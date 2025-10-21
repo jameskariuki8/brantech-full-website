@@ -1,0 +1,345 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Us - BranTech Solutions</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+  <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+
+  <!-- Tailwind & External Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <!-- Project Styles -->
+  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
+  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}"/>
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}"/>
+</head>
+<body class="bg-white text-gray-800 overflow-x-hidden">
+
+  <!-- Header -->
+  <div id="header"></div>
+
+  <!-- Tech Hero Section -->
+  <section class="tech-hero-section">
+    <div class="tech-grid-bg"><svg class="w-screen h-screen" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Keep boxes small -->
+    <pattern id="circuit" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+      <!-- Outer square -->
+      <rect x="5" y="5" width="40" height="40" fill="none" stroke="currentColor" stroke-width="0.5"/>
+      
+      <!-- Nodes -->
+      <circle cx="12" cy="12" r="2" fill="currentColor"/>
+      <circle cx="38" cy="38" r="2" fill="currentColor"/>
+      
+      <!-- Connection -->
+      <path d="M12 12L38 38" stroke="currentColor" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Fill entire viewport with repeating pattern -->
+  <rect width="100%" height="100%" fill="url(#circuit)" opacity="0.5"/>
+</svg>
+</div>
+    <!-- <div class="tech-floating-1"></div> -->
+    <div class="tech-floating-2"></div>
+    <div class="tech-gradient"></div>
+    <div class="tech-hero-content">
+      <div class="animate__animated animate__fadeInLeft">
+        <div class="tech-hero-badge">
+          <i class="fas fa-users-cog tech-hero-icon"></i>
+          <span class="tech-hero-badge-text">Who We Are</span>
+        </div>
+        <h1 class="tech-hero-title">
+          About <span class="tech-hero-title-highlight">BranTech</span>
+        </h1>
+        <p class="tech-hero-desc">
+          Our journey, values, and the team behind our innovative solutions.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Story Section -->
+  <section class="about-story-section">
+    <div class="about-story-grid">
+      <div class="animate__animated animate__fadeInLeft">
+        <span class="about-story-badge">Our Story</span>
+        <h2 class="about-story-title">
+          Building The Future <span class="about-story-title-highlight">Since 2025</span>
+        </h2>
+        <p class="about-story-text">
+          Founded in 2025, BranTech was born out of a passion for innovation and the belief that technology and branding can unlock limitless potential. We started as a small team with big ideas, determined to empower startups, SMEs, and large enterprises alike.
+        </p>
+        <p class="about-story-text">
+          From day one, our mission has been clear: to align businesses with their boldest visions through cutting-edge technology and creative strategy. Whether it's building powerful digital platforms or crafting unforgettable brand identities, BranTech helps companies grow, adapt, and lead in a fast-moving world.
+        </p>
+        <p class="about-story-text">
+          Today, we stand as a trusted partner for organizations seeking growth, clarity, and digital transformation — one innovation at a time.
+        </p>
+        <a href="contacts.html" class="about-story-connect-btn">
+          Let's Connect
+        </a>
+      </div>
+      <div class="animate__animated animate__fadeInRight">
+        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" 
+             alt="Our Team" 
+             class="about-story-img">
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section class="values-section">
+    <div class="values-container">
+        <h2 class="values-title">
+          Our Values<span class="values-title-highlighted"></span>
+        </h2>
+      <p class="values-desc">
+        At BranTech, our core values guide everything we do and shape our commitment to excellence.
+      </p>
+      <div class="values-grid">
+        <!-- Innovation -->
+        <div class="value-card group">
+          <div class="value-card-icon value-card-icon-innovation group-hover:scale-110">
+            <svg class="value-card-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <h3 class="value-card-title value-card-title-innovation">Innovation</h3>
+          <p class="value-card-desc">
+            We thrive on turning fresh ideas into impactful solutions that shape the future.
+          </p>
+        </div>
+        <!-- Integrity -->
+        <div class="value-card group">
+          <div class="value-card-icon value-card-icon-integrity group-hover:scale-110">
+            <svg class="value-card-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="value-card-title value-card-title-integrity">Integrity</h3>
+          <p class="value-card-desc">
+            We stand by transparency, honesty, and accountability in all our actions.
+          </p>
+        </div>
+        <!-- Collaboration -->
+        <div class="value-card group">
+          <div class="value-card-icon value-card-icon-collaboration group-hover:scale-110">
+            <svg class="value-card-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="value-card-title value-card-title-collaboration">Collaboration</h3>
+          <p class="value-card-desc">
+            We believe teamwork drives excellence, both within our team and with our clients.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team Section -->
+ <section class="team-section">
+  <div class="team-container">
+    <h2 class="team-title">
+      Meet the <span class="team-title-highlight">Team</span>
+    </h2>
+    <div class="team-grid">
+      
+      <!-- Leon -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Leon Musungu" class="team-img team-img-blue">
+          <div class="role-icon-circle role-blue">
+            <i class="fa-solid fa-user-astronaut"></i>          
+          </div>
+        </div>
+        <h3 class="team-name">Leon Musungu</h3>
+        <p class="team-role team-role-blue">Founder</p>
+      </div>
+
+      <!-- Neema -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/Neema .jpg' %}" alt="Neema Ogao" class="team-img team-img-green">
+          <div class="role-icon-circle role-green">
+           <i class="fa-solid fa-user-astronaut"></i>
+          </div>
+        </div>
+        <h3 class="team-name">Neema Ogao</h3>
+        <p class="team-role team-role-green">Head of Communications</p>
+      </div>
+
+      <!-- James -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/Junior.jpg' %}" alt="James Kariuki" class="team-img team-img-blue2">
+          <div class="role-icon-circle role-blue2">
+            <i class="fas fa-users-cog"></i>
+          </div>
+        </div>
+        <h3 class="team-name">James Kariuki</h3>
+        <p class="team-role team-role-blue2">Dev Team Lead</p>
+      </div>
+
+      <!-- Reuben -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/reuk.jpg' %}" alt="Reuben" class="team-img team-img-green2">
+          <div class="role-icon-circle role-green2">
+            <i class="fas fa-lightbulb"></i>
+          </div>
+        </div>
+        <h3 class="team-name">Reuben</h3>
+        <p class="team-role team-role-green2">Lead, Brand Strategy</p>
+      </div>
+
+      <!-- Bilha -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/Bilha.jpg' %}" alt="Bilha Ndung'u" class="team-img team-img-teal">
+          <div class="role-icon-circle role-teal">
+            <i class="fas fa-bullhorn"></i>
+          </div>
+        </div>
+        <h3 class="team-name">Bilha Ndung'u</h3>
+        <p class="team-role team-role-teal">Marketing Lead</p>
+      </div>
+
+      <!-- Edward -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Edward Ng'ang'a" class="team-img team-img-green3">
+          <div class="role-icon-circle role-green">
+            <i class="fas fa-server"></i>
+          </div>
+        </div>
+        <h3 class="team-name">Edward Ng'ang'a</h3>
+        <p class="team-role team-role-green">Backend Developer</p>
+      </div>
+
+      <!-- Ibrahim -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Ibrahim Mwangi" class="team-img team-img-indigo">
+          <div class="role-icon-circle role-blue">
+            <i class="fas fa-laptop-code"></i>
+          </div>
+        </div>
+        <h3 class="team-name">Ibrahim Mwangi</h3>
+        <p class="team-role team-role-blue">Frontend Developer</p>
+      </div>
+
+      <!-- David -->
+      <div class="team-card">
+        <div class="team-img-wrapper">
+          <img src="{% static 'brand/images/david2.png' %}" alt="David Njihia" class="team-img team-img-indigo">
+          <div class="role-icon-circle role-blue">
+            <i class="fas fa-laptop-code"></i>
+          </div>
+        </div>
+        <h3 class="team-name">David Njihia</h3>
+        <p class="team-role team-role-blue">Full-Stack Developer</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <!-- Chat Assistant -->
+  <div id="chatAssistant" class="chat-assistant">
+    <!-- Floating Chat Button -->
+    <div id="chatToggle" class="chat-toggle">
+      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+    </div>
+
+    <!-- Chat Window -->
+    <div id="chatWindow" class="chat-window">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="chat-header-text">
+            <h3>BranTech Assistant</h3>
+            <p>How can I help you today?</p>
+          </div>
+        </div>
+        <button id="chatClose" class="chat-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Chat Messages -->
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-welcome">
+          <div class="welcome-message">
+            <div class="welcome-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="welcome-text">
+              <p>Hello! I'm your BranTech Solutions assistant. I can help you with:</p>
+              <ul>
+                <li>Our services and solutions</li>
+                <li>Project inquiries</li>
+                <li>Technical support</li>
+                <li>General questions</li>
+              </ul>
+              <p>What would you like to know?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input -->
+      <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
+          <button id="chatSend" class="chat-send" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-typing" id="chatTyping" style="display: none;">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span>BranTech Assistant is typing...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'brand/js/components.js' %}"></script>
+  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+</body>
+</html>
