@@ -25,6 +25,8 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   
+
+  
   <style>
     :root {
       --magic-dark: #0a0a0f;
@@ -445,6 +447,8 @@
   </style>
 </head>
 <body>
+  
+  {% include 'brand/header.html' %}
 
   <!-- Navigation -->
   <div id="header"></div>
@@ -837,5 +841,6 @@
   </script>
   
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+  {% include 'brand/footer.html' %}
 </body>
 </html>

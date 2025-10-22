@@ -75,7 +75,8 @@
   </style>
 </head>
 <body class="bg-white text-gray-800 overflow-x-hidden">
-
+ 
+  {% include 'brand/header.html' %}
   <!-- Header -->
   <div id="header"></div>
 
@@ -198,5 +199,6 @@
 
   <script src="{% static 'brand/js/components.js' %}"></script>
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+  {% include 'brand/footer.html' %}
 </body>
 </html>

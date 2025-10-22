@@ -206,6 +206,9 @@
 </head>
 <body>
 
+  
+  {% include 'brand/header.html' %}
+
   <div id="header"></div>
 
   <section class="faq-hero">
@@ -472,7 +475,7 @@
       }
     });
   </script>
-  
+  {% include 'brand/footer.html' %}
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
 </body>
 </html>

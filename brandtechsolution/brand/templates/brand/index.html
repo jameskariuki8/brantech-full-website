@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -1547,6 +1548,8 @@
 </head>
 <body>
 
+  {% include 'brand/header.html' %}
+
   <!-- Navigation -->
   <div id="header"></div>
 
@@ -2413,7 +2416,7 @@
       }
     });
   </script>
-  
+  {% include 'brand/footer.html' %}
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
 </body>
 </html>
