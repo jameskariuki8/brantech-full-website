@@ -4,4 +4,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('brand.urls')),  # route to your app
+    path('appointments/', include('appointments.urls')),
 ]

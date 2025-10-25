@@ -1,0 +1,369 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "Manage Appointment" %} • BranTech Solutions</title>
+    <meta name="description" content="Manage appointment details and status.">
+    <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <style>
+      :root {
+        --magic-dark: #0a0a0f;
+        --magic-blue: #00d4ff;
+        --magic-teal: #00ffb3;
+        --magic-violet: #8b5cf6;
+        --magic-glow: rgba(0, 212, 255, 0.16);
+        --magic-text: #e0e7ff;
+      }
+      body {
+        background: linear-gradient(135deg, var(--magic-dark) 0%, #1a1a2e 50%, #16213e 100%);
+        color: var(--magic-text);
+        font-family: 'Inter', Arial, sans-serif;
+        min-height: 100vh;
+      }
+      .admin-header {
+        font-family: 'Orbitron', 'Inter', Arial, sans-serif;
+        font-size: 2.2rem;
+        color: var(--magic-blue);
+        text-shadow: 0 0 12px var(--magic-glow);
+        letter-spacing: 1px;
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .form-container {
+        background: rgba(26,26,46,0.9);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(128,140,255,0.1);
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      .form-label {
+        display: block;
+        color: var(--magic-blue);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+      }
+      .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: rgba(22,33,62,0.8);
+        border: 1px solid rgba(128,140,255,0.2);
+        border-radius: 8px;
+        color: var(--magic-text);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: var(--magic-blue);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+      .form-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: rgba(22,33,62,0.8);
+        border: 1px solid rgba(128,140,255,0.2);
+        border-radius: 8px;
+        color: var(--magic-text);
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      .form-select:focus {
+        outline: none;
+        border-color: var(--magic-blue);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+      .btn-primary {
+        background: linear-gradient(90deg, var(--magic-blue) 0%, var(--magic-teal) 100%);
+        color: #18182f;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+      }
+      .btn-secondary {
+        background: rgba(128,140,255,0.1);
+        color: var(--magic-text);
+        padding: 0.75rem 2rem;
+        border: 1px solid rgba(128,140,255,0.3);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin-left: 1rem;
+      }
+      .btn-secondary:hover {
+        background: rgba(128,140,255,0.2);
+        border-color: var(--magic-blue);
+      }
+      .appointment-info {
+        background: rgba(22,33,62,0.6);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--magic-blue);
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(128,140,255,0.1);
+      }
+      .info-label {
+        color: var(--magic-blue);
+        font-weight: 600;
+        min-width: 120px;
+      }
+      .info-value {
+        color: var(--magic-text);
+        flex: 1;
+        text-align: right;
+      }
+      .quill-editor {
+        background: rgba(22,33,62,0.8);
+        border: 1px solid rgba(128,140,255,0.2);
+        border-radius: 8px;
+        min-height: 200px;
+      }
+      .quill-editor .ql-toolbar {
+        border-top: 1px solid rgba(128,140,255,0.2);
+        border-left: 1px solid rgba(128,140,255,0.2);
+        border-right: 1px solid rgba(128,140,255,0.2);
+        background: rgba(26,26,46,0.9);
+      }
+      .quill-editor .ql-container {
+        border-bottom: 1px solid rgba(128,140,255,0.2);
+        border-left: 1px solid rgba(128,140,255,0.2);
+        border-right: 1px solid rgba(128,140,255,0.2);
+        background: rgba(22,33,62,0.8);
+        color: var(--magic-text);
+      }
+      .quill-editor .ql-editor {
+        color: var(--magic-text);
+        min-height: 150px;
+      }
+      .status-pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.28em 1em;
+        font-size: 0.95em;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+      }
+      .status-pending { background: var(--magic-violet); color: #fff; }
+      .status-confirmed { background: var(--magic-blue); color: #08101a; }
+      .status-completed { background: var(--magic-teal); color: #0a1420; }
+      .status-cancelled { background: #e8505b; color: #fff; }
+      .status-rescheduled { background: #f9d423; color: #312900; }
+      .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: none;
+      }
+      .alert-success {
+        background: rgba(0, 255, 179, 0.1);
+        border: 1px solid var(--magic-teal);
+        color: var(--magic-teal);
+      }
+      .alert-error {
+        background: rgba(232, 80, 91, 0.1);
+        border: 1px solid #e8505b;
+        color: #e8505b;
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container mx-auto max-w-4xl mt-8 px-4 sm:px-8 animate__animated animate__fadeIn">
+        <h2 class="admin-header">{% trans "Manage Appointment" %}</h2>
+        
+        <!-- Alert Messages -->
+        <div id="alert-success" class="alert alert-success">
+            <i class="fas fa-check-circle"></i> <span id="success-message"></span>
+        </div>
+        <div id="alert-error" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> <span id="error-message"></span>
+        </div>
+
+        <!-- Appointment Information -->
+        <div class="appointment-info">
+            <h3 class="text-xl font-bold text-white mb-4">{% trans "Appointment Details" %}</h3>
+            <div class="info-row">
+                <span class="info-label">{% trans "ID:" %}</span>
+                <span class="info-value">#{{ appointment.id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">{% trans "Client:" %}</span>
+                <span class="info-value">{{ appointment.full_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">{% trans "Email:" %}</span>
+                <span class="info-value">{{ appointment.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">{% trans "Phone:" %}</span>
+                <span class="info-value">{{ appointment.phone }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">{% trans "Created:" %}</span>
+                <span class="info-value">{{ appointment.created_at|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">{% trans "Last Updated:" %}</span>
+                <span class="info-value">{{ appointment.updated_at|date:"M d, Y H:i" }}</span>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <form id="appointment-form" class="form-container">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="title" class="form-label">{% trans "Title" %}</label>
+                <input type="text" id="title" name="title" class="form-input" value="{{ appointment.title }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description" class="form-label">{% trans "Description" %} ({% trans "Markdown supported" %})</label>
+                <div id="description-editor" class="quill-editor">{{ appointment.description }}</div>
+                <textarea id="description" name="description" style="display: none;">{{ appointment.description }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="form-group">
+                    <label for="date" class="form-label">{% trans "Date" %}</label>
+                    <input type="date" id="date" name="date" class="form-input" value="{{ appointment.date|date:'Y-m-d' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="time" class="form-label">{% trans "Time" %}</label>
+                    <input type="time" id="time" name="time" class="form-input" value="{{ appointment.time|time:'H:i' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="duration" class="form-label">{% trans "Duration (Minutes)" %}</label>
+                    <input type="number" id="duration" name="duration" class="form-input" value="{{ appointment.estimated_duration }}" min="1" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="status" class="form-label">{% trans "Status" %}</label>
+                <select id="status" name="status" class="form-select" required>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if appointment.status == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> {% trans "Update Appointment" %}
+                </button>
+                <a href="{% url 'appointments:list' %}" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {% trans "Back to List" %}
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Initialize Quill editor
+        const quill = new Quill('#description-editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    ['link', 'blockquote', 'code-block'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Sync Quill content with hidden textarea
+        quill.on('text-change', function() {
+            document.getElementById('description').value = quill.root.innerHTML;
+        });
+
+        // Form submission
+        document.getElementById('appointment-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Update hidden textarea with Quill content
+            document.getElementById('description').value = quill.root.innerHTML;
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', result.message);
+                } else {
+                    showAlert('error', result.error || 'An error occurred');
+                }
+            } catch (error) {
+                showAlert('error', 'Network error: ' + error.message);
+            }
+        });
+
+        function showAlert(type, message) {
+            // Hide all alerts
+            document.getElementById('alert-success').style.display = 'none';
+            document.getElementById('alert-error').style.display = 'none';
+            
+            if (type === 'success') {
+                document.getElementById('success-message').textContent = message;
+                document.getElementById('alert-success').style.display = 'block';
+            } else {
+                document.getElementById('error-message').textContent = message;
+                document.getElementById('alert-error').style.display = 'block';
+            }
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                document.getElementById('alert-success').style.display = 'none';
+                document.getElementById('alert-error').style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

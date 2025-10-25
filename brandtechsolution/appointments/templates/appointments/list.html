@@ -1,0 +1,188 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "Appointments" %} • BranTech Solutions</title>
+    <meta name="description" content="View your scheduled appointments with BranTech Solutions.">
+    <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+      :root {
+        --magic-dark: #0a0a0f;
+        --magic-blue: #00d4ff;
+        --magic-teal: #00ffb3;
+        --magic-violet: #8b5cf6;
+        --magic-glow: rgba(0, 212, 255, 0.16);
+        --magic-text: #e0e7ff;
+      }
+      body {
+        background: linear-gradient(135deg, var(--magic-dark) 0%, #1a1a2e 50%, #16213e 100%);
+        color: var(--magic-text);
+        font-family: 'Inter', Arial, sans-serif;
+        min-height: 100vh;
+      }
+      .appointments-header {
+        font-family: 'Orbitron', 'Inter', Arial, sans-serif;
+        font-size: 2.2rem;
+        color: var(--magic-blue);
+        text-shadow: 0 0 12px var(--magic-glow);
+        letter-spacing: 1px;
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .appointments-table th,
+      .appointments-table td {
+        padding: 0.5rem 1.2rem;
+        border-bottom: 1px solid rgba(128,140,255,0.08);
+      }
+      .appointments-table th {
+        background: linear-gradient(90deg, var(--magic-blue) 0%, var(--magic-teal) 100%);
+        color: #18182f;
+        font-weight: 700;
+        font-size: 1rem;
+        text-align: left;
+        border-radius: 0.3rem 0.3rem 0 0;
+      }
+      .appointments-table td {
+        background-color: rgba(26,26,46,0.9);
+      }
+      .appointments-table tr:nth-child(even) td {
+        background-color: rgba(22,33,62,0.92);
+      }
+      .appointments-table {
+        border-radius: 12px;
+        overflow: hidden;
+        width: 100%;
+        margin-bottom: 2rem;
+      }
+      .status-pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.28em 1em;
+        font-size: 0.95em;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+      }
+      .status-pending { background: var(--magic-violet); color: #fff; }
+      .status-confirmed { background: var(--magic-blue); color: #08101a; }
+      .status-completed { background: var(--magic-teal); color: #0a1420; }
+      .status-cancelled { background: #e8505b; color: #fff; }
+      .status-rescheduled { background: #f9d423; color: #312900; }
+      .pagination a, .pagination span {
+        margin: 0 0.2rem;
+        padding: 0.44rem 0.92rem;
+        border-radius: 6px;
+        transition: background 0.12s;
+        background: transparent;
+        color: var(--magic-blue);
+      }
+      .pagination .active > span, .pagination .active > a {
+        background: var(--magic-blue);
+        color: #08101a;
+        font-weight: bold;
+        box-shadow: 0 0 3px var(--magic-glow);
+      }
+      .pagination .disabled > span,
+      .pagination .disabled > a {
+        color: #999;
+        background: transparent;
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container mx-auto max-w-4xl mt-8 px-4 sm:px-8 animate__animated animate__fadeIn">
+        <h2 class="appointments-header">{% trans "Appointments" %}</h2>
+        <div class="overflow-x-auto rounded-lg shadow-lg">
+            <table class="appointments-table w-full">
+                <thead>
+                    <tr>
+                        <th>{% trans "Title" %}</th>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Phone" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Time" %}</th>
+                        <th>{% trans "Estimated Duration (Minutes)" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        {% if user.is_staff %}
+                        <th>{% trans "Actions" %}</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.title }}</td>
+                        <td class="text-sm text-gray-400">{{ appointment.email }}</td>
+                        <td class="text-sm text-gray-400">{{ appointment.phone }}</td>
+                        <td>{{ appointment.date }}</td>
+                        <td>{{ appointment.time|time:"H:i" }}</td>
+                        <td>{{ appointment.estimated_duration }}</td>
+                        <td>
+                            <span class="status-pill status-{{ appointment.status|lower }}">
+                                {{ appointment.status|capfirst }}
+                            </span>
+                        </td>
+                        {% if user.is_staff %}
+                        <td>
+                            <a href="{% url 'appointments:admin_manage' appointment.id %}" 
+                               class="text-blue-400 hover:text-blue-300 transition-colors">
+                                <i class="fas fa-edit"></i> {% trans "Manage" %}
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if user.is_staff %}8{% else %}7{% endif %}" class="text-center py-4 text-lg text-gray-400">{% trans "No appointments found." %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-8 flex justify-center">
+            <ul class="pagination flex">
+                {% if page_obj.has_previous %}
+                <li>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
+                </li>
+                {% else %}
+                <li class="disabled">
+                    <span class="page-link">{% trans "Previous" %}</span>
+                </li>
+                {% endif %}
+
+                {% for num in paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
+                </li>
+                {% else %}
+                <li class="disabled">
+                    <span class="page-link">{% trans "Next" %}</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</body>
+</html>
