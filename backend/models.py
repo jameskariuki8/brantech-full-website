@@ -39,7 +39,6 @@ class Project(models.Model):
     budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     technologies = models.CharField(max_length=300, help_text="Comma-separated technologies")
     project_url = models.URLField(blank=True, null=True, help_text="Link to live project or demo")
-    github_url = models.URLField(blank=True, null=True, help_text="Link to GitHub repository")
     image = models.ImageField(upload_to='project_images/', blank=True, null=True)
     featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)

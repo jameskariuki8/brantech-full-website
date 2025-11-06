@@ -1,0 +1,386 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - BranTech Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #0a0e17;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .signup-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 120px 20px 60px;
+        }
+
+        .auth-card {
+            width: 520px;
+            background: #121826;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            max-width: 92vw;
+        }
+
+        .registration-section {
+            padding: 35px;
+        }
+
+        .auth-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            text-align: center;
+        }
+        .brand-lockup { display:flex; align-items:center; justify-content:center; gap:14px; }
+        .brand-title { font-weight:800; font-size:28px; line-height:1.05; letter-spacing:.2px; }
+        .brand-title .accent-1 { color:#34d399; }
+        .brand-title .accent-2 { color:#60a5fa; }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 12px;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #f5f5f5;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            position: relative;
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #b0b0b0;
+            font-size: 13px;
+        }
+
+        input {
+            width: 100%;
+            height: 46px;
+            padding: 10px 14px;
+            background: #0f1a27;
+            border: 1px solid #243244;
+            border-radius: 12px;
+            color: #e5e7eb;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+            text-align: center;
+        }
+        input::placeholder { color:#9aa6b2; opacity: .9; text-align: center; }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 35px;
+            cursor: pointer;
+            color: #3498db;
+            font-size: 13px;
+        }
+
+        .register-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.6);
+        }
+
+        .login {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .login a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login a:hover {
+            text-decoration: underline;
+        }
+
+        /* Background effects */
+        .bg-effects {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(52, 152, 219, 0.05);
+            animation: float 20s infinite linear;
+        }
+
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            left: 70%;
+            animation-delay: -8s;
+        }
+
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 30%;
+            right: 10%;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(20px, -30px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-15px, 15px) rotate(240deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(360deg);
+            }
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.6), transparent);
+            top: 30%;
+            animation: scan 5s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                top: 0%;
+            }
+            100% {
+                top: 100%;
+            }
+        }
+
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #86efac;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                width: 90%;
+                margin: 20px;
+            }
+            
+            .registration-section {
+                padding: 25px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include 'brand/header.html' %}
+
+    <div class="signup-container">
+        <div class="auth-card">
+            <div class="bg-effects">
+                <div class="shape"></div>
+                <div class="shape"></div>
+                <div class="shape"></div>
+                <div class="scan-line"></div>
+            </div>
+            
+            <div class="registration-section">
+                <div class="auth-brand">
+                    <img src="{% static 'brand/images/logo.jpg' %}" alt="BranTech Logo" style="width:44px;height:44px;border-radius:10px;object-fit:cover;"/>
+                    <div class="brand-title"><span class="accent-2">Bran</span><span class="accent-1">Tech</span><br><span class="accent-2">Solutions</span></div>
+                </div>
+                
+                <h1>Create Account</h1>
+                <p class="subtitle">Join our secure platform today</p>
+                
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <form id="registrationForm" method="POST" action="{% url 'signup' %}">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="firstName" placeholder="John" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" placeholder="Doe" required>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" placeholder="••••••••" required>
+                            <span class="password-toggle" id="togglePassword">Show</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="register-btn">Create Account</button>
+                </form>
+                
+                <div class="login">
+                    Already have an account? <a href="{% url 'login' %}">Sign in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'brand/footer.html' %}
+
+    <script>
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                this.textContent = type === 'password' ? 'Show' : 'Hide';
+            });
+        }
+    </script>
+</body>
+</html>

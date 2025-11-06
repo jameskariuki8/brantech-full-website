@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events - BranTech Solutions</title>
+  <meta name="description" content="Upcoming tech events, workshops, and conferences by BranTech Solutions.">
+  <meta name="keywords" content="tech events, workshops, conferences, webinars, technology meetups">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
+  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}"/>
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}"/>
+  <style>
+    :root{ --bg-dark:#050911; --panel-dark:rgba(10,18,28,.85); --neon-green:#16ff7a; --neon-green-soft:rgba(22,255,122,.25); --neon-green-glow:0 0 10px rgba(22,255,122,.45),0 0 24px rgba(22,255,122,.25); --text-green:#a6ffc9; --text-green-dim:#7ef0b2; --accent-red:#ef4444; }
+    body{ background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%); color: var(--text-green); min-height:100vh; }
+    .events-hero{ position:relative; height:50vh; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-top:80px; }
+    .events-hero:before{ content:''; position:absolute; inset:-2px; z-index:0; background: radial-gradient(600px 300px at 20% 10%, rgba(22,255,122,.18), transparent 60%), radial-gradient(500px 280px at 80% 20%, rgba(22,255,122,.12), transparent 60%); pointer-events:none; }
+    .badge-green{ background:rgba(22,255,122,.12); border:1px solid rgba(22,255,122,.35); color:var(--neon-green); box-shadow: var(--neon-green-glow); }
+    .title-green{ color:var(--neon-green); text-shadow:0 0 18px rgba(22,255,122,.4); letter-spacing:.5px; }
+    .subtitle-green{ color:var(--text-green); opacity:.9; }
+    .events-container{ max-width:1400px; margin:0 auto; padding:4rem 2rem; }
+    .events-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; }
+    .event-card{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; transition:all 0.3s ease; }
+    .event-card:hover{ transform:translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.3); border-color:rgba(22,255,122,0.3); }
+    .event-image{ width:100%; height:240px; background:#0c1520; overflow:hidden; position:relative; }
+    .event-image img{ width:100%; height:100%; object-fit:cover; transition:transform 0.3s ease; }
+    .event-card:hover .event-image img{ transform:scale(1.05); }
+    .event-content{ padding:1.5rem; }
+    .event-title{ color:var(--accent-red); font-size:1.25rem; font-weight:700; margin-bottom:0.75rem; line-height:1.3; }
+    .event-description{ color:rgba(255,255,255,0.8); font-size:0.9rem; line-height:1.6; margin-bottom:1.25rem; min-height:3.2rem; }
+    .event-actions{ display:flex; gap:0.75rem; justify-content:center; }
+    .event-btn{ width:44px; height:44px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s ease; background:var(--accent-red); color:white; font-size:1.1rem; }
+    .event-btn:hover{ transform:scale(1.1); box-shadow:0 4px 12px rgba(239,68,68,0.4); }
+    .events-filter{ display:flex; justify-content:center; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+    .filter-btn{ padding:0.75rem 1.5rem; background:rgba(22,255,122,.08); border:1px solid rgba(22,255,122,.25); border-radius:8px; color:var(--neon-green); cursor:pointer; transition:all 0.3s ease; font-weight:600; }
+    .filter-btn.active{ background:var(--neon-green); color:#04110a; box-shadow: var(--neon-green-glow); }
+    .filter-btn:hover{ background:rgba(22,255,122,.15); }
+    @media (max-width:1024px){ .events-grid{ grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:768px){ .events-grid{ grid-template-columns:1fr; } .events-hero{ height:40vh; } }
+  </style>
+</head>
+<body>
+  {% include 'brand/header.html' %}
+
+  <section class="events-hero">
+    <canvas id="events-canvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
+    <div style="position:relative; z-index:10; text-align:center; max-width:800px; padding:0 2rem;">
+      <div class="inline-flex items-center px-4 py-2 badge-green rounded-full mb-6">
+        <i class="fas fa-calendar-alt mr-2"></i>
+        <span class="text-sm font-medium">Tech Events & Workshops</span>
+      </div>
+      <h1 class="title-green" style="font-family:Orbitron, monospace; font-weight:900; font-size:clamp(2.5rem,6vw,4rem); margin-bottom:1rem;">BranTech Events</h1>
+      <p class="subtitle-green" style="font-size:1.1rem;">Join us for cutting-edge tech events, workshops, and networking opportunities</p>
+    </div>
+  </section>
+
+  <div class="events-container">
+    <div class="events-filter">
+      <button class="filter-btn active" onclick="filterEvents('all')">All Events</button>
+      <button class="filter-btn" onclick="filterEvents('upcoming')">Upcoming</button>
+      <button class="filter-btn" onclick="filterEvents('workshop')">Workshops</button>
+      <button class="filter-btn" onclick="filterEvents('webinar')">Webinars</button>
+    </div>
+    <div id="eventsGrid" class="events-grid"></div>
+  </div>
+
+  {% include 'brand/footer.html' %}
+  <script src="{% static 'brand/js/components.js' %}"></script>
+  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+  <script>
+    const API_BASE = '/api';
+    let allEvents = [];
+    async function loadEvents(){
+      try{
+        const response = await fetch(`${API_BASE}/events/`);
+        if(response.ok){
+          const data = await response.json();
+          allEvents = data;
+          displayEvents(allEvents);
+        }
+      } catch(error) {
+        console.error('Error loading events:', error);
+      }
+    }
+    function displayEvents(events){
+      const grid = document.getElementById('eventsGrid');
+      if(events.length === 0){
+        grid.innerHTML = '<p class="text-center text-white col-span-3">No events available.</p>';
+        return;
+      }
+      grid.innerHTML = events.map(event => {
+        let imageUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400';
+        if(event.image) {
+          if(event.image.startsWith('http')) {
+            imageUrl = event.image;
+          } else if(event.image.startsWith('/media/')) {
+            imageUrl = event.image;
+          } else {
+            imageUrl = '/media/' + event.image;
+          }
+        }
+        const eventDate = new Date(event.date);
+        const isUpcoming = eventDate > new Date();
+        return `
+          <div class="event-card" data-type="${event.event_type}">
+            <div class="event-image">
+              <img src="${imageUrl}" alt="${event.title}">
+            </div>
+            <div class="event-content">
+              <h3 class="event-title">${event.title}</h3>
+              <p class="event-description">${event.description || 'No description available.'}</p>
+              <div class="event-actions">
+                ${event.registration_link ? `<a href="${event.registration_link}" target="_blank" class="event-btn" title="Register for Event"><i class="fas fa-ticket-alt"></i></a>` : ''}
+                <button class="event-btn" onclick="showEventDetails('${event.title}', '${event.description}', '${eventDate.toLocaleDateString()}', '${event.location || 'TBA'}')" title="View Details"><i class="fas fa-info-circle"></i></button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    function showEventDetails(title, description, date, location){
+      alert(`${title}\n\nDate: ${date}\nLocation: ${location}\n\n${description}`);
+    }
+    function filterEvents(type){
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      let filtered = allEvents;
+      if(type === 'upcoming'){
+        filtered = allEvents.filter(e => new Date(e.date) > new Date());
+      } else if(type !== 'all'){
+        filtered = allEvents.filter(e => e.event_type.toLowerCase() === type);
+      }
+      displayEvents(filtered);
+    }
+    function initEventsHero(){
+      const canvas = document.getElementById('events-canvas');
+      if(!canvas) return;
+      const scene = new THREE.Scene;
+      const camera = new THREE.PerspectiveCamera(75, canvas.offsetWidth / canvas.offsetHeight, .1, 1e3);
+      const renderer = new THREE.WebGLRenderer({canvas: canvas, alpha: true});
+      renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      const geometry = new THREE.BufferGeometry;
+      const vertices = [];
+      for(let i = 0; i < 600; i++){
+        vertices.push(2e3*(Math.random()-.5), 2e3*(Math.random()-.5), 2e3*(Math.random()-.5));
+      }
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      const material = new THREE.PointsMaterial({color: 0x16ff7a, size: 2, transparent: true, opacity: .4});
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+      camera.position.z = 1e3;
+      function animate(){
+        requestAnimationFrame(animate);
+        points.rotation.x += 5e-4;
+        points.rotation.y += .001;
+        renderer.render(scene, camera);
+      }
+      animate();
+      window.addEventListener('resize', () => {
+        camera.aspect = canvas.offsetWidth / canvas.offsetHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      initEventsHero();
+      loadEvents();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects - BranTech Solutions</title>
+  <meta name="description" content="Our portfolio of innovative projects and solutions by BranTech Solutions.">
+  <meta name="keywords" content="projects, portfolio, web development, technology solutions">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
+  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}"/>
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}"/>
+  <style>
+    :root{ --bg-dark:#050911; --panel-dark:rgba(10,18,28,.85); --neon-green:#16ff7a; --neon-green-soft:rgba(22,255,122,.25); --neon-green-glow:0 0 10px rgba(22,255,122,.45),0 0 24px rgba(22,255,122,.25); --text-green:#a6ffc9; --text-green-dim:#7ef0b2; --accent-red:#ef4444; }
+    body{ background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%); color: var(--text-green); min-height:100vh; }
+    .projects-hero{ position:relative; height:50vh; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-top:80px; }
+    .projects-hero:before{ content:''; position:absolute; inset:-2px; z-index:0; background: radial-gradient(600px 300px at 20% 10%, rgba(22,255,122,.18), transparent 60%), radial-gradient(500px 280px at 80% 20%, rgba(22,255,122,.12), transparent 60%); pointer-events:none; }
+    .badge-green{ background:rgba(22,255,122,.12); border:1px solid rgba(22,255,122,.35); color:var(--neon-green); box-shadow: var(--neon-green-glow); }
+    .title-green{ color:var(--neon-green); text-shadow:0 0 18px rgba(22,255,122,.4); letter-spacing:.5px; }
+    .subtitle-green{ color:var(--text-green); opacity:.9; }
+    .projects-container{ max-width:1400px; margin:0 auto; padding:4rem 2rem; }
+    .projects-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; }
+    .project-card{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; transition:all 0.3s ease; }
+    .project-card:hover{ transform:translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.3); border-color:rgba(22,255,122,0.3); }
+    .project-image{ width:100%; height:240px; background:#0c1520; overflow:hidden; position:relative; }
+    .project-image img{ width:100%; height:100%; object-fit:cover; transition:transform 0.3s ease; }
+    .project-card:hover .project-image img{ transform:scale(1.05); }
+    .project-content{ padding:1.5rem; }
+    .project-title{ color:var(--accent-red); font-size:1.25rem; font-weight:700; margin-bottom:0.75rem; line-height:1.3; }
+    .project-description{ color:rgba(255,255,255,0.8); font-size:0.9rem; line-height:1.6; margin-bottom:1.25rem; min-height:3.2rem; }
+    .project-actions{ display:flex; gap:0.75rem; justify-content:center; }
+    .project-btn{ width:44px; height:44px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s ease; background:var(--accent-red); color:white; font-size:1.1rem; }
+    .project-btn:hover{ transform:scale(1.1); box-shadow:0 4px 12px rgba(239,68,68,0.4); }
+    .project-btn.github{ background:var(--accent-red); }
+    .project-btn.external{ background:var(--accent-red); }
+    .projects-filter{ display:flex; justify-content:center; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+    .filter-btn{ padding:0.75rem 1.5rem; background:rgba(22,255,122,.08); border:1px solid rgba(22,255,122,.25); border-radius:8px; color:var(--neon-green); cursor:pointer; transition:all 0.3s ease; font-weight:600; }
+    .filter-btn.active{ background:var(--neon-green); color:#04110a; box-shadow: var(--neon-green-glow); }
+    .filter-btn:hover{ background:rgba(22,255,122,.15); }
+    @media (max-width:1024px){ .projects-grid{ grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:768px){ .projects-grid{ grid-template-columns:1fr; } .projects-hero{ height:40vh; } }
+  </style>
+</head>
+<body>
+  {% include 'brand/header.html' %}
+
+  <section class="projects-hero">
+    <canvas id="projects-canvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
+    <div style="position:relative; z-index:10; text-align:center; max-width:800px; padding:0 2rem;">
+      <div class="inline-flex items-center px-4 py-2 badge-green rounded-full mb-6">
+        <i class="fas fa-project-diagram mr-2"></i>
+        <span class="text-sm font-medium">Our Portfolio</span>
+      </div>
+      <h1 class="title-green" style="font-family:Orbitron, monospace; font-weight:900; font-size:clamp(2.5rem,6vw,4rem); margin-bottom:1rem;">BranTech Projects</h1>
+      <p class="subtitle-green" style="font-size:1.1rem;">Innovative solutions and cutting-edge technology projects</p>
+    </div>
+  </section>
+
+  <div class="projects-container">
+    <div class="projects-filter">
+      <button class="filter-btn active" onclick="filterProjects('all')">All Projects</button>
+      <button class="filter-btn" onclick="filterProjects('planning')">Planning</button>
+      <button class="filter-btn" onclick="filterProjects('in_progress')">In Progress</button>
+      <button class="filter-btn" onclick="filterProjects('completed')">Completed</button>
+    </div>
+    <div id="projectsGrid" class="projects-grid"></div>
+  </div>
+
+  {% include 'brand/footer.html' %}
+  <script src="{% static 'brand/js/components.js' %}"></script>
+  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+  <script>
+    const API_BASE = '/api';
+    let allProjects = [];
+    async function loadProjects(){
+      try{
+        const response = await fetch(`${API_BASE}/projects/`);
+        if(response.ok){
+          const data = await response.json();
+          allProjects = data;
+          displayProjects(allProjects);
+        }
+      } catch(error) {
+        console.error('Error loading projects:', error);
+      }
+    }
+    function displayProjects(projects){
+      const grid = document.getElementById('projectsGrid');
+      if(projects.length === 0){
+        grid.innerHTML = '<p class="text-center text-white col-span-3">No projects available.</p>';
+        return;
+      }
+      grid.innerHTML = projects.map(project => {
+        let imageUrl = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400';
+        if(project.image) {
+          if(project.image.startsWith('http')) {
+            imageUrl = project.image;
+          } else if(project.image.startsWith('/media/')) {
+            imageUrl = project.image;
+          } else {
+            imageUrl = '/media/' + project.image;
+          }
+        }
+        return `
+          <div class="project-card" data-status="${project.status}">
+            <div class="project-image">
+              <img src="${imageUrl}" alt="${project.title}">
+            </div>
+            <div class="project-content">
+              <h3 class="project-title">${project.title}</h3>
+              <p class="project-description">${project.description || 'No description available.'}</p>
+              <div class="project-actions">
+                ${project.github_url ? `<a href="${project.github_url}" target="_blank" class="project-btn github" title="View on GitHub"><i class="fab fa-github"></i></a>` : ''}
+                ${project.project_url ? `<a href="${project.project_url}" target="_blank" class="project-btn external" title="View Live Project"><i class="fas fa-external-link-alt"></i></a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    function filterProjects(status){
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      let filtered = allProjects;
+      if(status !== 'all'){
+        filtered = allProjects.filter(p => p.status === status);
+      }
+      displayProjects(filtered);
+    }
+    function initProjectsHero(){
+      const canvas = document.getElementById('projects-canvas');
+      if(!canvas) return;
+      const scene = new THREE.Scene;
+      const camera = new THREE.PerspectiveCamera(75, canvas.offsetWidth / canvas.offsetHeight, .1, 1e3);
+      const renderer = new THREE.WebGLRenderer({canvas: canvas, alpha: true});
+      renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      const geometry = new THREE.BufferGeometry;
+      const vertices = [];
+      for(let i = 0; i < 600; i++){
+        vertices.push(2e3*(Math.random()-.5), 2e3*(Math.random()-.5), 2e3*(Math.random()-.5));
+      }
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      const material = new THREE.PointsMaterial({color: 0x16ff7a, size: 2, transparent: true, opacity: .4});
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+      camera.position.z = 1e3;
+      function animate(){
+        requestAnimationFrame(animate);
+        points.rotation.x += 5e-4;
+        points.rotation.y += .001;
+        renderer.render(scene, camera);
+      }
+      animate();
+      window.addEventListener('resize', () => {
+        camera.aspect = canvas.offsetWidth / canvas.offsetHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      initProjectsHero();
+      loadProjects();
+    });
+  </script>
+</body>
+</html>

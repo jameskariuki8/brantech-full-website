@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events - BranTech Solutions</title>
+  <meta name="description" content="Upcoming tech events, workshops, and conferences by BranTech Solutions.">
+  <meta name="keywords" content="tech events, workshops, conferences, webinars, technology meetups">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="images/logo.jpg" type="image/jpeg">
+  
+  <!-- Three.js for 3D magic -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="header-styles.css"/>
+  <link rel="stylesheet" href="styles2.css"/>
+  <link rel="stylesheet" href="chat-assistant.css"/>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --magic-dark: #0a0a0f;
+      --magic-blue: #2563eb;
+      --magic-teal: #00ffb3;
+      --magic-violet: #8b5cf6;
+      --magic-glow: rgba(37, 99, 235, 0.3);
+      --magic-text: #e0e7ff;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #1a1a2e;
+      color: var(--magic-text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      cursor: auto;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      transition: all 0.3s ease;
+    }
+    
+    /* Light Mode */
+    body.light-mode {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    
+    body.light-mode .event-card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #1e293b;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    body.light-mode .event-card:hover {
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    body.light-mode .event-details {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    body.light-mode .event-detail {
+      color: #374151;
+    }
+    
+    body.light-mode .event-title {
+      color: #1e293b;
+    }
+    
+    body.light-mode .event-title {
+      color: #1e293b;
+    }
+    
+    body.light-mode .event-description {
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+
+    
+    /* Events Hero Section */
+    .events-hero {
+      position: relative;
+      height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-top: 80px;
+    }
+    
+    #events-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    
+    .events-hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 800px;
+      padding: 0 2rem;
+    }
+    
+    .events-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 1.5rem;
+    }
+    
+    .events-subtitle {
+      font-size: 1.3rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 3rem;
+      font-weight: 500;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Events Container */
+    .events-container {
+      position: relative;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+      z-index: 10;
+    }
+    
+    /* Floating Animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .event-card:nth-child(odd) {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .event-card:nth-child(even) {
+      animation: float 6s ease-in-out infinite reverse;
+    }
+    
+    /* Events Grid */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 2.5rem;
+      margin-bottom: 6rem;
+    }
+    
+    /* Event Card */
+    .event-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 0;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    
+    .event-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+    
+    .event-date-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #2563eb;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      z-index: 3;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    
+    .event-image {
+      width: 100%;
+      height: 200px;
+      border-radius: 16px 16px 0 0;
+      position: relative;
+      overflow: hidden;
+      background: #2a2a3e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .event-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: transform 0.4s ease;
+      z-index: 1;
+    }
+    
+    .event-card:hover .event-image img {
+      transform: scale(1.08);
+    }
+    
+    .event-content {
+      padding: 2rem;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .event-type {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+    }
+    
+    .event-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+    
+    .event-description {
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .event-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .event-detail {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .event-detail i {
+      color: #2563eb;
+      width: 18px;
+      font-size: 1rem;
+    }
+    
+    .event-register {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #2563eb;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+    
+    .event-register:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+    
+    /* Upcoming Events Filter */
+    .events-filter {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 4rem;
+      flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+      padding: 1rem 2rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+    
+    .filter-btn.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+    
+    .filter-btn:hover {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+    }
+    
+    @media (max-width: 768px) {
+      .events-hero { height: 60vh; margin-top: 60px; }
+      .events-title { font-size: 2.2rem; }
+      .events-container { padding: 3rem 1rem; }
+      .events-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .events-filter { flex-wrap: wrap; gap: 0.8rem; }
+      .filter-btn { padding: 0.8rem 1.5rem; font-size: 0.8rem; }
+      .event-details { grid-template-columns: 1fr; gap: 0.8rem; }
+      .event-card:nth-child(odd), .event-card:nth-child(even) { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <div id="header"></div>
+  
+
+
+  <!-- Events Hero Section -->
+  <section class="events-hero">
+    <canvas id="events-canvas"></canvas>
+    <div class="events-hero-content">
+      <div class="inline-flex items-center px-4 py-2 bg-cyan-500/20 rounded-full mb-6 border border-cyan-500/30">
+        <i class="fas fa-calendar-alt text-cyan-400 mr-2"></i>
+        <span class="text-cyan-300 text-sm font-medium">Tech Events & Workshops</span>
+      </div>
+      <h1 class="events-title">BranTech Events</h1>
+      <p class="events-subtitle">Join us for cutting-edge tech events, workshops, and networking opportunities</p>
+    </div>
+  </section>
+
+  <!-- Events Container -->
+  <div class="events-container">
+    
+    <!-- Events Stats -->
+    <div class="events-stats">
+      <div class="stat-item">
+        <span class="stat-number" id="totalEvents">0</span>
+        <span class="stat-label">Total Events</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="upcomingEvents">0</span>
+        <span class="stat-label">Upcoming</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="totalAttendees">0</span>
+        <span class="stat-label">Total Spots</span>
+      </div>
+    </div>
+    
+    <!-- Events Filter -->
+    <div class="events-filter">
+      <button class="filter-btn active" onclick="filterEvents('all')">All Events</button>
+      <button class="filter-btn" onclick="filterEvents('upcoming')">Upcoming</button>
+      <button class="filter-btn" onclick="filterEvents('workshop')">Workshops</button>
+      <button class="filter-btn" onclick="filterEvents('webinar')">Webinars</button>
+    </div>
+
+    <!-- Events Grid -->
+    <div id="eventsGrid" class="events-grid">
+      <!-- Events will be loaded here -->
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <!-- Chat Assistant -->
+  <div id="chatAssistant" class="chat-assistant">
+    <div id="chatToggle" class="chat-toggle">
+      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+    </div>
+    <div id="chatWindow" class="chat-window">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="chat-header-text">
+            <h3>BranTech Assistant</h3>
+            <p>How can I help you today?</p>
+          </div>
+        </div>
+        <button id="chatClose" class="chat-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-welcome">
+          <div class="welcome-message">
+            <div class="welcome-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="welcome-text">
+              <p>Hello! I'm your BranTech Solutions assistant. I can help you with:</p>
+              <ul>
+                <li>Event information and registration</li>
+                <li>Workshop details</li>
+                <li>Technical support</li>
+                <li>General questions</li>
+              </ul>
+              <p>What would you like to know?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
+          <button id="chatSend" class="chat-send" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-typing" id="chatTyping" style="display: none;">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span>BranTech Assistant is typing...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="components.js"></script>
+  <script src="chat-assistant.js"></script>
+  
+  <script>
+    const API_BASE = 'http://localhost:8000/api';
+    let allEvents = [];
+    
+    // Load events from Django API
+    async function loadEvents() {
+      try {
+        const response = await fetch(`${API_BASE}/events/`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+          mode: 'cors'
+        });
+        
+        if (response.ok) {
+          allEvents = await response.json();
+          displayEvents(allEvents);
+          updateStats();
+        } else {
+          loadStaticEvents();
+        }
+      } catch (error) {
+        console.error('API fetch error:', error);
+        loadStaticEvents();
+      }
+    }
+    
+    // Display events
+    function displayEvents(events) {
+      const eventsGrid = document.getElementById('eventsGrid');
+      
+      if (events.length === 0) {
+        eventsGrid.innerHTML = '<p class="text-center text-white">No events available.</p>';
+        return;
+      }
+      
+      eventsGrid.innerHTML = events.map(event => {
+        const eventDate = new Date(event.date);
+        const isUpcoming = eventDate > new Date();
+        
+        return `
+          <div class="event-card" data-type="${event.event_type}">
+            <div class="event-date-badge ${isUpcoming ? '' : 'bg-gray-500'}">
+              ${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </div>
+            <div class="event-image">
+              <img src="${event.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400'}" alt="${event.title}">
+            </div>
+            <div class="event-content">
+              <div class="event-type">${event.event_type}</div>
+              <h3 class="event-title">${event.title}</h3>
+              <p class="event-description">${event.description}</p>
+              <div class="event-details">
+                <div class="event-detail">
+                  <i class="fas fa-calendar"></i>
+                  <span>${eventDate.toLocaleDateString()}</span>
+                </div>
+                <div class="event-detail">
+                  <i class="fas fa-clock"></i>
+                  <span>${event.time || '10:00 AM'}</span>
+                </div>
+                <div class="event-detail">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>${event.location}</span>
+                </div>
+                <div class="event-detail">
+                  <i class="fas fa-users"></i>
+                  <span>${event.max_attendees} attendees max</span>
+                </div>
+              </div>
+              <button class="event-register" onclick="registerForEvent(${event.id})">
+                <i class="fas fa-${isUpcoming ? 'ticket-alt' : 'info-circle'}"></i>
+                ${isUpcoming ? 'Register Now' : 'View Details'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Filter events
+    function filterEvents(type) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      let filteredEvents = allEvents;
+      
+      if (type === 'upcoming') {
+        filteredEvents = allEvents.filter(event => new Date(event.date) > new Date());
+      } else if (type !== 'all') {
+        filteredEvents = allEvents.filter(event => event.event_type.toLowerCase() === type);
+      }
+      
+      displayEvents(filteredEvents);
+    }
+    
+    // Update stats
+    function updateStats() {
+      const upcoming = allEvents.filter(event => new Date(event.date) > new Date()).length;
+      const totalSpots = allEvents.reduce((sum, event) => sum + (event.max_attendees || 0), 0);
+      
+      document.getElementById('totalEvents').textContent = allEvents.length;
+      document.getElementById('upcomingEvents').textContent = upcoming;
+      document.getElementById('totalAttendees').textContent = totalSpots;
+    }
+    
+    // Register for event
+    function registerForEvent(eventId) {
+      const event = allEvents.find(e => e.id === eventId);
+      if (event) {
+        alert(`Registration for "${event.title}" - This would open a registration form.`);
+      }
+    }
+    
+    // Share event
+    function shareEvent(eventId) {
+      const event = allEvents.find(e => e.id === eventId);
+      if (event && navigator.share) {
+        navigator.share({
+          title: event.title,
+          text: event.description,
+          url: window.location.href
+        });
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Event link copied to clipboard!');
+      }
+    }
+    
+    // Fallback static events
+    function loadStaticEvents() {
+      const staticEvents = [
+        {
+          id: 1,
+          title: "AI & Machine Learning Workshop",
+          description: "Hands-on workshop covering the latest in AI and ML technologies. Learn practical applications and build your first ML model.",
+          date: "2024-12-15",
+          time: "10:00 AM",
+          location: "BranTech HQ, Conference Room A",
+          event_type: "Workshop",
+          max_attendees: 25,
+          image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400"
+        },
+        {
+          id: 2,
+          title: "Web Development Bootcamp",
+          description: "Intensive 3-day bootcamp covering modern web development frameworks and best practices.",
+          date: "2024-12-20",
+          time: "9:00 AM",
+          location: "Online",
+          event_type: "Webinar",
+          max_attendees: 100,
+          image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400"
+        }
+      ];
+      
+      allEvents = staticEvents;
+      displayEvents(allEvents);
+      updateStats();
+    }
+    
+    // Events Hero Animation
+    function initEventsHero() {
+      const canvas = document.getElementById('events-canvas');
+      if (!canvas) return;
+      
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, canvas.offsetWidth / canvas.offsetHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+      
+      renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      
+      // Create floating particles
+      const geometry = new THREE.BufferGeometry();
+      const vertices = [];
+      
+      for (let i = 0; i < 800; i++) {
+        vertices.push(
+          (Math.random() - 0.5) * 2000,
+          (Math.random() - 0.5) * 2000,
+          (Math.random() - 0.5) * 2000
+        );
+      }
+      
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      
+      const material = new THREE.PointsMaterial({
+        color: 0x00d4ff,
+        size: 2,
+        transparent: true,
+        opacity: 0.6
+      });
+      
+      const particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+      
+      camera.position.z = 1000;
+      
+      function animate() {
+        requestAnimationFrame(animate);
+        
+        particles.rotation.x += 0.0005;
+        particles.rotation.y += 0.001;
+        
+        renderer.render(scene, camera);
+      }
+      
+      animate();
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        camera.aspect = canvas.offsetWidth / canvas.offsetHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      });
+    }
+    
+
+    
+    // Initialize events page
+    document.addEventListener('DOMContentLoaded', () => {
+      initEventsHero();
+      loadEvents();
+    });
+  </script>
+</body>
+</html>

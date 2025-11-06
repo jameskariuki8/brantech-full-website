@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="post-title">Blog Post - BranTech Solutions</title>
+  <meta name="description" content="Read the full blog post from BranTech Solutions">
+  
+  <link rel="icon" href="images/logo.jpg" type="image/jpeg">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="header-styles.css"/>
+  <link rel="stylesheet" href="styles2.css"/>
+  <link rel="stylesheet" href="chat-assistant.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --magic-dark: #0a0a0f;
+      --magic-blue: #00d4ff;
+      --magic-teal: #00ffb3;
+      --magic-violet: #8b5cf6;
+      --magic-glow: rgba(0, 212, 255, 0.3);
+      --magic-text: #e0e7ff;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, var(--magic-dark) 0%, #1a1a2e 50%, #16213e 100%);
+      color: var(--magic-text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      cursor: none;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    .magic-cursor {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle, var(--magic-blue) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      mix-blend-mode: screen;
+      transition: transform 0.1s ease;
+    }
+    
+    .post-container {
+      max-width: 900px;
+      margin: 120px auto 0;
+      padding: 2rem;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--magic-blue);
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      color: var(--magic-teal);
+      transform: translateX(-5px);
+    }
+    
+    .post-header {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+    
+    .post-image {
+      width: 100%;
+      height: 300px;
+      border-radius: 20px 20px 0 0;
+      object-fit: cover;
+      margin-bottom: 0;
+      position: relative;
+    }
+    
+    .post-meta {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+    
+    .post-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      line-height: 1.3;
+      padding: 2rem;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      border-radius: 0 0 0 0;
+    }
+    
+    .post-tags {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .tag {
+      background: rgba(0, 212, 255, 0.2);
+      color: var(--magic-blue);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .post-content {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 20px;
+      padding: 3rem;
+      line-height: 1.7;
+      font-size: 1.05rem;
+      text-align: left;
+    }
+    
+    .post-content h2 {
+      color: var(--magic-blue);
+      font-size: 1.8rem;
+      margin: 2rem 0 1rem 0;
+      font-weight: 600;
+    }
+    
+    .post-content h3 {
+      color: var(--magic-teal);
+      font-size: 1.4rem;
+      margin: 1.5rem 0 0.75rem 0;
+      font-weight: 600;
+    }
+    
+    .post-content p {
+      margin-bottom: 1.5rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .post-content ul, .post-content ol {
+      margin: 1rem 0 1.5rem 2rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .post-content li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .post-content code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      color: var(--magic-teal);
+    }
+    
+    .post-content blockquote {
+      border-left: 4px solid var(--magic-blue);
+      padding-left: 1.5rem;
+      margin: 2rem 0;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    @media (max-width: 768px) {
+      body { cursor: auto; padding-bottom: 100px; }
+      .magic-cursor { display: none; }
+      .post-container { margin-top: 80px; padding: 1rem; }
+      .post-header { padding: 1.5rem; }
+      .post-content { padding: 1.5rem; font-size: 1rem; }
+      .post-title { font-size: 1.8rem; }
+      .post-meta { flex-direction: column; gap: 0.5rem; text-align: center; }
+      .post-tags { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="header"></div>
+
+  <div class="post-container">
+    <a href="blog.html" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Blog
+    </a>
+
+    <article class="blog-post">
+      <header class="post-header">
+        <div style="position: relative;">
+          <img id="post-image" class="post-image" src="" alt="">
+          <h1 class="post-title" id="post-title-text"></h1>
+        </div>
+        <div style="padding: 2rem;">
+          <div class="post-meta">
+            <span><i class="fas fa-calendar"></i> <span id="post-date"></span></span>
+            <span><i class="fas fa-clock"></i> <span id="read-time"></span></span>
+            <span><i class="fas fa-user"></i> BranTech Team</span>
+          </div>
+          <div class="post-tags" id="post-tags"></div>
+        </div>
+      </header>
+
+      <div class="post-content" id="post-content">
+        <!-- Content will be loaded here -->
+      </div>
+    </article>
+  </div>
+
+  <div class="magic-cursor"></div>
+  <div id="footer"></div>
+  <div id="chatAssistant" class="chat-assistant">
+    <div id="chatToggle" class="chat-toggle">
+      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </div>
+    <div id="chatWindow" class="chat-window">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="chat-header-text">
+            <h3>BranTech Assistant</h3>
+            <p>How can I help you today?</p>
+          </div>
+        </div>
+        <button id="chatClose" class="chat-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-welcome">
+          <div class="welcome-message">
+            <div class="welcome-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="welcome-text">
+              <p>Hello! I'm your BranTech Solutions assistant.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
+          <button id="chatSend" class="chat-send" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="components.js"></script>
+  <script src="js/blog-cms.js"></script>
+  <script>
+    const cms = new BlogCMS();
+    
+    const blogPosts = {
+      'ai-future': {
+        title: 'The Future of AI in Web Development: Transforming How We Build',
+        date: 'December 15, 2024',
+        readTime: '8 min read',
+        image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop',
+        tags: ['AI', 'Web Development', 'Future Tech'],
+        content: `
+          <p>Artificial Intelligence is revolutionizing every aspect of technology, and web development is no exception. As we stand on the brink of a new era, AI is transforming how we build, deploy, and maintain web applications.</p>
+          
+          <h2>The Current State of AI in Web Development</h2>
+          <p>Today's web developers are already leveraging AI tools for code completion, bug detection, and automated testing. Tools like GitHub Copilot and ChatGPT have become indispensable for many developers, offering intelligent code suggestions and helping solve complex problems.</p>
+          
+          <h3>Key Areas of Impact</h3>
+          <ul>
+            <li><strong>Automated Code Generation:</strong> AI can now write entire functions and components based on natural language descriptions</li>
+            <li><strong>Intelligent Testing:</strong> Machine learning algorithms can predict potential bugs and generate comprehensive test cases</li>
+            <li><strong>Performance Optimization:</strong> AI analyzes user behavior to optimize loading times and user experience</li>
+            <li><strong>Personalized User Experiences:</strong> Dynamic content adaptation based on user preferences and behavior patterns</li>
+          </ul>
+          
+          <h2>The Future Landscape</h2>
+          <p>Looking ahead, we can expect even more dramatic changes. AI will likely handle routine development tasks entirely, allowing developers to focus on creative problem-solving and architectural decisions.</p>
+          
+          <blockquote>"The future of web development isn't about replacing developers—it's about augmenting human creativity with machine intelligence."</blockquote>
+          
+          <h3>Emerging Technologies</h3>
+          <p>Several cutting-edge technologies are shaping this future:</p>
+          <ul>
+            <li>Neural networks for automatic UI/UX design</li>
+            <li>Natural language programming interfaces</li>
+            <li>AI-powered accessibility optimization</li>
+            <li>Predictive maintenance for web applications</li>
+          </ul>
+          
+          <h2>Preparing for the AI-Driven Future</h2>
+          <p>As developers, staying ahead means embracing these tools while developing skills that complement AI capabilities. Focus on understanding user needs, system architecture, and creative problem-solving—areas where human insight remains irreplaceable.</p>
+          
+          <p>The future of web development is bright, and AI is the catalyst that will unlock unprecedented possibilities for creating amazing digital experiences.</p>
+        `
+      },
+      'react-performance': {
+        title: 'Building Lightning-Fast React Applications',
+        date: 'December 12, 2024',
+        readTime: '6 min read',
+        image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=400&fit=crop',
+        tags: ['React', 'Performance'],
+        content: `
+          <p>Performance is crucial for modern web applications. Users expect fast, responsive interfaces, and React provides powerful tools to achieve this goal.</p>
+          
+          <h2>Core Performance Principles</h2>
+          <p>Understanding React's rendering behavior is the first step to optimization. Every state change can trigger re-renders, so managing these efficiently is key.</p>
+          
+          <h3>Essential Optimization Techniques</h3>
+          <ul>
+            <li><strong>Code Splitting:</strong> Use <code>React.lazy()</code> and dynamic imports</li>
+            <li><strong>Memoization:</strong> Implement <code>React.memo()</code> and <code>useMemo()</code></li>
+            <li><strong>Virtual Scrolling:</strong> Handle large lists efficiently</li>
+            <li><strong>Bundle Analysis:</strong> Identify and eliminate bloat</li>
+          </ul>
+          
+          <h2>Advanced Strategies</h2>
+          <p>Beyond basic optimizations, consider these advanced techniques for maximum performance gains.</p>
+        `
+      }
+    };
+
+    function initCursor() {
+      const cursor = document.querySelector('.magic-cursor');
+      document.addEventListener('mousemove', (e) => {
+        cursor.style.left = e.clientX - 10 + 'px';
+        cursor.style.top = e.clientY - 10 + 'px';
+      });
+    }
+
+    async function loadBlogPost() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get('post');
+      
+      // Try loading from CMS first, fallback to hardcoded
+      let post = await cms.loadPost(postId);
+      if (!post) {
+        post = blogPosts[postId];
+      }
+      
+      if (!post) {
+        document.getElementById('post-content').innerHTML = '<p>Blog post not found.</p>';
+        return;
+      }
+      
+      document.getElementById('post-title').textContent = post.title + ' - BranTech Solutions';
+      document.getElementById('post-title-text').textContent = post.title;
+      document.getElementById('post-date').textContent = post.date;
+      document.getElementById('read-time').textContent = post.readTime || post.readTime;
+      document.getElementById('post-image').src = post.image;
+      document.getElementById('post-image').alt = post.title;
+      document.getElementById('post-content').innerHTML = post.content;
+      
+      const tagsContainer = document.getElementById('post-tags');
+      tagsContainer.innerHTML = post.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadBlogPost();
+      initCursor();
+    });
+  </script>
+  <script src="chat-assistant.js"></script>
+</body>
+</html>
