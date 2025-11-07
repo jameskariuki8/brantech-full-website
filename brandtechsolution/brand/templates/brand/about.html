@@ -146,113 +146,173 @@
     </div>
   </section>
 
-  <!-- Team Section -->
- <section class="team-section">
-  <div class="team-container">
-    <h2 class="team-title">
-      Meet the <span class="team-title-highlight">Team</span>
-    </h2>
-    <div class="team-grid">
+  <!-- Photo Gallery Section -->
+  <section class="photo-gallery-section" style="padding: 5rem 0; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%);">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
+      <h2 class="team-title" style="text-align: center; margin-bottom: 3rem;">
+        Our <span class="team-title-highlight">Gallery</span>
+      </h2>
       
-      <!-- Leon -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Leon Musungu" class="team-img team-img-blue">
-          <div class="role-icon-circle role-blue">
-            <i class="fa-solid fa-user-astronaut"></i>          
+      <!-- First Row - Moving Left -->
+      <div class="gallery-row-wrapper" style="margin-bottom: 2rem; overflow: hidden;">
+        <div class="gallery-row gallery-row-left" style="display: flex; gap: 1.5rem; width: fit-content;">
+          <!-- Duplicate images for seamless loop -->
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/3.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/4.jpeg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <!-- Duplicate for seamless loop -->
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/5.jpeg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
         </div>
-        <h3 class="team-name">Leon Musungu</h3>
-        <p class="team-role team-role-blue">Founder</p>
       </div>
 
-      <!-- Neema -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/Neema .jpg' %}" alt="Neema Ogao" class="team-img team-img-green">
-          <div class="role-icon-circle role-green">
-           <i class="fa-solid fa-user-astronaut"></i>
+      <!-- Second Row - Moving Right -->
+      <div class="gallery-row-wrapper" style="overflow: hidden;">
+        <div class="gallery-row gallery-row-right" style="display: flex; gap: 1.5rem; width: fit-content;">
+          <!-- Duplicate images for seamless loop -->
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/4.jpeg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/3.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <!-- Duplicate for seamless loop -->
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+            <img src="{% static 'brand/images/1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
         </div>
-        <h3 class="team-name">Neema Ogao</h3>
-        <p class="team-role team-role-green">Head of Communications</p>
       </div>
-
-      <!-- James -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/Junior.jpg' %}" alt="James Kariuki" class="team-img team-img-blue2">
-          <div class="role-icon-circle role-blue2">
-            <i class="fas fa-users-cog"></i>
-          </div>
-        </div>
-        <h3 class="team-name">James Kariuki</h3>
-        <p class="team-role team-role-blue2">Dev Team Lead</p>
-      </div>
-
-      <!-- Reuben -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/reuk.jpg' %}" alt="Reuben" class="team-img team-img-green2">
-          <div class="role-icon-circle role-green2">
-            <i class="fas fa-lightbulb"></i>
-          </div>
-        </div>
-        <h3 class="team-name">Reuben</h3>
-        <p class="team-role team-role-green2">Lead, Brand Strategy</p>
-      </div>
-
-      <!-- Bilha -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/Bilha.jpg' %}" alt="Bilha Ndung'u" class="team-img team-img-teal">
-          <div class="role-icon-circle role-teal">
-            <i class="fas fa-bullhorn"></i>
-          </div>
-        </div>
-        <h3 class="team-name">Bilha Ndung'u</h3>
-        <p class="team-role team-role-teal">Marketing Lead</p>
-      </div>
-
-      <!-- Edward -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Edward Ng'ang'a" class="team-img team-img-green3">
-          <div class="role-icon-circle role-green">
-            <i class="fas fa-server"></i>
-          </div>
-        </div>
-        <h3 class="team-name">Edward Ng'ang'a</h3>
-        <p class="team-role team-role-green">Backend Developer</p>
-      </div>
-
-      <!-- Ibrahim -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Ibrahim Mwangi" class="team-img team-img-indigo">
-          <div class="role-icon-circle role-blue">
-            <i class="fas fa-laptop-code"></i>
-          </div>
-        </div>
-        <h3 class="team-name">Ibrahim Mwangi</h3>
-        <p class="team-role team-role-blue">Frontend Developer</p>
-      </div>
-
-      <!-- David -->
-      <div class="team-card">
-        <div class="team-img-wrapper">
-          <img src="{% static 'brand/images/david2.png' %}" alt="David Njihia" class="team-img team-img-indigo">
-          <div class="role-icon-circle role-blue">
-            <i class="fas fa-laptop-code"></i>
-          </div>
-        </div>
-        <h3 class="team-name">David Njihia</h3>
-        <p class="team-role team-role-blue">Full-Stack Developer</p>
-      </div>
-
     </div>
-  </div>
-</section>
+
+    <style>
+      @keyframes scroll-left {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(calc(-280px * 8 - 1.5rem * 7));
+        }
+      }
+
+      @keyframes scroll-right {
+        0% {
+          transform: translateX(calc(-280px * 8 - 1.5rem * 7));
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
+      .gallery-row-left {
+        animation: scroll-left 80s linear infinite;
+      }
+
+      .gallery-row-right {
+        animation: scroll-right 80s linear infinite;
+      }
+
+      .gallery-item {
+        transition: transform 0.3s ease;
+      }
+
+      .gallery-item:hover {
+        transform: scale(1.05);
+        z-index: 10;
+        position: relative;
+      }
+
+      @media (max-width: 768px) {
+        .gallery-item {
+          width: 200px !important;
+          height: 250px !important;
+        }
+        
+        @keyframes scroll-left-mobile {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(calc(-200px * 8 - 1.5rem * 7));
+          }
+        }
+
+        @keyframes scroll-right-mobile {
+          0% {
+            transform: translateX(calc(-200px * 8 - 1.5rem * 7));
+          }
+          100% {
+            transform: translateX(0);
+          }
+        }
+
+        .gallery-row-left {
+          animation: scroll-left-mobile 60s linear infinite;
+        }
+
+        .gallery-row-right {
+          animation: scroll-right-mobile 60s linear infinite;
+        }
+      }
+    </style>
+  </section>
 
 
 

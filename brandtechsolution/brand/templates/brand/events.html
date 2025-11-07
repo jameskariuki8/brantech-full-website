@@ -7,6 +7,11 @@
   <title>Events - BranTech Solutions</title>
   <meta name="description" content="Upcoming tech events, workshops, and conferences by BranTech Solutions.">
   <meta name="keywords" content="tech events, workshops, conferences, webinars, technology meetups">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+  <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -15,17 +20,17 @@
   <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}"/>
   <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}"/>
   <style>
-    :root{ --bg-dark:#050911; --panel-dark:rgba(10,18,28,.85); --neon-green:#16ff7a; --neon-green-soft:rgba(22,255,122,.25); --neon-green-glow:0 0 10px rgba(22,255,122,.45),0 0 24px rgba(22,255,122,.25); --text-green:#a6ffc9; --text-green-dim:#7ef0b2; --accent-red:#ef4444; }
-    body{ background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%); color: var(--text-green); min-height:100vh; }
+    :root{ --bg-dark:#050911; --panel-dark:rgba(10,18,28,.85); --neon-blue:#60a5fa; --neon-blue-soft:rgba(96,165,250,.25); --neon-blue-glow:0 0 10px rgba(96,165,250,.45),0 0 24px rgba(96,165,250,.25); --text-blue:#93c5fd; --text-blue-dim:#60a5fa; --accent-red:#ef4444; }
+    body{ background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%); color: var(--text-blue); min-height:100vh; }
     .events-hero{ position:relative; height:50vh; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-top:80px; }
-    .events-hero:before{ content:''; position:absolute; inset:-2px; z-index:0; background: radial-gradient(600px 300px at 20% 10%, rgba(22,255,122,.18), transparent 60%), radial-gradient(500px 280px at 80% 20%, rgba(22,255,122,.12), transparent 60%); pointer-events:none; }
-    .badge-green{ background:rgba(22,255,122,.12); border:1px solid rgba(22,255,122,.35); color:var(--neon-green); box-shadow: var(--neon-green-glow); }
-    .title-green{ color:var(--neon-green); text-shadow:0 0 18px rgba(22,255,122,.4); letter-spacing:.5px; }
-    .subtitle-green{ color:var(--text-green); opacity:.9; }
+    .events-hero:before{ content:''; position:absolute; inset:-2px; z-index:0; background: radial-gradient(600px 300px at 20% 10%, rgba(96,165,250,.18), transparent 60%), radial-gradient(500px 280px at 80% 20%, rgba(22,255,122,.12), transparent 60%); pointer-events:none; }
+    .badge-green{ background:linear-gradient(90deg, rgba(40,96,144,.12) 0%, rgba(22,255,122,.12) 100%); border:1px solid rgba(96,165,250,.35); color:var(--neon-blue); box-shadow: 0 0 10px rgba(96,165,250,.25), 0 0 24px rgba(22,255,122,.15); }
+    .title-green{ background:linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 18px rgba(96,165,250,.4), 0 0 18px rgba(22,255,122,.3); letter-spacing:.5px; }
+    .subtitle-green{ color:var(--text-blue); opacity:.9; }
     .events-container{ max-width:1400px; margin:0 auto; padding:4rem 2rem; }
     .events-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; }
     .event-card{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; transition:all 0.3s ease; }
-    .event-card:hover{ transform:translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.3); border-color:rgba(22,255,122,0.3); }
+    .event-card:hover{ transform:translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(96,165,250,0.2), 0 0 20px rgba(22,255,122,0.15); border-color:rgba(96,165,250,0.3); }
     .event-image{ width:100%; height:240px; background:#0c1520; overflow:hidden; position:relative; }
     .event-image img{ width:100%; height:100%; object-fit:cover; transition:transform 0.3s ease; }
     .event-card:hover .event-image img{ transform:scale(1.05); }
@@ -36,9 +41,9 @@
     .event-btn{ width:44px; height:44px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s ease; background:var(--accent-red); color:white; font-size:1.1rem; }
     .event-btn:hover{ transform:scale(1.1); box-shadow:0 4px 12px rgba(239,68,68,0.4); }
     .events-filter{ display:flex; justify-content:center; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
-    .filter-btn{ padding:0.75rem 1.5rem; background:rgba(22,255,122,.08); border:1px solid rgba(22,255,122,.25); border-radius:8px; color:var(--neon-green); cursor:pointer; transition:all 0.3s ease; font-weight:600; }
-    .filter-btn.active{ background:var(--neon-green); color:#04110a; box-shadow: var(--neon-green-glow); }
-    .filter-btn:hover{ background:rgba(22,255,122,.15); }
+    .filter-btn{ padding:0.75rem 1.5rem; background:linear-gradient(90deg, rgba(40,96,144,.08) 0%, rgba(22,255,122,.08) 100%); border:1px solid rgba(96,165,250,.25); border-radius:8px; color:var(--neon-blue); cursor:pointer; transition:all 0.3s ease; font-weight:600; }
+    .filter-btn.active{ background:linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%); color:#0a1520; box-shadow: 0 0 10px rgba(96,165,250,.45), 0 0 24px rgba(22,255,122,.25); }
+    .filter-btn:hover{ background:linear-gradient(90deg, rgba(40,96,144,.15) 0%, rgba(22,255,122,.15) 100%); }
     @media (max-width:1024px){ .events-grid{ grid-template-columns:repeat(2,1fr); } }
     @media (max-width:768px){ .events-grid{ grid-template-columns:1fr; } .events-hero{ height:40vh; } }
   </style>
@@ -114,7 +119,7 @@
               <h3 class="event-title">${event.title}</h3>
               <p class="event-description">${event.description || 'No description available.'}</p>
               <div class="event-actions">
-                ${event.registration_link ? `<a href="${event.registration_link}" target="_blank" class="event-btn" title="Register for Event"><i class="fas fa-ticket-alt"></i></a>` : ''}
+                ${event.registration_link ? `<a href="${event.registration_link}" target="_blank" class="event-btn" title="Register for Event"><i class="fas fa-external-link-alt"></i></a>` : ''}
                 <button class="event-btn" onclick="showEventDetails('${event.title}', '${event.description}', '${eventDate.toLocaleDateString()}', '${event.location || 'TBA'}')" title="View Details"><i class="fas fa-info-circle"></i></button>
               </div>
             </div>
@@ -149,7 +154,7 @@
         vertices.push(2e3*(Math.random()-.5), 2e3*(Math.random()-.5), 2e3*(Math.random()-.5));
       }
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      const material = new THREE.PointsMaterial({color: 0x16ff7a, size: 2, transparent: true, opacity: .4});
+      const material = new THREE.PointsMaterial({color: 0x60a5fa, size: 2, transparent: true, opacity: .4});
       const points = new THREE.Points(geometry, material);
       scene.add(points);
       camera.position.z = 1e3;
