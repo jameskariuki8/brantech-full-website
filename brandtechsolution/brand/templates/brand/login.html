@@ -1,18 +1,19 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - BranTech Solutions</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
     <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}" />
     <style>
         * {
             margin: 0;
@@ -42,7 +43,7 @@
             width: 520px;
             height: auto;
             background: #121826;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 20px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
@@ -68,9 +69,22 @@
             margin-bottom: 30px;
             text-align: center;
         }
-        .brand-title { font-weight:800; font-size:28px; line-height:1.05; letter-spacing:.2px; text-align:center; }
-        .brand-title .accent-1 { color:#34d399; }
-        .brand-title .accent-2 { color:#60a5fa; }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 28px;
+            line-height: 1.05;
+            letter-spacing: .2px;
+            text-align: center;
+        }
+
+        .brand-title .accent-1 {
+            color: #34d399;
+        }
+
+        .brand-title .accent-2 {
+            color: #60a5fa;
+        }
 
         .logo-icon {
             width: 40px;
@@ -125,10 +139,15 @@
             color: #e5e7eb;
             font-size: 15px;
             transition: all 0.2s ease;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
             text-align: center;
         }
-        input::placeholder { color:#9aa6b2; opacity: .9; text-align: center; }
+
+        input::placeholder {
+            color: #9aa6b2;
+            opacity: .9;
+            text-align: center;
+        }
 
         input:focus {
             outline: none;
@@ -228,24 +247,22 @@
         }
 
         @media (max-width: 768px) {
-            .auth-card { width: 92vw; padding: 20px; }
+            .auth-card {
+                width: 92vw;
+                padding: 20px;
+            }
         }
     </style>
 </head>
+
 <body>
     {% include 'brand/header.html' %}
 
     <div class="login-container">
         <div class="auth-card">
             <div class="login-section">
-                <div class="auth-brand">
-                    <img src="{% static 'brand/images/logo.jpg' %}" alt="BranTech Logo" style="width:44px;height:44px;border-radius:10px;object-fit:cover;"/>
-                    <div class="brand-title"><span class="accent-2">Bran</span><span class="accent-1">Tech</span><br><span class="accent-2">Solutions</span></div>
-                </div>
-                
-                <h1>Welcome Back</h1>
-                <p class="subtitle">Sign in to access this page</p>
-                
+                <h1 style="margin-top: 10px; text-align: center;">Sign In</h1>
+
                 {% if messages %}
                 <div class="messages">
                     {% for message in messages %}
@@ -255,7 +272,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                
+
                 <form id="loginForm" method="POST" action="{% url 'login' %}">
                     {% csrf_token %}
                     {% if next %}
@@ -267,13 +284,13 @@
                         <label for="email">Email Address</label>
                         <input type="email" id="email" name="email" placeholder="you@example.com" required>
                     </div>
-                    
+
                     <div class="input-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" placeholder="••••••••" required>
                         <span class="password-toggle" id="togglePassword">Show</span>
                     </div>
-                    
+
                     <div class="options">
                         <div class="remember">
                             <input type="checkbox" id="remember" name="remember">
@@ -281,10 +298,10 @@
                         </div>
                         <a href="#" class="forgot">Forgot password?</a>
                     </div>
-                    
+
                     <button type="submit" class="login-btn">Sign In</button>
                 </form>
-                
+
                 <div class="signup">
                     Don't have an account? <a href="{% url 'signup' %}">Sign up</a>
                 </div>
@@ -298,9 +315,9 @@
         // Toggle password visibility
         const togglePassword = document.getElementById('togglePassword');
         const password = document.getElementById('password');
-        
+
         if (togglePassword && password) {
-            togglePassword.addEventListener('click', function() {
+            togglePassword.addEventListener('click', function () {
                 const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                 password.setAttribute('type', type);
                 this.textContent = type === 'password' ? 'Show' : 'Hide';
@@ -308,4 +325,5 @@
         }
     </script>
 </body>
+
 </html>

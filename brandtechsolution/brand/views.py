@@ -14,9 +14,7 @@ def about(request):
     """About page view"""
     return render(request, 'brand/about.html')
 
-def services(request):
-    """Services page view"""
-    return render(request, 'brand/services.html')
+
 
 def blog(request):
     """Blog page view"""
