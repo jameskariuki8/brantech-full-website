@@ -237,7 +237,7 @@
 <nav class="modern-header" id="modernHeader">
   <div class="logo-container" onclick="window.location.href='{% url 'index' %}'">
 
-    <img src="{% static 'brand/images/logo.jpg' %}" alt="BranTech Logo" class="logo">
+    <img src="{% static 'brand/images/logo.png' %}" alt="BranTech Logo" class="logo">
     <span class="brand">TekLora</span>
   </div>
 
@@ -259,36 +259,48 @@
   </div>
 
   <div class="nav-links">
-    <a href="{% url 'index' %}" data-page="home"><i class="fas fa-home"></i><span>Home</span></a>
-    <a href="{% url 'about' %}" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></a>
-
-    <a href="{% url 'blog' %}" data-page="blog"><i class="fas fa-blog"></i><span>Blog</span></a>
-    <a href="{% url 'events' %}" data-page="events"><i class="fas fa-calendar-alt"></i><span>Events</span></a>
-    <a href="{% url 'projects' %}" data-page="projects"><i class="fas fa-project-diagram"></i><span>Projects</span></a>
-    <a href="{% url 'faq' %}" data-page="faq"><i class="fas fa-question-circle"></i><span>FAQ</span></a>
-    <a href="{% url 'contacts' %}" data-page="contact"><i class="fas fa-envelope"></i><span>Contact</span></a>
+    <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i
+        class="fas fa-home"></i><span>Home</span></a>
+    <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"><i
+        class="fas fa-info-circle"></i><span>About</span></a>
+    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}"><i
+        class="fas fa-blog"></i><span>Blog</span></a>
+    <a href="{% url 'projects' %}" class="{% if request.resolver_match.url_name == 'projects' %}active{% endif %}"><i
+        class="fas fa-project-diagram"></i><span>Projects</span></a>
+    <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}"><i
+        class="fas fa-question-circle"></i><span>FAQ</span></a>
+    <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
+        class="fas fa-envelope"></i><span>Contact</span></a>
     {% if user.is_authenticated %}
-    <a href="{% url 'logout' %}" data-page="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    <a href="{% url 'logout' %}" class="{% if request.resolver_match.url_name == 'logout' %}active{% endif %}"><i
+        class="fas fa-sign-out-alt"></i><span>Logout</span></a>
     {% else %}
-    <a href="{% url 'login' %}" data-page="login"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+    <a href="{% url 'login' %}" class="{% if request.resolver_match.url_name == 'login' %}active{% endif %}"><i
+        class="fas fa-sign-in-alt"></i><span>Login</span></a>
     {% endif %}
   </div>
 
   <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
 
   <div class="mobile-menu" id="mobileMenu">
-    <a href="{% url 'index' %}" data-page="home"><i class="fas fa-home"></i>Home</a>
-    <a href="{% url 'about' %}" data-page="about"><i class="fas fa-info-circle"></i>About</a>
-
-    <a href="{% url 'blog' %}" data-page="blog"><i class="fas fa-blog"></i>Blog</a>
-    <a href="{% url 'events' %}" data-page="events"><i class="fas fa-calendar-alt"></i>Events</a>
-    <a href="{% url 'projects' %}" data-page="projects"><i class="fas fa-project-diagram"></i>Projects</a>
-    <a href="{% url 'faq' %}" data-page="faq"><i class="fas fa-question-circle"></i>FAQ</a>
-    <a href="{% url 'contacts' %}" data-page="contact"><i class="fas fa-envelope"></i>Contact</a>
+    <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i
+        class="fas fa-home"></i>Home</a>
+    <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"><i
+        class="fas fa-info-circle"></i>About</a>
+    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}"><i
+        class="fas fa-blog"></i>Blog</a>
+    <a href="{% url 'projects' %}" class="{% if request.resolver_match.url_name == 'projects' %}active{% endif %}"><i
+        class="fas fa-project-diagram"></i>Projects</a>
+    <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}"><i
+        class="fas fa-question-circle"></i>FAQ</a>
+    <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
+        class="fas fa-envelope"></i>Contact</a>
     {% if user.is_authenticated %}
-    <a href="{% url 'logout' %}" data-page="logout"><i class="fas fa-sign-out-alt"></i>Logout</a>
+    <a href="{% url 'logout' %}" class="{% if request.resolver_match.url_name == 'logout' %}active{% endif %}"><i
+        class="fas fa-sign-out-alt"></i>Logout</a>
     {% else %}
-    <a href="{% url 'login' %}" data-page="login"><i class="fas fa-sign-in-alt"></i>Login</a>
+    <a href="{% url 'login' %}" class="{% if request.resolver_match.url_name == 'login' %}active{% endif %}"><i
+        class="fas fa-sign-in-alt"></i>Login</a>
     {% endif %}
   </div>
 </nav>
@@ -327,12 +339,6 @@
       });
     }
 
-    // Active page highlight
-    const currentPage = (window.location.pathname.split('/').pop() || 'index').replace('.html', '');
-    const pageMap = { '': 'home', 'about': 'about', 'services': 'services', 'blog': 'blog', 'events': 'events', 'projects': 'projects', 'faq': 'faq', 'contacts': 'contact' };
-    const activePage = pageMap[currentPage] || 'home';
-    document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(function (link) {
-      if (link.dataset.page === activePage) link.classList.add('active');
-    });
+
   })();
 </script>

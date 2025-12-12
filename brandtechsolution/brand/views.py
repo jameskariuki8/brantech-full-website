@@ -28,13 +28,17 @@ def contacts(request):
     """Contact page view"""
     return render(request, 'brand/contacts.html')
 
+from django.contrib.auth.decorators import user_passes_test
+
+def is_admin(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+@login_required(login_url='/login/')
+@user_passes_test(is_admin, login_url='/login/')
 def admin_panel_page(request):
     return render(request, 'brand/admin_panel.html')
 
-@login_required(login_url='/login/')
-def events(request):
-    """Events page view - requires login"""
-    return render(request, 'brand/events.html')
+
 
 @login_required(login_url='/login/')
 def projects(request):
@@ -96,9 +100,27 @@ def login_view(request):
             messages.error(request, 'Please fill in all fields.')
             return render(request, 'brand/login.html', {'next': next_url})
         
-        # Authenticate user (username is email in our case)
+        # Authenticate user (support both email and username)
         user = authenticate(request, username=email, password=password)
         
+        # If email authentication fails, try treating the email input as a username
+        if user is None:
+             # Check if user exists with this username
+             user_obj = User.objects.filter(username=email).first()
+             if user_obj:
+                 user = authenticate(request, username=email, password=password)
+             
+             # If still None, maybe they entered an email but the username is different?
+             # (Standard Django User model usually requires username to be unique. 
+             # If we use email as username, the first check works. 
+             # If we allow distinct usernames, we should check both.)
+             if user is None:
+                 # Try finding user by email field
+                 user_by_email = User.objects.filter(email=email).first()
+                 if user_by_email:
+                     user = authenticate(request, username=user_by_email.username, password=password)
+
+
         if user is not None:
             login(request, user)
             if not remember_me:
@@ -111,7 +133,7 @@ def login_view(request):
             # Redirect to next page if specified, otherwise to home
             return redirect(next_url)
         else:
-            messages.error(request, 'Invalid email or password.')
+            messages.error(request, 'Invalid email/username or password.')
             return render(request, 'brand/login.html', {'next': next_url})
     
     next_url = request.GET.get('next', '/')

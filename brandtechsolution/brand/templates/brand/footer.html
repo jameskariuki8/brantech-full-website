@@ -4,7 +4,7 @@
   <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
     <div>
       <div class="flex items-center space-x-3 mb-4">
-        <img src="{% static 'brand/images/logo.jpg' %}" alt="Logo" class="h-10 w-10 rounded-full" />
+        <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="h-10 w-10 rounded-full" />
         <span class="text-xl font-bold">TekLora</span>
       </div>
       <p class="text-gray-400">Innovative technology solutions for modern businesses.</p>
@@ -37,10 +37,14 @@
     <div>
       <h4 class="text-lg font-semibold mb-4">Services</h4>
       <ul class="space-y-2">
-        <li><a href="#" class="text-gray-400 hover:text-white transition">Web Design & system Development</a></li>
-        <li><a href="#" class="text-gray-400 hover:text-white transition">Mobile application Development</a></li>
-        <li><a href="#" class="text-gray-400 hover:text-white transition">Digital Strategy</a></li>
-        <li><a href="#" class="text-gray-400 hover:text-white transition">Branding</a></li>
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Web Design & system
+            Development</a></li>
+        <li><a href="{% url 'index' %}#services#" class="text-gray-400 hover:text-white transition">Mobile application
+            Development</a></li>
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Digital Strategy</a>
+        </li>
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Cloud computing</a>
+        </li>
       </ul>
     </div>
     <div>
@@ -55,6 +59,6 @@
     </div>
   </div>
   <div class="max-w-7xl mx-auto pt-8 mt-8 border-t border-gray-800 text-center text-gray-400 pb-0 mb-0">
-    <p class="mb-0">© 2025 BranTech Solutions. All rights reserved.</p>
+    <p class="mb-0">© 2025 TekLora Solutions. All rights reserved.</p>
   </div>
 </footer>
