@@ -59,7 +59,7 @@ def post_list(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
-@require_http_methods(["GET", "PUT", "DELETE"])
+@require_http_methods(["GET", "POST", "PUT", "DELETE"])
 def post_detail(request, pk):
     post = get_object_or_404(BlogPost, pk=pk)
     
