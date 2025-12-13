@@ -25,7 +25,11 @@ SECRET_KEY = os.environ.get(
     "django-insecure-qle-bmx+6%6qe81&hck$q%+%8($+n4z9-4d7=!4v!0ce75-vjv"
 )
 
-DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
+# Auto-detect environment: Windows (nt) = Local Dev, Linux = Production
+if os.name == 'nt':
+    DEBUG = True
+else:
+    DEBUG = False
 
 # Production hosts
 PRODUCTION_ALLOWED_HOSTS = [
