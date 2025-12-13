@@ -139,8 +139,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'brand' / 'static',
 ]
 
-STATIC_ROOT = PRODUCTION_STATIC_ROOT if not DEBUG else LOCAL_STATIC_ROOT
-MEDIA_ROOT = PRODUCTION_MEDIA_ROOT if not DEBUG else LOCAL_MEDIA_ROOT
+STATIC_ROOT = PRODUCTION_STATIC_ROOT if os.name != 'nt' else LOCAL_STATIC_ROOT
+MEDIA_ROOT = PRODUCTION_MEDIA_ROOT if os.name != 'nt' else LOCAL_MEDIA_ROOT
 MEDIA_URL = '/media/'
 
 # ============================================================
