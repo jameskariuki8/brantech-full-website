@@ -549,13 +549,9 @@
             try {
                 const p = await fetch(`${API_BASE}/projects/${id}/`).then(r => r.json());
                 const form = document.getElementById('addProjectForm');
-                form.title.value = p.title;
-                form.client.value = p.client;
-                form.description.value = p.description;
-                form.status.value = p.status;
-                form.start_date.value = p.start_date;
-                form.budget.value = p.budget;
-                form.technologies.value = p.technologies;
+                form.title.value = p.title || '';
+                if (form.short_description && p.short_description) form.short_description.value = p.short_description;
+                form.description.value = p.description || '';
                 form.project_url.value = p.project_url || '';
                 form.github_url.value = p.github_url || '';
                 form.featured.checked = p.featured;
