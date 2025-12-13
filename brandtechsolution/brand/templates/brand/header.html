@@ -239,11 +239,10 @@
 
 
 <nav class="modern-header" id="modernHeader">
-  <div class="logo-container" onclick="window.location.href='{% url 'index' %}'">
-
+  <a href="{% url 'index' %}" class="logo-container" style="text-decoration: none; color: inherit;">
     <img src="{% static 'brand/images/logo.png' %}" alt="BranTech Logo" class="logo">
     <span class="brand">TekLora</span>
-  </div>
+  </a>
 
   <div class="header-ticker" aria-hidden="true">
     <div class="ticker-track">
