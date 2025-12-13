@@ -481,8 +481,7 @@
                 if (response.ok) {
                     alert('Saved successfully!');
                     form.reset();
-                    hideAddForm(endpoint.slice(0, -1)); // 'posts' -> 'post' -> wait, id is 'blogForm'. 'projects'->'project'. Logic alignment needed.
-                    // Correcting logic: endpoint 'posts' maps to type 'blog'. 'projects' maps to 'project'.
+                    // hideAddForm call moved to specific blocks below to ensure correct ID is used
                     if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); }
                     if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); }
                 } else {
@@ -496,7 +495,8 @@
             if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
 
             try {
-                const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'PUT', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+                // Use POST for updates to support file uploads (Django doesn't handle multipart PUT well)
+                const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
                 if (response.ok) {
                     alert('Updated!');
                     form.reset();
