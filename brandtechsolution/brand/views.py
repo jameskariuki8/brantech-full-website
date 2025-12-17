@@ -40,9 +40,8 @@ def admin_panel_page(request):
 
 
 
-@login_required(login_url='/login/')
 def projects(request):
-    """Projects page view - requires login"""
+    """Projects page view - public access"""
     return render(request, 'brand/projects.html')
 
 def signup_view(request):

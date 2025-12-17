@@ -153,7 +153,6 @@ def post_detail(request, pk):
 
 # --- Project APIs ---
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def project_list(request):
     if request.method == "GET":
@@ -173,6 +172,8 @@ def project_list(request):
         return JsonResponse(data, safe=False)
     
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
         try:
             title = request.POST.get('title')
             short_description = request.POST.get('short_description')
@@ -195,7 +196,6 @@ def project_list(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
-@login_required
 @require_http_methods(["GET", "POST", "PUT", "DELETE"])
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
@@ -214,6 +214,8 @@ def project_detail(request, pk):
         return JsonResponse(data)
 
     if request.method == "POST" or request.method == "PUT":
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
         try:
             project.title = request.POST.get('title', project.title)
             project.short_description = request.POST.get('short_description', project.short_description)
@@ -231,5 +233,7 @@ def project_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
         project.delete()
         return JsonResponse({'message': 'Project deleted successfully'})

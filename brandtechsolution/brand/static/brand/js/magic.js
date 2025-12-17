@@ -21,15 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Typing finished
             setTimeout(() => {
                 // Reveal message after typing
-                revealMessage.classList.remove('hidden');
                 gsap.fromTo(revealMessage, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
 
                 // Wait and then reset to loop
                 setTimeout(() => {
-                    revealMessage.classList.add('hidden');
-                    typewriterElement.textContent = "";
-                    charIndex = 0;
-                    typeText();
+                    gsap.to(revealMessage, {
+                        opacity: 0, duration: 0.5, onComplete: () => {
+                            typewriterElement.textContent = "";
+                            charIndex = 0;
+                            typeText();
+                        }
+                    });
                 }, 3000); // 3-second pause before restarting
 
             }, 500);
