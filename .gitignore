@@ -11,3 +11,7 @@ __pycache__/
 *.pyzw
 *.pyzwz
 .env
+chroma_db/
+
+# BigAddict
+/docs

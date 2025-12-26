@@ -1,19 +1,20 @@
 /**
  * BranTech Chat Assistant
- * Handles user identification, API communication, and chat functionality
+ * Uses Django sessions for anonymous users and database for logged-in users
+ * Uses localStorage for chatbot open/closed state persistence
  */
 
 class ChatAssistant {
   constructor() {
-    this.userKey = null;
-    this.memoryId = null;
+    this.threadId = null;
     this.isOpen = false;
     this.isLoading = false;
     this.messageHistory = [];
     
-    // API endpoints
-    this.chatEndpoint = 'https://n8n.bigaddict.shop/webhook/brantech/chatbot';
-    this.messagesEndpoint = 'https://n8n.bigaddict.shop/webhook/brantech/messages';
+    // Django endpoints
+    this.chatEndpoint = '/api/ai/chat/';
+    this.historyEndpoint = '/api/ai/chat/history/';
+    this.clearEndpoint = '/api/ai/chat/clear/';
     
     // DOM elements
     this.chatAssistant = document.getElementById('chatAssistant');
@@ -31,42 +32,60 @@ class ChatAssistant {
   }
 
   /**
+   * Get CSRF token from cookies
+   */
+  getCsrfToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  /**
    * Initialize the chat assistant
    */
   init() {
-    this.initializeUser();
+    // Generate or retrieve persistent thread_id from localStorage
+    this.threadId = localStorage.getItem('brantech_chat_thread_id');
+    if (!this.threadId) {
+      this.threadId = 'anon_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('brantech_chat_thread_id', this.threadId);
+    }
+
+    // Load chatbot state from localStorage
+    this.loadChatbotState();
+    
+    // Bind events
     this.bindEvents();
+    
+    // Load message history
     this.loadMessageHistory();
   }
 
   /**
-   * Initialize or retrieve user identification
+   * Load chatbot open/closed state from localStorage
    */
-  initializeUser() {
-    // Check if user key exists in localStorage
-    this.userKey = localStorage.getItem('brantech_user_key');
-    
-    if (!this.userKey) {
-      // Generate new random key for new user
-      this.userKey = this.generateUserKey();
-      localStorage.setItem('brantech_user_key', this.userKey);
-      console.log('New user created with key:', this.userKey);
-    } else {
-      console.log('Existing user found with key:', this.userKey);
+  loadChatbotState() {
+    const savedState = localStorage.getItem('brantech_chatbot_open');
+    if (savedState === 'true') {
+      this.openChat(false); // false = don't save state (we're loading it)
     }
-    
-    // Initialize memory ID (same as user key for now)
-    this.memoryId = this.userKey;
   }
 
   /**
-   * Generate a unique user key
+   * Save chatbot open/closed state to localStorage
    */
-  generateUserKey() {
-    const timestamp = Date.now().toString(36);
-    const randomStr = Math.random().toString(36).substring(2, 15);
-    const userAgent = navigator.userAgent.slice(-8);
-    return `user_${timestamp}_${randomStr}_${userAgent}`;
+  saveChatbotState() {
+    localStorage.setItem('brantech_chatbot_open', this.isOpen.toString());
   }
 
   /**
@@ -133,7 +152,7 @@ class ChatAssistant {
   /**
    * Open chat window
    */
-  openChat() {
+  openChat(saveState = true) {
     this.isOpen = true;
     this.chatWindow.classList.add('open');
     this.chatToggle.style.transform = 'scale(0.9)';
@@ -144,6 +163,11 @@ class ChatAssistant {
     // Prevent body scrolling on mobile when chat is open
     if (window.innerWidth <= 768) {
       document.body.classList.add('chat-open');
+    }
+    
+    // Save state to localStorage
+    if (saveState) {
+      this.saveChatbotState();
     }
   }
 
@@ -157,52 +181,70 @@ class ChatAssistant {
     
     // Restore body scrolling when chat is closed
     document.body.classList.remove('chat-open');
+    
+    // Save state to localStorage
+    this.saveChatbotState();
   }
 
   /**
    * Show notification badge
    */
   showNotification() {
-    this.chatNotification.style.display = 'flex';
+    if (this.chatNotification) {
+      this.chatNotification.style.display = 'flex';
+    }
   }
 
   /**
    * Hide notification badge
    */
   hideNotification() {
-    this.chatNotification.style.display = 'none';
+    if (this.chatNotification) {
+      this.chatNotification.style.display = 'none';
+    }
   }
 
   /**
-   * Load message history from API
+   * Load message history from Django
    */
   async loadMessageHistory() {
     try {
-      const response = await fetch(this.messagesEndpoint, {
-        method: 'POST',
+      const csrfToken = this.getCsrfToken();
+      
+      // Append thread_id to the URL query parameters
+      const url = new URL(this.historyEndpoint, window.location.origin);
+      if (this.threadId) {
+        url.searchParams.append('thread_id', this.threadId);
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
+          'X-CSRFToken': csrfToken,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          memory_id: this.memoryId
-        })
+        credentials: 'same-origin',
       });
 
       if (response.ok) {
-        const messages = await response.json();
-        console.log('Loaded message history:', messages);
-        if (Array.isArray(messages) && messages.length > 0) {
-          this.messageHistory = messages;
+        const data = await response.json();
+        // Always update thread_id from server response if provided
+        if (data.thread_id) {
+          this.threadId = data.thread_id;
+          localStorage.setItem('brantech_chat_thread_id', this.threadId);
+        }
+        
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          this.messageHistory = data.messages;
           this.displayMessageHistory();
         } else {
           console.log('No messages found in history');
         }
       } else {
-        console.log('No message history found or endpoint not ready');
+        console.log('No message history found');
       }
     } catch (error) {
       console.log('Could not load message history:', error.message);
-      // This is expected for new users or when endpoint is not ready
     }
   }
 
@@ -220,10 +262,9 @@ class ChatAssistant {
 
     // Display each message
     this.messageHistory.forEach(message => {
-      // Add user message
-      this.addMessageToChat(message.request_text, 'user', false);
-      // Add assistant response
-      this.addMessageToChat(message.response, 'assistant', false);
+      const role = message.role || 'user';
+      const content = message.content || message.text || '';
+      this.addMessageToChat(content, role, false);
     });
 
     this.scrollToBottom();
@@ -248,14 +289,17 @@ class ChatAssistant {
     this.showTyping();
     
     try {
+      const csrfToken = this.getCsrfToken();
       const response = await fetch(this.chatEndpoint, {
         method: 'POST',
         headers: {
+          'X-CSRFToken': csrfToken,
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
           message: message,
-          memory_id: this.memoryId
+          thread_id: this.threadId
         })
       });
 
@@ -268,14 +312,17 @@ class ChatAssistant {
       // Hide typing indicator
       this.hideTyping();
       
+      // Always update thread_id from server response (should always be present)
+      if (data.thread_id) {
+        this.threadId = data.thread_id;
+        localStorage.setItem('brantech_chat_thread_id', this.threadId);
+      } else {
+        console.warn('Server did not return thread_id in response');
+      }
+      
       // Add assistant response to chat
       if (data.response) {
         this.addMessageToChat(data.response, 'assistant');
-        
-        // Update memory ID if provided
-        if (data.memory_id) {
-          this.memoryId = data.memory_id;
-        }
       } else {
         this.addErrorMessage('Sorry, I didn\'t receive a proper response. Please try again.');
       }
@@ -537,51 +584,64 @@ class ChatAssistant {
   }
 
   /**
-   * Get user key (for debugging)
+   * Clear chat history
    */
-  getUserKey() {
-    return this.userKey;
-  }
+  async clearHistory() {
+    try {
+      const csrfToken = this.getCsrfToken();
+      const response = await fetch(this.clearEndpoint, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          thread_id: this.threadId
+        })
+      });
 
-  /**
-   * Get memory ID (for debugging)
-   */
-  getMemoryId() {
-    return this.memoryId;
-  }
-
-  /**
-   * Clear chat history (for debugging)
-   */
-  clearHistory() {
-    this.messageHistory = [];
-    const messages = this.chatMessages.querySelectorAll('.message, .error-message');
-    messages.forEach(msg => msg.remove());
-    
-    // Restore welcome message
-    const welcomeDiv = document.createElement('div');
-    welcomeDiv.className = 'chat-welcome';
-    welcomeDiv.innerHTML = `
-      <div class="welcome-message">
-        <div class="welcome-avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        <div class="welcome-text">
-          <p>Hello! I'm your BranTech Solutions assistant. I can help you with:</p>
-          <ul>
-            <li>Our services and solutions</li>
-            <li>Project inquiries</li>
-            <li>Technical support</li>
-            <li>General questions</li>
-          </ul>
-          <p>What would you like to know?</p>
-        </div>
-      </div>
-    `;
-    this.chatMessages.appendChild(welcomeDiv);
+      if (response.ok) {
+        this.messageHistory = [];
+        const messages = this.chatMessages.querySelectorAll('.message, .error-message');
+        messages.forEach(msg => msg.remove());
+        
+        // Restore welcome message
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'chat-welcome';
+        welcomeDiv.innerHTML = `
+          <div class="welcome-message">
+            <div class="welcome-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="welcome-text">
+              <p>Hello! I'm your BranTech Solutions assistant. I can help you with:</p>
+              <ul>
+                <li>Our services and solutions</li>
+                <li>Project inquiries</li>
+                <li>Technical support</li>
+                <li>General questions</li>
+              </ul>
+              <p>What would you like to know?</p>
+            </div>
+          </div>
+        `;
+        this.chatMessages.appendChild(welcomeDiv);
+        
+        // Clear thread ID from localStorage and memory
+        localStorage.removeItem('brantech_chat_thread_id');
+        this.threadId = null;
+        
+        // Re-initialize a fresh anonymous thread ID for next message
+        this.threadId = 'anon_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('brantech_chat_thread_id', this.threadId);
+      }
+    } catch (error) {
+      console.error('Error clearing history:', error);
+    }
   }
 }
 

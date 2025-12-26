@@ -1,0 +1,391 @@
+from typing import Optional, Dict, Any, List, Sequence, Tuple
+from collections import ChainMap
+from langgraph.checkpoint.base import (
+    BaseCheckpointSaver,
+    Checkpoint,
+    CheckpointMetadata,
+    CheckpointTuple,
+)
+from langchain_core.runnables import RunnableConfig
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage
+from django.db import transaction
+from django.utils import timezone
+from asgiref.sync import sync_to_async
+from .models import ConversationThread, ConversationCheckpoint
+import uuid
+from datetime import datetime
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class DjangoCheckpointer(BaseCheckpointSaver):
+    """
+    Custom Django checkpointer implementing LangGraph's BaseCheckpointSaver interface.
+    Stores checkpoint data in Django models for persistence and querying.
+    """
+    
+    def __init__(self, thread_id: str):
+        super().__init__()
+        # required default thread_id (used if config doesn't provide one)
+        self.thread_id = thread_id
+    
+    def _to_jsonable(self, obj: Any) -> Any:
+        """Convert common LangGraph/Django objects (e.g., ChainMap) to JSON-safe structures."""
+        # Handle LangChain message objects first
+        if isinstance(obj, BaseMessage):
+            # Determine message type
+            if isinstance(obj, HumanMessage):
+                msg_type = "human"
+            elif isinstance(obj, AIMessage):
+                msg_type = "ai"
+            elif isinstance(obj, SystemMessage):
+                msg_type = "system"
+            elif isinstance(obj, ToolMessage):
+                msg_type = "tool"
+            else:
+                msg_type = getattr(obj, "type", "unknown")
+            
+            # Extract content - handle list content (Gemini format)
+            content = obj.content
+            if isinstance(content, list):
+                # Extract text from list of dicts
+                text_parts = []
+                for part in content:
+                    if isinstance(part, dict) and "text" in part:
+                        text_parts.append(part["text"])
+                    elif isinstance(part, str):
+                        text_parts.append(part)
+                content = "\n".join(text_parts) if text_parts else str(content)
+            
+            return {
+                "type": msg_type,
+                "content": content,
+                "id": getattr(obj, "id", None),
+            }
+        
+        if isinstance(obj, ChainMap):
+            return self._to_jsonable(dict(obj))
+        if isinstance(obj, dict):
+            return {k: self._to_jsonable(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple, set)):
+            return [self._to_jsonable(v) for v in obj]
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        try:
+            json.dumps(obj)
+            return obj
+        except TypeError:
+            return str(obj)
+
+    def _extract_checkpoint_id(self, checkpoint: Any, config: Dict[str, Any]) -> str:
+        """Get a checkpoint id from checkpoint/config, or generate one."""
+        if isinstance(checkpoint, dict) and (checkpoint.get("id") or checkpoint.get("checkpoint_id")):
+            return checkpoint.get("id") or checkpoint.get("checkpoint_id")
+        if hasattr(checkpoint, "get"):
+            cid = checkpoint.get("id") or checkpoint.get("checkpoint_id")
+            if cid:
+                return cid
+        cid = config.get("configurable", {}).get("checkpoint_id")
+        return cid or str(uuid.uuid4())
+
+    def _get_version(self, checkpoint: Any) -> int:
+        """Safely extract version from checkpoint."""
+        if isinstance(checkpoint, dict):
+            return checkpoint.get("version", 1)
+        if hasattr(checkpoint, "get"):
+            return checkpoint.get("version", 1)
+        return 1
+
+    def _get_thread_id(self, config: Dict[str, Any]) -> str:
+        thread_id = config.get("configurable", {}).get("thread_id")
+        if not thread_id:
+            raise ValueError("thread_id is required in config['configurable']")
+        return thread_id
+
+    def _get_user_id(self, config: Dict[str, Any]) -> Optional[int]:
+        return config.get("user_id")
+
+    def _get_workflow_type(self, config: Dict[str, Any]) -> str:
+        return config.get("workflow_type", "chatbot")
+
+    def _get_or_create_thread(self, config: Dict[str, Any]) -> ConversationThread:
+        thread_id = self._get_thread_id(config)
+        user_id = self._get_user_id(config)
+        workflow_type = self._get_workflow_type(config)
+        safe_metadata = self._to_jsonable(config.get("metadata", {}))
+
+        thread, created = ConversationThread.objects.get_or_create(
+            thread_id=thread_id,
+            defaults={
+                "user_id": user_id,
+                "workflow_type": workflow_type,
+                "metadata": safe_metadata,
+            },
+        )
+
+        # Attach user if thread was anonymous and we now have one
+        if not created and user_id and thread.user_id is None:
+            thread.user_id = user_id
+            thread.save(update_fields=["user_id"])
+
+        # Merge metadata if provided
+        if not created and config.get("metadata"):
+            thread.metadata.update(safe_metadata)
+            thread.save(update_fields=["metadata"])
+
+        return thread
+    
+    @transaction.atomic
+    def put(
+        self,
+        config: Dict[str, Any],
+        checkpoint: Checkpoint,
+        metadata: CheckpointMetadata,
+        new_versions: Dict[str, Any],
+    ) -> CheckpointTuple:
+        """
+        Save a checkpoint to the database.
+        
+        Args:
+            config: Configuration dict containing thread_id
+            checkpoint: Checkpoint data to save
+            metadata: Metadata associated with checkpoint
+            new_versions: New version information
+            
+        Returns:
+            CheckpointTuple with saved checkpoint data
+        """
+        thread = self._get_or_create_thread(config)
+        
+        # Generate checkpoint ID
+        checkpoint_id = self._extract_checkpoint_id(checkpoint, config)
+        
+        # Get parent checkpoint if exists
+        parent_checkpoint = None
+        parent_id = checkpoint.get("parent_checkpoint_id")
+        if parent_id:
+            try:
+                parent_checkpoint = ConversationCheckpoint.objects.get(
+                    checkpoint_id=parent_id,
+                    thread=thread
+                )
+            except ConversationCheckpoint.DoesNotExist:
+                pass
+        
+        # Determine version
+        version = self._get_version(checkpoint)
+        if new_versions:
+            version = max(new_versions.values()) if new_versions.values() else version
+        
+        # JSON-safe checkpoint and metadata
+        safe_checkpoint_state = self._to_jsonable(checkpoint)
+        safe_checkpoint_metadata = self._to_jsonable(metadata)
+
+        # Create checkpoint record
+        checkpoint_obj, _ = ConversationCheckpoint.objects.update_or_create(
+            thread=thread,
+            checkpoint_id=checkpoint_id,
+            defaults={
+                "parent_checkpoint": parent_checkpoint,
+                "state": safe_checkpoint_state,
+                "checkpoint_metadata": safe_checkpoint_metadata,
+                "version": version,
+            },
+        )
+        
+        # Update thread updated_at
+        thread.updated_at = timezone.now()
+        thread.save()
+        
+        return CheckpointTuple(
+            config=config,
+            checkpoint={
+                **safe_checkpoint_state,
+                "id": checkpoint_id,
+            },
+            metadata=safe_checkpoint_metadata,
+        )
+
+    def put_writes(
+        self,
+        config: RunnableConfig,
+        writes: Sequence[Tuple[str, Any]],
+        task_id: str,
+        task_path: str = "",
+    ) -> None:
+        """
+        Put writes to the checkpoint.
+        
+        Following WozapAuto pattern: just log writes for now.
+        In a full implementation, you might want to store these writes.
+        """
+        try:
+            logger.info(f"Put writes: {len(writes)} writes for task {task_id}")
+        except Exception as e:
+            logger.error(f"Error putting writes: {e}")
+    
+    def get(self, config: Dict[str, Any]) -> Optional[CheckpointTuple]:
+        """
+        Retrieve a checkpoint from the database.
+        
+        Args:
+            config: Configuration dict containing thread_id and optionally checkpoint_id
+            
+        Returns:
+            CheckpointTuple if found, None otherwise
+        """
+        return self.get_tuple(config)
+    
+    def get_tuple(self, config: Dict[str, Any]) -> Optional[CheckpointTuple]:
+        """
+        Retrieve a checkpoint tuple from the database.
+        This is the method called by LangGraph internally.
+        
+        Args:
+            config: Configuration dict containing thread_id and optionally checkpoint_id
+            
+        Returns:
+            CheckpointTuple if found, None otherwise
+        """
+        checkpoint_id = config.get("configurable", {}).get("checkpoint_id")
+        
+        try:
+            thread_id = self._get_thread_id(config)
+        except ValueError:
+            return None
+        
+        try:
+            thread = ConversationThread.objects.get(thread_id=thread_id)
+        except ConversationThread.DoesNotExist:
+            return None
+        
+        # Get specific checkpoint or latest
+        if checkpoint_id:
+            try:
+                checkpoint_obj = ConversationCheckpoint.objects.get(
+                    thread=thread,
+                    checkpoint_id=checkpoint_id
+                )
+            except ConversationCheckpoint.DoesNotExist:
+                return None
+        else:
+            checkpoint_obj = ConversationCheckpoint.objects.filter(
+                thread=thread
+            ).order_by('-created_at').first()
+            
+            if not checkpoint_obj:
+                return None
+        
+        return CheckpointTuple(
+            config=config,
+            checkpoint={
+                **checkpoint_obj.state,
+                "id": checkpoint_obj.checkpoint_id,
+            },
+            metadata=checkpoint_obj.checkpoint_metadata,
+        )
+    
+    def list(
+        self,
+        config: Dict[str, Any],
+        filter: Optional[Dict[str, Any]] = None,
+        before: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[CheckpointTuple]:
+        """
+        List checkpoints for a thread.
+        
+        Args:
+            config: Configuration dict containing thread_id
+            filter: Optional filter dict
+            before: Optional timestamp to filter checkpoints before this time
+            limit: Optional limit on number of checkpoints
+            
+        Returns:
+            List of CheckpointTuple objects
+        """
+        try:
+            thread_id = self._get_thread_id(config)
+        except ValueError:
+            return []
+        
+        try:
+            thread = ConversationThread.objects.get(thread_id=thread_id)
+        except ConversationThread.DoesNotExist:
+            return []
+        
+        queryset = ConversationCheckpoint.objects.filter(thread=thread)
+        
+        # Apply filters
+        if before:
+            try:
+                before_dt = datetime.fromisoformat(before.replace('Z', '+00:00'))
+                queryset = queryset.filter(created_at__lt=before_dt)
+            except ValueError:
+                pass
+        
+        # Apply custom filters
+        if filter:
+            # Example: filter by version
+            if "version" in filter:
+                queryset = queryset.filter(version=filter["version"])
+        
+        # Order by creation time
+        queryset = queryset.order_by('-created_at')
+        
+        # Apply limit
+        if limit:
+            queryset = queryset[:limit]
+        
+        # Convert to CheckpointTuple list
+        checkpoints = []
+        for checkpoint_obj in queryset:
+            checkpoints.append(
+                CheckpointTuple(
+                    config=config,
+                    checkpoint={
+                        **checkpoint_obj.state,
+                        "id": checkpoint_obj.checkpoint_id,
+                    },
+                    metadata=checkpoint_obj.checkpoint_metadata,
+                )
+            )
+        
+        return checkpoints
+
+    #
+    # Async wrappers
+    #
+
+    async def aput(
+        self,
+        config: Dict[str, Any],
+        checkpoint: Checkpoint,
+        metadata: CheckpointMetadata,
+        new_versions: Dict[str, Any],
+    ) -> CheckpointTuple:
+        return await sync_to_async(self.put)(config, checkpoint, metadata, new_versions)
+
+    async def aput_writes(
+        self,
+        config: RunnableConfig,
+        writes: Sequence[Tuple[str, Any]],
+        task_id: str,
+        task_path: str = "",
+    ) -> None:
+        return await sync_to_async(self.put_writes)(config, writes, task_id, task_path)
+
+    async def aget_tuple(self, config: Dict[str, Any]) -> Optional[CheckpointTuple]:
+        return await sync_to_async(self.get_tuple)(config)
+
+    async def alist(
+        self,
+        config: Dict[str, Any],
+        filter: Optional[Dict[str, Any]] = None,
+        before: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[CheckpointTuple]:
+        return await sync_to_async(self.list)(config, filter, before, limit)
+
