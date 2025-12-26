@@ -1,3 +1,12 @@
 django
 djangorestframework
 pillow
+langchain
+langgraph
+langchain-community
+langchain-google-genai
+langchain-chroma
+langchain-text-splitters
+chromadb
+pydantic-settings
+psycopg2-binary

@@ -8,6 +8,7 @@ urlpatterns = [
     path('', include('brand.urls')),
     path('appointments/', include('appointments.urls')),
     path('api/', include('brand.api_urls')),
+    path('api/ai/', include('ai_workflows.urls')),
 ]
 
 if settings.DEBUG:

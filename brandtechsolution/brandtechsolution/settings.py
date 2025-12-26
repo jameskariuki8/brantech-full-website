@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from brandtechsolution.config import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'brand',
     'appointments',
+    'ai_workflows',
 ]
 
 MIDDLEWARE = [
@@ -75,12 +77,27 @@ WSGI_APPLICATION = 'brandtechsolution.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if config.database_engine.lower() == "postgresql":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config.database_name,
+            'USER': config.database_user,
+            'PASSWORD': config.database_password,
+            'HOST': config.database_host,
+            'PORT': config.database_port,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# Persistent connections (Postgres)
+CONN_MAX_AGE = config.database_conn_max_age
 
 
 # Password validation
