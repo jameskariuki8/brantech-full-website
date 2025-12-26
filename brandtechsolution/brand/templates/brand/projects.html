@@ -1,124 +1,474 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Projects - BranTech Solutions</title>
+  <title>Projects - TekLora Solutions</title>
   <meta name="description" content="Our portfolio of innovative projects and solutions by BranTech Solutions.">
   <meta name="keywords" content="projects, portfolio, web development, technology solutions">
-  
+
   <!-- Favicon -->
-  <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
-  <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
-  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}"/>
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}" />
+  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}" />
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
   <style>
-    :root{ --bg-dark:#050911; --panel-dark:rgba(10,18,28,.85); --neon-blue:#60a5fa; --neon-blue-soft:rgba(96,165,250,.25); --neon-blue-glow:0 0 10px rgba(96,165,250,.45),0 0 24px rgba(96,165,250,.25); --text-blue:#93c5fd; --text-blue-dim:#60a5fa; --accent-red:#ef4444; }
-    body{ background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%); color: var(--text-blue); min-height:100vh; }
-    .projects-hero{ position:relative; height:50vh; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-top:80px; }
-    .projects-hero:before{ content:''; position:absolute; inset:-2px; z-index:0; background: radial-gradient(600px 300px at 20% 10%, rgba(96,165,250,.18), transparent 60%), radial-gradient(500px 280px at 80% 20%, rgba(22,255,122,.12), transparent 60%); pointer-events:none; }
-    .badge-green{ background:linear-gradient(90deg, rgba(40,96,144,.12) 0%, rgba(22,255,122,.12) 100%); border:1px solid rgba(96,165,250,.35); color:var(--neon-blue); box-shadow: 0 0 10px rgba(96,165,250,.25), 0 0 24px rgba(22,255,122,.15); }
-    .title-green{ background:linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 18px rgba(96,165,250,.4), 0 0 18px rgba(22,255,122,.3); letter-spacing:.5px; }
-    .subtitle-green{ color:var(--text-blue); opacity:.9; }
-    .projects-container{ max-width:1400px; margin:0 auto; padding:4rem 2rem; }
-    .projects-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; }
-    .project-card{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; transition:all 0.3s ease; }
-    .project-card:hover{ transform:translateY(-5px); box-shadow:0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(96,165,250,0.2), 0 0 20px rgba(22,255,122,0.15); border-color:rgba(96,165,250,0.3); }
-    .project-image{ width:100%; height:240px; background:#0c1520; overflow:hidden; position:relative; }
-    .project-image img{ width:100%; height:100%; object-fit:cover; transition:transform 0.3s ease; }
-    .project-card:hover .project-image img{ transform:scale(1.05); }
-    .project-content{ padding:1.5rem; }
-    .project-title{ color:var(--accent-red); font-size:1.25rem; font-weight:700; margin-bottom:0.75rem; line-height:1.3; }
-    .project-description{ color:rgba(255,255,255,0.8); font-size:0.9rem; line-height:1.6; margin-bottom:1.25rem; min-height:3.2rem; }
-    .project-actions{ display:flex; gap:0.75rem; justify-content:center; }
-    .project-btn{ width:44px; height:44px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s ease; background:var(--accent-red); color:white; font-size:1.1rem; }
-    .project-btn:hover{ transform:scale(1.1); box-shadow:0 4px 12px rgba(239,68,68,0.4); }
-    .project-btn.github{ background:var(--accent-red); }
-    .project-btn.external{ background:var(--accent-red); }
-    .projects-filter{ display:flex; justify-content:center; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
-    .filter-btn{ padding:0.75rem 1.5rem; background:linear-gradient(90deg, rgba(40,96,144,.08) 0%, rgba(22,255,122,.08) 100%); border:1px solid rgba(96,165,250,.25); border-radius:8px; color:var(--neon-blue); cursor:pointer; transition:all 0.3s ease; font-weight:600; }
-    .filter-btn.active{ background:linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%); color:#0a1520; box-shadow: 0 0 10px rgba(96,165,250,.45), 0 0 24px rgba(22,255,122,.25); }
-    .filter-btn:hover{ background:linear-gradient(90deg, rgba(40,96,144,.15) 0%, rgba(22,255,122,.15) 100%); }
-    @media (max-width:1024px){ .projects-grid{ grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:768px){ .projects-grid{ grid-template-columns:1fr; } .projects-hero{ height:40vh; } }
+    :root {
+      --bg-dark: #050911;
+      --panel-dark: rgba(10, 18, 28, .85);
+      --neon-blue: #60a5fa;
+      --neon-blue-soft: rgba(96, 165, 250, .25);
+      --neon-blue-glow: 0 0 10px rgba(96, 165, 250, .45), 0 0 24px rgba(96, 165, 250, .25);
+      --text-blue: #93c5fd;
+      --text-blue-dim: #60a5fa;
+      --accent-red: #ef4444;
+    }
+
+    body {
+      background: #02060c;
+      color: var(--text-blue);
+      min-height: 100vh;
+    }
+
+    .projects-hero {
+      position: relative;
+      height: 25vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-top: 60px;
+    }
+
+    .projects-hero:before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      z-index: 0;
+      background: transparent;
+      pointer-events: none;
+    }
+
+    .badge-green {
+      background: linear-gradient(90deg, rgba(40, 96, 144, .12) 0%, rgba(22, 255, 122, .12) 100%);
+      border: 1px solid rgba(96, 165, 250, .35);
+      color: var(--neon-blue);
+      box-shadow: 0 0 10px rgba(96, 165, 250, .25), 0 0 24px rgba(22, 255, 122, .15);
+    }
+
+    .title-green {
+      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 18px rgba(96, 165, 250, .4), 0 0 18px rgba(22, 255, 122, .3);
+      letter-spacing: .5px;
+    }
+
+    .subtitle-green {
+      color: var(--text-blue);
+      opacity: .9;
+    }
+
+    .projects-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 2rem 4rem 2rem;
+    }
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    .project-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .project-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(96, 165, 250, 0.2), 0 0 20px rgba(22, 255, 122, 0.15);
+      border-color: rgba(96, 165, 250, 0.3);
+    }
+
+    .project-image {
+      width: 100%;
+      height: 240px;
+      background: #0c1520;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .project-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .project-card:hover .project-image img {
+      transform: scale(1.05);
+    }
+
+    .project-content {
+      padding: 1.5rem;
+    }
+
+    .project-title {
+      color: var(--accent-red);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    .project-description {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      min-height: 3.2rem;
+    }
+
+    .project-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .project-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--accent-red);
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .project-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .project-btn.github {
+      background: var(--accent-red);
+    }
+
+    .project-btn.external {
+      background: var(--accent-red);
+    }
+
+    .projects-filter {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(90deg, rgba(40, 96, 144, .08) 0%, rgba(22, 255, 122, .08) 100%);
+      border: 1px solid rgba(96, 165, 250, .25);
+      border-radius: 8px;
+      color: var(--neon-blue);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
+      color: #0a1520;
+      box-shadow: 0 0 10px rgba(96, 165, 250, .45), 0 0 24px rgba(22, 255, 122, .25);
+    }
+
+    .filter-btn:hover {
+      background: linear-gradient(90deg, rgba(40, 96, 144, .15) 0%, rgba(22, 255, 122, .15) 100%);
+    }
+
+    @media (max-width:1024px) {
+      .projects-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width:768px) {
+      .projects-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .projects-hero {
+        height: 20vh;
+        margin-top: 40px;
+      }
+    }
+
+    /* Modal Styles */
+    .project-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .project-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .project-modal-content {
+      background: #0a121d;
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-modal-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .project-modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-blue);
+      margin: 0;
+      line-height: 1.2;
+      padding-right: 2rem;
+    }
+
+    .project-modal-close {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 0.5rem;
+      margin: -0.5rem -0.5rem 0 0;
+    }
+
+    .project-modal-close:hover {
+      color: var(--accent-red);
+    }
+
+    .project-modal-body {
+      padding: 2rem;
+      overflow-y: auto;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .project-modal-image {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
   </style>
 </head>
+
 <body>
   {% include 'brand/header.html' %}
 
   <section class="projects-hero">
     <canvas id="projects-canvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
     <div style="position:relative; z-index:10; text-align:center; max-width:800px; padding:0 2rem;">
-      <div class="inline-flex items-center px-4 py-2 badge-green rounded-full mb-6">
-        <i class="fas fa-project-diagram mr-2"></i>
-        <span class="text-sm font-medium">Our Portfolio</span>
-      </div>
-      <h1 class="title-green" style="font-family:Orbitron, monospace; font-weight:900; font-size:clamp(2.5rem,6vw,4rem); margin-bottom:1rem;">BranTech Projects</h1>
-      <p class="subtitle-green" style="font-size:1.1rem;">Innovative solutions and cutting-edge technology projects</p>
+      <h1 class="title-green"
+        style="font-family:Orbitron, monospace; font-weight:900; font-size:clamp(2rem,5vw,3rem); margin-bottom:0;">
+        TekLora Projects</h1>
     </div>
   </section>
 
   <div class="projects-container">
-    <div class="projects-filter">
-      <button class="filter-btn active" onclick="filterProjects('all')">All Projects</button>
-      <button class="filter-btn" onclick="filterProjects('planning')">Planning</button>
-      <button class="filter-btn" onclick="filterProjects('in_progress')">In Progress</button>
-      <button class="filter-btn" onclick="filterProjects('completed')">Completed</button>
-    </div>
     <div id="projectsGrid" class="projects-grid"></div>
+  </div>
+
+  <div id="projectModal" class="project-modal">
+    <div class="project-modal-content">
+      <div class="project-modal-header">
+        <h1 class="project-modal-title" id="modalTitle"></h1>
+        <button class="project-modal-close" onclick="closeProjectModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="project-modal-body">
+        <img id="modalImage" class="project-modal-image" src="" alt="">
+        <div class="project-modal-content-text" id="modalContent"></div>
+      </div>
+    </div>
   </div>
 
   {% include 'brand/footer.html' %}
   <script src="{% static 'brand/js/components.js' %}"></script>
+
+  <!-- Chat Assistant -->
+  <div id="chatAssistant" class="chat-assistant">
+    <!-- Floating Chat Button -->
+    <div id="chatToggle" class="chat-toggle">
+      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
+      </svg>
+      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+    </div>
+
+    <!-- Chat Window -->
+    <div id="chatWindow" class="chat-window">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div class="chat-header-text">
+            <h3>TekLora Assistant</h3>
+            <p>How can I help you today?</p>
+          </div>
+        </div>
+        <button id="chatClose" class="chat-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Chat Messages -->
+      <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
+        <div class="chat-welcome">
+          <div class="welcome-message">
+            <div class="welcome-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div class="welcome-text">
+              <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
+              <ul>
+                <li>Our services and solutions</li>
+                <li>Project inquiries</li>
+                <li>Technical support</li>
+                <li>General questions</li>
+              </ul>
+              <p>What would you like to know?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input -->
+      <div class="chat-input-container">
+        <div class="chat-input-wrapper">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
+          <button id="chatSend" class="chat-send" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22,2 15,22 11,13 2,9 22,2" />
+            </svg>
+          </button>
+        </div>
+        <div class="chat-typing" id="chatTyping" style="display: none;">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span>TekLora Assistant is typing...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
   <script>
     const API_BASE = '/api';
     let allProjects = [];
-    async function loadProjects(){
-      try{
+    async function loadProjects() {
+      try {
         const response = await fetch(`${API_BASE}/projects/`);
-        if(response.ok){
+        if (response.ok) {
           const data = await response.json();
           allProjects = data;
           displayProjects(allProjects);
         }
-      } catch(error) {
+      } catch (error) {
         console.error('Error loading projects:', error);
       }
     }
-    function displayProjects(projects){
+    function displayProjects(projects) {
       const grid = document.getElementById('projectsGrid');
-      if(projects.length === 0){
+      if (projects.length === 0) {
         grid.innerHTML = '<p class="text-center text-white col-span-3">No projects available.</p>';
         return;
       }
       grid.innerHTML = projects.map(project => {
         let imageUrl = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400';
-        if(project.image) {
-          if(project.image.startsWith('http')) {
+        if (project.image) {
+          if (project.image.startsWith('http')) {
             imageUrl = project.image;
-          } else if(project.image.startsWith('/media/')) {
+          } else if (project.image.startsWith('/media/')) {
             imageUrl = project.image;
           } else {
             imageUrl = '/media/' + project.image;
           }
         }
         return `
-          <div class="project-card" data-status="${project.status}">
+          <div class="project-card">
             <div class="project-image">
               <img src="${imageUrl}" alt="${project.title}">
             </div>
             <div class="project-content">
               <h3 class="project-title">${project.title}</h3>
-              <p class="project-description">${project.description || 'No description available.'}</p>
+              <p class="project-description">${project.short_description || project.description?.substring(0, 100) + '...' || 'No description available.'}</p>
               <div class="project-actions">
+                <button class="project-btn" onclick="openProjectModal(${project.id})" title="Read More"><i class="fas fa-book-open"></i></button>
                 ${project.github_url ? `<a href="${project.github_url}" target="_blank" class="project-btn github" title="View on GitHub"><i class="fab fa-github"></i></a>` : ''}
                 ${project.project_url ? `<a href="${project.project_url}" target="_blank" class="project-btn external" title="View Live Project"><i class="fas fa-external-link-alt"></i></a>` : ''}
               </div>
@@ -127,33 +477,60 @@
         `;
       }).join('');
     }
-    function filterProjects(status){
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      let filtered = allProjects;
-      if(status !== 'all'){
-        filtered = allProjects.filter(p => p.status === status);
+    function openProjectModal(projectId) {
+      const project = allProjects.find(p => p.id === projectId);
+      if (!project) return;
+      document.getElementById('modalTitle').textContent = project.title;
+
+      let imageUrl = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400';
+      if (project.image) {
+        if (project.image.startsWith('http')) imageUrl = project.image;
+        else if (project.image.startsWith('/media/')) imageUrl = project.image;
+        else imageUrl = '/media/' + project.image;
       }
-      displayProjects(filtered);
+      document.getElementById('modalImage').src = imageUrl;
+      document.getElementById('modalContent').textContent = project.description || 'No description available.';
+
+      document.getElementById('projectModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
     }
-    function initProjectsHero(){
+
+    function closeProjectModal() {
+      document.getElementById('projectModal').classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Event Listeners for Modal
+    document.addEventListener('DOMContentLoaded', () => {
+      initProjectsHero();
+      loadProjects();
+
+      const modal = document.getElementById('projectModal');
+      modal.addEventListener('click', function (e) {
+        if (e.target === this) closeProjectModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeProjectModal();
+      });
+    });
+    function initProjectsHero() {
       const canvas = document.getElementById('projects-canvas');
-      if(!canvas) return;
+      if (!canvas) return;
       const scene = new THREE.Scene;
       const camera = new THREE.PerspectiveCamera(75, canvas.offsetWidth / canvas.offsetHeight, .1, 1e3);
-      const renderer = new THREE.WebGLRenderer({canvas: canvas, alpha: true});
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
       renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
       const geometry = new THREE.BufferGeometry;
       const vertices = [];
-      for(let i = 0; i < 600; i++){
-        vertices.push(2e3*(Math.random()-.5), 2e3*(Math.random()-.5), 2e3*(Math.random()-.5));
+      for (let i = 0; i < 600; i++) {
+        vertices.push(2e3 * (Math.random() - .5), 2e3 * (Math.random() - .5), 2e3 * (Math.random() - .5));
       }
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      const material = new THREE.PointsMaterial({color: 0x60a5fa, size: 2, transparent: true, opacity: .4});
+      const material = new THREE.PointsMaterial({ color: 0x60a5fa, size: 2, transparent: true, opacity: .4 });
       const points = new THREE.Points(geometry, material);
       scene.add(points);
       camera.position.z = 1e3;
-      function animate(){
+      function animate() {
         requestAnimationFrame(animate);
         points.rotation.x += 5e-4;
         points.rotation.y += .001;
@@ -166,10 +543,8 @@
         renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
       });
     }
-    document.addEventListener('DOMContentLoaded', () => {
-      initProjectsHero();
-      loadProjects();
-    });
+
   </script>
 </body>
+
 </html>

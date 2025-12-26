@@ -1,0 +1,240 @@
+:root {
+  /* Techlora Premium Dark Palette */
+  --bg-primary: #06090F;
+  /* Deepest Dark */
+  --bg-secondary: #0D121D;
+  /* Surface */
+  --bg-tertiary: #161B28;
+  /* Lighter Surface */
+
+  /* Accents - Flat & Neon */
+  --accent-blue: #007AFF;
+  --accent-green: #00FF94;
+  --accent-blue-dim: rgba(0, 122, 255, 0.1);
+  --accent-green-dim: rgba(0, 255, 148, 0.1);
+
+  /* Text */
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+
+  /* Spacing */
+  --section-spacing: 8rem;
+
+  /* Borders */
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(255, 255, 255, 0.1);
+}
+
+/* Base Styles */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+a {
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+/* Utilities */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.text-blue {
+  color: var(--accent-blue);
+}
+
+.text-green {
+  color: var(--accent-green);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 2rem;
+  border-radius: 6px;
+  /* Slightly rounded, not full pill */
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--accent-blue);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: #0066d6;
+  box-shadow: 0 0 30px rgba(0, 122, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-hover);
+}
+
+/* Cards */
+.tech-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2.5rem;
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tech-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-blue);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.tech-card-icon {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--accent-blue);
+  transition: all 0.3s ease;
+}
+
+.tech-card:hover .tech-card-icon {
+  color: var(--accent-green);
+  text-shadow: 0 0 10px rgba(0, 255, 148, 0.4);
+}
+
+/* Animations */
+@keyframes type {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.typing-cursor::after {
+  content: '|';
+  animation: blink 1s step-end infinite;
+  color: var(--accent-green);
+}
+
+/* Tech Stack Carousel */
+.tech-carousel-track {
+  display: flex;
+  gap: 4rem;
+  width: max-content;
+  animation: scroll 40s linear infinite;
+}
+
+.tech-logo {
+  font-size: 2.5rem;
+  color: #334155;
+  /* Monochrome dark gray */
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tech-logo:hover {
+  color: var(--accent-blue);
+  filter: drop-shadow(0 0 8px rgba(0, 122, 255, 0.5));
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Interactive Section */
+.interactive-console {
+  background-color: #000;
+  border-radius: 8px;
+  padding: 2rem;
+  font-family: 'Fira Code', monospace;
+  border: 1px solid #1e293b;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.console-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot-red {
+  background-color: #ef4444;
+}
+
+.dot-yellow {
+  background-color: #eab308;
+}
+
+.dot-green {
+  background-color: #22c55e;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --section-spacing: 5rem;
+  }
+
+  h1 {
+    font-size: 2.5rem !important;
+  }
+}

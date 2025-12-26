@@ -1,300 +1,344 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BranTech Admin Dashboard</title>
-    
+    <title>TekLora Admin Dashboard</title>
+
     <!-- Favicon -->
-    <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
-    <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
-    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            bg: '#06090F',
+                            card: '#0D121D',
+                            border: 'rgba(255, 255, 255, 0.05)',
+                        },
+                        brand: {
+                            blue: '#007AFF',
+                            green: '#00FF94',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(13, 18, 29, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
+            border-left: 3px solid #007AFF;
+            color: #fff;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #06090F;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1F2937;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- Content copied from backend/admin_panel.html -->
-    <!-- Start Embedded -->
-    <div class="min-h-screen flex">
-        <!-- Sidebar -->
-        <div class="w-64 bg-gray-800 text-white">
-            <div class="p-4">
-                <h1 class="text-xl font-bold">BranTech Admin</h1>
-            </div>
-            <nav class="mt-8">
-                <a href="#" onclick="showSection('dashboard', this)" class="nav-link block px-4 py-2 hover:bg-gray-700 active">
-                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-                </a>
-                <a href="#" onclick="showSection('blogs', this)" class="nav-link block px-4 py-2 hover:bg-gray-700">
-                    <i class="fas fa-blog mr-2"></i>Blog Posts
-                </a>
-                <a href="#" onclick="showSection('projects', this)" class="nav-link block px-4 py-2 hover:bg-gray-700">
-                    <i class="fas fa-project-diagram mr-2"></i>Projects
-                </a>
-                <a href="#" onclick="showSection('events', this)" class="nav-link block px-4 py-2 hover:bg-gray-700">
-                    <i class="fas fa-calendar-alt mr-2"></i>Events
-                </a>
-                <a href="#" onclick="showSection('analytics', this)" class="nav-link block px-4 py-2 hover:bg-gray-700">
-                    <i class="fas fa-chart-bar mr-2"></i>Analytics
-                </a>
-                <a href="#" onclick="showSection('users', this)" class="nav-link block px-4 py-2 hover:bg-gray-700">
-                    <i class="fas fa-users mr-2"></i>Users
-                </a>
-                <a href="#" onclick="showSection('settings', this)" class="nav-link block px-4 py-2 hover:bg-gray-700">
-                    <i class="fas fa-cog mr-2"></i>Settings
-                </a>
-            </nav>
+
+<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
+
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn"
+        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
+        <!-- Logo -->
+        <div class="h-20 flex items-center px-6 border-b border-dark-border">
+            <img src="{% static 'brand/images/logo.jpg' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
+            <span class="text-xl font-bold text-white tracking-tight">TekLora<span
+                    class="text-brand-blue">Admin</span></span>
         </div>
 
-        <!-- Main Content -->
-        <div class="flex-1 p-8">
+        <!-- Nav -->
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+            <a href="#" onclick="showSection('dashboard', this)"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
+                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
+            </a>
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
+            <a href="#" onclick="showSection('blogs', this)"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
+            </a>
+            <a href="#" onclick="showSection('projects', this)"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
+            </a>
+            <a href="/appointments"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
+            </a>
+
+        </nav>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-dark-border">
+            <a href="{% url 'logout' %}"
+                class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
+        <!-- Top Bar (Mobile Overlay) -->
+        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
+
             <!-- Dashboard Section -->
-            <div id="dashboard" class="section">
-                <h2 class="text-3xl font-bold mb-8">Dashboard Overview</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="bg-blue-500 text-white p-3 rounded-full">
-                                <i class="fas fa-blog text-xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold">Blog Posts</h3>
-                                <p class="text-2xl font-bold" id="blogCount">0</p>
-                            </div>
+            <div id="dashboard" class="section animate-fade-in">
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
+                    <p class="text-gray-500">Welcome back, here's what's happening correctly.</p>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Stat Card 1 -->
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i class="fas fa-blog text-6xl text-brand-blue"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
+                            <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
                         </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="bg-green-500 text-white p-3 rounded-full">
-                                <i class="fas fa-project-diagram text-xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold">Projects</h3>
-                                <p class="text-2xl font-bold" id="projectCount">0</p>
-                            </div>
+
+                    <!-- Stat Card 2 -->
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i class="fas fa-rocket text-6xl text-brand-green"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
+                            <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
                         </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="bg-purple-500 text-white p-3 rounded-full">
-                                <i class="fas fa-calendar-alt text-xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold">Events</h3>
-                                <p class="text-2xl font-bold" id="eventCount">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="bg-orange-500 text-white p-3 rounded-full">
-                                <i class="fas fa-users text-xl"></i>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-semibold">Blog Users</h3>
-                                <p class="text-2xl font-bold" id="userCount">0</p>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
 
-            <!-- Blog Posts Section -->
+            <!-- Blog Section -->
             <div id="blogs" class="section hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Blog Posts</h2>
-                    <button onclick="showAddForm('blog')" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-plus mr-2"></i>Add Post
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Blog Posts</h2>
+                        <p class="text-gray-500 text-sm">Manage your news and articles</p>
+                    </div>
+                    <button onclick="showAddForm('blog')"
+                        class="bg-brand-blue hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Create Post
                     </button>
                 </div>
-                
-                <!-- Add Blog Form -->
-                <div id="blogForm" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
-                    <h3 class="text-xl font-semibold mb-4">Add New Blog Post</h3>
-                    <form id="addBlogForm" enctype="multipart/form-data">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="text" name="title" placeholder="Title" class="border rounded px-3 py-2" required>
-                            <select name="category" class="border rounded px-3 py-2" required>
-                                <option value="">Select Category</option>
-                                <option value="Web Development">Web Development</option>
-                                <option value="AI & Machine Learning">AI & Machine Learning</option>
-                                <option value="Digital Marketing">Digital Marketing</option>
-                                <option value="Tech Trends">Tech Trends</option>
-                            </select>
+
+                <!-- Add/Edit Form -->
+                <div id="blogForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
+                    <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Blog Post</h3>
+                    <form id="addBlogForm" class="space-y-6" enctype="multipart/form-data">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Title</label>
+                                <input type="text" name="title"
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                    placeholder="e.g. The Future of AI" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Category</label>
+                                <select name="category"
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                    required>
+                                    <option value="">Select Category</option>
+                                    <option value="Web Development">Web Development</option>
+                                    <option value="AI & Machine Learning">AI & Machine Learning</option>
+                                    <option value="Digital Marketing">Digital Marketing</option>
+                                    <option value="Tech Trends">Tech Trends</option>
+                                </select>
+                            </div>
                         </div>
-                        <textarea name="excerpt" placeholder="Excerpt" class="w-full border rounded px-3 py-2 mb-4" rows="3" required></textarea>
-                        <textarea name="content" placeholder="Content" class="w-full border rounded px-3 py-2 mb-4" rows="6" required></textarea>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="text" name="tags" placeholder="Tags (comma-separated)" class="border rounded px-3 py-2">
-                            <input type="file" name="image" accept="image/*" class="border rounded px-3 py-2">
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Excerpt</label>
+                            <textarea name="excerpt" rows="2"
+                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                placeholder="Brief summary..." required></textarea>
                         </div>
-                        <label class="flex items-center mb-4">
-                            <input type="checkbox" name="featured" class="mr-2">
-                            Featured Post
-                        </label>
-                        <div class="flex gap-2">
-                            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Add Post</button>
-                            <button type="button" onclick="hideAddForm('blog')" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">Cancel</button>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Content</label>
+                            <textarea name="content" rows="6"
+                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                placeholder="Full article content..." required></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Cover Image</label>
+                                <input type="file" name="image" accept="image/*"
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-blue/10 file:text-brand-blue hover:file:bg-brand-blue/20">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Tags</label>
+                                <input type="text" name="tags"
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                    placeholder="tech, ai, coding">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" name="featured" id="blogFeatured"
+                                class="w-5 h-5 bg-[#06090F] border-dark-border rounded text-brand-blue focus:ring-offset-gray-900">
+                            <label for="blogFeatured" class="ml-2 text-sm text-gray-300">Mark as Featured Post</label>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
+                            <button type="button" onclick="hideAddForm('blog')"
+                                class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
+                            <button type="submit"
+                                class="bg-brand-blue hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg transition-colors font-medium">Save
+                                Post</button>
                         </div>
                     </form>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div id="blogsList"></div>
-                </div>
+                <div id="blogsList" class="space-y-4"></div>
             </div>
 
-            <!-- Projects Section -->
+            <!-- Project Section -->
             <div id="projects" class="section hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Projects</h2>
-                    <button onclick="showAddForm('project')" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                        <i class="fas fa-plus mr-2"></i>Add Project
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Projects</h2>
+                        <p class="text-gray-500 text-sm">Showcase your best work</p>
+                    </div>
+                    <button onclick="showAddForm('project')"
+                        class="bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                        <i class="fas fa-plus mr-2"></i>New Project
                     </button>
                 </div>
 
-                <!-- Add Project Form -->
-                <div id="projectForm" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
-                    <h3 class="text-xl font-semibold mb-4">Add New Project</h3>
-                    <form id="addProjectForm" enctype="multipart/form-data">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="text" name="title" placeholder="Project Title" class="border rounded px-3 py-2" required>
-                            <input type="text" name="client" placeholder="Client Name" class="border rounded px-3 py-2" required>
-                        </div>
-                        <textarea name="description" placeholder="Project Description" class="w-full border rounded px-3 py-2 mb-4" rows="4" required></textarea>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <select name="status" class="border rounded px-3 py-2" required>
-                                <option value="">Select Status</option>
-                                <option value="planning">Planning</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                                <option value="on_hold">On Hold</option>
-                            </select>
-                            <input type="date" name="start_date" class="border rounded px-3 py-2" required>
-                            <input type="date" name="end_date" class="border rounded px-3 py-2">
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="number" name="budget" placeholder="Budget" step="0.01" class="border rounded px-3 py-2">
-                            <input type="text" name="technologies" placeholder="Technologies (comma-separated)" class="border rounded px-3 py-2">
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="url" name="project_url" placeholder="Project URL (live demo)" class="border rounded px-3 py-2">
-                            <input type="url" name="github_url" placeholder="GitHub URL (repository)" class="border rounded px-3 py-2">
-                        </div>
-                        <input type="file" name="image" accept="image/*" class="border rounded px-3 py-2 mb-4">
-                        <label class="flex items-center mb-4">
-                            <input type="checkbox" name="featured" class="mr-2">
-                            Featured Project
-                        </label>
-                        <div class="flex gap-2">
-                            <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">Add Project</button>
-                            <button type="button" onclick="hideAddForm('project')" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">Cancel</button>
-                        </div>
-                    </form>
+                <!-- Add/Edit Form -->
+                <div id="projectForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
+                    <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Project Details
+                    </h3>
+                    <form id="addProjectForm" class="space-y-6" enctype="multipart/form-data">
+                        <form id="addProjectForm" onsubmit="event.preventDefault(); addItem('projects', this);"
+                            class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Project Title</label>
+                                <input type="text" name="title" required
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Short Description</label>
+                                <textarea name="short_description" rows="2"
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Full Description</label>
+                                <textarea name="description" rows="4" required
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Project Image</label>
+                                    <input type="file" name="image" accept="image/*"
+                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-gray-400 focus:outline-none focus:border-brand-blue transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Live Demo URL</label>
+                                    <input type="url" name="project_url"
+                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">GitHub URL</label>
+                                    <input type="url" name="github_url"
+                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                </div>
+                                <div class="flex items-center pt-8">
+                                    <input type="checkbox" name="featured" id="projectFeatured"
+                                        class="w-5 h-5 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
+                                    <label for="projectFeatured" class="ml-2 text-sm text-gray-300">Featured
+                                        Project</label>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
+                                <button type="button" onclick="hideAddForm('project')"
+                                    class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
+                                <button type="submit"
+                                    class="bg-brand-green hover:bg-green-500 text-black px-6 py-2.5 rounded-lg transition-colors font-semibold">Save
+                                    Project</button>
+                            </div>
+                        </form>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div id="projectsList"></div>
-                </div>
+                <div id="projectsList" class="space-y-4"></div>
             </div>
 
-            <!-- Events Section -->
-            <div id="events" class="section hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Events</h2>
-                    <button onclick="showAddForm('event')" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
-                        <i class="fas fa-plus mr-2"></i>Add Event
-                    </button>
-                </div>
 
-                <!-- Add Event Form -->
-                <div id="eventForm" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
-                    <h3 class="text-xl font-semibold mb-4">Add New Event</h3>
-                    <form id="addEventForm" enctype="multipart/form-data">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="text" name="title" placeholder="Event Title" class="border rounded px-3 py-2" required>
-                            <select name="event_type" class="border rounded px-3 py-2" required>
-                                <option value="">Select Type</option>
-                                <option value="webinar">Webinar</option>
-                                <option value="workshop">Workshop</option>
-                                <option value="conference">Conference</option>
-                                <option value="meetup">Meetup</option>
-                                <option value="launch">Product Launch</option>
-                            </select>
-                        </div>
-                        <textarea name="description" placeholder="Event Description" class="w-full border rounded px-3 py-2 mb-4" rows="4" required></textarea>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="datetime-local" name="date" class="border rounded px-3 py-2" required>
-                            <input type="text" name="location" placeholder="Location (optional)" class="border rounded px-3 py-2">
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="url" name="registration_link" placeholder="Registration Link" class="border rounded px-3 py-2">
-                            <input type="number" name="max_attendees" placeholder="Max Attendees" class="border rounded px-3 py-2">
-                        </div>
-                        <input type="file" name="image" accept="image/*" class="border rounded px-3 py-2 mb-4">
-                        <div class="flex gap-4 mb-4">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="is_online" class="mr-2">
-                                Online Event
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="featured" class="mr-2">
-                                Featured Event
-                            </label>
-                        </div>
-                        <div class="flex gap-2">
-                            <button type="submit" class="bg-purple-500 text-white px-6 py-2 rounded hover:bg-purple-600">Add Event</button>
-                            <button type="button" onclick="hideAddForm('event')" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">Cancel</button>
-                        </div>
-                    </form>
-                </div>
 
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div id="eventsList"></div>
-                </div>
-            </div>
-
-            <!-- Analytics Section -->
-            <div id="analytics" class="section hidden">
-                <h2 class="text-3xl font-bold mb-8">Analytics</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold mb-4">Blog Views</h3>
-                        <div class="text-3xl font-bold text-blue-600" id="totalViews">0</div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold mb-4">Popular Posts</h3>
-                        <div id="popularPosts"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Users Section -->
-            <div id="users" class="section hidden">
-                <h2 class="text-3xl font-bold mb-8">Blog Users</h2>
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div id="usersList"></div>
-                </div>
-            </div>
-
-            <!-- Settings Section -->
-            <div id="settings" class="section hidden">
-                <h2 class="text-3xl font-bold mb-8">Settings</h2>
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold mb-4">Site Configuration</h3>
-                    <div class="space-y-4">
-                        <button onclick="clearAllData()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-                            Clear All Data
-                        </button>
-                        <button onclick="exportData()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                            Export Data
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
+    </main>
 
     <script>
         const API_BASE = '/api';
@@ -304,215 +348,239 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
         const CSRF_TOKEN = getCookie('csrftoken');
+
+        // Toggle Sidebar
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+
         function showSection(sectionName, clickedElement) {
+            // Main content sections
             document.querySelectorAll('.section').forEach(section => { section.classList.add('hidden'); });
-            document.querySelectorAll('.nav-link').forEach(link => { link.classList.remove('active', 'bg-gray-700'); });
             const targetSection = document.getElementById(sectionName);
-            if (targetSection) { targetSection.classList.remove('hidden'); }
-            if (clickedElement) { clickedElement.classList.add('active', 'bg-gray-700'); }
+            if (targetSection) targetSection.classList.remove('hidden');
+
+            // Sidebar highlighting
+            document.querySelectorAll('.nav-item').forEach(link => { link.classList.remove('active'); });
+            if (clickedElement) clickedElement.classList.add('active');
+
+            // Close mobile menu on navigate
+            if (window.innerWidth < 1024) {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+
+            // Load data
             if (sectionName === 'blogs') loadBlogs();
             if (sectionName === 'projects') loadProjects();
-            if (sectionName === 'events') loadEvents();
+            // Events removed
             if (sectionName === 'dashboard') loadDashboard();
-            if (sectionName === 'analytics') loadAnalytics();
-            if (sectionName === 'users') loadUsers();
         }
-        function showAddForm(type) { const formContainer = document.getElementById(`${type}Form`); if (formContainer) { formContainer.classList.remove('hidden'); } }
+
+        function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
         function hideAddForm(type) {
-            const formContainer = document.getElementById(`${type}Form`);
+            document.getElementById(`${type}Form`).classList.add('hidden');
             const form = document.getElementById(`add${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
-            if (formContainer) { formContainer.classList.add('hidden'); }
-            if (form) { form.reset(); }
+            form.reset();
+            // Reset header back to 'Add' state visually if needed, simplified here
         }
+
         async function loadDashboard() {
             try {
                 const common = { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
-                const [blogs, projects, events] = await Promise.all([
+                const [blogs, projects] = await Promise.all([
                     fetch(`${API_BASE}/posts/`, common).then(r => r.json()),
-                    fetch(`${API_BASE}/projects/`, common).then(r => r.json()),
-                    fetch(`${API_BASE}/events/`, common).then(r => r.json())
+                    fetch(`${API_BASE}/projects/`, common).then(r => r.json())
                 ]);
-                document.getElementById('blogCount').textContent = blogs.length;
-                document.getElementById('projectCount').textContent = projects.length;
-                document.getElementById('eventCount').textContent = events.length;
-                document.getElementById('userCount').textContent = JSON.parse(localStorage.getItem('blogUsers') || '[]').length;
+
+                document.getElementById('blogCount').textContent = blogs.length || 0;
+                document.getElementById('projectCount').textContent = projects.length || 0;
+
+
+
             } catch (error) { console.error('Error loading dashboard:', error); }
         }
-        async function loadBlogs() { try { const response = await fetch(`${API_BASE}/posts/`, { credentials: 'same-origin' }); const blogs = await response.json(); displayBlogs(blogs); } catch (error) { console.error('Error loading blogs:', error); } }
-        function displayBlogs(blogs) {
-            const container = document.getElementById('blogsList');
-            container.innerHTML = blogs.map(blog => `
-                <div class="border rounded-lg p-3 mb-3 bg-gray-50">
-                    <div class="flex justify-between items-start">
+
+        async function loadBlogs() {
+            try {
+                const response = await fetch(`${API_BASE}/posts/`, { credentials: 'same-origin' });
+                const blogs = await response.json();
+                const container = document.getElementById('blogsList');
+                if (!blogs.length) {
+                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No posts found. Create your first one!</div>`;
+                    return;
+                }
+                container.innerHTML = blogs.map(blog => `
+                    <div class="bg-dark-card border border-dark-border p-5 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4 hover:border-brand-blue/30 transition-colors group">
                         <div class="flex-1">
-                            <h3 class="font-semibold text-sm">${blog.title}</h3>
-                            <p class="text-gray-600 text-xs">${blog.category} • ${new Date(blog.created_at).toLocaleDateString()}</p>
-                            <p class="text-gray-700 text-xs mt-1 line-clamp-2">${blog.excerpt.substring(0, 100)}...</p>
-                            <div class="flex items-center mt-1 space-x-2">
-                                <span class="text-blue-600 text-xs">
-                                    <i class="fas fa-eye mr-1"></i>${blog.view_count || 0}
-                                </span>
-                                ${blog.featured ? '<span class="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs">Featured</span>' : ''}
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded uppercase">${blog.category}</span>
+                                ${blog.featured ? '<span class="text-xs font-bold text-purple-400 px-2 py-1 bg-purple-900/20 rounded">FEATURED</span>' : ''}
+                                <span class="text-gray-500 text-xs">${new Date(blog.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-brand-blue transition-colors">${blog.title}</h3>
+                            <p class="text-gray-400 text-sm line-clamp-2 mb-3">${blog.excerpt || ''}</p>
+                            <div class="flex items-center text-xs text-gray-500 gap-4">
+                                <span><i class="fas fa-eye mr-1"></i>${blog.view_count || 0}</span>
                             </div>
                         </div>
-                        <div class="flex space-x-1 ml-2">
-                            <button onclick="editBlog(${blog.id})" class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteItem('posts', ${blog.id})" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div class="flex gap-2">
+                            <button onclick="editBlog(${blog.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteItem('posts', ${blog.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (e) { console.error(e); }
         }
-        async function loadProjects() { try { const response = await fetch(`${API_BASE}/projects/`, { credentials: 'same-origin' }); const projects = await response.json(); displayProjects(projects); } catch (error) { console.error('Error loading projects:', error); } }
-        function displayProjects(projects) {
-            const container = document.getElementById('projectsList');
-            container.innerHTML = projects.map(project => `
-                <div class="border rounded-lg p-3 mb-3 bg-gray-50">
-                    <div class="flex justify-between items-start">
+
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_BASE}/projects/`, { credentials: 'same-origin' });
+                const projects = await response.json();
+                const container = document.getElementById('projectsList');
+                if (!projects.length) {
+                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No projects found. Add one!</div>`;
+                    return;
+                }
+                container.innerHTML = projects.map(project => `
+                    <div class="bg-dark-card border border-dark-border p-5 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4 hover:border-brand-green/30 transition-colors group">
                         <div class="flex-1">
-                            <h3 class="font-semibold text-sm">${project.title}</h3>
-                            <p class="text-gray-600 text-xs">${project.client} • ${project.status}</p>
-                            <p class="text-gray-700 text-xs mt-1">${project.description.substring(0, 80)}...</p>
-                            <div class="flex items-center mt-1 space-x-2">
-                                <span class="text-green-600 text-xs">
-                                    ${new Date(project.start_date).toLocaleDateString()}
-                                </span>
-                                ${project.featured ? '<span class="bg-green-100 text-green-800 px-1 py-0.5 rounded text-xs">Featured</span>' : ''}
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded">PROJECT</span>
+                                ${project.featured ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded">FEATURED</span>' : ''}
                             </div>
+                            <h3 class="text-xl font-bold text-white mb-1">${project.title}</h3>
+                            <p class="text-sm text-gray-400 mb-2">${project.short_description || ''}</p>
+                            <a href="${project.project_url || '#'}" target="_blank" class="text-xs text-brand-blue hover:underline">${project.project_url || 'No Live Link'}</a>
                         </div>
-                        <div class="flex space-x-1 ml-2">
-                            <button onclick="editProject(${project.id})" class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteItem('projects', ${project.id})" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div class="flex gap-2">
+                            <button onclick="editProject(${project.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteItem('projects', ${project.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (e) { console.error(e); }
         }
-        async function loadEvents() { try { const response = await fetch(`${API_BASE}/events/`, { credentials: 'same-origin' }); const events = await response.json(); displayEvents(events); } catch (error) { console.error('Error loading events:', error); } }
-        function displayEvents(events) {
-            const container = document.getElementById('eventsList');
-            container.innerHTML = events.map(event => `
-                <div class="border rounded-lg p-3 mb-3 bg-gray-50">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-sm">${event.title}</h3>
-                            <p class="text-gray-600 text-xs">${event.event_type} • ${new Date(event.date).toLocaleDateString()}</p>
-                            <p class="text-gray-700 text-xs mt-1">${event.description.substring(0, 80)}...</p>
-                            <div class="flex items-center mt-1 space-x-1">
-                                ${event.is_online ? '<span class="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">Online</span>' : ''}
-                                ${event.featured ? '<span class="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs">Featured</span>' : ''}
-                            </div>
-                        </div>
-                        <div class="flex space-x-1 ml-2">
-                            <button onclick="editEvent(${event.id})" class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteItem('events', ${event.id})" class="text-red-500 hover:text-red-700 text-xs px-2 py-1">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        document.getElementById('addBlogForm').addEventListener('submit', async (e) => { e.preventDefault(); await addItem('posts', e.target); });
-        document.getElementById('addProjectForm').addEventListener('submit', async (e) => { e.preventDefault(); await addItem('projects', e.target); });
-        document.getElementById('addEventForm').addEventListener('submit', async (e) => { e.preventDefault(); await addItem('events', e.target); });
+
+
+
+        // CRUD helpers
         async function addItem(endpoint, form) {
             const formData = new FormData(form);
             if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
-            if (formData.has('is_online')) { formData.set('is_online', formData.get('is_online') === 'on' ? 'true' : 'false'); } else { formData.set('is_online', 'false'); }
             try {
                 const response = await fetch(`${API_BASE}/${endpoint}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
                 if (response.ok) {
-                    alert('Item added successfully!');
+                    alert('Saved successfully!');
                     form.reset();
-                    hideAddForm(endpoint.slice(0, -1));
-                    if (endpoint === 'posts') loadBlogs();
-                    if (endpoint === 'projects') loadProjects();
-                    if (endpoint === 'events') loadEvents();
-                    loadDashboard();
+                    // hideAddForm call moved to specific blocks below to ensure correct ID is used
+                    if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); }
+                    if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); }
                 } else {
-                    const errorData = await response.text();
-                    console.error('Server error:', errorData);
-                    alert('Error adding item: ' + response.status);
+                    alert('Error saving item');
                 }
-            } catch (error) { console.error('Error:', error); alert('Error adding item: ' + error.message); }
+            } catch (e) { console.error(e); alert('Error'); }
         }
-        async function deleteItem(endpoint, id) {
-            if (confirm('Are you sure you want to delete this item?')) {
-                try {
-                    const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                    if (response.ok) {
-                        alert('Item deleted successfully!');
-                        if (endpoint === 'posts') loadBlogs();
-                        if (endpoint === 'projects') loadProjects();
-                        if (endpoint === 'events') loadEvents();
-                    } else { alert('Error deleting item'); }
-                } catch (error) { console.error('Error:', error); alert('Error deleting item'); }
-            }
-        }
-        async function editBlog(id) {
-            try { const response = await fetch(`${API_BASE}/posts/${id}/`); const blog = await response.json(); const form = document.getElementById('addBlogForm'); form.title.value = blog.title; form.category.value = blog.category; form.excerpt.value = blog.excerpt; form.content.value = blog.content; form.tags.value = blog.tags; form.featured.checked = blog.featured; form.onsubmit = async (e) => { e.preventDefault(); await updateItem('posts', id, e.target); }; document.querySelector('#blogForm h3').textContent = 'Edit Blog Post'; document.querySelector('#blogForm button[type="submit"]').textContent = 'Update Post'; showAddForm('blog'); } catch (error) { console.error('Error loading blog for edit:', error); }
-        }
-        async function editProject(id) {
-            try { const response = await fetch(`${API_BASE}/projects/${id}/`); const project = await response.json(); const form = document.getElementById('addProjectForm'); form.title.value = project.title; form.client.value = project.client; form.description.value = project.description; form.status.value = project.status; form.start_date.value = project.start_date; form.end_date.value = project.end_date || ''; form.budget.value = project.budget || ''; form.technologies.value = project.technologies; form.project_url.value = project.project_url || ''; form.github_url.value = project.github_url || ''; form.featured.checked = project.featured; form.onsubmit = async (e) => { e.preventDefault(); await updateItem('projects', id, e.target); }; document.querySelector('#projectForm h3').textContent = 'Edit Project'; document.querySelector('#projectForm button[type="submit"]').textContent = 'Update Project'; showAddForm('project'); } catch (error) { console.error('Error loading project for edit:', error); }
-        }
-        async function editEvent(id) {
-            try { const response = await fetch(`${API_BASE}/events/${id}/`); const event = await response.json(); const form = document.getElementById('addEventForm'); form.title.value = event.title; form.event_type.value = event.event_type; form.description.value = event.description; form.date.value = event.date.slice(0, 16); form.location.value = event.location || ''; form.registration_link.value = event.registration_link || ''; form.max_attendees.value = event.max_attendees || ''; form.is_online.checked = event.is_online; form.featured.checked = event.featured; form.onsubmit = async (e) => { e.preventDefault(); await updateItem('events', id, e.target); }; document.querySelector('#eventForm h3').textContent = 'Edit Event'; document.querySelector('#eventForm button[type="submit"]').textContent = 'Update Event'; showAddForm('event'); } catch (error) { console.error('Error loading event for edit:', error); }
-        }
+
         async function updateItem(endpoint, id, form) {
             const formData = new FormData(form);
-            try { const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'PUT', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } }); if (response.ok) { alert('Item updated successfully!'); resetForm(endpoint); if (endpoint === 'posts') loadBlogs(); if (endpoint === 'projects') loadProjects(); if (endpoint === 'events') loadEvents(); } else { alert('Error updating item'); } } catch (error) { console.error('Error:', error); alert('Error updating item'); }
-        }
-        function resetForm(endpoint) {
-            const type = endpoint.slice(0, -1);
-            const form = document.getElementById(`add${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
-            form.reset();
-            form.onsubmit = null;
-            document.querySelector(`#${type}Form h3`).textContent = `Add New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-            document.querySelector(`#${type}Form button[type="submit"]`).textContent = `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-            hideAddForm(type);
-            if (type === 'blog') { form.onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); }; }
-            else if (type === 'project') { form.onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); }; }
-            else if (type === 'event') { form.onsubmit = async (e) => { e.preventDefault(); await addItem('events', e.target); }; }
-        }
-        async function loadAnalytics() {
+            if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
+
             try {
-                const blogs = await fetch(`${API_BASE}/posts/`, { credentials: 'same-origin' }).then(r => r.json());
-                const totalViews = blogs.reduce((sum, blog) => sum + (blog.view_count || 0), 0);
-                document.getElementById('totalViews').textContent = totalViews;
-                const popular = blogs.sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 5);
-                document.getElementById('popularPosts').innerHTML = popular.map(post => 
-                    `<div class="flex justify-between py-2 border-b">
-                        <span class="text-sm">${post.title}</span>
-                        <span class="text-sm font-bold">${post.view_count || 0} views</span>
-                    </div>`
-                ).join('');
-            } catch (error) { console.error('Error loading analytics:', error); }
+                // Use POST for updates to support file uploads (Django doesn't handle multipart PUT well)
+                const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+                if (response.ok) {
+                    alert('Updated!');
+                    form.reset();
+                    form.onsubmit = null; // Remove override
+
+                    // Reset UI text
+                    const type = endpoint === 'posts' ? 'blog' : 'project';
+                    document.querySelector(`#${type}Form h3`).textContent = type === 'blog' ? 'New Blog Post' : 'New Project Details';
+                    document.querySelector(`#${type}Form button[type="submit"]`).textContent = type === 'blog' ? 'Save Post' : 'Save Project';
+
+                    if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); }; }
+                    if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); }; }
+                } else { alert('Update failed'); }
+            } catch (e) { console.error(e); alert('Error'); }
         }
-        function loadUsers() {
-            const users = JSON.parse(localStorage.getItem('blogUsers') || '[]');
-            document.getElementById('usersList').innerHTML = users.map(user => 
-                `<div class="border rounded p-3 mb-2">
-                    <div class="font-semibold">${user.email}</div>
-                    <div class="text-sm text-gray-600">${user.fullName || 'N/A'}</div>
-                </div>`
-            ).join('') || '<p class="text-gray-500">No users registered yet.</p>';
+
+        async function deleteItem(endpoint, id) {
+            if (!confirm('Delete this item permanently?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+                if (res.ok) {
+                    if (endpoint === 'posts') loadBlogs();
+                    if (endpoint === 'projects') loadProjects();
+                } else { alert('Delete failed'); }
+            } catch (e) { console.error(e); }
         }
-        function clearAllData() { if (confirm('Are you sure? This will delete all blog users data.')) { localStorage.removeItem('blogUsers'); alert('All user data cleared!'); loadDashboard(); } }
-        function exportData() { const users = JSON.parse(localStorage.getItem('blogUsers') || '[]'); const dataStr = JSON.stringify(users, null, 2); const dataBlob = new Blob([dataStr], {type: 'application/json'}); const url = URL.createObjectURL(dataBlob); const link = document.createElement('a'); link.href = url; link.download = 'blog-users.json'; link.click(); }
-        document.addEventListener('DOMContentLoaded', () => { loadDashboard(); });
+
+        // Edit Pre-fill
+        async function editBlog(id) {
+            try {
+                const blog = await fetch(`${API_BASE}/posts/${id}/`).then(r => r.json());
+                const form = document.getElementById('addBlogForm');
+                form.title.value = blog.title;
+                form.category.value = blog.category;
+                form.excerpt.value = blog.excerpt;
+                form.content.value = blog.content;
+                form.tags.value = blog.tags;
+                form.featured.checked = blog.featured;
+
+                document.querySelector('#blogForm h3').textContent = 'Edit Blog Post';
+                const btn = document.querySelector('#blogForm button[type="submit"]');
+                btn.textContent = 'Update Post';
+
+                form.onsubmit = async (e) => { e.preventDefault(); await updateItem('posts', id, e.target); };
+                showAddForm('blog');
+            } catch (e) { console.error(e); }
+        }
+
+        async function editProject(id) {
+            try {
+                const p = await fetch(`${API_BASE}/projects/${id}/`).then(r => r.json());
+                const form = document.getElementById('addProjectForm');
+                form.title.value = p.title || '';
+                if (form.short_description && p.short_description) form.short_description.value = p.short_description;
+                form.description.value = p.description || '';
+                form.project_url.value = p.project_url || '';
+                form.github_url.value = p.github_url || '';
+                form.featured.checked = p.featured;
+
+                document.querySelector('#projectForm h3').textContent = 'Edit Project';
+                const btn = document.querySelector('#projectForm button[type="submit"]');
+                btn.textContent = 'Update Project';
+
+                form.onsubmit = async (e) => { e.preventDefault(); await updateItem('projects', id, e.target); };
+                showAddForm('project');
+            } catch (e) { console.error(e); }
+        }
+
+        // Bind initial submits
+        document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); };
+        document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
+
+
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            // Highlight dashboard initially
+            document.querySelector('a[onclick*="dashboard"]').classList.add('active');
+        });
+
     </script>
 </body>
+
 </html>
-
-

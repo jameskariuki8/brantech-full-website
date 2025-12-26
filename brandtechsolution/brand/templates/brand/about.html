@@ -1,330 +1,623 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About Us - BranTech Solutions</title>
-  
+  <title>About Us - TekLora</title>
+
   <!-- Favicon -->
-  <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
-  <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
-  <!-- Tailwind & External Libraries -->
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}" />
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
-  <!-- Project Styles -->
-  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}"/>
-  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}"/>
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}"/>
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
-<body class="bg-white text-gray-800 overflow-x-hidden">
 
-  {% include 'brand/header.html' %}
+<body class="bg-[#06090F] text-white font-inter overflow-x-hidden">
+
   <!-- Header -->
-  <div id="header"></div>
+  {% include 'brand/header.html' %}
 
-  <!-- Tech Hero Section -->
-  <section class="tech-hero-section">
-    <div class="tech-grid-bg"><svg class="w-screen h-screen" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- Keep boxes small -->
-    <pattern id="circuit" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
-      <!-- Outer square -->
-      <rect x="5" y="5" width="40" height="40" fill="none" stroke="currentColor" stroke-width="0.5"/>
-      
-      <!-- Nodes -->
-      <circle cx="12" cy="12" r="2" fill="currentColor"/>
-      <circle cx="38" cy="38" r="2" fill="currentColor"/>
-      
-      <!-- Connection -->
-      <path d="M12 12L38 38" stroke="currentColor" stroke-width="0.5"/>
-    </pattern>
-  </defs>
+  <!-- HERO SECTION -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <!-- Background Elements -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+      <div class="absolute top-0 right-0 w-1/2 h-1/2 bg-blue-500/10 rounded-full blur-[100px]"></div>
+      <div class="absolute bottom-0 left-0 w-1/2 h-1/2 bg-green-500/10 rounded-full blur-[100px]"></div>
+    </div>
 
-  <!-- Fill entire viewport with repeating pattern -->
-  <rect width="100%" height="100%" fill="url(#circuit)" opacity="0.5"/>
-</svg>
-</div>
-    <!-- <div class="tech-floating-1"></div> -->
-    <div class="tech-floating-2"></div>
-    <div class="tech-gradient"></div>
-    <div class="tech-hero-content">
-      <div class="animate__animated animate__fadeInLeft">
-        <div class="tech-hero-badge">
-          <i class="fas fa-users-cog tech-hero-icon"></i>
-          <span class="tech-hero-badge-text">Who We Are</span>
+    <div class="container max-w-6xl mx-auto px-6">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Left: Text Content -->
+        <div class="text-left">
+          <!-- <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-6">
+                        <i class="fas fa-users-cog"></i> Who We Are
+                    </div> -->
+          <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            Our Story
+          </h1>
+          <p class="text-xl text-gray-400 max-w-lg leading-relaxed mb-8">
+            From a spark of an idea to a thriving movement: how TekLora empowers innovators through mentorship,
+            skill-sharing, and community.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <button onclick="document.getElementById('gallery-section').scrollIntoView({behavior: 'smooth'})"
+              class="btn btn-secondary bg-white text-black hover:bg-gray-200 border-none font-bold">
+              Explore Moments
+            </button>
+          </div>
         </div>
-        <h1 class="tech-hero-title">
-          About <span class="tech-hero-title-highlight">BranTech</span>
-        </h1>
-        <p class="tech-hero-desc">
-          Our journey, values, and the team behind our innovative solutions.
-        </p>
+
+        <!-- Right: Audio/Video Player Card -->
+        <div class="relative">
+          <!-- Toggle Switch -->
+          <div class="flex justify-center mb-6 relative z-20">
+            <div class="bg-white/10 backdrop-blur-md p-1 rounded-full border border-white/10 inline-flex">
+              <button id="btn-audio" onclick="toggleMedia('audio')"
+                class="px-6 py-2 rounded-full text-sm font-bold transition-all bg-blue-500 text-white shadow-lg">
+                <i class="fas fa-music mr-2"></i> Audio
+              </button>
+              <button id="btn-video" onclick="toggleMedia('video')"
+                class="px-6 py-2 rounded-full text-sm font-bold transition-all text-gray-400 hover:text-white">
+                <i class="fas fa-video mr-2"></i> Video
+              </button>
+            </div>
+          </div>
+
+          <!-- Audio Card -->
+          <div id="media-audio"
+            class="bg-white rounded-2xl p-6 shadow-2xl max-w-md mx-auto relative z-10 text-gray-800 transition-all duration-500">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                <i class="fas fa-headphones-alt text-xl"></i>
+              </div>
+              <span class="font-bold text-lg">Listen to TekLora Story</span>
+            </div>
+
+            <!-- Audio Controls Visual -->
+            <div class="bg-gray-100 rounded-lg p-3 flex items-center gap-3">
+              <button
+                class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition"
+                onclick="togglePlay('storyAudio', this)">
+                <i class="fas fa-play text-gray-600 text-xs"></i>
+              </button>
+              <span class="text-xs font-mono text-gray-500">Strategy & Tech Alignment</span>
+              <!-- <div class="flex-1 h-1 bg-gray-300 rounded-full overflow-hidden">
+                <div class="w-1/3 h-full bg-gray-500 rounded-full"></div>
+              </div> -->
+              <div class="ml-auto">
+                <i class="fas fa-volume-up text-gray-400 text-sm"></i>
+              </div>
+            </div>
+
+            <audio id="storyAudio" class="hidden" onended="resetIcon(this)">
+              <source src="{% static 'brand/images/TekLora_Strategy_Tech_and_Branding_Alignment.m4a' %}"
+                type="audio/mp4">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+
+          <!-- Video Card -->
+          <div id="media-video"
+            class="hidden max-w-md mx-auto relative z-10 rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black">
+            <video controls class="w-full h-auto aspect-video">
+              <source src="{% static 'brand/images/TekLora__From_Idea_to_Impact.mp4' %}" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+
+          <!-- Decorative Blob behind card -->
+          <div
+            class="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-[60px] opacity-40 -z-10">
+          </div>
+        </div>
+
+        <script>
+          function toggleMedia(type) {
+            const audioBtn = document.getElementById('btn-audio');
+            const videoBtn = document.getElementById('btn-video');
+            const audioCard = document.getElementById('media-audio');
+            const videoCard = document.getElementById('media-video');
+            const audio = document.getElementById('storyAudio');
+
+            if (type === 'audio') {
+              // UI
+              audioBtn.classList.add('bg-blue-500', 'text-white', 'shadow-lg');
+              audioBtn.classList.remove('text-gray-400', 'hover:text-white');
+              videoBtn.classList.remove('bg-blue-500', 'text-white', 'shadow-lg');
+              videoBtn.classList.add('text-gray-400', 'hover:text-white');
+
+              // Content
+              audioCard.classList.remove('hidden');
+              videoCard.classList.add('hidden');
+
+              // Logic: stop video if playing (handled by browser usually but safe to check)
+              const video = videoCard.querySelector('video');
+              if (video) video.pause();
+
+            } else {
+              // UI
+              videoBtn.classList.add('bg-blue-500', 'text-white', 'shadow-lg');
+              videoBtn.classList.remove('text-gray-400', 'hover:text-white');
+              audioBtn.classList.remove('bg-blue-500', 'text-white', 'shadow-lg');
+              audioBtn.classList.add('text-gray-400', 'hover:text-white');
+
+              // Content
+              videoCard.classList.remove('hidden');
+              audioCard.classList.add('hidden');
+
+              // Logic: stop audio
+              audio.pause();
+            }
+          }
+
+          function togglePlay(audioId, btn) {
+            const audio = document.getElementById(audioId);
+            const icon = btn.querySelector('i');
+            if (audio.paused) {
+              audio.play();
+              icon.classList.remove('fa-play');
+              icon.classList.add('fa-pause');
+            } else {
+              audio.pause();
+              icon.classList.remove('fa-pause');
+              icon.classList.add('fa-play');
+            }
+          }
+
+          function resetIcon(audio) {
+            // Find the button that controls this audio - simple assumption here or traverse up
+            const btn = audio.parentElement.querySelector('button');
+            if (btn) {
+              const icon = btn.querySelector('i');
+              icon.classList.remove('fa-pause');
+              icon.classList.add('fa-play');
+            }
+          }
+        </script>
       </div>
     </div>
   </section>
 
-  <!-- About Story Section -->
-  <section class="about-story-section">
-    <div class="about-story-grid">
-      <div class="animate__animated animate__fadeInLeft">
-        <span class="about-story-badge">Our Story</span>
-        <h2 class="about-story-title">
-          Building The Future <span class="about-story-title-highlight">Since 2025</span>
-        </h2>
-        <p class="about-story-text">
-          Founded in 2025, BranTech was born out of a passion for innovation and the belief that technology and branding can unlock limitless potential. We started as a small team with big ideas, determined to empower startups, SMEs, and large enterprises alike.
-        </p>
-        <p class="about-story-text">
-          From day one, our mission has been clear: to align businesses with their boldest visions through cutting-edge technology and creative strategy. Whether it's building powerful digital platforms or crafting unforgettable brand identities, BranTech helps companies grow, adapt, and lead in a fast-moving world.
-        </p>
-        <p class="about-story-text">
-          Today, we stand as a trusted partner for organizations seeking growth, clarity, and digital transformation — one innovation at a time.
-        </p>
-        <a href="contacts.html" class="about-story-connect-btn">
-          Let's Connect
-        </a>
+  <!-- STORY SECTION (BENTO GRID) -->
+  <section class="py-24 bg-[#0D121D] relative overflow-hidden">
+    <div class="container max-w-6xl mx-auto px-6 relative z-10">
+      <div class="text-center mb-16">
+
+        <h2 class="text-4xl md:text-5xl font-bold text-white">Our Evolution</h2>
       </div>
-      <div class="animate__animated animate__fadeInRight">
-        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80" 
-             alt="Our Team" 
-             class="about-story-img">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(300px,auto)]">
+
+        <!-- Card 1: The Origin (Large Vertical) -->
+        <div
+          class="md:col-span-1 md:row-span-2 bg-[#06090F] border border-white/5 rounded-3xl p-8 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+          <!-- Background Image -->
+          <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop"
+              alt="Origin"
+              class="w-full h-full object-cover opacity-50 group-hover:opacity-60 transition-opacity duration-700">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#06090F] via-[#06090F]/60 to-transparent"></div>
+          </div>
+
+          <div class="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <div
+                class="w-12 h-12 bg-blue-900/80 border border-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 mb-6 backdrop-blur-sm">
+                <i class="fas fa-cube text-xl"></i>
+              </div>
+              <h3 class="text-2xl font-bold text-white mb-4 drop-shadow-lg">The Origin</h3>
+              <p class="text-gray-300 leading-relaxed text-sm drop-shadow-md">
+                Established in 2025, we began as a collective of restless innovators. We saw a digital landscape crowded
+                with complexity and resolved to build clarity.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: The Vision (Wide Horizontal) -->
+        <div
+          class="md:col-span-2 bg-[#06090F] border border-white/5 rounded-3xl p-8 relative overflow-hidden group hover:border-green-500/30 transition-all duration-500 flex flex-col md:flex-row items-center gap-8">
+          <!-- Background Image -->
+          <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop"
+              alt="Vision"
+              class="w-full h-full object-cover opacity-50 group-hover:opacity-60 transition-opacity duration-700">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#06090F] via-[#06090F]/70 to-transparent"></div>
+          </div>
+
+          <div class="flex-1 relative z-10">
+            <div
+              class="w-12 h-12 bg-green-900/80 border border-green-500/20 rounded-xl flex items-center justify-center text-green-400 mb-6 backdrop-blur-sm">
+              <i class="fas fa-eye text-xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-4 drop-shadow-lg">The Vision</h3>
+            <p class="text-gray-300 leading-relaxed drop-shadow-md">
+              We don't just write code; we architect ecosystems. Combining <strong>Agentic AI</strong> with
+              human-centric design, we are building a future where technology feels organic, intuitive, and limitless.
+            </p>
+          </div>
+          <!-- Visual / Tech Element -->
+          <div class="relative z-10 w-full md:w-1/3">
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+              </div>
+              <div class="space-y-2 font-mono text-xs text-green-400/80">
+                <div>> initiating_sequence...</div>
+                <div>> optimizing_core...</div>
+                <div class="text-white">> system_ready</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: The Craft (Standard) -->
+        <div
+          class="md:col-span-1 bg-[#06090F] border border-white/5 rounded-3xl p-8 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-500">
+          <!-- Background Image -->
+          <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=2031&auto=format&fit=crop"
+              alt="Coding"
+              class="w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-700">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#06090F] via-[#06090F]/70 to-transparent"></div>
+          </div>
+
+          <div class="relative z-10">
+            <div
+              class="w-12 h-12 bg-purple-900/80 border border-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 mb-6 backdrop-blur-sm">
+              <i class="fas fa-code text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2 drop-shadow-lg">Precision Craft</h3>
+            <p class="text-gray-300 text-sm drop-shadow-md">
+              Every pixel aligned. Every function optimized.
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 4: Impact (Standard) -->
+        <div
+          class="md:col-span-1 border border-white/10 rounded-3xl p-8 relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+          <!-- Background Gradient (subtle) -->
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-[#06090F] opacity-50"></div>
+
+          <!-- Background Image -->
+          <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
+              alt="Team"
+              class="w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity duration-700 grayscale">
+          </div>
+
+          <div class="relative z-10 h-full flex flex-col justify-center">
+            <h3 class="text-5xl font-bold text-white mb-2">8+</h3>
+            <p class="text-blue-200 text-sm font-medium uppercase tracking-wider">Projects Delivered</p>
+            <div class="mt-4 w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div class="h-full bg-blue-500 w-3/4 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- Values Section -->
-  <section class="values-section">
-    <div class="values-container">
-        <h2 class="values-title">
-          Our Values<span class="values-title-highlighted"></span>
-        </h2>
-      <p class="values-desc">
-        At BranTech, our core values guide everything we do and shape our commitment to excellence.
-      </p>
-      <div class="values-grid">
+  <!-- VALUES SECTION -->
+  <section class="py-24 bg-[#06090F]">
+    <div class="container max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Our Core Values</h2>
+        <div class="h-1 w-20 bg-gradient-to-r from-blue-500 to-green-500 mx-auto rounded-full"></div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
         <!-- Innovation -->
-        <div class="value-card group">
-          <div class="value-card-icon value-card-icon-innovation group-hover:scale-110">
-            <svg class="value-card-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-            </svg>
+        <div
+          class="bg-[#0D121D] p-8 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all duration-300 group hover:-translate-y-2">
+          <div
+            class="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6 text-blue-500 group-hover:bg-blue-500/20 transition-colors">
+            <i class="fas fa-lightbulb text-2xl"></i>
           </div>
-          <h3 class="value-card-title value-card-title-innovation">Innovation</h3>
-          <p class="value-card-desc">
-            We thrive on turning fresh ideas into impactful solutions that shape the future.
+          <h3 class="text-xl font-bold mb-4 text-white">Innovation</h3>
+          <p class="text-gray-400 leading-relaxed">
+            We thrive on turning fresh ideas into impactful solutions that shape the future. Continuous improvement is
+            in our DNA.
           </p>
         </div>
+
         <!-- Integrity -->
-        <div class="value-card group">
-          <div class="value-card-icon value-card-icon-integrity group-hover:scale-110">
-            <svg class="value-card-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+        <div
+          class="bg-[#0D121D] p-8 rounded-2xl border border-white/5 hover:border-green-500/30 transition-all duration-300 group hover:-translate-y-2">
+          <div
+            class="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center mb-6 text-green-500 group-hover:bg-green-500/20 transition-colors">
+            <i class="fas fa-shield-alt text-2xl"></i>
           </div>
-          <h3 class="value-card-title value-card-title-integrity">Integrity</h3>
-          <p class="value-card-desc">
-            We stand by transparency, honesty, and accountability in all our actions.
+          <h3 class="text-xl font-bold mb-4 text-white">Integrity</h3>
+          <p class="text-gray-400 leading-relaxed">
+            We stand by transparency, honesty, and accountability in all our actions. Trust is the foundation of our
+            partnerships.
           </p>
         </div>
+
         <!-- Collaboration -->
-        <div class="value-card group">
-          <div class="value-card-icon value-card-icon-collaboration group-hover:scale-110">
-            <svg class="value-card-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-            </svg>
+        <div
+          class="bg-[#0D121D] p-8 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-all duration-300 group hover:-translate-y-2">
+          <div
+            class="w-14 h-14 rounded-xl bg-purple-500/10 flex items-center justify-center mb-6 text-purple-500 group-hover:bg-purple-500/20 transition-colors">
+            <i class="fas fa-users text-2xl"></i>
           </div>
-          <h3 class="value-card-title value-card-title-collaboration">Collaboration</h3>
-          <p class="value-card-desc">
-            We believe teamwork drives excellence, both within our team and with our clients.
+          <h3 class="text-xl font-bold mb-4 text-white">Collaboration</h3>
+          <p class="text-gray-400 leading-relaxed">
+            We believe teamwork drives excellence. By working together with our clients, we achieve extraordinary
+            results.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Photo Gallery Section -->
-  <section class="photo-gallery-section" style="padding: 5rem 0; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%);">
-    <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
-      <h2 class="team-title" style="text-align: center; margin-bottom: 3rem;">
-        Our <span class="team-title-highlight">Gallery</span>
-      </h2>
-      
-      <!-- First Row - Moving Left -->
-      <div class="gallery-row-wrapper" style="margin-bottom: 2rem; overflow: hidden;">
-        <div class="gallery-row gallery-row-left" style="display: flex; gap: 1.5rem; width: fit-content;">
-          <!-- Duplicate images for seamless loop -->
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+  <!-- GALLERY SECTION -->
+  <section id="gallery-section" class="py-20 bg-[#0D121D] border-t border-white/5 overflow-hidden">
+    <div class="container text-center mb-12">
+      <h2 class="text-3xl font-bold mb-2">Our Moments</h2>
+      <p class="text-gray-400">Capturing the spirit of innovation at TekLora.</p>
+    </div>
+
+    <!-- Scrolling Wrapper -->
+    <div class="relative w-full">
+      <!-- Fade Edges -->
+      <div
+        class="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#0D121D] to-transparent z-10 pointer-events-none">
+      </div>
+      <div
+        class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#0D121D] to-transparent z-10 pointer-events-none">
+      </div>
+
+      <!-- Row 1 Left -->
+      <div class="gallery-marquee mb-6 flex gap-6 w-max animate-scroll-left">
+        <!-- Original Set -->
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <!-- Hover Caption overlay -->
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Leadership Vision</h4>
+            <p class="text-gray-600 text-xs">Driving innovation forward</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Community Workshop</h4>
+            <p class="text-gray-600 text-xs">Sharing knowledge & skills</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Tech Mentorship</h4>
+            <p class="text-gray-600 text-xs">Guiding the next generation</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/3.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/3.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Innovation Hub</h4>
+            <p class="text-gray-600 text-xs">Where ideas come to life</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/4.jpeg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <!-- Duplicates for loop (simplified caption for loop smoothness, or same) -->
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Leadership Vision</h4>
+            <p class="text-gray-600 text-xs">Driving innovation forward</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Community Workshop</h4>
+            <p class="text-gray-600 text-xs">Sharing knowledge & skills</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Tech Mentorship</h4>
+            <p class="text-gray-600 text-xs">Guiding the next generation</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <!-- Duplicate for seamless loop -->
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/5.jpeg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/3.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Innovation Hub</h4>
+            <p class="text-gray-600 text-xs">Where ideas come to life</p>
           </div>
         </div>
       </div>
 
-      <!-- Second Row - Moving Right -->
-      <div class="gallery-row-wrapper" style="overflow: hidden;">
-        <div class="gallery-row gallery-row-right" style="display: flex; gap: 1.5rem; width: fit-content;">
-          <!-- Duplicate images for seamless loop -->
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+      <!-- Row 2 Right -->
+      <div class="gallery-marquee flex gap-6 w-max animate-scroll-right">
+        <!-- Original Set -->
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Strategic Planning</h4>
+            <p class="text-gray-600 text-xs">Building the roadmap</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Development Sprint</h4>
+            <p class="text-gray-600 text-xs">Coding the future</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">System Architecture</h4>
+            <p class="text-gray-600 text-xs">Designing robust foundations</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/4.jpeg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/4.jpeg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Team Building</h4>
+            <p class="text-gray-600 text-xs">Stronger together</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/2.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <!-- Duplicates for loop -->
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Strategic Planning</h4>
+            <p class="text-gray-600 text-xs">Building the roadmap</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/Junior.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Development Sprint</h4>
+            <p class="text-gray-600 text-xs">Coding the future</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/3.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">System Architecture</h4>
+            <p class="text-gray-600 text-xs">Designing robust foundations</p>
           </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/leon pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <!-- Duplicate for seamless loop -->
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/david2.png' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/Mwangi pic.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/nganga 1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div class="gallery-item" style="flex-shrink: 0; width: 280px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-            <img src="{% static 'brand/images/1.jpg' %}" alt="Gallery" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div
+          class="w-72 h-96 rounded-xl overflow-hidden border border-white/10 group relative flex-shrink-0 cursor-pointer">
+          <img src="{% static 'brand/images/4.jpeg' %}" alt="Gallery" loading="lazy"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+          <div
+            class="absolute bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out border-t border-white/20">
+            <h4 class="text-gray-900 font-bold text-sm">Team Building</h4>
+            <p class="text-gray-600 text-xs">Stronger together</p>
           </div>
         </div>
       </div>
     </div>
 
     <style>
-      @keyframes scroll-left {
+      @keyframes scrollLeft {
         0% {
           transform: translateX(0);
         }
+
         100% {
-          transform: translateX(calc(-280px * 8 - 1.5rem * 7));
+          transform: translateX(-50%);
         }
       }
 
-      @keyframes scroll-right {
+      @keyframes scrollRight {
         0% {
-          transform: translateX(calc(-280px * 8 - 1.5rem * 7));
+          transform: translateX(-50%);
         }
+
         100% {
           transform: translateX(0);
         }
       }
 
-      .gallery-row-left {
-        animation: scroll-left 80s linear infinite;
+      .animate-scroll-left {
+        animation: scrollLeft 40s linear infinite;
       }
 
-      .gallery-row-right {
-        animation: scroll-right 80s linear infinite;
+      .animate-scroll-right {
+        animation: scrollRight 40s linear infinite;
       }
 
-      .gallery-item {
-        transition: transform 0.3s ease;
-      }
-
-      .gallery-item:hover {
-        transform: scale(1.05);
-        z-index: 10;
-        position: relative;
-      }
-
-      @media (max-width: 768px) {
-        .gallery-item {
-          width: 200px !important;
-          height: 250px !important;
-        }
-        
-        @keyframes scroll-left-mobile {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(calc(-200px * 8 - 1.5rem * 7));
-          }
-        }
-
-        @keyframes scroll-right-mobile {
-          0% {
-            transform: translateX(calc(-200px * 8 - 1.5rem * 7));
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
-
-        .gallery-row-left {
-          animation: scroll-left-mobile 60s linear infinite;
-        }
-
-        .gallery-row-right {
-          animation: scroll-right-mobile 60s linear infinite;
-        }
+      /* Pause on hover optional */
+      .gallery-marquee:hover {
+        animation-play-state: paused;
       }
     </style>
   </section>
 
-
-
   <!-- Footer -->
-  <div id="footer"></div>
+  {% include 'brand/footer.html' %}
 
   <!-- Chat Assistant -->
   <div id="chatAssistant" class="chat-assistant">
     <!-- Floating Chat Button -->
     <div id="chatToggle" class="chat-toggle">
       <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
       </svg>
       <div class="chat-notification" id="chatNotification" style="display: none;"></div>
     </div>
@@ -336,35 +629,35 @@
         <div class="chat-header-info">
           <div class="chat-avatar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
           <div class="chat-header-text">
-            <h3>BranTech Assistant</h3>
+            <h3>TekLora Assistant</h3>
             <p>How can I help you today?</p>
           </div>
         </div>
         <button id="chatClose" class="chat-close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       </div>
 
       <!-- Chat Messages -->
-      <div id="chatMessages" class="chat-messages">
+      <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
         <div class="chat-welcome">
           <div class="welcome-message">
             <div class="welcome-avatar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
             <div class="welcome-text">
-              <p>Hello! I'm your BranTech Solutions assistant. I can help you with:</p>
+              <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
               <ul>
                 <li>Our services and solutions</li>
                 <li>Project inquiries</li>
@@ -383,8 +676,8 @@
           <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
           <button id="chatSend" class="chat-send" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22,2 15,22 11,13 2,9 22,2" />
             </svg>
           </button>
         </div>
@@ -394,13 +687,15 @@
             <span></span>
             <span></span>
           </div>
-          <span>BranTech Assistant is typing...</span>
+          <span>TekLora Assistant is typing...</span>
         </div>
       </div>
     </div>
   </div>
-{% include 'brand/footer.html' %}
+
   <script src="{% static 'brand/js/components.js' %}"></script>
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+
 </body>
+
 </html>

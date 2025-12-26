@@ -11,7 +11,9 @@ from django.db import IntegrityError
 import json
 from appointments.models import Appointment
 
-class AppointmentsListView(ListView):
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
+class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Appointment
     template_name = "appointments/list.html"
     context_object_name = "appointments"
@@ -21,6 +23,10 @@ class AppointmentsListView(ListView):
     filter_fields = ["status"]
     list_display = ["title", "description", "date", "time", "estimated_duration", "status"]
     list_filter = ["status"]
+    login_url = '/login/'
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
 
 @csrf_exempt
 @require_http_methods(["POST"])

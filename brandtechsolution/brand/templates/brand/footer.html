@@ -1,59 +1,64 @@
 {% load static %}
 <!-- footer.html -->
 <footer class="bg-gray-900 text-white pt-12 pb-0 px-6">
-    <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
-      <div>
-        <div class="flex items-center space-x-3 mb-4">
-          <img src="{% static 'brand/images/logo.jpg' %}" alt="Logo" class="h-10 w-10 rounded-full" />
-          <span class="text-xl font-bold">BranTech</span>
-        </div>
-        <p class="text-gray-400">Innovative technology solutions for modern businesses.</p>
-        <div class="flex space-x-4 mt-4">
-          <a href="https://www.linkedin.com/company/brantech-solutions-ke/" class="text-gray-400 hover:text-white transition">
-            <i class="fab fa-linkedin-in text-xl"></i>
-          </a>
-          <a href="#" class="text-gray-400 hover:text-white transition">
-            <i class="fab fa-facebook-f text-xl"></i>
-          </a>
-          <a href="#" class="text-gray-400 hover:text-white transition">
-            <i class="fab fa-tiktok text-xl"></i>
-          </a>
-          <a href="https://www.instagram.com/brantech_solutions" target="_blank" class="text-gray-400 hover:text-white transition">
-            <i class="fab fa-instagram text-xl"></i>
-          </a>
-        </div>
+  <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
+    <div>
+      <div class="flex items-center space-x-3 mb-4">
+        <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="h-10 w-10 rounded-full" />
+        <span class="text-xl font-bold">Teklora</span>
       </div>
-      <div>
-        <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
-        <ul class="space-y-2">
-          <li><a href="{% url 'index' %}" class="text-gray-400 hover:text-white transition">Home</a></li>
-          <li><a href="{% url 'about' %}" class="text-gray-400 hover:text-white transition">About Us</a></li>
-          <li><a href="{% url 'services' %}" class="text-gray-400 hover:text-white transition">Services</a></li>
-          <li><a href="{% url 'contacts' %}" class="text-gray-400 hover:text-white transition">Contact</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="text-lg font-semibold mb-4">Services</h4>
-        <ul class="space-y-2">
-          <li><a href="#" class="text-gray-400 hover:text-white transition">Web Design & system Development</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition">Mobile application Development</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition">Digital Strategy</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition">Branding</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="text-lg font-semibold mb-4">Contact</h4>
-        <address class="text-gray-400 not-italic">
-          <p></p>
-          <p></p>
-          <p class="mt-2">info@brantechsolutions.co</p>
-          <p>+254704894220</p>
-          <p>+254759191326</p>
-        </address>
+      <p class="text-gray-400">Innovative technology solutions for modern businesses.</p>
+      <div class="flex space-x-4 mt-4">
+        <a href="https://www.linkedin.com/company/brantech-solutions-ke/"
+          class="text-gray-400 hover:text-white transition">
+          <i class="fab fa-linkedin-in text-xl"></i>
+        </a>
+        <a href="#" class="text-gray-400 hover:text-white transition">
+          <i class="fab fa-facebook-f text-xl"></i>
+        </a>
+        <a href="#" class="text-gray-400 hover:text-white transition">
+          <i class="fab fa-tiktok text-xl"></i>
+        </a>
+        <a href="https://www.instagram.com/brantech_solutions" target="_blank"
+          class="text-gray-400 hover:text-white transition">
+          <i class="fab fa-instagram text-xl"></i>
+        </a>
       </div>
     </div>
-    <div class="max-w-7xl mx-auto pt-8 mt-8 border-t border-gray-800 text-center text-gray-400 pb-0 mb-0">
-      <p class="mb-0">© 2025 BranTech Solutions. All rights reserved.</p>
+    <div>
+      <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+      <ul class="space-y-2">
+        <li><a href="{% url 'index' %}" class="text-gray-400 hover:text-white transition">Home</a></li>
+        <li><a href="{% url 'about' %}" class="text-gray-400 hover:text-white transition">About Us</a></li>
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Services</a></li>
+        <li><a href="{% url 'contacts' %}" class="text-gray-400 hover:text-white transition">Contact</a></li>
+      </ul>
     </div>
-  </footer>
-  
+    <div>
+      <h4 class="text-lg font-semibold mb-4">Services</h4>
+      <ul class="space-y-2">
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Web Design & system
+            Development</a></li>
+        <li><a href="{% url 'index' %}#services#" class="text-gray-400 hover:text-white transition">Mobile application
+            Development</a></li>
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Digital Strategy</a>
+        </li>
+        <li><a href="{% url 'index' %}#services" class="text-gray-400 hover:text-white transition">Cloud computing</a>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-lg font-semibold mb-4">Contact</h4>
+      <address class="text-gray-400 not-italic">
+        <p></p>
+        <p></p>
+        <p class="mt-2">info@brantechsolutions.co</p>
+        <p>+254 704 894220</p>
+
+      </address>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto pt-8 mt-8 border-t border-gray-800 text-center text-gray-400 pb-0 mb-0">
+    <p class="mb-0">© 2025 Teklora Solutions. All rights reserved.</p>
+  </div>
+</footer>

@@ -2,27 +2,30 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
-    --brantech-blue: #1e3a8a;
-    --brantech-green: #10b981;
+    --brantech-blue: #007AFF;
+    --brantech-green: #00FF94;
     --brantech-gradient: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
-    --text-dark: #1f2937;
-    --text-light: #6b7280;
-    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    --text-dark: #FFFFFF;
+    --text-light: #94A3B8;
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
     --transition: all 0.3s ease;
   }
 
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
 
   /* Modern Header (fragment-scoped) */
   .modern-header {
     width: 100%;
     margin: 0 0 24px 0;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(6, 9, 15, 0.95);
+    /* Dark Background */
     backdrop-filter: blur(10px);
     box-shadow: var(--shadow-lg);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -33,55 +36,213 @@
     right: 0;
     z-index: 1000;
   }
-  .modern-header.scrolled { padding: 0.8rem 1.25rem; box-shadow: var(--shadow-md); }
+
+  .modern-header.scrolled {
+    padding: 0.8rem 1.25rem;
+    box-shadow: var(--shadow-md);
+  }
 
   /* Logo */
-  .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 4px 8px; border-radius: 12px; transition: var(--transition); }
-  .logo-container:hover { background: rgba(30, 58, 138, 0.05); }
-  .logo { height: 42px; width: 42px; object-fit: contain; border-radius: 10px; }
-  .brand { font-weight: 700; font-size: 1.5rem; background: var(--brantech-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 12px;
+    transition: var(--transition);
+  }
+
+  .logo-container:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .logo {
+    height: 42px;
+    width: 42px;
+    object-fit: contain;
+    border-radius: 10px;
+  }
+
+  .brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    background: var(--brantech-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.5px;
+  }
 
   /* Ticker between logo and nav (desktop only) */
-  .header-ticker { display: none; flex: 1 1 auto; overflow: hidden; padding: 0 12px; margin-left: 24px; }
-  .ticker-track { display: inline-block; white-space: nowrap; color: var(--text-light); font-weight: 600; animation: ticker-scroll 18s linear infinite; }
-  .ticker-track span { margin-right: 32px; }
-  @keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .header-ticker {
+    display: none;
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 0 12px;
+    margin-left: 24px;
+  }
+
+  .ticker-track {
+    display: inline-block;
+    white-space: nowrap;
+    color: var(--text-light);
+    font-weight: 600;
+    animation: ticker-scroll 18s linear infinite;
+  }
+
+  .ticker-track span {
+    margin-right: 32px;
+  }
+
+  @keyframes ticker-scroll {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
 
   /* Desktop Nav */
-  .nav-links { display: flex; align-items: center; gap: 0.9rem; }
-  .nav-links a { font-size: 1rem; font-weight: 600; text-decoration: none; color: var(--text-light); padding: 10px 20px; border-radius: 12px; transition: var(--transition); position: relative; display: flex; align-items: center; gap: 6px; }
-  .nav-links a:first-child { margin-left: 8px; }
-  .nav-links a:hover { color: var(--brantech-blue); background: rgba(30, 58, 138, 0.08); }
-  .nav-links a.active { color: #fff; background: var(--brantech-gradient); box-shadow: 0 4px 12px rgba(30,58,138,0.2); }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .nav-links a {
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-light);
+    padding: 10px 20px;
+    border-radius: 12px;
+    transition: var(--transition);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-links a:first-child {
+    margin-left: 8px;
+  }
+
+  .nav-links a:hover {
+    color: var(--brantech-blue);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-links a.active {
+    color: #fff;
+    background: var(--brantech-gradient);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  }
 
   /* Mobile Menu Button */
-  .menu-toggle { display: none; background: rgba(30, 58, 138, 0.1); color: var(--brantech-blue); border: none; cursor: pointer; padding: 8px; border-radius: 10px; }
+  .menu-toggle {
+    display: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--brantech-blue);
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 10px;
+  }
 
   /* Mobile Menu */
-  .mobile-menu { display: none; position: fixed; top: 80px; left: 16px; right: 16px; background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: var(--shadow-lg); border: 1px solid rgba(255,255,255,0.2); padding: 16px; z-index: 999; opacity: 0; transform: translateY(-10px); transition: var(--transition); }
-  .mobile-menu.open { opacity: 1; transform: translateY(0); }
-  .mobile-menu a { display: flex; align-items: center; padding: 14px 16px; border-radius: 12px; text-decoration: none; font-weight: 500; color: var(--text-light); font-size: 1rem; gap: 12px; }
-  .mobile-menu a:hover, .mobile-menu a.active { background: var(--brantech-gradient); color: #fff; }
+  .mobile-menu {
+    display: none;
+    position: fixed;
+    top: 80px;
+    left: 16px;
+    right: 16px;
+    background: rgba(6, 9, 15, 0.98);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: var(--transition);
+  }
+
+  .mobile-menu.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .mobile-menu a {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+    color: var(--text-light);
+    font-size: 1rem;
+    gap: 12px;
+  }
+
+  .mobile-menu a:hover,
+  .mobile-menu a.active {
+    background: var(--brantech-gradient);
+    color: #fff;
+  }
 
   /* Responsive */
-  @media (min-width: 1024px) { .header-ticker { display: block; } }
+  @media (min-width: 1024px) {
+    .header-ticker {
+      display: block;
+    }
+  }
+
   @media (max-width: 768px) {
-    .modern-header { padding: 0.7rem 1rem; border-radius: 0; width: 100%; margin: 0; }
-    .nav-links { display: none; }
-    .menu-toggle { display: block; margin-left: auto; }
-    .mobile-menu { display: block; }
-    .brand { font-size: 1.3rem; }
-    .logo { height: 36px; width: 36px; }
+    .modern-header {
+      padding: 0.7rem 1rem;
+      border-radius: 0;
+      width: 100%;
+      margin: 0;
+    }
+
+    .nav-links {
+      display: none;
+    }
+
+    .menu-toggle {
+      display: block;
+      margin-left: auto;
+    }
+
+    .mobile-menu {
+      display: block;
+    }
+
+    .brand {
+      font-size: 1.3rem;
+    }
+
+    .logo {
+      height: 36px;
+      width: 36px;
+    }
   }
 </style>
 
 
 <nav class="modern-header" id="modernHeader">
-    <div class="logo-container" onclick="window.location.href='{% url "index" %}'">
-
-    <img src="{% static 'brand/images/logo.jpg' %}" alt="BranTech Logo" class="logo">
-    <span class="brand">BranTech</span>
-  </div>
+  <a href="{% url 'index' %}" class="logo-container" style="text-decoration: none; color: inherit;">
+    <img src="{% static 'brand/images/logo.png' %}" alt="BranTech Logo" class="logo">
+    <span class="brand">Teklora</span>
+  </a>
 
   <div class="header-ticker" aria-hidden="true">
     <div class="ticker-track">
@@ -101,42 +262,40 @@
   </div>
 
   <div class="nav-links">
-    <a href="{% url 'index' %}" data-page="home"><i class="fas fa-home"></i><span>Home</span></a>
-    <a href="{% url 'about' %}" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></a>
-    <a href="{% url 'services' %}" data-page="services"><i class="fas fa-cogs"></i><span>Services</span></a>
-    <a href="{% url 'blog' %}" data-page="blog"><i class="fas fa-blog"></i><span>Blog</span></a>
-    <a href="{% url 'events' %}" data-page="events"><i class="fas fa-calendar-alt"></i><span>Events</span></a>
-    <a href="{% url 'projects' %}" data-page="projects"><i class="fas fa-project-diagram"></i><span>Projects</span></a>
-    <a href="{% url 'faq' %}" data-page="faq"><i class="fas fa-question-circle"></i><span>FAQ</span></a>
-    <a href="{% url 'contacts' %}" data-page="contact"><i class="fas fa-envelope"></i><span>Contact</span></a>
-    {% if user.is_authenticated %}
-    <a href="{% url 'logout' %}" data-page="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
-    {% else %}
-    <a href="{% url 'login' %}" data-page="login"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
-    {% endif %}
+    <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i
+        class="fas fa-home"></i><span>Home</span></a>
+    <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"><i
+        class="fas fa-info-circle"></i><span>About</span></a>
+    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}"><i
+        class="fas fa-blog"></i><span>Blog</span></a>
+    <a href="{% url 'projects' %}" class="{% if request.resolver_match.url_name == 'projects' %}active{% endif %}"><i
+        class="fas fa-project-diagram"></i><span>Projects</span></a>
+    <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}"><i
+        class="fas fa-question-circle"></i><span>FAQ</span></a>
+    <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
+        class="fas fa-envelope"></i><span>Contact</span></a>
   </div>
 
   <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
 
   <div class="mobile-menu" id="mobileMenu">
-    <a href="{% url 'index' %}" data-page="home"><i class="fas fa-home"></i>Home</a>
-    <a href="{% url 'about' %}" data-page="about"><i class="fas fa-info-circle"></i>About</a>
-    <a href="{% url 'services' %}" data-page="services"><i class="fas fa-cogs"></i>Services</a>
-    <a href="{% url 'blog' %}" data-page="blog"><i class="fas fa-blog"></i>Blog</a>
-    <a href="{% url 'events' %}" data-page="events"><i class="fas fa-calendar-alt"></i>Events</a>
-    <a href="{% url 'projects' %}" data-page="projects"><i class="fas fa-project-diagram"></i>Projects</a>
-    <a href="{% url 'faq' %}" data-page="faq"><i class="fas fa-question-circle"></i>FAQ</a>
-    <a href="{% url 'contacts' %}" data-page="contact"><i class="fas fa-envelope"></i>Contact</a>
-    {% if user.is_authenticated %}
-    <a href="{% url 'logout' %}" data-page="logout"><i class="fas fa-sign-out-alt"></i>Logout</a>
-    {% else %}
-    <a href="{% url 'login' %}" data-page="login"><i class="fas fa-sign-in-alt"></i>Login</a>
-    {% endif %}
+    <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i
+        class="fas fa-home"></i>Home</a>
+    <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"><i
+        class="fas fa-info-circle"></i>About</a>
+    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}"><i
+        class="fas fa-blog"></i>Blog</a>
+    <a href="{% url 'projects' %}" class="{% if request.resolver_match.url_name == 'projects' %}active{% endif %}"><i
+        class="fas fa-project-diagram"></i>Projects</a>
+    <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}"><i
+        class="fas fa-question-circle"></i>FAQ</a>
+    <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
+        class="fas fa-envelope"></i>Contact</a>
   </div>
 </nav>
 
 <script>
-  (function initHeader(){
+  (function initHeader() {
     const modernHeader = document.getElementById('modernHeader');
     const menuToggle = document.getElementById('menuToggle');
     const mobileMenu = document.getElementById('mobileMenu');
@@ -150,31 +309,25 @@
     // Mobile menu toggle
     if (menuToggle && mobileMenu && !menuToggle._btBound) {
       menuToggle._btBound = true;
-      menuToggle.addEventListener('click', function(e){
+      menuToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         mobileMenu.classList.toggle('open');
         menuToggle.innerHTML = mobileMenu.classList.contains('open') ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
       });
-      document.addEventListener('click', function(e){
+      document.addEventListener('click', function (e) {
         if (!mobileMenu.contains(e.target) && !menuToggle.contains(e.target)) {
           mobileMenu.classList.remove('open');
           menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
         }
       });
-      mobileMenu.querySelectorAll('a').forEach(function(link){
-        link.addEventListener('click', function(){
+      mobileMenu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
           mobileMenu.classList.remove('open');
           menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
         });
       });
     }
 
-    // Active page highlight
-    const currentPage = (window.location.pathname.split('/').pop() || 'index').replace('.html','');
-    const pageMap = { '': 'home', 'about': 'about', 'services': 'services', 'blog': 'blog', 'events': 'events', 'projects': 'projects', 'faq': 'faq', 'contacts': 'contact' };
-    const activePage = pageMap[currentPage] || 'home';
-    document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(function(link){
-      if (link.dataset.page === activePage) link.classList.add('active');
-    });
+
   })();
 </script>
