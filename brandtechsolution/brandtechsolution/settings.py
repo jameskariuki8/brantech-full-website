@@ -34,8 +34,8 @@ else:
 
 # Production hosts
 PRODUCTION_ALLOWED_HOSTS = [
-    "brantechsolutions.co",
-    "www.brantechsolutions.co",
+    "teklora.co.ke",
+    "www.teklora.co.ke",
     "16.171.7.205",
     "127.0.0.1",
     "localhost",
