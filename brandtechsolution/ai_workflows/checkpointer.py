@@ -30,6 +30,7 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         super().__init__()
         # required default thread_id (used if config doesn't provide one)
         self.thread_id = thread_id
+        logger.debug(f"[DjangoCheckpointer] Initialized with thread_id={thread_id}")
     
     def _to_jsonable(self, obj: Any) -> Any:
         """Convert common LangGraph/Django objects (e.g., ChainMap) to JSON-safe structures."""
@@ -157,10 +158,15 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         Returns:
             CheckpointTuple with saved checkpoint data
         """
+        thread_id = self._get_thread_id(config)
+        logger.info(f"[DjangoCheckpointer] Saving checkpoint for thread_id={thread_id}")
+        
         thread = self._get_or_create_thread(config)
+        logger.debug(f"[DjangoCheckpointer] Thread: id={thread.id}, thread_id={thread.thread_id}, user_id={thread.user_id}")
         
         # Generate checkpoint ID
         checkpoint_id = self._extract_checkpoint_id(checkpoint, config)
+        logger.debug(f"[DjangoCheckpointer] Checkpoint ID: {checkpoint_id}")
         
         # Get parent checkpoint if exists
         parent_checkpoint = None
@@ -171,20 +177,28 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                     checkpoint_id=parent_id,
                     thread=thread
                 )
+                logger.debug(f"[DjangoCheckpointer] Found parent checkpoint: {parent_id}")
             except ConversationCheckpoint.DoesNotExist:
-                pass
+                logger.debug(f"[DjangoCheckpointer] Parent checkpoint {parent_id} not found")
         
         # Determine version
         version = self._get_version(checkpoint)
         if new_versions:
             version = max(new_versions.values()) if new_versions.values() else version
+        logger.debug(f"[DjangoCheckpointer] Checkpoint version: {version}")
         
         # JSON-safe checkpoint and metadata
         safe_checkpoint_state = self._to_jsonable(checkpoint)
         safe_checkpoint_metadata = self._to_jsonable(metadata)
+        
+        # Log message count if available
+        if isinstance(safe_checkpoint_state, dict):
+            channel_values = safe_checkpoint_state.get("channel_values", {})
+            messages = channel_values.get("messages", [])
+            logger.info(f"[DjangoCheckpointer] Saving checkpoint with {len(messages)} messages")
 
         # Create checkpoint record
-        checkpoint_obj, _ = ConversationCheckpoint.objects.update_or_create(
+        checkpoint_obj, created = ConversationCheckpoint.objects.update_or_create(
             thread=thread,
             checkpoint_id=checkpoint_id,
             defaults={
@@ -194,6 +208,8 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                 "version": version,
             },
         )
+        
+        logger.info(f"[DjangoCheckpointer] Checkpoint {'created' if created else 'updated'}: id={checkpoint_obj.id}, checkpoint_id={checkpoint_id}")
         
         # Update thread updated_at
         thread.updated_at = timezone.now()
@@ -253,12 +269,16 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         
         try:
             thread_id = self._get_thread_id(config)
-        except ValueError:
+            logger.debug(f"[DjangoCheckpointer] Getting checkpoint for thread_id={thread_id}, checkpoint_id={checkpoint_id}")
+        except ValueError as e:
+            logger.warning(f"[DjangoCheckpointer] No thread_id in config: {e}")
             return None
         
         try:
             thread = ConversationThread.objects.get(thread_id=thread_id)
+            logger.debug(f"[DjangoCheckpointer] Found thread: id={thread.id}, user_id={thread.user_id}")
         except ConversationThread.DoesNotExist:
+            logger.info(f"[DjangoCheckpointer] Thread not found: thread_id={thread_id}")
             return None
         
         # Get specific checkpoint or latest
@@ -268,7 +288,9 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                     thread=thread,
                     checkpoint_id=checkpoint_id
                 )
+                logger.debug(f"[DjangoCheckpointer] Found specific checkpoint: {checkpoint_id}")
             except ConversationCheckpoint.DoesNotExist:
+                logger.info(f"[DjangoCheckpointer] Checkpoint not found: checkpoint_id={checkpoint_id}")
                 return None
         else:
             checkpoint_obj = ConversationCheckpoint.objects.filter(
@@ -276,7 +298,15 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             ).order_by('-created_at').first()
             
             if not checkpoint_obj:
+                logger.info(f"[DjangoCheckpointer] No checkpoints found for thread_id={thread_id}")
                 return None
+            logger.debug(f"[DjangoCheckpointer] Found latest checkpoint: {checkpoint_obj.checkpoint_id}")
+        
+        # Log message count if available
+        if isinstance(checkpoint_obj.state, dict):
+            channel_values = checkpoint_obj.state.get("channel_values", {})
+            messages = channel_values.get("messages", [])
+            logger.info(f"[DjangoCheckpointer] Retrieved checkpoint with {len(messages)} messages")
         
         return CheckpointTuple(
             config=config,

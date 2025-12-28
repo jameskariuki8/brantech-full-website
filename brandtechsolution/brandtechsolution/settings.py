@@ -21,30 +21,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # export EMAIL_HOST_USER="your-email@gmail.com"
 # export EMAIL_HOST_PASSWORD="your-app-password"
 
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY",
-    "django-insecure-qle-bmx+6%6qe81&hck$q%+%8($+n4z9-4d7=!4v!0ce75-vjv"
-)
+SECRET_KEY = config.secret_key
 
-# Auto-detect environment: Windows (nt) = Local Dev, Linux = Production
-if os.name == 'nt':
-    DEBUG = True
-else:
-    DEBUG = False
+DEBUG = config.debug
 
-# Production hosts
-PRODUCTION_ALLOWED_HOSTS = [
-    "brantechsolutions.co",
-    "www.brantechsolutions.co",
-    "16.171.7.205",
-    "127.0.0.1",
-    "localhost",
-]
+# # Production hosts
+# PRODUCTION_ALLOWED_HOSTS = [
+#     "brantechsolutions.co",
+#     "www.brantechsolutions.co",
+#     "16.171.7.205",
+#     "127.0.0.1",
+#     "localhost",
+# ]
 
-# Development hosts
-DEVELOPMENT_ALLOWED_HOSTS = ["*"]
+# # Development hosts
+# DEVELOPMENT_ALLOWED_HOSTS = ["*"]
 
-ALLOWED_HOSTS = PRODUCTION_ALLOWED_HOSTS if not DEBUG else DEVELOPMENT_ALLOWED_HOSTS
+ALLOWED_HOSTS = config.allowed_hosts
 
 # ============================================================
 # APPLICATIONS
@@ -134,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ============================================================
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 USE_I18N = True
 USE_TZ = True
 
@@ -165,14 +158,13 @@ MEDIA_URL = '/media/'
 # ============================================================
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST = config.email_host
+EMAIL_PORT = config.email_port
+EMAIL_USE_TLS = config.email_use_tls
+EMAIL_HOST_USER = config.email_host_user
+EMAIL_HOST_PASSWORD = config.email_host_password
 
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = config.email_host_user
 
 # ============================================================
 # AUTHENTICATION REDIRECTS
@@ -181,6 +173,57 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# ============================================================
+# LOGGING CONFIGURATION
+# ============================================================
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'ai_workflows': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'langchain': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'langgraph': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # ============================================================
 # DEFAULT PRIMARY KEY FIELD
