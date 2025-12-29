@@ -1,10 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.models import User
 
 # Create your views here.
+
+def is_admin(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 def index(request):
     """Home page view"""
@@ -27,11 +30,6 @@ def faq(request):
 def contacts(request):
     """Contact page view"""
     return render(request, 'brand/contacts.html')
-
-from django.contrib.auth.decorators import user_passes_test
-
-def is_admin(user):
-    return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 @login_required(login_url='/login/')
 @user_passes_test(is_admin, login_url='/login/')
