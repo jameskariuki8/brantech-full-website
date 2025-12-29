@@ -22,29 +22,71 @@ logger = logging.getLogger(__name__)
 
 
 def _set_external_environment():
-    """Expose select configuration values to libraries that read from os.environ."""
+    """
+    Expose select configuration values to libraries that read from os.environ.
+    
+    Some libraries (like LangChain/LangSmith) read directly from environment variables,
+    so we need to set them even though we use config.py as our central source.
+    """
     env_overrides = {
         'GOOGLE_API_KEY': config.google_api_key,
-        'LANGSMITH_TRACING': config.langsmith_tracing,
-        'LANGSMITH_API_KEY': config.langsmith_api_key,
+        # LANGSMITH_TRACING must be lowercase string "true" or "false", not boolean
+        'LANGSMITH_TRACING': 'true' if config.langsmith_tracing else 'false',
         'LANGSMITH_PROJECT': config.langsmith_project,
     }
+    
+    # Only set LANGSMITH_API_KEY if it's provided (it's optional)
+    if config.langsmith_api_key:
+        env_overrides['LANGSMITH_API_KEY'] = config.langsmith_api_key
+    
+    # Set LANGSMITH_ENDPOINT if different from default
+    if config.langsmith_endpoint != "https://api.smith.langchain.com":
+        env_overrides['LANGSMITH_ENDPOINT'] = config.langsmith_endpoint
+    
     for key, value in env_overrides.items():
         if value is not None:
             os.environ[key] = str(value)
+            # Log LangSmith config for debugging (mask API key)
+            if key == 'LANGSMITH_API_KEY':
+                masked_key = f"{value[:8]}...{value[-4:]}" if len(str(value)) > 12 else "***"
+                logger.debug(f"[LangSmith] {key}={masked_key}")
+            else:
+                logger.debug(f"[LangSmith] {key}={value}")
 
 
 _set_external_environment()
 
+# Verify LangSmith configuration after setting environment variables
+if config.langsmith_tracing:
+    # Verify environment variables were set correctly (for external libraries)
+    langsmith_tracing_env = os.environ.get('LANGSMITH_TRACING', '').lower()
+    
+    if langsmith_tracing_env == 'true' and config.langsmith_api_key:
+        logger.info(f"[LangSmith] Tracing enabled for project: {config.langsmith_project}")
+    else:
+        logger.warning(
+            f"[LangSmith] Tracing configured but may not work: "
+            f"LANGSMITH_TRACING={langsmith_tracing_env}, "
+            f"LANGSMITH_API_KEY={'set' if config.langsmith_api_key else 'NOT SET'}, "
+            f"LANGSMITH_PROJECT={config.langsmith_project}"
+        )
+
 
 # System prompt following official docs pattern
 SYSTEM_PROMPT = """You are a helpful assistant for BranTech Solutions, a web development and digital innovation company.
+
+## IMPORTANT: Conversation Memory
+
+You HAVE conversation memory and can remember previous interactions in this conversation thread. When users ask about past conversations or reference something discussed earlier, you should acknowledge and reference those previous exchanges. You can see the full conversation history, so use it to provide contextually relevant responses.
+
+## Your Capabilities
 
 You can help users with:
 - Information about our services and solutions
 - Details about our blog posts and articles
 - Information about our completed projects
 - General questions about web development and technology
+- Remembering and referencing previous conversation topics
 
 ## Available Tools
 
@@ -56,8 +98,10 @@ You have access to these tools:
 
 - Be friendly, professional, and helpful
 - Use tools when users ask about specific blog content or projects
+- Reference previous conversation history when relevant
 - If you don't know something, say so and offer to help find the information
 - Keep responses concise but informative
+- When users ask if you remember something, check the conversation history and respond accordingly
 """
 
 
@@ -103,6 +147,8 @@ class ChatAssistant:
         self.thread_id = thread_id
         self.user_id = user_id
         
+        logger.info(f"[ChatAssistant] Initializing with thread_id={thread_id}, user_id={user_id}, use_tools={use_tools}")
+        
         # Build config following official docs pattern
         self.config = {
             "configurable": {"thread_id": thread_id},
@@ -111,12 +157,17 @@ class ChatAssistant:
         if user_id:
             self.config["user_id"] = user_id
         
+        logger.debug(f"[ChatAssistant] Config: {self.config}")
+        
         # Initialize components
         self.checkpointer = DjangoCheckpointer(thread_id)
+        logger.debug(f"[ChatAssistant] Checkpointer initialized for thread_id={thread_id}")
+        
         self.model = ChatGoogleGenerativeAI(
             model=config.gemini_chat_model,
             google_api_key=config.google_api_key,
         )
+        logger.debug(f"[ChatAssistant] Model initialized: {config.gemini_chat_model}")
         
         # Collect tools
         self.tools = []
@@ -127,11 +178,15 @@ class ChatAssistant:
             if self.user_id:
                 self.tools.append(create_user_info_tool(self.user_id))
         
+        logger.info(f"[ChatAssistant] Tools configured: {len(self.tools)} tools")
+        
         # Create the agent
         self._create_agent()
 
     def _create_agent(self):
         """Create the LangChain agent with middleware."""
+        
+        logger.debug(f"[ChatAssistant] Creating agent with checkpointer={type(self.checkpointer).__name__}")
         
         # Message trimming middleware following WozapAuto pattern
         @wrap_model_call
@@ -142,8 +197,10 @@ class ChatAssistant:
             """Trim message history to fit within token limit before model call."""
             messages = request.messages
             if not messages:
+                logger.debug("[ChatAssistant] No messages to trim")
                 return handler(request)
 
+            logger.debug(f"[ChatAssistant] Message trimming: {len(messages)} messages before trimming")
             trimmed = trim_messages(
                 messages=messages,
                 max_tokens=self.MAX_TOKENS_FOR_TRIMMING,
@@ -157,11 +214,12 @@ class ChatAssistant:
 
             if len(trimmed) != len(messages):
                 logger.info(
-                    f"Trimmed messages from {len(messages)} to {len(trimmed)} for model call"
+                    f"[ChatAssistant] Trimmed messages from {len(messages)} to {len(trimmed)} for model call"
                 )
                 modified_request = request.override(messages=trimmed)
                 return handler(modified_request)
             
+            logger.debug(f"[ChatAssistant] No trimming needed, {len(messages)} messages within limit")
             return handler(request)
 
         # Create agent following official docs pattern
@@ -172,6 +230,7 @@ class ChatAssistant:
             middleware=[trim_message_history],
             checkpointer=self.checkpointer,
         )
+        logger.info(f"[ChatAssistant] Agent created successfully with checkpointer")
 
     def send_message(self, message: str) -> AssistantResponse:
         """
@@ -184,22 +243,46 @@ class ChatAssistant:
             AssistantResponse with response text and suggested questions
         """
         try:
+            logger.info(f"[ChatAssistant] Sending message to thread_id={self.thread_id}, user_id={self.user_id}")
+            logger.debug(f"[ChatAssistant] Message content: {message[:100]}...")
+            logger.debug(f"[ChatAssistant] Config being used: {self.config}")
+            
+            # Check for existing checkpoint/memory before sending
+            existing_checkpoint = self.checkpointer.get_tuple(self.config)
+            if existing_checkpoint:
+                messages = existing_checkpoint.checkpoint.get("channel_values", {}).get("messages", [])
+                logger.info(f"[ChatAssistant] Found existing checkpoint with {len(messages)} messages in history")
+                for i, msg in enumerate(messages[-5:]):  # Log last 5 messages
+                    msg_type = "unknown"
+                    msg_content = str(msg)[:50]
+                    if isinstance(msg, dict):
+                        msg_type = msg.get("type", "unknown")
+                        msg_content = str(msg.get("content", ""))[:50]
+                    logger.debug(f"[ChatAssistant] History message {i}: type={msg_type}, content={msg_content}...")
+            else:
+                logger.info(f"[ChatAssistant] No existing checkpoint found - starting new conversation")
+            
             output = self.app.invoke(
                 {"messages": [HumanMessage(content=message)]},
                 self.config,
             )
             
+            logger.debug(f"[ChatAssistant] Agent invoke completed, output keys: {output.keys() if isinstance(output, dict) else 'not a dict'}")
+            
             # Extract response from messages
             messages = output.get("messages", [])
+            logger.debug(f"[ChatAssistant] Output contains {len(messages)} messages")
             content = ""
             if messages:
                 last = messages[-1]
+                logger.debug(f"[ChatAssistant] Last message type: {type(last).__name__}")
                 if hasattr(last, "content"):
                     content = last.content
                 elif isinstance(last, dict):
                     content = last.get("content", str(last))
                 else:
                     content = str(last)
+                logger.debug(f"[ChatAssistant] Extracted content length: {len(str(content))}")
             
             # Handle list of content objects (Gemini raw format)
             if isinstance(content, list):
@@ -216,13 +299,23 @@ class ChatAssistant:
                     # Fallback for unknown list structure
                     content = str(content)
             
+            logger.info(f"[ChatAssistant] Successfully generated response (length: {len(str(content))})")
+            
+            # Verify checkpoint was saved
+            saved_checkpoint = self.checkpointer.get_tuple(self.config)
+            if saved_checkpoint:
+                saved_messages = saved_checkpoint.checkpoint.get("channel_values", {}).get("messages", [])
+                logger.info(f"[ChatAssistant] Verified checkpoint saved with {len(saved_messages)} messages")
+            else:
+                logger.warning(f"[ChatAssistant] WARNING: Checkpoint not found after message send!")
+            
             return {
                 "response": content,
                 "suggested_questions": [],
             }
             
         except Exception as e:
-            logger.error(f"Error in send_message: {e}", exc_info=True)
+            logger.error(f"[ChatAssistant] Error in send_message: {e}", exc_info=True)
             return {
                 "response": "I apologize, but I encountered an error processing your message. Please try again.",
                 "suggested_questions": [],
@@ -282,11 +375,17 @@ class ChatAssistant:
             List of message dicts with role and content
         """
         try:
+            logger.info(f"[ChatAssistant] Getting history for thread_id={self.thread_id}, user_id={self.user_id}")
+            logger.debug(f"[ChatAssistant] Using config: {self.config}")
+            
             checkpoint = self.checkpointer.get_tuple(self.config)
             if not checkpoint:
+                logger.info(f"[ChatAssistant] No checkpoint found for thread_id={self.thread_id}")
                 return []
             
+            logger.debug(f"[ChatAssistant] Checkpoint found, keys: {checkpoint.checkpoint.keys() if isinstance(checkpoint.checkpoint, dict) else 'not a dict'}")
             messages = checkpoint.checkpoint.get("channel_values", {}).get("messages", [])
+            logger.info(f"[ChatAssistant] Found {len(messages)} messages in checkpoint")
             history = []
             
             for msg in messages:
@@ -349,10 +448,11 @@ class ChatAssistant:
                 
                 history.append({"role": role, "content": content})
             
+            logger.info(f"[ChatAssistant] Returning {len(history)} messages from history")
             return history
             
         except Exception as e:
-            logger.error(f"Error getting history: {e}", exc_info=True)
+            logger.error(f"[ChatAssistant] Error getting history: {e}", exc_info=True)
             return []
 
 
@@ -376,9 +476,11 @@ def get_chatbot_response(
     Returns:
         Dict with response and metadata
     """
+    logger.info(f"[get_chatbot_response] Called with thread_id={thread_id}, user_id={user_id}")
     assistant = ChatAssistant(thread_id=thread_id, user_id=user_id)
     result = assistant.send_message(message)
     
+    logger.info(f"[get_chatbot_response] Response generated successfully")
     return {
         "response": result["response"],
         "thread_id": thread_id,

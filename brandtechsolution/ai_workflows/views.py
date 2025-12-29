@@ -22,7 +22,11 @@ def chat_endpoint(request):
         data = json.loads(request.body)
         message = data.get('message')
         
+        logger.info(f"[chat_endpoint] Received message request")
+        logger.debug(f"[chat_endpoint] Message: {message[:100] if message else 'None'}...")
+        
         if not message:
+            logger.warning("[chat_endpoint] No message provided")
             return JsonResponse(
                 {"error": "Message is required"},
                 status=400
@@ -30,6 +34,7 @@ def chat_endpoint(request):
         
         user = request.user
         is_authenticated = user.is_authenticated
+        logger.debug(f"[chat_endpoint] User authenticated: {is_authenticated}, user_id: {user.id if is_authenticated else 'None'}")
         
         # Get or create thread_id
         if is_authenticated:
@@ -64,12 +69,16 @@ def chat_endpoint(request):
                 request.session['chat_thread_id'] = f"anon_{uuid.uuid4().hex[:12]}"
             thread_id = request.session['chat_thread_id']
         
+        logger.info(f"[chat_endpoint] Using thread_id={thread_id}")
+        
         # Get chatbot response
         result = get_chatbot_response(
             message=message,
             thread_id=thread_id,
             user_id=user.id if is_authenticated else None,
         )
+        
+        logger.info(f"[chat_endpoint] Response generated successfully")
         
         # Store in session for anonymous users (for history)
         if not is_authenticated:
@@ -96,7 +105,7 @@ def chat_endpoint(request):
     except Exception as e:
         # Log the full traceback for debugging
         error_traceback = traceback.format_exc()
-        logger.error(f"Error in chat_endpoint: {str(e)}\n{error_traceback}")
+        logger.error(f"[chat_endpoint] Error: {str(e)}\n{error_traceback}")
         
         return JsonResponse(
             {
@@ -111,6 +120,8 @@ def chat_endpoint(request):
 @require_http_methods(["GET"])
 def chat_history(request):
     """Get conversation history"""
+    
+    logger.info(f"[chat_history] Getting conversation history")
     
     user = request.user
     is_authenticated = user.is_authenticated
@@ -154,12 +165,16 @@ def chat_history(request):
                 request.session.modified = True
             thread_id = request.session['chat_thread_id']
 
+    logger.info(f"[chat_history] Using thread_id={thread_id}")
+    
     # Use ChatAssistant to retrieve history consistently
     assistant = ChatAssistant(
         thread_id=thread_id,
         user_id=user.id if is_authenticated else None
     )
     history = assistant.get_history()
+    
+    logger.info(f"[chat_history] Returning {len(history)} messages")
     
     return JsonResponse({
         "thread_id": thread_id,
