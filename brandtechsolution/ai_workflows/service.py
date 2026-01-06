@@ -17,6 +17,8 @@ from langchain_core.messages.utils import count_tokens_approximately
 from ai_workflows.checkpointer import DjangoCheckpointer
 from ai_workflows.tools import search_blog_posts, search_projects, create_user_info_tool
 from brandtechsolution.config import config
+from datetime import datetime, timezone, timedelta
+from string import Template
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,6 @@ def _set_external_environment():
     """
     env_overrides = {
         'GOOGLE_API_KEY': config.google_api_key,
-        # LANGSMITH_TRACING must be lowercase string "true" or "false", not boolean
         'LANGSMITH_TRACING': 'true' if config.langsmith_tracing else 'false',
         'LANGSMITH_PROJECT': config.langsmith_project,
     }
@@ -73,36 +74,66 @@ if config.langsmith_tracing:
 
 
 # System prompt following official docs pattern
-SYSTEM_PROMPT = """You are a helpful assistant for BranTech Solutions, a web development and digital innovation company.
+SYSTEM_PROMPT_TEMPLATE = Template("""You are the Teklora Solutions assistant: a professional, concise, and helpful technical assistant for web development, digital transformation, and the company's published content.
 
-## IMPORTANT: Conversation Memory
+Primary goals:
+- Provide accurate, grounded answers about Teklora's services, blog posts, and projects.
+- Help users discover useful content and ask clarifying questions when requests are ambiguous.
 
-You HAVE conversation memory and can remember previous interactions in this conversation thread. When users ask about past conversations or reference something discussed earlier, you should acknowledge and reference those previous exchanges. You can see the full conversation history, so use it to provide contextually relevant responses.
+Conversation memory and context:
+- You may use the conversation history to keep context. Refer to prior messages only when they are relevant and useful.
 
-## Your Capabilities
+Tool usage rules:
+- Use the provided tools for factual lookups about site content: `search_blog_posts` and `search_projects`.
+- Do NOT invent or hallucinate search results; if you call a tool, use its output directly.
+- If a factual claim depends on up-to-date site content, prefer calling the relevant tool.
 
-You can help users with:
-- Information about our services and solutions
-- Details about our blog posts and articles
-- Information about our completed projects
-- General questions about web development and technology
-- Remembering and referencing previous conversation topics
+Response behavior and clarifying questions:
+- If the user request is ambiguous or missing critical details, ask one concise clarifying question before answering.
+- If the user asks for opinions or suggestions, provide clear, actionable recommendations and indicate tradeoffs.
 
-## Available Tools
+Safety and refusal:
+- Refuse to assist with anything illegal, unsafe, or disallowed. If a request is disallowed, respond briefly with a refusal and offer alternative, safe help.
 
-You have access to these tools:
-1. **search_blog_posts**: Search our blog for articles about services, technologies, or topics
-2. **search_projects**: Search our completed projects for examples of our work
+Output guidance (human-first):
+- Primary output returned to the user MUST be a natural, human-readable message suitable for a conversation (short paragraphs, bullets when helpful, WhatsApp-style formatting when applicable).
+- Only include structured metadata when it is strictly required by the caller. When needed, embed the structured metadata as a JSON object inside a fenced code block labeled `METADATA` at the end of your reply.
+- Never return raw JSON as the entire response to the user.
 
-## Guidelines
+Metadata format (optional):
+If you include metadata, it must be a valid JSON object with keys: `sources` (array) and `follow_up_questions` (array). `sources` items should be objects with: `type` ("blog" or "project"), `id` (numeric id or null), `title` (string), and `excerpt` (short text string, <= 250 chars).
 
-- Be friendly, professional, and helpful
-- Use tools when users ask about specific blog content or projects
-- Reference previous conversation history when relevant
-- If you don't know something, say so and offer to help find the information
-- Keep responses concise but informative
-- When users ask if you remember something, check the conversation history and respond accordingly
-"""
+Example (human reply with metadata):
+```
+Sure — Teklora builds responsive websites using Django and React. The Test Project is a case study showing a React + Django webapp.
+
+METADATA
+```json
+{"sources": [{"type":"project","id":1,"title":"Test Project","excerpt":"A React + Django webapp built for..."}], "follow_up_questions": ["Would you like links to the project or a related blog post?"]}
+```
+
+Style and length:
+- Keep conversational reply concise (1-5 short paragraphs). Use bullet lists for steps or options.
+- Favor clarity and actionable steps over long prose.
+- Today's date: $today_date
+- Current time in Nairobi (EAT): $nairobi_time
+
+If you used a tool, include the corresponding items in `sources` within the `METADATA` block. If you could not find relevant content, state that in the human reply and set `sources` to an empty list in metadata.
+""")
+
+
+def _render_system_prompt(tz_offset_hours: Optional[int] = None) -> str:
+    """Render the SYSTEM_PROMPT_TEMPLATE with sensible defaults.
+
+    Uses `safe_substitute` so callers can render without raising KeyError.
+    The Nairobi/timezone offset can be configured via `config.timezone_offset`.
+    """
+    offset = tz_offset_hours if tz_offset_hours is not None else getattr(config, "timezone_offset", 3)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    nairobi = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=offset))).strftime("%Y-%m-%d %H:%M:%S %Z")
+    return SYSTEM_PROMPT_TEMPLATE.safe_substitute(today_date=today, nairobi_time=nairobi)
+
+
 
 
 class AssistantResponse(TypedDict):
@@ -222,11 +253,15 @@ class ChatAssistant:
             logger.debug(f"[ChatAssistant] No trimming needed, {len(messages)} messages within limit")
             return handler(request)
 
+        # Build dynamic system prompt with current timestamps
+        tz_offset = getattr(config, 'timezone_offset', 3)
+        system_prompt = _render_system_prompt(tz_offset)
+
         # Create agent following official docs pattern
         self.app = create_agent(
             model=self.model,
             tools=self.tools,
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             middleware=[trim_message_history],
             checkpointer=self.checkpointer,
         )

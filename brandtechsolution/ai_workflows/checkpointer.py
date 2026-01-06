@@ -60,11 +60,30 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                         text_parts.append(part)
                 content = "\n".join(text_parts) if text_parts else str(content)
             
-            return {
+            serialized = {
                 "type": msg_type,
                 "content": content,
                 "id": getattr(obj, "id", None),
+                "name": getattr(obj, "name", None),
             }
+            
+            # Serialize additional fields based on message type
+            if isinstance(obj, ToolMessage):
+                serialized["tool_call_id"] = obj.tool_call_id
+                if obj.artifact:
+                    serialized["artifact"] = self._to_jsonable(obj.artifact)
+            
+            elif isinstance(obj, AIMessage):
+                if obj.tool_calls:
+                    serialized["tool_calls"] = self._to_jsonable(obj.tool_calls)
+                if obj.usage_metadata:
+                    serialized["usage_metadata"] = self._to_jsonable(obj.usage_metadata)
+            
+            # Include additional_kwargs if present
+            if obj.additional_kwargs:
+                serialized["additional_kwargs"] = self._to_jsonable(obj.additional_kwargs)
+            
+            return serialized
         
         if isinstance(obj, ChainMap):
             return self._to_jsonable(dict(obj))
@@ -79,6 +98,42 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             return obj
         except TypeError:
             return str(obj)
+
+    def _sanitize_checkpoint_state(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure checkpoint state is valid for LangGraph, patching legacy data if needed."""
+        if not isinstance(state, dict):
+            return state
+            
+        channel_values = state.get("channel_values", {})
+        if not channel_values:
+            return state
+            
+        messages = channel_values.get("messages", [])
+        if not messages:
+            return state
+            
+        sanitized_messages = []
+        modified = False
+        for msg in messages:
+            if isinstance(msg, dict):
+                # Fix ToolMessages missing tool_call_id
+                if msg.get("type") == "tool" and "tool_call_id" not in msg:
+                    # Don't log on every access to avoid spam, but patch it
+                    msg_copy = msg.copy()
+                    msg_copy["tool_call_id"] = "legacy_missing_id"
+                    sanitized_messages.append(msg_copy)
+                    modified = True
+                    continue
+            sanitized_messages.append(msg)
+            
+        if modified:
+            # Create a shallow copy structure to return modified state
+            new_state = state.copy()
+            new_state["channel_values"] = channel_values.copy()
+            new_state["channel_values"]["messages"] = sanitized_messages
+            return new_state
+            
+        return state
 
     def _extract_checkpoint_id(self, checkpoint: Any, config: Dict[str, Any]) -> str:
         """Get a checkpoint id from checkpoint/config, or generate one."""
@@ -308,10 +363,13 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             messages = channel_values.get("messages", [])
             logger.info(f"[DjangoCheckpointer] Retrieved checkpoint with {len(messages)} messages")
         
+        # Sanitize state to ensure compatibility (e.g., missing tool_call_id)
+        sanitized_state = self._sanitize_checkpoint_state(checkpoint_obj.state)
+
         return CheckpointTuple(
             config=config,
             checkpoint={
-                **checkpoint_obj.state,
+                **sanitized_state,
                 "id": checkpoint_obj.checkpoint_id,
             },
             metadata=checkpoint_obj.checkpoint_metadata,
@@ -372,11 +430,14 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         # Convert to CheckpointTuple list
         checkpoints = []
         for checkpoint_obj in queryset:
+            # Sanitize state
+            sanitized_state = self._sanitize_checkpoint_state(checkpoint_obj.state)
+            
             checkpoints.append(
                 CheckpointTuple(
                     config=config,
                     checkpoint={
-                        **checkpoint_obj.state,
+                        **sanitized_state,
                         "id": checkpoint_obj.checkpoint_id,
                     },
                     metadata=checkpoint_obj.checkpoint_metadata,

@@ -5,184 +5,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% trans "Appointments" %} • BranTech Solutions</title>
-    <meta name="description" content="View your scheduled appointments with BranTech Solutions.">
-    <link rel="icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
-    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+    <title>{% trans "Appointments" %} • TekLora</title>
+    <meta name="description" content="View your scheduled appointments with TekLora.">
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
     <style>
       :root {
-        --magic-dark: #0a0a0f;
-        --magic-blue: #00d4ff;
-        --magic-teal: #00ffb3;
-        --magic-violet: #8b5cf6;
-        --magic-glow: rgba(0, 212, 255, 0.16);
-        --magic-text: #e0e7ff;
+        --brantech-blue: #007AFF;
+        --brantech-green: #00FF94;
+        --bg-primary: #06090F;
+        --bg-secondary: #0D121D;
+        --text-primary: #FFFFFF;
+        --text-secondary: #94A3B8;
       }
       body {
-        background: linear-gradient(135deg, var(--magic-dark) 0%, #1a1a2e 50%, #16213e 100%);
-        color: var(--magic-text);
-        font-family: 'Inter', Arial, sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
         min-height: 100vh;
       }
       .appointments-header {
-        font-family: 'Orbitron', 'Inter', Arial, sans-serif;
-        font-size: 2.2rem;
-        color: var(--magic-blue);
-        text-shadow: 0 0 12px var(--magic-glow);
-        letter-spacing: 1px;
-        margin-bottom: 24px;
-        text-align: center;
-      }
-      .appointments-table th,
-      .appointments-table td {
-        padding: 0.5rem 1.2rem;
-        border-bottom: 1px solid rgba(128,140,255,0.08);
-      }
-      .appointments-table th {
-        background: linear-gradient(90deg, var(--magic-blue) 0%, var(--magic-teal) 100%);
-        color: #18182f;
+        font-size: 2.5rem;
         font-weight: 700;
-        font-size: 1rem;
-        text-align: left;
-        border-radius: 0.3rem 0.3rem 0 0;
+        background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 2rem;
+        text-align: center;
+        letter-spacing: -0.02em;
       }
-      .appointments-table td {
-        background-color: rgba(26,26,46,0.9);
-      }
-      .appointments-table tr:nth-child(even) td {
-        background-color: rgba(22,33,62,0.92);
+      .appointments-table-container {
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
       }
       .appointments-table {
-        border-radius: 12px;
-        overflow: hidden;
         width: 100%;
-        margin-bottom: 2rem;
+        border-collapse: collapse;
+      }
+      .appointments-table th {
+        background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-align: left;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .appointments-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+      }
+      .appointments-table tbody tr:hover td {
+        background: rgba(0, 122, 255, 0.05);
+      }
+      .appointments-table tbody tr:last-child td {
+        border-bottom: none;
       }
       .status-pill {
         display: inline-block;
         border-radius: 999px;
-        padding: 0.28em 1em;
-        font-size: 0.95em;
+        padding: 0.35em 1em;
+        font-size: 0.875rem;
         font-weight: 500;
         letter-spacing: 0.01em;
       }
-      .status-pending { background: var(--magic-violet); color: #fff; }
-      .status-confirmed { background: var(--magic-blue); color: #08101a; }
-      .status-completed { background: var(--magic-teal); color: #0a1420; }
-      .status-cancelled { background: #e8505b; color: #fff; }
-      .status-rescheduled { background: #f9d423; color: #312900; }
+      .status-pending { 
+        background: rgba(139, 92, 246, 0.2); 
+        color: #c4b5fd; 
+        border: 1px solid rgba(139, 92, 246, 0.3);
+      }
+      .status-confirmed { 
+        background: rgba(0, 122, 255, 0.2); 
+        color: #60a5fa; 
+        border: 1px solid rgba(0, 122, 255, 0.3);
+      }
+      .status-completed { 
+        background: rgba(0, 255, 148, 0.2); 
+        color: #00FF94; 
+        border: 1px solid rgba(0, 255, 148, 0.3);
+      }
+      .status-cancelled { 
+        background: rgba(239, 68, 68, 0.2); 
+        color: #fca5a5; 
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .status-rescheduled { 
+        background: rgba(251, 191, 36, 0.2); 
+        color: #fcd34d; 
+        border: 1px solid rgba(251, 191, 36, 0.3);
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+      }
       .pagination a, .pagination span {
-        margin: 0 0.2rem;
-        padding: 0.44rem 0.92rem;
-        border-radius: 6px;
-        transition: background 0.12s;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
         background: transparent;
-        color: var(--magic-blue);
+        color: var(--text-secondary);
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .pagination a:hover {
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--brantech-blue);
+        border-color: rgba(0, 122, 255, 0.3);
       }
       .pagination .active > span, .pagination .active > a {
-        background: var(--magic-blue);
-        color: #08101a;
-        font-weight: bold;
-        box-shadow: 0 0 3px var(--magic-glow);
+        background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
+        color: #fff;
+        font-weight: 600;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
       }
       .pagination .disabled > span,
       .pagination .disabled > a {
-        color: #999;
+        color: #64748B;
+        opacity: 0.5;
+        cursor: not-allowed;
+        border-color: rgba(255, 255, 255, 0.05);
+      }
+      .pagination .disabled > a:hover {
         background: transparent;
+        color: #64748B;
+        border-color: rgba(255, 255, 255, 0.05);
+      }
+      .action-link {
+        color: var(--brantech-blue);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+      .action-link:hover {
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--brantech-green);
       }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="container mx-auto max-w-4xl mt-8 px-4 sm:px-8 animate__animated animate__fadeIn">
-        <h2 class="appointments-header">{% trans "Appointments" %}</h2>
-        <div class="overflow-x-auto rounded-lg shadow-lg">
-            <table class="appointments-table w-full">
-                <thead>
-                    <tr>
-                        <th>{% trans "Title" %}</th>
-                        <th>{% trans "Email" %}</th>
-                        <th>{% trans "Phone" %}</th>
-                        <th>{% trans "Date" %}</th>
-                        <th>{% trans "Time" %}</th>
-                        <th>{% trans "Estimated Duration (Minutes)" %}</th>
-                        <th>{% trans "Status" %}</th>
-                        {% if user.is_staff %}
-                        <th>{% trans "Actions" %}</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appointment in appointments %}
-                    <tr>
-                        <td>{{ appointment.title }}</td>
-                        <td class="text-sm text-gray-400">{{ appointment.email }}</td>
-                        <td class="text-sm text-gray-400">{{ appointment.phone }}</td>
-                        <td>{{ appointment.date }}</td>
-                        <td>{{ appointment.time|time:"H:i" }}</td>
-                        <td>{{ appointment.estimated_duration }}</td>
-                        <td>
-                            <span class="status-pill status-{{ appointment.status|lower }}">
-                                {{ appointment.status|capfirst }}
-                            </span>
-                        </td>
-                        {% if user.is_staff %}
-                        <td>
-                            <a href="{% url 'appointments:admin_manage' appointment.id %}" 
-                               class="text-blue-400 hover:text-blue-300 transition-colors">
-                                <i class="fas fa-edit"></i> {% trans "Manage" %}
-                            </a>
-                        </td>
-                        {% endif %}
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="{% if user.is_staff %}8{% else %}7{% endif %}" class="text-center py-4 text-lg text-gray-400">{% trans "No appointments found." %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<body class="bg-[#06090F] text-white">
+    <!-- Header -->
+    {% include 'brand/header.html' %}
+
+    <div class="container mx-auto max-w-7xl px-4 py-32 relative overflow-hidden min-h-screen">
+        <!-- Decorative Background Elements -->
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <span class="absolute top-[-10%] right-[48%] w-[500px] h-[500px] bg-gradient-to-b from-blue-500/20 to-transparent rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2"></span>
         </div>
 
-        {% if is_paginated %}
-        <nav aria-label="Page navigation" class="mt-8 flex justify-center">
-            <ul class="pagination flex">
+        <div class="relative z-10">
+            <h2 class="appointments-header">{% trans "Appointments" %}</h2>
+            
+            <div class="appointments-table-container">
+                <div class="overflow-x-auto">
+                    <table class="appointments-table">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Title" %}</th>
+                                <th>{% trans "Email" %}</th>
+                                <th>{% trans "Phone" %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Time" %}</th>
+                                <th>{% trans "Duration (Min)" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                {% if user.is_staff %}
+                                <th>{% trans "Actions" %}</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in appointments %}
+                            <tr>
+                                <td class="font-medium">{{ appointment.title }}</td>
+                                <td class="text-sm" style="color: var(--text-secondary);">{{ appointment.email }}</td>
+                                <td class="text-sm" style="color: var(--text-secondary);">{{ appointment.phone }}</td>
+                                <td>{{ appointment.date }}</td>
+                                <td>{{ appointment.time|time:"H:i" }}</td>
+                                <td>{{ appointment.estimated_duration }}</td>
+                                <td>
+                                    <span class="status-pill status-{{ appointment.status|lower }}">
+                                        {{ appointment.status|capfirst }}
+                                    </span>
+                                </td>
+                                {% if user.is_staff %}
+                                <td>
+                                    <a href="{% url 'appointments:admin_manage' appointment.id %}" class="action-link">
+                                        <i class="fas fa-edit"></i> <span>{% trans "Manage" %}</span>
+                                    </a>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="{% if user.is_staff %}8{% else %}7{% endif %}" class="text-center py-8 text-lg" style="color: var(--text-secondary);">
+                                    <i class="fas fa-calendar-times mb-2" style="font-size: 2rem; opacity: 0.5;"></i>
+                                    <p>{% trans "No appointments found." %}</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="pagination">
                 {% if page_obj.has_previous %}
-                <li>
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
-                </li>
+                <a href="?page={{ page_obj.previous_page_number }}" class="page-link">
+                    <i class="fas fa-chevron-left"></i> {% trans "Previous" %}
+                </a>
                 {% else %}
-                <li class="disabled">
-                    <span class="page-link">{% trans "Previous" %}</span>
-                </li>
+                <span class="page-link disabled">
+                    <i class="fas fa-chevron-left"></i> {% trans "Previous" %}
+                </span>
                 {% endif %}
 
                 {% for num in paginator.page_range %}
                     {% if page_obj.number == num %}
-                    <li class="active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
+                    <span class="page-link active">{{ num }}</span>
                     {% else %}
-                    <li>
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                    </li>
+                    <a href="?page={{ num }}" class="page-link">{{ num }}</a>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                <li>
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
-                </li>
+                <a href="?page={{ page_obj.next_page_number }}" class="page-link">
+                    {% trans "Next" %} <i class="fas fa-chevron-right"></i>
+                </a>
                 {% else %}
-                <li class="disabled">
-                    <span class="page-link">{% trans "Next" %}</span>
-                </li>
+                <span class="page-link disabled">
+                    {% trans "Next" %} <i class="fas fa-chevron-right"></i>
+                </span>
                 {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+            </nav>
+            {% endif %}
+        </div>
     </div>
+
+    <!-- Footer -->
+    {% include 'brand/footer.html' %}
+
+    <!-- Chat Assistant -->
+    <div id="chatAssistant" class="chat-assistant">
+        <!-- Floating Chat Button -->
+        <div id="chatToggle" class="chat-toggle">
+            <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
+            </svg>
+            <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+        </div>
+
+        <!-- Chat Window -->
+        <div id="chatWindow" class="chat-window">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                    <div class="chat-header-text">
+                        <h3>TekLora Assistant</h3>
+                        <p>How can I help you today?</p>
+                    </div>
+                </div>
+                <button id="chatClose" class="chat-close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
+                <div class="chat-welcome">
+                    <div class="welcome-message">
+                        <div class="welcome-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        </div>
+                        <div class="welcome-text">
+                            <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
+                            <ul>
+                                <li>Our services and solutions</li>
+                                <li>Project inquiries</li>
+                                <li>Technical support</li>
+                                <li>General questions</li>
+                            </ul>
+                            <p>What would you like to know?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
+                    <button id="chatSend" class="chat-send" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22,2 15,22 11,13 2,9 22,2" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="chat-typing" id="chatTyping" style="display: none;">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span>TekLora Assistant is typing...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
 </body>
 </html>

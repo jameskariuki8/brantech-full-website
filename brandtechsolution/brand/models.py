@@ -1,5 +1,23 @@
 from django.db import models
 from django.utils import timezone
+from pgvector.django import VectorField
+
+
+def _truncate_for_embedding(text: str, max_chars: int = 1500) -> str:
+    """Truncate text for embedding use.
+
+    - Keeps output <= max_chars characters.
+    - Avoids cutting the last word in half when possible.
+    """
+    if not text:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    truncated = text[:max_chars]
+    if " " in truncated:
+        truncated = truncated.rsplit(" ", 1)[0]
+    return truncated + " ..."
+
 
 class BlogPost(models.Model):
     title = models.CharField(max_length=200)
@@ -12,6 +30,8 @@ class BlogPost(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    # Vector embedding for semantic search (768 dimensions for Gemini embedding-001)
+    embedding = VectorField(dimensions=768, null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -21,6 +41,19 @@ class BlogPost(models.Model):
 
     def get_tags_list(self):
         return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+    
+    def get_embedding_text(self) -> str:
+        """Return the text to be embedded for this blog post."""
+        parts = [
+            f"Title: {self.title}",
+            f"Category: {self.category}",
+            f"Tags: {self.tags}",
+        ]
+        # Use excerpt first (short summary), then truncated content to limit embedding size
+        body = (self.excerpt or "") + "\n\n" + (self.content or "")
+        parts.append(_truncate_for_embedding(body, max_chars=1500))
+        return "\n".join(parts)
+
 
 class Project(models.Model):
     title = models.CharField(max_length=200)
@@ -32,12 +65,23 @@ class Project(models.Model):
     featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    # Vector embedding for semantic search (768 dimensions for Gemini embedding-001)
+    embedding = VectorField(dimensions=768, null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
         return self.title
+    
+    def get_embedding_text(self) -> str:
+        """Return the text to be embedded for this project."""
+        parts = [
+            f"Project: {self.title}",
+            f"Technologies: {self.short_description or ''}",
+        ]
+        parts.append(_truncate_for_embedding(self.description or "", max_chars=1500))
+        return "\n".join(parts)
 
 class Event(models.Model):
     EVENT_TYPES = [
