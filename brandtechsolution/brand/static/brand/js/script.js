@@ -7,14 +7,22 @@ document.addEventListener('DOMContentLoaded', function () {
   const tabContents = document.querySelectorAll('.tab-content');
 
   if (tabButtons.length > 0) {
+    // Use event delegation for better performance
     tabButtons.forEach((button) => {
       button.addEventListener('click', () => {
+        // Remove active class from all buttons and hide all content
         tabButtons.forEach((btn) => btn.classList.remove('tab-active'));
         tabContents.forEach((content) => content.classList.add('hidden'));
 
+        // Add active class to clicked button
         button.classList.add('tab-active');
+        
+        // Show corresponding tab content
         const tabId = button.getAttribute('data-tab') + '-tab';
-        document.getElementById(tabId).classList.remove('hidden');
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) {
+          targetTab.classList.remove('hidden');
+        }
       });
     });
   }
@@ -27,6 +35,8 @@ document.addEventListener('DOMContentLoaded', function () {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+          // Stop observing after animation to improve performance
+          observer.unobserve(entry.target);
         }
       });
     },
@@ -34,7 +44,8 @@ document.addEventListener('DOMContentLoaded', function () {
   );
 
   // Target fancy service cards
-  document.querySelectorAll('#services .service-card-fancy').forEach((card) => {
+  const serviceCards = document.querySelectorAll('#services .service-card-fancy');
+  serviceCards.forEach((card) => {
     observer.observe(card);
   });
 
@@ -49,11 +60,11 @@ document.addEventListener('DOMContentLoaded', function () {
       mobileNav.classList.toggle('open');
     });
 
-    // Close menu on link click
-    mobileNav.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => {
+    // Close menu on link click - use event delegation for better performance
+    mobileNav.addEventListener('click', (e) => {
+      if (e.target.tagName === 'A') {
         mobileNav.classList.remove('open');
-      });
+      }
     });
   }
 
