@@ -29,4 +29,6 @@ class Appointment(models.Model):
         return self.title
 
     def calculate_end_time(self):
-        return self.time + timedelta(minutes=self.estimated_duration)
+        start_datetime = datetime.combine(self.date, self.time)
+        end_datetime = start_datetime + timedelta(minutes=self.estimated_duration)
+        return end_datetime.time()

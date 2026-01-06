@@ -24,7 +24,7 @@ class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     list_display = ["title", "description", "date", "time", "estimated_duration", "status"]
     list_filter = ["status"]
     login_url = '/login/'
-
+    
     def test_func(self):
         return self.request.user.is_staff or self.request.user.is_superuser
 
@@ -53,7 +53,7 @@ def create_appointment(request: HttpRequest):
         return JsonResponse({"error": str(e)}, status=400)
 
 @csrf_exempt
-@require_http_methods(["GET"])
+@require_http_methods(["POST"])
 def get_appointment(request: HttpRequest):
     try:
         data = json.loads(request.body)
@@ -63,7 +63,21 @@ def get_appointment(request: HttpRequest):
         if not all([id, email, phone]):
             return JsonResponse({"error": "Missing required fields: id, email, and phone"}, status=400)
         appointment = Appointment.objects.get(id=id, email=email, phone=phone)
-        return JsonResponse({"success": "Appointment fetched successfully", "appointment": appointment.to_dict()}, status=200)
+        appointment_data = {
+            "id": appointment.id,
+            "email": appointment.email,
+            "phone": appointment.phone,
+            "full_name": appointment.full_name,
+            "title": appointment.title,
+            "description": appointment.description,
+            "date": appointment.date.isoformat(),
+            "time": appointment.time.strftime("%H:%M"),
+            "estimated_duration": appointment.estimated_duration,
+            "status": appointment.status,
+            "created_at": appointment.created_at.isoformat(),
+            "updated_at": appointment.updated_at.isoformat(),
+        }
+        return JsonResponse({"success": "Appointment fetched successfully", "appointment": appointment_data}, status=200)
     except Appointment.DoesNotExist:
         return JsonResponse({"error": "Appointment not found"}, status=404)
     except Exception as e:
