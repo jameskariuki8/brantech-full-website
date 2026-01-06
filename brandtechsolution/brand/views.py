@@ -3,6 +3,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db import models
 
 # Create your views here.
 
@@ -62,11 +63,8 @@ def signup_view(request):
             messages.error(request, 'Passwords do not match.')
             return render(request, 'brand/signup.html')
         
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'An account with this email already exists.')
-            return render(request, 'brand/signup.html')
-        
-        if User.objects.filter(username=email).exists():
+        # Check if user exists with this email or username in a single query
+        if User.objects.filter(models.Q(email=email) | models.Q(username=email)).exists():
             messages.error(request, 'An account with this email already exists.')
             return render(request, 'brand/signup.html')
         
@@ -102,22 +100,19 @@ def login_view(request):
         # Authenticate user (support both email and username)
         user = authenticate(request, username=email, password=password)
         
-        # If email authentication fails, try treating the email input as a username
+        # If authentication fails, try finding user by email or username in a single query
         if user is None:
-             # Check if user exists with this username
-             user_obj = User.objects.filter(username=email).first()
-             if user_obj:
-                 user = authenticate(request, username=email, password=password)
-             
-             # If still None, maybe they entered an email but the username is different?
-             # (Standard Django User model usually requires username to be unique. 
-             # If we use email as username, the first check works. 
-             # If we allow distinct usernames, we should check both.)
-             if user is None:
-                 # Try finding user by email field
-                 user_by_email = User.objects.filter(email=email).first()
-                 if user_by_email:
-                     user = authenticate(request, username=user_by_email.username, password=password)
+            try:
+                # Use Q object for a single database query
+                user_obj = User.objects.filter(
+                    models.Q(username=email) | models.Q(email=email)
+                ).first()
+                
+                if user_obj:
+                    # Authenticate with the found username
+                    user = authenticate(request, username=user_obj.username, password=password)
+            except Exception:
+                pass
 
 
         if user is not None:
