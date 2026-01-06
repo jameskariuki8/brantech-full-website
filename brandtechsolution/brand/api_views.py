@@ -17,9 +17,12 @@ def get_data(request):
 def post_list(request):
     if request.method == "GET":
         posts = BlogPost.objects.all().order_by('-created_at')
-        data = []
-        for post in posts:
-            data.append({
+        # Use only() to fetch only required fields for better performance
+        posts = posts.only('id', 'title', 'category', 'excerpt', 'content', 'tags', 'featured', 'view_count', 'created_at', 'image')
+        
+        # Build response using list comprehension for better performance
+        data = [
+            {
                 'id': post.id,
                 'title': post.title,
                 'category': post.category,
@@ -30,7 +33,9 @@ def post_list(request):
                 'view_count': post.view_count,
                 'created_at': post.created_at.isoformat(),
                 'image': post.image.url if post.image else None
-            })
+            }
+            for post in posts
+        ]
         return JsonResponse(data, safe=False)
     
     if request.method == "POST":
@@ -157,9 +162,12 @@ def post_detail(request, pk):
 def project_list(request):
     if request.method == "GET":
         projects = Project.objects.all().order_by('-created_at')
-        data = []
-        for p in projects:
-            data.append({
+        # Use only() to fetch only required fields for better performance
+        projects = projects.only('id', 'title', 'short_description', 'description', 'project_url', 'github_url', 'featured', 'image')
+        
+        # Build response using list comprehension for better performance
+        data = [
+            {
                 'id': p.id,
                 'title': p.title,
                 'short_description': p.short_description,
@@ -168,7 +176,9 @@ def project_list(request):
                 'github_url': p.github_url,
                 'featured': p.featured,
                 'image': p.image.url if p.image else None
-            })
+            }
+            for p in projects
+        ]
         return JsonResponse(data, safe=False)
     
     if request.method == "POST":

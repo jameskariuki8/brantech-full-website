@@ -5,8 +5,9 @@ langchain
 langgraph
 langchain-community
 langchain-google-genai
-langchain-chroma
+langchain-huggingface
+sentence-transformers
 langchain-text-splitters
-chromadb
 pydantic-settings
 psycopg2-binary
+pgvector

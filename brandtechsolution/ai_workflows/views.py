@@ -92,9 +92,10 @@ def chat_endpoint(request):
                 'role': 'assistant',
                 'content': result['response'],
             })
-            # Keep only last 20 messages in session
-            if len(request.session['chat_messages']) > 20:
-                request.session['chat_messages'] = request.session['chat_messages'][-20:]
+            # Keep only last 10 messages in session to reduce session size
+            # (5 exchanges = 10 messages)
+            if len(request.session['chat_messages']) > 10:
+                request.session['chat_messages'] = request.session['chat_messages'][-10:]
             request.session.modified = True
         
         return JsonResponse({

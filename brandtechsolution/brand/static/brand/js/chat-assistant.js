@@ -111,22 +111,24 @@ class ChatAssistant {
       this.chatSend.disabled = !hasText || this.isLoading;
     });
     
-    // Close chat when clicking outside
-    document.addEventListener('click', (e) => {
+    // Close chat when clicking outside - use event delegation for better performance
+    this.handleOutsideClick = (e) => {
       if (this.isOpen && !this.chatAssistant.contains(e.target)) {
         this.closeChat();
       }
-    });
+    };
+    document.addEventListener('click', this.handleOutsideClick);
     
     // Handle escape key
-    document.addEventListener('keydown', (e) => {
+    this.handleEscapeKey = (e) => {
       if (e.key === 'Escape' && this.isOpen) {
         this.closeChat();
       }
-    });
+    };
+    document.addEventListener('keydown', this.handleEscapeKey);
     
-    // Handle window resize
-    window.addEventListener('resize', () => {
+    // Handle window resize with debouncing for better performance
+    this.handleResize = this.debounce(() => {
       if (this.isOpen) {
         // Update body class based on current screen size
         if (window.innerWidth <= 768) {
@@ -135,7 +137,38 @@ class ChatAssistant {
           document.body.classList.remove('chat-open');
         }
       }
-    });
+    }, 250);
+    window.addEventListener('resize', this.handleResize);
+  }
+
+  /**
+   * Debounce function to limit the rate at which a function can fire
+   */
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  /**
+   * Clean up event listeners when destroying the instance
+   */
+  destroy() {
+    if (this.handleOutsideClick) {
+      document.removeEventListener('click', this.handleOutsideClick);
+    }
+    if (this.handleEscapeKey) {
+      document.removeEventListener('keydown', this.handleEscapeKey);
+    }
+    if (this.handleResize) {
+      window.removeEventListener('resize', this.handleResize);
+    }
   }
 
   /**
