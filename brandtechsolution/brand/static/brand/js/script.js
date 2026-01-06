@@ -44,8 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
   );
 
   // Target fancy service cards
-  const serviceCards = document.querySelectorAll('#services .service-card-fancy');
-  serviceCards.forEach((card) => {
+  document.querySelectorAll('#services .service-card-fancy').forEach((card) => {
     observer.observe(card);
   });
 

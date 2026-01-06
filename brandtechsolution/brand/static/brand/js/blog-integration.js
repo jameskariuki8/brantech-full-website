@@ -82,20 +82,32 @@ class BlogIntegration {
   }
 
   createBlogCard(post) {
+    // Helper function to escape HTML to prevent XSS
+    const escapeHtml = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
+    
     const imageUrl = post.image || 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=400&q=80';
     const date = new Date(post.created_at).toLocaleDateString();
+    
+    // Escape user-generated content to prevent XSS
+    const safeTitle = escapeHtml(post.title);
+    const safeExcerpt = escapeHtml(post.excerpt);
+    
     const tagsHtml = post.tags_list ? post.tags_list.slice(0, 2).map(tag => 
-      `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">${tag}</span>`
+      `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">${escapeHtml(tag)}</span>`
     ).join('') : '';
     
     return `
       <div class="h-48 overflow-hidden">
-        <img src="${imageUrl}" alt="${post.title}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy">
+        <img src="${imageUrl}" alt="${safeTitle}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy">
       </div>
       <div class="p-6">
         <div class="text-sm text-blue-600 font-medium mb-2">${date}</div>
-        <h3 class="text-xl font-bold text-gray-900 mb-3 line-clamp-2">${post.title}</h3>
-        <p class="text-gray-600 mb-4 line-clamp-3">${post.excerpt}</p>
+        <h3 class="text-xl font-bold text-gray-900 mb-3 line-clamp-2">${safeTitle}</h3>
+        <p class="text-gray-600 mb-4 line-clamp-3">${safeExcerpt}</p>
         <div class="flex flex-wrap gap-2 mb-4">
           ${tagsHtml}
         </div>

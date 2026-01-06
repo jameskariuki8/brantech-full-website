@@ -100,14 +100,13 @@ def login_view(request):
         # Authenticate user (support both email and username)
         user = authenticate(request, username=email, password=password)
         
-        # If authentication fails, try finding user by email or username
+        # If authentication fails, try finding user by email or username in a single query
         if user is None:
-            # Try to find user by username or email in a single query
             try:
-                # Try to get user by username first, then by email
-                user_obj = User.objects.filter(username=email).first()
-                if not user_obj:
-                    user_obj = User.objects.filter(email=email).first()
+                # Use Q object for a single database query
+                user_obj = User.objects.filter(
+                    models.Q(username=email) | models.Q(email=email)
+                ).first()
                 
                 if user_obj:
                     # Authenticate with the found username
