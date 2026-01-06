@@ -36,13 +36,19 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING('No blog posts to process'))
             else:
                 processed = 0
+                posts_to_update = []
+                
                 for post in posts:
                     text = post.get_embedding_text()
                     embedding_vector = embeddings.embed_query(text)
                     post.embedding = embedding_vector
-                    post.save(update_fields=['embedding'])
+                    posts_to_update.append(post)
                     processed += 1
                     self.stdout.write(f'  [{processed}/{total_posts}] Processed: {post.title}')
+                
+                # Bulk update for better performance
+                if posts_to_update:
+                    BlogPost.objects.bulk_update(posts_to_update, ['embedding'], batch_size=100)
                 
                 self.stdout.write(self.style.SUCCESS(f'✓ Generated embeddings for {processed} blog posts'))
                 
@@ -64,13 +70,19 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING('No projects to process'))
             else:
                 processed = 0
+                projects_to_update = []
+                
                 for project in projects:
                     text = project.get_embedding_text()
                     embedding_vector = embeddings.embed_query(text)
                     project.embedding = embedding_vector
-                    project.save(update_fields=['embedding'])
+                    projects_to_update.append(project)
                     processed += 1
                     self.stdout.write(f'  [{processed}/{total_projects}] Processed: {project.title}')
+                
+                # Bulk update for better performance
+                if projects_to_update:
+                    Project.objects.bulk_update(projects_to_update, ['embedding'], batch_size=100)
                 
                 self.stdout.write(self.style.SUCCESS(f'✓ Generated embeddings for {processed} projects'))
                 

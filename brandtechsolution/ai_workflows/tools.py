@@ -42,19 +42,22 @@ class BlogRetrieverTool:
             
             # Query Django ORM using L2Distance for vector similarity
             # Only search posts that have embeddings
+            # Use only() to fetch only required fields for better performance
             results = (
                 BlogPost.objects
                 .exclude(embedding__isnull=True)
+                .only('title', 'category', 'content')
                 .order_by(L2Distance('embedding', query_embedding))[:k]
             )
             
             if not results:
                 return "No relevant blog posts found. The blog posts may not have been indexed yet."
             
-            output = []
-            for post in results:
-                content_preview = post.content[:500]
-                output.append(f"Title: {post.title}\nCategory: {post.category}\n{content_preview}...")
+            # Use list comprehension for better performance
+            output = [
+                f"Title: {post.title}\nCategory: {post.category}\n{post.content[:500]}..."
+                for post in results
+            ]
             
             return "\n\n---\n\n".join(output)
             
@@ -84,19 +87,22 @@ class ProjectRetrieverTool:
             
             # Query Django ORM using L2Distance for vector similarity
             # Only search projects that have embeddings
+            # Use only() to fetch only required fields for better performance
             results = (
                 Project.objects
                 .exclude(embedding__isnull=True)
+                .only('title', 'description')
                 .order_by(L2Distance('embedding', query_embedding))[:k]
             )
             
             if not results:
                 return "No relevant projects found. The projects may not have been indexed yet."
             
-            output = []
-            for project in results:
-                content_preview = project.description[:500]
-                output.append(f"Project: {project.title}\n{content_preview}...")
+            # Use list comprehension for better performance
+            output = [
+                f"Project: {project.title}\n{project.description[:500]}..."
+                for project in results
+            ]
             
             return "\n\n---\n\n".join(output)
             

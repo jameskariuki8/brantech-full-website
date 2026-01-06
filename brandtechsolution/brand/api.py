@@ -9,7 +9,11 @@ from .serializers import BlogPostSerializer, ProjectSerializer, EventSerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class BlogPostViewSet(viewsets.ModelViewSet):
-    queryset = BlogPost.objects.all().order_by('-updated_at')
+    # Optimize queryset by selecting only frequently accessed fields
+    queryset = BlogPost.objects.all().order_by('-updated_at').only(
+        'id', 'title', 'excerpt', 'content', 'image', 'tags', 
+        'category', 'featured', 'view_count', 'created_at', 'updated_at'
+    )
     serializer_class = BlogPostSerializer
     
     def get_serializer_context(self):
@@ -21,12 +25,16 @@ class BlogPostViewSet(viewsets.ModelViewSet):
     def increment_view(self, request, pk=None):
         post = get_object_or_404(BlogPost, pk=pk)
         post.view_count += 1
-        post.save()
+        post.save(update_fields=['view_count'])
         return Response({'view_count': post.view_count})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
+    # Optimize queryset by selecting only frequently accessed fields
+    queryset = Project.objects.all().only(
+        'id', 'title', 'short_description', 'description', 
+        'project_url', 'github_url', 'image', 'featured', 'created_at', 'updated_at'
+    )
     serializer_class = ProjectSerializer
     
     def get_serializer_context(self):
@@ -46,7 +54,11 @@ class EventViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 def blog_posts_api(request):
-    posts = BlogPost.objects.all().order_by('-updated_at')
+    # Optimize by selecting only required fields
+    posts = BlogPost.objects.all().order_by('-updated_at').only(
+        'id', 'title', 'excerpt', 'content', 'image', 'tags', 
+        'category', 'featured', 'view_count', 'created_at', 'updated_at'
+    )
     serializer = BlogPostSerializer(posts, many=True, context={'request': request})
     return Response(serializer.data)
 
