@@ -99,7 +99,8 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         try:
             json.dumps(obj)
             return obj
-        except (TypeError, ValueError):
+        except TypeError:
+            # Not JSON serializable - convert to string
             return str(obj)
 
     def _sanitize_checkpoint_state(self, state: Dict[str, Any]) -> Dict[str, Any]:

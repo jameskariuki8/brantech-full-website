@@ -31,15 +31,15 @@ def cache_query_result(timeout=300, key_prefix='query'):
             # Generate cache key from function name and arguments
             cache_key_parts = [key_prefix, func.__module__, func.__name__]
             
-            # Add args to cache key
+            # Add args to cache key using SHA-256 for security best practices
             if args:
                 args_str = json.dumps(args, sort_keys=True, default=str)
-                cache_key_parts.append(hashlib.md5(args_str.encode()).hexdigest()[:8])
+                cache_key_parts.append(hashlib.sha256(args_str.encode()).hexdigest()[:16])
             
-            # Add kwargs to cache key
+            # Add kwargs to cache key using SHA-256 for security best practices
             if kwargs:
                 kwargs_str = json.dumps(kwargs, sort_keys=True, default=str)
-                cache_key_parts.append(hashlib.md5(kwargs_str.encode()).hexdigest()[:8])
+                cache_key_parts.append(hashlib.sha256(kwargs_str.encode()).hexdigest()[:16])
             
             cache_key = ':'.join(cache_key_parts)
             
