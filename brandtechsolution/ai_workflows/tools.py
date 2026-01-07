@@ -12,6 +12,28 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _handle_search_error(error: Exception, search_type: str) -> str:
+    """
+    Centralized error handling for search operations.
+    
+    Args:
+        error: The exception that occurred
+        search_type: Type of search ("blog posts" or "projects")
+    
+    Returns:
+        User-friendly error message
+    """
+    error_str = str(error)
+    logger.error(f"Error searching {search_type}: {error_str}", exc_info=True)
+    
+    if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
+        return f"I'm currently unable to search {search_type} due to API rate limits. Please try again in a moment."
+    elif "embed" in error_str.lower() or "embedding" in error_str.lower():
+        return f"I'm having trouble accessing the {search_type} search feature at the moment. Please try again later."
+    else:
+        return f"I encountered an issue searching {search_type}. Please try again or ask about something else."
+
+
 # Singleton embedding instance
 _embeddings = None
 
@@ -20,11 +42,13 @@ def get_embeddings():
     """Get or create embeddings instance using HuggingFace sentence-transformers (free, local)."""
     global _embeddings
     if _embeddings is None:
+        logger.info("Initializing embedding model (sentence-transformers/all-mpnet-base-v2)...")
         # all-mpnet-base-v2 produces 768-dimensional vectors (matches our VectorField)
         # Runs locally - no API costs or rate limits
         _embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2"
         )
+        logger.info("Embedding model initialized successfully")
     return _embeddings
 
 
@@ -62,15 +86,7 @@ class BlogRetrieverTool:
             return "\n\n---\n\n".join(output)
             
         except Exception as e:
-            error_str = str(e)
-            logger.error(f"Error searching blog posts: {error_str}", exc_info=True)
-            
-            if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
-                return "I'm currently unable to search blog posts due to API rate limits. Please try again in a moment."
-            elif "embed" in error_str.lower() or "embedding" in error_str.lower():
-                return "I'm having trouble accessing the blog post search feature at the moment. Please try again later."
-            else:
-                return "I encountered an issue searching blog posts. Please try again or ask about something else."
+            return _handle_search_error(e, "blog posts")
 
 
 class ProjectRetrieverTool:
@@ -107,15 +123,7 @@ class ProjectRetrieverTool:
             return "\n\n---\n\n".join(output)
             
         except Exception as e:
-            error_str = str(e)
-            logger.error(f"Error searching projects: {error_str}", exc_info=True)
-            
-            if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
-                return "I'm currently unable to search projects due to API rate limits. Please try again in a moment."
-            elif "embed" in error_str.lower() or "embedding" in error_str.lower():
-                return "I'm having trouble accessing the project search feature at the moment. Please try again later."
-            else:
-                return "I encountered an issue searching projects. Please try again or ask about something else."
+            return _handle_search_error(e, "projects")
 
 
 # Singleton instances
@@ -186,7 +194,7 @@ def create_user_info_tool(user_id: int):
             String containing user's basic information
         """
         try:
-            user = User.objects.get(pk=user_id)
+            user = User.objects.only('username', 'email', 'first_name', 'last_name', 'date_joined', 'is_active').get(pk=user_id)
             
             info_parts = [
                 f"Username: {user.username}",

@@ -93,10 +93,13 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             return [self._to_jsonable(v) for v in obj]
         if isinstance(obj, datetime):
             return obj.isoformat()
+        # Optimize JSON check - only try serialization once
+        if isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
         try:
             json.dumps(obj)
             return obj
-        except TypeError:
+        except (TypeError, ValueError):
             return str(obj)
 
     def _sanitize_checkpoint_state(self, state: Dict[str, Any]) -> Dict[str, Any]:
