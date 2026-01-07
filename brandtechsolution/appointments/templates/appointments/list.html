@@ -9,227 +9,395 @@
     <meta name="description" content="View your scheduled appointments with TekLora.">
     <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
     <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            bg: '#06090F',
+                            card: '#0D121D',
+                            border: 'rgba(255, 255, 255, 0.05)',
+                        },
+                        brand: {
+                            blue: '#007AFF',
+                            green: '#00FF94',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    {# Admin-only page: intentionally does not include public-site chat assistant assets #}
     <style>
-      :root {
-        --brantech-blue: #007AFF;
-        --brantech-green: #00FF94;
-        --bg-primary: #06090F;
-        --bg-secondary: #0D121D;
-        --text-primary: #FFFFFF;
-        --text-secondary: #94A3B8;
-      }
-      body {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        min-height: 100vh;
-      }
-      .appointments-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        margin-bottom: 2rem;
-        text-align: center;
-        letter-spacing: -0.02em;
-      }
-      .appointments-table-container {
-        background: var(--bg-secondary);
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        overflow: hidden;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-      }
-      .appointments-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .appointments-table th {
-        background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
-        color: #fff;
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-align: left;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .appointments-table td {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        color: var(--text-primary);
-        background: var(--bg-secondary);
-      }
-      .appointments-table tbody tr:hover td {
-        background: rgba(0, 122, 255, 0.05);
-      }
-      .appointments-table tbody tr:last-child td {
-        border-bottom: none;
-      }
-      .status-pill {
-        display: inline-block;
-        border-radius: 999px;
-        padding: 0.35em 1em;
-        font-size: 0.875rem;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-      }
-      .status-pending { 
-        background: rgba(139, 92, 246, 0.2); 
-        color: #c4b5fd; 
-        border: 1px solid rgba(139, 92, 246, 0.3);
-      }
-      .status-confirmed { 
-        background: rgba(0, 122, 255, 0.2); 
-        color: #60a5fa; 
-        border: 1px solid rgba(0, 122, 255, 0.3);
-      }
-      .status-completed { 
-        background: rgba(0, 255, 148, 0.2); 
-        color: #00FF94; 
-        border: 1px solid rgba(0, 255, 148, 0.3);
-      }
-      .status-cancelled { 
-        background: rgba(239, 68, 68, 0.2); 
-        color: #fca5a5; 
-        border: 1px solid rgba(239, 68, 68, 0.3);
-      }
-      .status-rescheduled { 
-        background: rgba(251, 191, 36, 0.2); 
-        color: #fcd34d; 
-        border: 1px solid rgba(251, 191, 36, 0.3);
-      }
-      .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 2rem;
-      }
-      .pagination a, .pagination span {
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        background: transparent;
-        color: var(--text-secondary);
-        text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .pagination a:hover {
-        background: rgba(0, 122, 255, 0.1);
-        color: var(--brantech-blue);
-        border-color: rgba(0, 122, 255, 0.3);
-      }
-      .pagination .active > span, .pagination .active > a {
-        background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
-        color: #fff;
-        font-weight: 600;
-        border-color: transparent;
-        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-      }
-      .pagination .disabled > span,
-      .pagination .disabled > a {
-        color: #64748B;
-        opacity: 0.5;
-        cursor: not-allowed;
-        border-color: rgba(255, 255, 255, 0.05);
-      }
-      .pagination .disabled > a:hover {
-        background: transparent;
-        color: #64748B;
-        border-color: rgba(255, 255, 255, 0.05);
-      }
-      .action-link {
-        color: var(--brantech-blue);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-      }
-      .action-link:hover {
-        background: rgba(0, 122, 255, 0.1);
-        color: var(--brantech-green);
-      }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="bg-[#06090F] text-white">
-    <!-- Header -->
-    {% include 'brand/header.html' %}
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass-panel {
+            background: rgba(13, 18, 29, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-    <div class="container mx-auto max-w-7xl px-4 py-32 relative overflow-hidden min-h-screen">
-        <!-- Decorative Background Elements -->
-        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-            <span class="absolute top-[-10%] right-[48%] w-[500px] h-[500px] bg-gradient-to-b from-blue-500/20 to-transparent rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2"></span>
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
+            border-left: 3px solid #007AFF;
+            color: #fff;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #06090F;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #1F2937;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+        
+        .appointments-table-container {
+            background: var(--bg-secondary, #0D121D);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .appointments-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        /* Table header styles (legacy): removed since list now uses card layout */
+        
+        .appointments-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #FFFFFF;
+            background: #0D121D;
+        }
+        
+        .appointments-table tbody tr:hover td {
+            background: rgba(0, 122, 255, 0.05);
+        }
+        
+        .appointments-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-pill {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 0.35em 1em;
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+        
+        .status-pending { 
+            background: rgba(139, 92, 246, 0.2); 
+            color: #c4b5fd; 
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .status-confirmed { 
+            background: rgba(0, 122, 255, 0.2); 
+            color: #60a5fa; 
+            border: 1px solid rgba(0, 122, 255, 0.3);
+        }
+        
+        .status-completed { 
+            background: rgba(0, 255, 148, 0.2); 
+            color: #00FF94; 
+            border: 1px solid rgba(0, 255, 148, 0.3);
+        }
+        
+        .status-cancelled { 
+            background: rgba(239, 68, 68, 0.2); 
+            color: #fca5a5; 
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-rescheduled { 
+            background: rgba(251, 191, 36, 0.2); 
+            color: #fcd34d; 
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        .pagination a, .pagination span {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: #94A3B8;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .pagination a:hover {
+            background: rgba(0, 122, 255, 0.1);
+            color: #007AFF;
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+        
+        .pagination .active > span, .pagination .active > a {
+            background: linear-gradient(90deg, #007AFF, #00FF94);
+            color: #fff;
+            font-weight: 600;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+        
+        .pagination .disabled > span,
+        .pagination .disabled > a {
+            color: #64748B;
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .pagination .disabled > a:hover {
+            background: transparent;
+            color: #64748B;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .action-link {
+            color: #007AFF;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .action-link:hover {
+            background: rgba(0, 122, 255, 0.1);
+            color: #00FF94;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn"
+        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
+        <!-- Logo -->
+        <div class="h-20 flex items-center px-6 border-b border-dark-border">
+            <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
+            <span class="text-xl font-bold text-white tracking-tight">Teklora<span class="text-brand-blue">Admin</span></span>
         </div>
 
-        <div class="relative z-10">
-            <h2 class="appointments-header">{% trans "Appointments" %}</h2>
-            
-            <div class="appointments-table-container">
-                <div class="overflow-x-auto">
-                    <table class="appointments-table">
-                        <thead>
-                            <tr>
-                                <th>{% trans "Title" %}</th>
-                                <th>{% trans "Email" %}</th>
-                                <th>{% trans "Phone" %}</th>
-                                <th>{% trans "Date" %}</th>
-                                <th>{% trans "Time" %}</th>
-                                <th>{% trans "Duration (Min)" %}</th>
-                                <th>{% trans "Status" %}</th>
-                                {% if user.is_staff %}
-                                <th>{% trans "Actions" %}</th>
-                                {% endif %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for appointment in appointments %}
-                            <tr>
-                                <td class="font-medium">{{ appointment.title }}</td>
-                                <td class="text-sm" style="color: var(--text-secondary);">{{ appointment.email }}</td>
-                                <td class="text-sm" style="color: var(--text-secondary);">{{ appointment.phone }}</td>
-                                <td>{{ appointment.date }}</td>
-                                <td>{{ appointment.time|time:"H:i" }}</td>
-                                <td>{{ appointment.estimated_duration }}</td>
-                                <td>
-                                    <span class="status-pill status-{{ appointment.status|lower }}">
-                                        {{ appointment.status|capfirst }}
-                                    </span>
-                                </td>
-                                {% if user.is_staff %}
-                                <td>
-                                    <a href="{% url 'appointments:admin_manage' appointment.id %}" class="action-link">
-                                        <i class="fas fa-edit"></i> <span>{% trans "Manage" %}</span>
-                                    </a>
-                                </td>
-                                {% endif %}
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="{% if user.is_staff %}8{% else %}7{% endif %}" class="text-center py-8 text-lg" style="color: var(--text-secondary);">
-                                    <i class="fas fa-calendar-times mb-2" style="font-size: 2rem; opacity: 0.5;"></i>
-                                    <p>{% trans "No appointments found." %}</p>
-                                </td>
-                            </tr>
+        <!-- Nav -->
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+            <a href="/admin-panel/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
+            </a>
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
+            <a href="/admin-panel/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
+            </a>
+            <a href="/admin-panel/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
+            </a>
+            <a href="/appointments/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
+                <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
+            </a>
+        </nav>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-dark-border">
+            <a href="{% url 'logout' %}"
+                class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
+        <!-- Top Bar (Mobile Overlay) -->
+        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
+            <header class="mb-8">
+                <h1 class="text-3xl font-bold text-white mb-2">{% trans "Appointments" %}</h1>
+                <p class="text-gray-500">{% trans "View and manage your scheduled appointments" %}</p>
+            </header>
+
+            <!-- Filters -->
+            <div class="bg-dark-card border border-dark-border rounded-xl p-4 mb-6">
+                <form method="get" class="flex flex-col lg:flex-row gap-3 lg:items-center">
+                    <div class="flex-1">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">{% trans "Search" %}</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                            <input
+                                type="text"
+                                name="q"
+                                value="{{ q }}"
+                                placeholder="{% trans 'Search title, client, email, phone…' %}"
+                                class="w-full bg-[#06090F] border border-dark-border rounded-lg pl-10 pr-3 py-2.5 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="w-full lg:w-64">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">{% trans "Status" %}</label>
+                        <select
+                            name="status"
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                        >
+                            <option value="">{% trans "All statuses" %}</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
-                        </tbody>
-                    </table>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2 lg:self-end">
+                        <button
+                            type="submit"
+                            class="bg-brand-blue hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg transition-colors font-medium"
+                        >
+                            <i class="fas fa-filter mr-2"></i>{% trans "Apply" %}
+                        </button>
+                        <a
+                            href="/appointments/"
+                            class="px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 border border-dark-border transition-colors font-medium"
+                        >
+                            {% trans "Clear" %}
+                        </a>
+                    </div>
+                </form>
+
+                <div class="mt-3 text-sm text-gray-500">
+                    {% if page_obj.paginator.count %}
+                        {% trans "Showing" %} {{ page_obj.start_index }}–{{ page_obj.end_index }} {% trans "of" %} {{ page_obj.paginator.count }}
+                    {% endif %}
                 </div>
+            </div>
+
+            <!-- Appointments list (card layout, no table header) -->
+            <div class="space-y-4">
+                {% for appointment in appointments %}
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-4 lg:p-5 hover:border-brand-blue/30 transition-colors group">
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-3 lg:justify-start">
+                                    <div class="min-w-0">
+                                        <div class="text-white font-semibold text-lg leading-tight truncate">{{ appointment.title }}</div>
+                                        <div class="text-sm text-gray-500 mt-1 truncate">
+                                            {{ appointment.full_name|default:"" }}
+                                        </div>
+                                    </div>
+                                    <div class="lg:hidden">
+                                        <span class="status-pill status-{{ appointment.status|lower }}">{{ appointment.status|capfirst }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 grid grid-cols-2 lg:grid-cols-6 gap-3 text-sm">
+                                    <div class="col-span-2 lg:col-span-2">
+                                        <div class="text-gray-500">{% trans "Email" %}</div>
+                                        <div class="text-gray-300 break-all">{{ appointment.email }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-500">{% trans "Phone" %}</div>
+                                        <div class="text-gray-300">{{ appointment.phone }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-500">{% trans "Date" %}</div>
+                                        <div class="text-gray-300">{{ appointment.date }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-500">{% trans "Time" %}</div>
+                                        <div class="text-gray-300">{{ appointment.time|time:"H:i" }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-gray-500">{% trans "Duration" %}</div>
+                                        <div class="text-gray-300">{{ appointment.estimated_duration }} {% trans "min" %}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hidden lg:flex items-center gap-3">
+                                <span class="status-pill status-{{ appointment.status|lower }}">{{ appointment.status|capfirst }}</span>
+                                {% if user.is_staff %}
+                                    <a href="{% url 'appointments:admin_manage' appointment.id %}"
+                                       class="inline-flex items-center px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-dark-border text-brand-blue hover:text-brand-green transition-colors font-medium whitespace-nowrap">
+                                        <i class="fas fa-edit mr-2"></i>{% trans "Manage" %}
+                                    </a>
+                                {% endif %}
+                            </div>
+
+                            {% if user.is_staff %}
+                                <div class="lg:hidden">
+                                    <a href="{% url 'appointments:admin_manage' appointment.id %}"
+                                       class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-dark-border text-brand-blue hover:text-brand-green transition-colors font-medium">
+                                        <i class="fas fa-edit mr-2"></i>{% trans "Manage" %}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-8 text-center text-gray-400">
+                        <i class="fas fa-calendar-times mb-2 text-4xl opacity-50"></i>
+                        <p>{% trans "No appointments found." %}</p>
+                    </div>
+                {% endfor %}
             </div>
 
             {% if is_paginated %}
             <nav aria-label="Page navigation" class="pagination">
                 {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="page-link">
+                <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">
                     <i class="fas fa-chevron-left"></i> {% trans "Previous" %}
                 </a>
                 {% else %}
@@ -242,12 +410,12 @@
                     {% if page_obj.number == num %}
                     <span class="page-link active">{{ num }}</span>
                     {% else %}
-                    <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+                    <a href="?page={{ num }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">{{ num }}</a>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="page-link">
+                <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">
                     {% trans "Next" %} <i class="fas fa-chevron-right"></i>
                 </a>
                 {% else %}
@@ -258,92 +426,24 @@
             </nav>
             {% endif %}
         </div>
-    </div>
+    </main>
 
-    <!-- Footer -->
-    {% include 'brand/footer.html' %}
+    <script>
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
 
-    <!-- Chat Assistant -->
-    <div id="chatAssistant" class="chat-assistant">
-        <!-- Floating Chat Button -->
-        <div id="chatToggle" class="chat-toggle">
-            <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-            </svg>
-            <div class="chat-notification" id="chatNotification" style="display: none;"></div>
-        </div>
+        if (mobileMenuBtn && sidebar && overlay) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            });
 
-        <!-- Chat Window -->
-        <div id="chatWindow" class="chat-window">
-            <!-- Chat Header -->
-            <div class="chat-header">
-                <div class="chat-header-info">
-                    <div class="chat-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                    </div>
-                    <div class="chat-header-text">
-                        <h3>TekLora Assistant</h3>
-                        <p>How can I help you today?</p>
-                    </div>
-                </div>
-                <button id="chatClose" class="chat-close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Chat Messages -->
-            <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-                <div class="chat-welcome">
-                    <div class="welcome-message">
-                        <div class="welcome-avatar">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                        </div>
-                        <div class="welcome-text">
-                            <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
-                            <ul>
-                                <li>Our services and solutions</li>
-                                <li>Project inquiries</li>
-                                <li>Technical support</li>
-                                <li>General questions</li>
-                            </ul>
-                            <p>What would you like to know?</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Input -->
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
-                    <button id="chatSend" class="chat-send" disabled>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="22" y1="2" x2="11" y2="13" />
-                            <polygon points="22,2 15,22 11,13 2,9 22,2" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="chat-typing" id="chatTyping" style="display: none;">
-                    <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <span>TekLora Assistant is typing...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+            overlay.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            });
+        }
+    </script>
 </body>
 </html>
