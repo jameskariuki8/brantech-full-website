@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from datetime import datetime, timedelta
 from django.db import IntegrityError
+from django.db.models import Q
 import json
 from appointments.models import Appointment
 
@@ -27,6 +28,33 @@ class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     
     def test_func(self):
         return self.request.user.is_staff or self.request.user.is_superuser
+
+    def get_queryset(self):
+        qs = super().get_queryset().order_by(*self.ordering)
+
+        q = (self.request.GET.get("q") or "").strip()
+        status = (self.request.GET.get("status") or "").strip()
+
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(description__icontains=q)
+                | Q(email__icontains=q)
+                | Q(phone__icontains=q)
+                | Q(full_name__icontains=q)
+            )
+
+        if status:
+            qs = qs.filter(status=status)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["q"] = (self.request.GET.get("q") or "").strip()
+        context["status_filter"] = (self.request.GET.get("status") or "").strip()
+        context["status_choices"] = Appointment.APPOINTMENT_STATUS_CHOICES
+        return context
 
 @csrf_exempt
 @require_http_methods(["POST"])

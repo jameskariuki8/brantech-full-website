@@ -9,12 +9,39 @@
     <meta name="description" content="Manage appointment details and status.">
     <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
     <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            bg: '#06090F',
+                            card: '#0D121D',
+                            border: 'rgba(255, 255, 255, 0.05)',
+                        },
+                        brand: {
+                            blue: '#007AFF',
+                            green: '#00FF94',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    {# Admin-only page: intentionally does not include public-site chat assistant assets #}
     <style>
       :root {
         --brantech-blue: #007AFF;
@@ -24,12 +51,7 @@
         --text-primary: #FFFFFF;
         --text-secondary: #94A3B8;
       }
-      body {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        min-height: 100vh;
-      }
+      body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
       .admin-header {
         font-size: 2.5rem;
         font-weight: 700;
@@ -244,21 +266,81 @@
         border-color: #ef4444;
         color: #fca5a5;
       }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="bg-[#06090F] text-white">
-    <!-- Header -->
-    {% include 'brand/header.html' %}
 
-    <div class="container mx-auto max-w-6xl px-4 py-32 relative overflow-hidden min-h-screen">
-        <!-- Decorative Background Elements -->
-        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-            <span class="absolute top-[-10%] right-[48%] w-[500px] h-[500px] bg-gradient-to-b from-blue-500/20 to-transparent rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2"></span>
+      .nav-item.active {
+        background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
+        border-left: 3px solid #007AFF;
+        color: #fff;
+      }
+
+      .nav-item:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.03);
+        color: #fff;
+      }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn"
+        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
+        <!-- Logo -->
+        <div class="h-20 flex items-center px-6 border-b border-dark-border">
+            <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
+            <span class="text-xl font-bold text-white tracking-tight">Teklora<span class="text-brand-blue">Admin</span></span>
         </div>
 
-        <div class="relative z-10">
-            <h2 class="admin-header">{% trans "Manage Appointment" %}</h2>
+        <!-- Nav -->
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+            <a href="/admin-panel/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
+            </a>
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
+            <a href="/admin-panel/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
+            </a>
+            <a href="/admin-panel/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
+            </a>
+            <a href="/appointments/"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
+                <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
+            </a>
+        </nav>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-dark-border">
+            <a href="{% url 'logout' %}"
+                class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+                <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
+        <!-- Top Bar (Mobile Overlay) -->
+        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+        <div class="p-6 lg:p-10 max-w-5xl mx-auto">
+            <header class="mb-8 flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">{% trans "Manage Appointment" %}</h1>
+                    <p class="text-gray-500">{% trans "Update appointment details and status" %}</p>
+                </div>
+                <a href="{% url 'appointments:list' %}"
+                   class="px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 border border-dark-border transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>{% trans "Back to list" %}
+                </a>
+            </header>
             
             <!-- Alert Messages -->
             <div id="alert-success" class="alert alert-success">
@@ -350,95 +432,26 @@
                 </div>
             </form>
         </div>
-    </div>
-
-    <!-- Footer -->
-    {% include 'brand/footer.html' %}
-
-    <!-- Chat Assistant -->
-    <div id="chatAssistant" class="chat-assistant">
-        <!-- Floating Chat Button -->
-        <div id="chatToggle" class="chat-toggle">
-            <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-            </svg>
-            <div class="chat-notification" id="chatNotification" style="display: none;"></div>
-        </div>
-
-        <!-- Chat Window -->
-        <div id="chatWindow" class="chat-window">
-            <!-- Chat Header -->
-            <div class="chat-header">
-                <div class="chat-header-info">
-                    <div class="chat-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                    </div>
-                    <div class="chat-header-text">
-                        <h3>TekLora Assistant</h3>
-                        <p>How can I help you today?</p>
-                    </div>
-                </div>
-                <button id="chatClose" class="chat-close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Chat Messages -->
-            <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-                <div class="chat-welcome">
-                    <div class="welcome-message">
-                        <div class="welcome-avatar">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                        </div>
-                        <div class="welcome-text">
-                            <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
-                            <ul>
-                                <li>Our services and solutions</li>
-                                <li>Project inquiries</li>
-                                <li>Technical support</li>
-                                <li>General questions</li>
-                            </ul>
-                            <p>What would you like to know?</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Input -->
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
-                    <button id="chatSend" class="chat-send" disabled>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="22" y1="2" x2="11" y2="13" />
-                            <polygon points="22,2 15,22 11,13 2,9 22,2" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="chat-typing" id="chatTyping" style="display: none;">
-                    <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <span>TekLora Assistant is typing...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+    </main>
 
     <script>
+        // Sidebar (mobile) toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobileOverlay');
+
+        if (mobileMenuBtn && sidebar && overlay) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            });
+        }
+
         // Initialize Quill editor
         const quill = new Quill('#description-editor', {
             theme: 'snow',
