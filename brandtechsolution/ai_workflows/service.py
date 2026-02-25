@@ -8,10 +8,9 @@ import logging
 import os
 import re
 
-from langchain.agents import create_agent
-from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_call
+from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, trim_messages
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage, trim_messages
 from langchain_core.messages.utils import count_tokens_approximately
 
 from ai_workflows.checkpointer import DjangoCheckpointer
@@ -219,50 +218,42 @@ class ChatAssistant:
         
         logger.debug(f"[ChatAssistant] Creating agent with checkpointer={type(self.checkpointer).__name__}")
         
-        # Message trimming middleware following WozapAuto pattern
-        @wrap_model_call
-        def trim_message_history(
-            request: ModelRequest,
-            handler
-        ) -> ModelResponse:
-            """Trim message history to fit within token limit before model call."""
-            messages = request.messages
+        # State modifier to handle system prompt and trimming
+        def _modifier(state):
+            messages = state["messages"] if isinstance(state, dict) else state
+            
             if not messages:
                 logger.debug("[ChatAssistant] No messages to trim")
-                return handler(request)
-
-            logger.debug(f"[ChatAssistant] Message trimming: {len(messages)} messages before trimming")
-            trimmed = trim_messages(
-                messages=messages,
-                max_tokens=self.MAX_TOKENS_FOR_TRIMMING,
-                token_counter=count_tokens_approximately,
-                strategy="last",
-                allow_partial=True,
-                include_system=True,
-                start_on="human",
-                end_on=["human", "tool", "ai"],
-            )
-
-            if len(trimmed) != len(messages):
-                logger.info(
-                    f"[ChatAssistant] Trimmed messages from {len(messages)} to {len(trimmed)} for model call"
+                trimmed = messages
+            else:
+                logger.debug(f"[ChatAssistant] Message trimming: {len(messages)} messages before trimming")
+                trimmed = trim_messages(
+                    messages=messages,
+                    max_tokens=self.MAX_TOKENS_FOR_TRIMMING,
+                    token_counter=count_tokens_approximately,
+                    strategy="last",
+                    allow_partial=True,
+                    include_system=True,
+                    start_on="human",
+                    end_on=["human", "tool", "ai"],
                 )
-                modified_request = request.override(messages=trimmed)
-                return handler(modified_request)
+                if len(trimmed) != len(messages):
+                    logger.info(f"[ChatAssistant] Trimmed messages from {len(messages)} to {len(trimmed)}")
+                else:
+                    logger.debug(f"[ChatAssistant] No trimming needed, {len(messages)} messages within limit")
             
-            logger.debug(f"[ChatAssistant] No trimming needed, {len(messages)} messages within limit")
-            return handler(request)
+            # Build dynamic system prompt with current timestamps
+            tz_offset = getattr(config, 'timezone_offset', 3)
+            system_prompt = _render_system_prompt(tz_offset)
+            system_msg = SystemMessage(content=system_prompt)
+            
+            return [system_msg] + trimmed
 
-        # Build dynamic system prompt with current timestamps
-        tz_offset = getattr(config, 'timezone_offset', 3)
-        system_prompt = _render_system_prompt(tz_offset)
-
-        # Create agent following official docs pattern
-        self.app = create_agent(
+        # Create agent following official LangGraph pattern
+        self.app = create_react_agent(
             model=self.model,
             tools=self.tools,
-            system_prompt=system_prompt,
-            middleware=[trim_message_history],
+            prompt=_modifier,
             checkpointer=self.checkpointer,
         )
         logger.info(f"[ChatAssistant] Agent created successfully with checkpointer")
