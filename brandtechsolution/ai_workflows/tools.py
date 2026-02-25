@@ -2,7 +2,7 @@
 RAG tools for retrieving blog posts and projects using pgvector and Django ORM.
 """
 from langchain.tools import tool
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from django.contrib.auth.models import User
 from brandtechsolution.config import config
 from brand.models import BlogPost, Project
@@ -17,13 +17,13 @@ _embeddings = None
 
 
 def get_embeddings():
-    """Get or create embeddings instance using HuggingFace sentence-transformers (free, local)."""
+    """Get or create embeddings instance using Google Gemini API."""
     global _embeddings
     if _embeddings is None:
-        # all-mpnet-base-v2 produces 768-dimensional vectors (matches our VectorField)
-        # Runs locally - no API costs or rate limits
-        _embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-mpnet-base-v2"
+        # models/embedding-001 produces 768-dimensional vectors (matches our VectorField)
+        _embeddings = GoogleGenerativeAIEmbeddings(
+            model=config.gemini_embedding_model,
+            google_api_key=config.google_api_key
         )
     return _embeddings
 
