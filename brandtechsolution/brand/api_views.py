@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage
 from .models import BlogPost, Project
 
 # Helper to parse FormData or JSON
@@ -10,6 +11,44 @@ def get_data(request):
     if request.content_type == 'application/json':
         return json.loads(request.body)
     return request.POST
+
+
+def paginate_queryset(queryset, request, page_size=20):
+    """
+    Helper function to paginate querysets.
+    
+    Args:
+        queryset: Django queryset to paginate
+        request: HTTP request object
+        page_size: Items per page (default 20)
+    
+    Returns:
+        Tuple of (paginated_items, pagination_metadata)
+    """
+    page = request.GET.get('page', 1)
+    try:
+        page = int(page)
+    except (ValueError, TypeError):
+        page = 1
+    
+    paginator = Paginator(queryset, page_size)
+    
+    try:
+        paginated_items = paginator.page(page)
+    except EmptyPage:
+        # Return last page if page number is too high
+        paginated_items = paginator.page(paginator.num_pages)
+    
+    pagination_metadata = {
+        'page': paginated_items.number,
+        'page_size': page_size,
+        'total_pages': paginator.num_pages,
+        'total_items': paginator.count,
+        'has_next': paginated_items.has_next(),
+        'has_previous': paginated_items.has_previous(),
+    }
+    
+    return paginated_items, pagination_metadata
 
 # --- Blog Post APIs ---
 
@@ -19,6 +58,9 @@ def post_list(request):
         posts = BlogPost.objects.all().order_by('-created_at')
         # Use only() to fetch only required fields for better performance
         posts = posts.only('id', 'title', 'category', 'excerpt', 'content', 'tags', 'featured', 'view_count', 'created_at', 'image')
+        
+        # Add pagination support
+        paginated_posts, pagination_meta = paginate_queryset(posts, request, page_size=20)
         
         # Build response using list comprehension for better performance
         data = [
@@ -34,9 +76,13 @@ def post_list(request):
                 'created_at': post.created_at.isoformat(),
                 'image': post.image.url if post.image else None
             }
-            for post in posts
+            for post in paginated_posts
         ]
-        return JsonResponse(data, safe=False)
+        
+        return JsonResponse({
+            'results': data,
+            'pagination': pagination_meta
+        }, safe=False)
     
     if request.method == "POST":
         if not request.user.is_authenticated:
@@ -165,6 +211,9 @@ def project_list(request):
         # Use only() to fetch only required fields for better performance
         projects = projects.only('id', 'title', 'short_description', 'description', 'project_url', 'github_url', 'featured', 'image')
         
+        # Add pagination support
+        paginated_projects, pagination_meta = paginate_queryset(projects, request, page_size=20)
+        
         # Build response using list comprehension for better performance
         data = [
             {
@@ -177,9 +226,13 @@ def project_list(request):
                 'featured': p.featured,
                 'image': p.image.url if p.image else None
             }
-            for p in projects
+            for p in paginated_projects
         ]
-        return JsonResponse(data, safe=False)
+        
+        return JsonResponse({
+            'results': data,
+            'pagination': pagination_meta
+        }, safe=False)
     
     if request.method == "POST":
         if not request.user.is_authenticated:

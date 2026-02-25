@@ -161,7 +161,7 @@ def check_availability(request: HttpRequest):
         same_date_appointments = Appointment.objects.filter(
             date=appointment_date,
             status__in=active_statuses
-        ).select_related().only('id', 'title', 'time', 'estimated_duration', 'status')
+        ).only('id', 'title', 'time', 'estimated_duration', 'status')
         
         conflicting_appointments = []
         
