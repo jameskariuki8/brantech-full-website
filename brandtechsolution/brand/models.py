@@ -30,8 +30,8 @@ class BlogPost(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    # Vector embedding for semantic search (768 dimensions for Gemini embedding-001)
-    embedding = VectorField(dimensions=768, null=True, blank=True)
+    # Vector embedding for semantic search (3072 dimensions for Gemini embedding-001)
+    embedding = VectorField(dimensions=3072, null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -65,8 +65,8 @@ class Project(models.Model):
     featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    # Vector embedding for semantic search (768 dimensions for Gemini embedding-001)
-    embedding = VectorField(dimensions=768, null=True, blank=True)
+    # Vector embedding for semantic search (3072 dimensions for Gemini embedding-001)
+    embedding = VectorField(dimensions=3072, null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
