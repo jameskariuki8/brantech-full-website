@@ -274,6 +274,8 @@
         class="fas fa-question-circle"></i><span>FAQ</span></a>
     <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
         class="fas fa-envelope"></i><span>Contact</span></a>
+    <a href="{% url 'donate' %}" class="{% if request.resolver_match.url_name == 'donate' %}active{% endif %}"><i
+        class="fas fa-heart"></i><span>Donate</span></a>
   </div>
 
   <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
@@ -291,6 +293,8 @@
         class="fas fa-question-circle"></i>FAQ</a>
     <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
         class="fas fa-envelope"></i>Contact</a>
+    <a href="{% url 'donate' %}" class="{% if request.resolver_match.url_name == 'donate' %}active{% endif %}"><i
+        class="fas fa-heart"></i>Donate</a>
   </div>
 </nav>
 

@@ -1,0 +1,474 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support TekLora - Creating a Legacy Through Technology</title>
+    <meta name="description"
+        content="Join TekLora in our mission to solve problems and empower communities across Africa and the world. Donate or join us as a marketer.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --brantech-blue: #007AFF;
+            --brantech-green: #00FF94;
+            --brantech-bg: #06090F;
+            --brantech-card: rgba(13, 18, 29, 0.7);
+        }
+
+        body {
+            background-color: var(--brantech-bg);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .text-gradient {
+            background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            background: var(--brantech-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: var(--brantech-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 122, 255, 0.1);
+        }
+
+        .hero-bg {
+            background: linear-gradient(rgba(6, 9, 15, 0.8), rgba(6, 9, 15, 0.9)),
+            url("{% static 'brand/images/donate_hero.png' %}");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .btn-donate {
+            background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-donate:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 148, 0.4);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.6s;
+        }
+
+        /* M-Pesa Style */
+        .mpesa-tile {
+            background: #4ab937;
+            color: white;
+        }
+
+        /* PayPal Style */
+        .paypal-tile {
+            background: #003087;
+            color: white;
+        }
+
+        .particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .purpose-card img {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* Magical Marketer Section */
+        .magical-box {
+            position: relative;
+            overflow: hidden;
+            background: rgba(13, 18, 29, 0.4);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .magical-box:hover {
+            border-color: var(--brantech-green);
+            box-shadow: 0 0 50px rgba(0, 255, 148, 0.15);
+        }
+
+        .glow-sphere {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 255, 148, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: 0;
+            pointer-events: none;
+            animation: move-sphere 10s infinite alternate;
+        }
+
+        @keyframes move-sphere {
+            0% {
+                transform: translate(-50%, -50%);
+            }
+
+            100% {
+                transform: translate(50%, 50%);
+            }
+        }
+
+        .magical-image {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 30px;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        .skill-tag {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #94A3B8;
+            transition: all 0.3s ease;
+        }
+
+        .skill-tag:hover {
+            background: rgba(0, 122, 255, 0.1);
+            border-color: var(--brantech-blue);
+            color: white;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="bg-[#06090F] text-white font-inter">
+
+    <!-- Header Inheritance -->
+    {% include 'brand/header.html' %}
+
+    <!-- HERO SECTION -->
+    <section class="relative min-h-[60vh] flex items-center pt-24 pb-12 overflow-hidden hero-bg">
+        <canvas id="particleCanvas" class="particle-canvas"></canvas>
+        <div class="container max-w-6xl mx-auto px-6 relative z-10 text-center">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fadeInUp">
+                Leaving a <span class="text-gradient">Legacy.</span>
+            </h1>
+            <p class="text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed animate-fadeInUp delay-1">
+                We are problem solvers at heart. Our mission is to make Africa and the world a better place through
+                innovative technology. Support our vision or join us in making an impact.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 animate-fadeInUp delay-2">
+                <a href="#payment-options" class="btn-donate">
+                    Support Our Mission <i class="fas fa-heart"></i>
+                </a>
+                <a href="#marketer-space"
+                    class="px-8 py-3 rounded-full border border-white/20 hover:bg-white/5 transition flex items-center gap-2">
+                    Join Our Story <i class="fas fa-users"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- PURPOSE SECTION -->
+    <section class="py-12 bg-[#0D121D] relative">
+        <div class="container max-w-6xl mx-auto px-6">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-bold mb-4">Our <span class="text-gradient">Core Purpose</span></h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">We offer our service to the community, open to discussions
+                    that make the world a better place via technology.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Problem Solvers -->
+                <div class="p-6 glass-card rounded-3xl purpose-card animate-on-scroll">
+                    <img src="{% static 'brand/images/purpose_1.png' %}" alt="Problem Solving">
+                    <div
+                        class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 mb-4">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3">Problem Solvers</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed">We don't just build software; we address real-world
+                        challenges faced by our communities with elegant technical solutions.</p>
+                </div>
+
+                <!-- Community First -->
+                <div class="p-6 glass-card rounded-3xl purpose-card animate-on-scroll delay-1">
+                    <img src="{% static 'brand/images/purpose_2.png' %}" alt="Community Impact">
+                    <div
+                        class="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mb-4">
+                        <i class="fas fa-globe-africa"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3">Community Service</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed">We are open to such discussions that make Africa
+                        and the world a better place. Our skills are at the service of humanity.</p>
+                </div>
+
+                <!-- Timeless Legacy -->
+                <div class="p-6 glass-card rounded-3xl purpose-card animate-on-scroll delay-2">
+                    <img src="{% static 'brand/images/purpose_3.png' %}" alt="Technological Legacy">
+                    <div
+                        class="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 mb-4">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3">Timeless Legacy</h4>
+                    <p class="text-gray-400 text-sm leading-relaxed">We want to leave a legacy. We are committed to
+                        building systems and stories that will outlast us for generations to come.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAGICAL MARKETER SECTION -->
+    <section id="marketer-space" class="py-12 bg-[#06090F] relative">
+        <div class="container max-w-6xl mx-auto px-6">
+            <div class="magical-box p-8 md:p-16">
+                <!-- Glowing effect -->
+                <div class="glow-sphere" style="top: 20%; left: 10%;"></div>
+                <div class="glow-sphere"
+                    style="bottom: 10%; right: 10%; background: radial-gradient(circle, rgba(0, 122, 255, 0.2) 0%, transparent 70%);">
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-12 items-center relative z-10">
+                    <!-- Visual Side -->
+                    <div class="order-2 md:order-1 flex justify-center">
+                        <div class="relative group">
+                            <div
+                                class="absolute -inset-4 bg-gradient-to-r from-blue-500/20 to-green-500/20 rounded-[40px] blur-2xl group-hover:opacity-100 transition duration-1000">
+                            </div>
+                            <img src="{% static 'brand/images/magical_marketer.png' %}" alt="Magical Marketing"
+                                class="magical-image">
+                        </div>
+                    </div>
+
+                    <!-- Content Side -->
+                    <div class="order-1 md:order-2">
+                        <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                            Elevate Our <br>
+                            <span class="text-gradient">Digital Story.</span>
+                        </h2>
+                        <p class="text-xl text-gray-300 mb-8 leading-relaxed">
+                            We are seeking a visionary <strong>Marketer</strong> to join our inner circle. Someone who
+                            can blend data with magic to make Africa's tech legacy known to the world.
+                        </p>
+
+                        <div class="flex flex-wrap gap-3 mb-10">
+                            <span class="skill-tag">Brand Strategy</span>
+                            <span class="skill-tag">Storytelling</span>
+                            <span class="skill-tag">Growth Hacking</span>
+                            <span class="skill-tag">Digital Magic</span>
+                            <span class="skill-tag">Social ROI</span>
+                        </div>
+
+                        <a href="{% url 'contacts' %}" class="btn-donate group">
+                            Let's Create Magic <i class="fas fa-magic group-hover:rotate-12 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DONATION OPTIONS -->
+    <section id="payment-options" class="py-10 bg-gradient-to-b from-[#06090F] to-[#0D121D]">
+        <div class="container max-w-5xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold mb-8">Ways to <span class="text-gradient">Support Us</span></h2>
+
+            <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <!-- PayPal -->
+                <div class="p-6 rounded-2xl glass-card flex flex-col items-center">
+                    <div
+                        class="w-14 h-14 bg-blue-500/10 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-4">
+                        <i class="fab fa-paypal"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">PayPal</h3>
+                    <p class="text-gray-400 text-sm mb-6 text-center">Support our initiatives globally.</p>
+                    <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=juniorkariuki735@gmail.com&currency_code=USD&item_name=Support%20TekLora"
+                        target="_blank"
+                        class="w-full py-3 rounded-lg paypal-tile font-bold hover:opacity-90 transition text-center text-sm">
+                        Donate via PayPal
+                    </a>
+                </div>
+
+                <!-- M-Pesa -->
+                <div class="p-6 rounded-2xl glass-card flex flex-col items-center border border-green-500/10">
+                    <div
+                        class="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center text-2xl text-green-500 mb-4">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">M-Pesa</h3>
+                    <p class="text-gray-400 text-sm mb-4">Support us locally in Kenya.</p>
+                    <div class="w-full p-3 bg-white/5 rounded-lg border border-white/10 text-center">
+                        <span class="text-gray-500 text-xs block mb-1">Phone number</span>
+                        <span class="font-mono text-xl font-bold text-green-400">+254 704 894220</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Inheritance -->
+    {% include 'brand/footer.html' %}
+
+    <!-- SCRIPTS -->
+    <script>
+        // Particle Background System
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = Math.random() > 0.5 ? '#007AFF' : '#00FF94';
+                this.opacity = Math.random() * 0.5;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+            }
+        }
+
+        function setupParticles() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        setupParticles();
+        animate();
+
+        // Reveal on scroll
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fadeInUp');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            el.style.opacity = '0';
+            observer.observe(el);
+        });
+    </script>
+</body>
+
+</html>

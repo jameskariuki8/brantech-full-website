@@ -3,381 +3,359 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FAQ - TekLora</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ - TekLora | Expert Solutions</title>
+    <meta name="description"
+        content="Find answers to common questions about TekLora's tech solutions, pricing, and process.">
 
-  <!-- Favicon -->
-  <!-- Favicon -->
-  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+        rel="stylesheet">
 
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-  <!-- CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}" />
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    <!-- CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
-  <!-- GSAP (Optional for smooth interactions if needed) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --brantech-blue: #007AFF;
+            --brantech-green: #00FF94;
+            --brantech-bg: #06090F;
+            --brantech-card: rgba(13, 18, 29, 0.4);
+        }
+
+        html,
+        body {
+            background-color: var(--brantech-bg);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        .font-jakarta {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .text-gradient {
+            background: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bento-card {
+            background: var(--brantech-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            height: 100%;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bento-card:hover {
+            transform: scale(1.02);
+            border-color: var(--brantech-blue);
+            background: rgba(13, 18, 29, 0.6);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 0;
+            background: linear-gradient(to bottom, var(--brantech-blue), var(--brantech-green));
+            transition: height 0.4s ease;
+        }
+
+        .bento-card:hover::before {
+            height: 100%;
+        }
+
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .category-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+        }
+
+        .pill-services {
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--brantech-blue);
+        }
+
+        .pill-pricing {
+            background: rgba(0, 255, 148, 0.1);
+            color: var(--brantech-green);
+        }
+
+        .pill-process {
+            background: rgba(168, 85, 247, 0.1);
+            color: #a855f7;
+        }
+
+        .pill-tech {
+            background: rgba(234, 179, 8, 0.1);
+            color: #eab308;
+        }
+
+        .search-wrapper {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 8px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--brantech-blue);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        /* Animation class */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+    </style>
 </head>
 
-<body class="bg-[#06090F] text-white font-inter overflow-x-hidden flex flex-col min-h-screen">
+<body class="bg-[#06090F] text-white">
 
-  <!-- Header -->
-  {% include 'brand/header.html' %}
+    <!-- Header -->
+    {% include 'brand/header.html' %}
 
-  <!-- HERO SECTION -->
-  <section class="relative pt-32 pb-20 overflow-hidden">
-    <!-- Background Elements -->
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-      <div class="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]"></div>
-      <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[100px]">
-      </div>
-    </div>
+    <!-- Navbar Spacer -->
+    <div class="h-24 md:h-32"></div>
 
-    <div class="container max-w-4xl mx-auto px-6 text-center">
+    <main class="relative min-h-screen">
+        <!-- Floating Elements -->
+        <div class="glow-orb w-[800px] h-[800px] bg-blue-500 top-[-300px] left-[-200px]"></div>
+        <div class="glow-orb w-[600px] h-[600px] bg-green-500 bottom-[-200px] right-[-100px]"></div>
 
-      <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-        Frequently Asked <span
-          class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400">Questions</span>
-      </h1>
-      <p class="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-        Everything you need to know about our services, process, and how we help you build the future.
-      </p>
-    </div>
-  </section>
+        <!-- HERO SECTION -->
+        <section class="pt-12 md:pt-20 pb-8 overflow-hidden">
+            <div class="container max-w-6xl mx-auto px-6 text-center">
+                <h1
+                    class="text-4xl sm:text-5xl md:text-8xl font-bold mb-4 font-jakarta tracking-tight reveal-item break-words">
+                    Knowledge <span class="text-gradient">Hub.</span>
+                </h1>
+                <p class="text-base md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 reveal-item">
+                    Clear insights into how we work and help you build the future.
+                </p>
+            </div>
+        </section>
 
-  <!-- FAQ CONTENT -->
-  <section class="pb-32">
-    <div class="container max-w-4xl mx-auto px-6">
+        <!-- BENTO GRID FAQ -->
+        <section class="pb-24">
+            <div class="container max-w-7xl mx-auto px-6">
+                <!-- Category Tabs -->
+                <div class="flex flex-wrap justify-center gap-4 mb-16 reveal-item">
+                    <button class="filter-tab active text-sm font-bold opacity-100 hover:text-white transition"
+                        data-filter="all">All</button>
+                    <button
+                        class="filter-tab text-sm font-bold opacity-40 hover:opacity-100 hover:text-white transition text-blue-400"
+                        data-filter="services">Services</button>
+                    <button
+                        class="filter-tab text-sm font-bold opacity-40 hover:opacity-100 hover:text-white transition text-green-400"
+                        data-filter="pricing">Pricing</button>
+                    <button
+                        class="filter-tab text-sm font-bold opacity-40 hover:opacity-100 hover:text-white transition text-purple-400"
+                        data-filter="process">Process</button>
+                </div>
 
-      <!-- Category Filter (Mobile: Horizontal Scroll, Desktop: Centered) -->
-      <div class="flex md:flex-wrap md:justify-center overflow-x-auto pb-4 md:pb-0 gap-3 mb-12 scrollbar-hide snap-x"
-        id="faq-filters">
-        <button
-          class="flex-shrink-0 snap-start px-5 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-sm md:text-base font-medium hover:bg-blue-500 hover:text-white transition-all active-filter"
-          data-filter="all">All Questions</button>
-        <button
-          class="flex-shrink-0 snap-start px-5 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm md:text-base font-medium hover:bg-white/10 hover:text-white transition-all"
-          data-filter="services">Our Services</button>
-        <button
-          class="flex-shrink-0 snap-start px-5 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm md:text-base font-medium hover:bg-white/10 hover:text-white transition-all"
-          data-filter="pricing">Pricing & Plans</button>
-        <button
-          class="flex-shrink-0 snap-start px-5 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm md:text-base font-medium hover:bg-white/10 hover:text-white transition-all"
-          data-filter="process">Process & Workflow</button>
-      </div>
+                <div id="bentoGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-      <!-- FAQ Items Grid -->
-      <div class="space-y-4" id="faq-list">
+                    <!-- Card 1 -->
+                    <div class="faq-card reveal-item" data-category="services">
+                        <div class="bento-card p-6 md:p-8">
+                            <span class="category-pill pill-services">Services</span>
+                            <h3 class="text-xl font-bold mb-4 font-jakarta">What services does TekLora offer?</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                We offer comprehensive digital solutions including web development, mobile app
+                                development, branding and design, digital strategy, SEO optimization, and ongoing
+                                technical support.
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Item 1 -->
-        <div
-          class="faq-item group bg-[#0D121D] border border-white/5 rounded-2xl overflow-hidden transition-all duration-300 hover:border-blue-500/30"
-          data-category="services">
-          <button
-            class="w-full text-left p-5 md:p-8 flex items-start md:items-center justify-between gap-4 focus:outline-none"
-            onclick="toggleAccordion(this)">
-            <div class="flex items-start md:items-center gap-4">
-              <div
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors mt-1 md:mt-0">
-                <i class="fas fa-cubes text-sm md:text-base"></i>
-              </div>
-              <span class="text-base md:text-lg font-semibold text-white leading-tight mt-1 md:mt-0">What services does
-                Teklora offer?</span>
-            </div>
-            <div
-              class="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center transition-transform duration-300 icon-rotate mt-1 md:mt-0">
-              <i class="fas fa-plus text-xs md:text-sm text-gray-400"></i>
-            </div>
-          </button>
-          <div class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out bg-[#06090F]/50">
-            <div class="p-5 md:p-8 pt-0 text-sm md:text-base text-gray-400 leading-relaxed border-t border-white/5">
-              We offer comprehensive digital solutions including web development, mobile app development, branding and
-              design, digital strategy, SEO optimization, and ongoing technical support. Our team specializes in
-              creating modern, responsive websites and applications using the latest technologies.
-            </div>
-          </div>
-        </div>
+                    <!-- Card 2 -->
+                    <div class="faq-card reveal-item" data-category="pricing">
+                        <div class="bento-card p-6 md:p-8">
+                            <span class="category-pill pill-pricing">Pricing</span>
+                            <h3 class="text-xl font-bold mb-4 font-jakarta">How much do your services cost?</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Pricing is tailored to your project. We offer fixed-price projects for clearly defined
+                                requirements and hourly or retainer models for ongoing support.
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Item 2 -->
-        <div
-          class="faq-item group bg-[#0D121D] border border-white/5 rounded-2xl overflow-hidden transition-all duration-300 hover:border-green-500/30"
-          data-category="pricing">
-          <button
-            class="w-full text-left p-5 md:p-8 flex items-start md:items-center justify-between gap-4 focus:outline-none"
-            onclick="toggleAccordion(this)">
-            <div class="flex items-start md:items-center gap-4">
-              <div
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 group-hover:bg-green-500 group-hover:text-white transition-colors mt-1 md:mt-0">
-                <i class="fas fa-tags text-sm md:text-base"></i>
-              </div>
-              <span class="text-base md:text-lg font-semibold text-white leading-tight mt-1 md:mt-0">How much do your
-                services cost?</span>
-            </div>
-            <div
-              class="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center transition-transform duration-300 icon-rotate mt-1 md:mt-0">
-              <i class="fas fa-plus text-xs md:text-sm text-gray-400"></i>
-            </div>
-          </button>
-          <div class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out bg-[#06090F]/50">
-            <div class="p-5 md:p-8 pt-0 text-sm md:text-base text-gray-400 leading-relaxed border-t border-white/5">
-              Our pricing varies based on project scope, complexity, and requirements. We offer competitive rates and
-              provide detailed quotes after understanding your specific needs. Contact us for a free consultation and
-              personalized quote.
-            </div>
-          </div>
-        </div>
+                    <!-- Card 3 -->
+                    <div class="faq-card reveal-item" data-category="process">
+                        <div class="bento-card p-6 md:p-8">
+                            <span class="category-pill pill-process">Process</span>
+                            <h3 class="text-xl font-bold mb-4 font-jakarta">Project Timeline?</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                A typical corporate website takes 2-4 weeks. Complex applications can take 2-3 months
+                                depending on features. We use Agile to provide weekly updates.
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Item 3 -->
-        <div
-          class="faq-item group bg-[#0D121D] border border-white/5 rounded-2xl overflow-hidden transition-all duration-300 hover:border-purple-500/30"
-          data-category="process">
-          <button
-            class="w-full text-left p-5 md:p-8 flex items-start md:items-center justify-between gap-4 focus:outline-none"
-            onclick="toggleAccordion(this)">
-            <div class="flex items-start md:items-center gap-4">
-              <div
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors mt-1 md:mt-0">
-                <i class="fas fa-cogs text-sm md:text-base"></i>
-              </div>
-              <span class="text-base md:text-lg font-semibold text-white leading-tight mt-1 md:mt-0">What is your
-                development process?</span>
-            </div>
-            <div
-              class="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center transition-transform duration-300 icon-rotate mt-1 md:mt-0">
-              <i class="fas fa-plus text-xs md:text-sm text-gray-400"></i>
-            </div>
-          </button>
-          <div class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out bg-[#06090F]/50">
-            <div class="p-5 md:p-8 pt-0 text-sm md:text-base text-gray-400 leading-relaxed border-t border-white/5">
-              Our process includes: 1) Initial consultation and requirements gathering, 2) Planning and strategy
-              development, 3) Design and prototyping, 4) Development and testing, 5) Launch and deployment, 6) Ongoing
-              support and maintenance. We keep you involved throughout every step.
-            </div>
-          </div>
-        </div>
+                    <!-- Card 4 -->
+                    <div class="faq-card reveal-item" data-category="services">
+                        <div class="bento-card p-6 md:p-8">
+                            <span class="category-pill pill-services">Support</span>
+                            <h3 class="text-xl font-bold mb-4 font-jakarta">Post-launch Support?</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Yes! We provide 30 days of free post-launch support and offer maintenance packages for
+                                regular updates, security monitoring, and backups.
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Item 4 -->
-        <div
-          class="faq-item group bg-[#0D121D] border border-white/5 rounded-2xl overflow-hidden transition-all duration-300 hover:border-blue-500/30"
-          data-category="services">
-          <button
-            class="w-full text-left p-5 md:p-8 flex items-start md:items-center justify-between gap-4 focus:outline-none"
-            onclick="toggleAccordion(this)">
-            <div class="flex items-start md:items-center gap-4">
-              <div
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors mt-1 md:mt-0">
-                <i class="fas fa-headset text-sm md:text-base"></i>
-              </div>
-              <span class="text-base md:text-lg font-semibold text-white leading-tight mt-1 md:mt-0">Do you provide
-                ongoing support?</span>
-            </div>
-            <div
-              class="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center transition-transform duration-300 icon-rotate mt-1 md:mt-0">
-              <i class="fas fa-plus text-xs md:text-sm text-gray-400"></i>
-            </div>
-          </button>
-          <div class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out bg-[#06090F]/50">
-            <div class="p-5 md:p-8 pt-0 text-sm md:text-base text-gray-400 leading-relaxed border-t border-white/5">
-              Yes, we provide comprehensive post-launch support including bug fixes, security updates, performance
-              optimization, and feature enhancements. We offer various support packages to meet different needs.
-            </div>
-          </div>
-        </div>
+                    <!-- Card 5 -->
+                    <div class="faq-card reveal-item" data-category="tech">
+                        <div class="bento-card p-6 md:p-8">
+                            <span class="category-pill pill-tech">Tech Stack</span>
+                            <h3 class="text-xl font-bold mb-4 font-jakarta">What tech do you use?</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                We specialize in Python for backend, React/Next.js for frontend, and React Native for
+                                mobile. We also use AWS and Google Cloud for hosting.
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Item 5 -->
-        <div
-          class="faq-item group bg-[#0D121D] border border-white/5 rounded-2xl overflow-hidden transition-all duration-300 hover:border-green-500/30"
-          data-category="services">
-          <button
-            class="w-full text-left p-5 md:p-8 flex items-start md:items-center justify-between gap-4 focus:outline-none"
-            onclick="toggleAccordion(this)">
-            <div class="flex items-start md:items-center gap-4">
-              <div
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 group-hover:bg-green-500 group-hover:text-white transition-colors mt-1 md:mt-0">
-                <i class="fas fa-globe text-sm md:text-base"></i>
-              </div>
-              <span class="text-base md:text-lg font-semibold text-white leading-tight mt-1 md:mt-0">Do you work with
-                clients remotely?</span>
-            </div>
-            <div
-              class="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center transition-transform duration-300 icon-rotate mt-1 md:mt-0">
-              <i class="fas fa-plus text-xs md:text-sm text-gray-400"></i>
-            </div>
-          </button>
-          <div class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out bg-[#06090F]/50">
-            <div class="p-5 md:p-8 pt-0 text-sm md:text-base text-gray-400 leading-relaxed border-t border-white/5">
-              Absolutely! We work with clients worldwide and have established efficient remote collaboration processes.
-              We use modern communication tools and project management systems to ensure smooth collaboration regardless
-              of location.
-            </div>
-          </div>
-        </div>
+                    <!-- Card 6 -->
+                    <div class="faq-card reveal-item" data-category="process">
+                        <div class="bento-card p-6 md:p-8">
+                            <span class="category-pill pill-process">Legacy</span>
+                            <h3 class="text-xl font-bold mb-4 font-jakarta">Our Mission?</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Our goal is to make Africa a tech powerhouse. We invest part of our profits into
+                                community tech training and legacy projects.
+                            </p>
+                        </div>
+                    </div>
 
-        <!-- Call to Action -->
-        <div
-          class="mt-12 p-8 rounded-3xl bg-gradient-to-r from-blue-600/10 to-green-600/10 border border-white/10 text-center">
-          <h3 class="text-2xl font-bold mb-4">Still have questions?</h3>
-          <p class="text-gray-400 mb-8 max-w-lg mx-auto">Can't find the answer you're looking for? Please chat to our
-            friendly team.</p>
-          <a href="{% url 'contacts' %}"
-            class="inline-block px-8 py-3 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20">
-            Get in Touch
-          </a>
-        </div>
+                </div>
 
-      </div>
-    </div>
-  </section>
+            </div>
+            </div>
+        </section>
+    </main>
 
-  <!-- Footer -->
-  <div class="mt-auto">
+    <!-- Footer -->
     {% include 'brand/footer.html' %}
-  </div>
 
-  <!-- Chat Assistant -->
-  <div id="chatAssistant" class="chat-assistant">
-    <!-- Floating Chat Button -->
-    <div id="chatToggle" class="chat-toggle">
-      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-      </svg>
-      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+    <!-- Chat Assistant integration -->
+    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    <div id="chatAssistant" class="chat-assistant">
+        <!-- Floating Chat Button icon -->
+        <div id="chatToggle" class="chat-toggle">
+            <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
+            </svg>
+        </div>
+        <!-- Standard Chat Window content -->
+        <div id="chatWindow" class="chat-window">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-header-text">
+                        <h3>TekLora Assistant</h3>
+                        <p>Ask anything about our FAQ!</p>
+                    </div>
+                </div>
+                <button id="chatClose" class="chat-close"><i class="fas fa-times"></i></button>
+            </div>
+            <!-- Messages container -->
+            <div id="chatMessages" class="chat-messages"
+                style="background: #f3f4f6; color: #1f2937; height: 300px; overflow-y: auto; padding: 1rem;">
+                <p>Hi! How can I help you today?</p>
+            </div>
+            <!-- Input -->
+            <div class="p-4 border-t">
+                <input type="text" id="chatInput" class="w-full p-2 rounded border" placeholder="Type here...">
+            </div>
+        </div>
     </div>
 
-    <!-- Chat Window -->
-    <div id="chatWindow" class="chat-window">
-      <!-- Chat Header -->
-      <div class="chat-header">
-        <div class="chat-header-info">
-          <div class="chat-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <div class="chat-header-text">
-            <h3>TekLora Assistant</h3>
-            <p>How can I help you today?</p>
-          </div>
-        </div>
-        <button id="chatClose" class="chat-close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
+    <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
 
-      <!-- Chat Messages -->
-      <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-        <div class="chat-welcome">
-          <div class="welcome-message">
-            <div class="welcome-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-            <div class="welcome-text">
-              <p>Hello! I'm your TekLora Solutions assistant.</p>
-              <p>What would you like to know?</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // GSAP Reveal
+            gsap.to('.reveal-item', {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: 'power4.out'
+            });
 
-      <!-- Chat Input -->
-      <div class="chat-input-container">
-        <div class="chat-input-wrapper">
-          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
-          <button id="chatSend" class="chat-send" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22,2 15,22 11,13 2,9 22,2" />
-            </svg>
-          </button>
-        </div>
-        <div class="chat-typing" id="chatTyping" style="display: none;">
-          <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span>TekLora Assistant is typing...</span>
-        </div>
-      </div>
-    </div>
-  </div>
+            // Tab logic
+            const tabs = document.querySelectorAll('.filter-tab');
+            const cards = document.querySelectorAll('.faq-card');
 
-  <script src="{% static 'brand/js/components.js' %}"></script>
-  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.add('opacity-40'));
+                    tab.classList.remove('opacity-40');
+                    tab.classList.add('opacity-100');
 
-  <script>
-    // Simple Accordion Logic
-    function toggleAccordion(button) {
-      const item = button.parentElement;
-      const content = button.nextElementSibling;
-      const icon = button.querySelector('.icon-rotate');
-      const iconI = icon.querySelector('i');
+                    const filter = tab.getAttribute('data-filter');
 
-      // Close others (optional, for accordion vs toggle behavior)
-      // document.querySelectorAll('.faq-item').forEach(otherItem => {
-      //     if (otherItem !== item && otherItem.querySelector('.bg-[#06090F]/50').style.maxHeight) {
-      //         otherItem.querySelector('.bg-[#06090F]/50').style.maxHeight = null;
-      //         otherItem.querySelector('.icon-rotate').classList.remove('rotate-45');
-      //         otherItem.querySelector('i').classList.remove('text-blue-400');
-      //     }
-      // });
+                    cards.forEach(card => {
+                        if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                            card.style.display = 'block';
+                            gsap.fromTo(card, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4 });
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
 
-      if (content.style.maxHeight) {
-        content.style.maxHeight = null;
-        icon.classList.remove('rotate-45', 'bg-blue-500/20');
-        iconI.classList.remove('text-blue-400');
-        iconI.classList.add('text-gray-400');
-      } else {
-        content.style.maxHeight = content.scrollHeight + "px";
-        icon.classList.add('rotate-45', 'bg-blue-500/20');
-        iconI.classList.remove('text-gray-400');
-        iconI.classList.add('text-blue-400');
-      }
-    }
-
-    // Filter Logic
-    const filterButtons = document.querySelectorAll('#faq-filters button');
-    const faqItems = document.querySelectorAll('.faq-item');
-
-    filterButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Update buttons state
-        filterButtons.forEach(b => {
-          b.classList.remove('bg-blue-500/10', 'text-blue-400', 'border-blue-500/30');
-          b.classList.add('bg-white/5', 'text-gray-400', 'border-white/10');
+            // Search logic
+            const searchInput = document.getElementById('bentoSearch');
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                cards.forEach(card => {
+                    const content = card.innerText.toLowerCase();
+                    card.style.display = content.includes(term) ? 'block' : 'none';
+                });
+            });
         });
-        btn.classList.remove('bg-white/5', 'text-gray-400', 'border-white/10');
-        btn.classList.add('bg-blue-500/10', 'text-blue-400', 'border-blue-500/30');
-
-        // Filter items
-        const filter = btn.getAttribute('data-filter');
-        faqItems.forEach(item => {
-          if (filter === 'all' || item.getAttribute('data-category') === filter) {
-            item.style.display = 'block';
-            // Optional: fade in animation could go here
-          } else {
-            item.style.display = 'none';
-          }
-        });
-      });
-    });
-  </script>
-
+    </script>
 </body>
 
 </html>

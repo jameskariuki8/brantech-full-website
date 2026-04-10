@@ -17,6 +17,10 @@ def about(request):
     """About page view"""
     return render(request, 'brand/about.html')
 
+def donate(request):
+    """Donate page view"""
+    return render(request, 'brand/donate.html')
+
 
 
 def blog(request):
