@@ -46,11 +46,10 @@ class AppSettings(BaseSettings):
     # Gemini API Configuration
     # ============================================================
     google_api_key: str
-    chroma_persist_directory: str = "./chroma_db"
     
     # Gemini Model Configuration
     gemini_chat_model: str = "gemini-2.5-flash"
-    gemini_embedding_model: str = "models/embedding-001"
+    gemini_embedding_model: str = "models/gemini-embedding-001"
     
     # ============================================================
     # LangSmith Configuration

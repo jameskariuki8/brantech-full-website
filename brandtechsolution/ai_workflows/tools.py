@@ -1,120 +1,128 @@
 """
-RAG tools for retrieving blog posts and projects
+RAG tools for retrieving blog posts and projects using pgvector and Django ORM.
 """
 from langchain.tools import tool
-from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from django.contrib.auth.models import User
 from brandtechsolution.config import config
+from brand.models import BlogPost, Project
+from pgvector.django import L2Distance
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class BlogRetrieverTool:
-    """Tool for retrieving relevant blog posts"""
+def _handle_search_error(error: Exception, search_type: str) -> str:
+    """
+    Centralized error handling for search operations.
     
-    def __init__(self):
-        self.embeddings = GoogleGenerativeAIEmbeddings(
+    Args:
+        error: The exception that occurred
+        search_type: Type of search ("blog posts" or "projects")
+    
+    Returns:
+        User-friendly error message
+    """
+    error_str = str(error)
+    logger.error(f"Error searching {search_type}: {error_str}", exc_info=True)
+    
+    if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
+        return f"I'm currently unable to search {search_type} due to API rate limits. Please try again in a moment."
+    elif "embed" in error_str.lower() or "embedding" in error_str.lower():
+        return f"I'm having trouble accessing the {search_type} search feature at the moment. Please try again later."
+    else:
+        return f"I encountered an issue searching {search_type}. Please try again or ask about something else."
+
+
+# Singleton embedding instance
+_embeddings = None
+
+
+def get_embeddings():
+    """Get or create embeddings instance using Google Gemini API."""
+    global _embeddings
+    if _embeddings is None:
+        # models/embedding-001 produces 768-dimensional vectors (matches our VectorField)
+        _embeddings = GoogleGenerativeAIEmbeddings(
             model=config.gemini_embedding_model,
             google_api_key=config.google_api_key
         )
-        self.vectorstore = self._load_existing_vectorstore()
+        logger.info("Embedding model initialized successfully")
+    return _embeddings
+
+
+class BlogRetrieverTool:
+    """Tool for retrieving relevant blog posts using pgvector."""
     
-    def _load_existing_vectorstore(self):
-        """Load prebuilt vector store; create empty collection if missing."""
+    def __init__(self):
+        self.embeddings = get_embeddings()
+    
+    def search(self, query: str, k: int = 3) -> str:
+        """Search blog posts and return relevant content using vector similarity."""
         try:
-            return Chroma(
-                collection_name="blog_posts",
-                embedding_function=self.embeddings,
-                persist_directory=config.chroma_persist_directory
+            # Generate embedding for the query
+            query_embedding = self.embeddings.embed_query(query)
+            
+            # Query Django ORM using L2Distance for vector similarity
+            # Only search posts that have embeddings
+            # Use only() to fetch only required fields for better performance
+            results = (
+                BlogPost.objects
+                .exclude(embedding__isnull=True)
+                .only('title', 'category', 'content')
+                .order_by(L2Distance('embedding', query_embedding))[:k]
             )
+            
+            if not results:
+                return "No relevant blog posts found. The blog posts may not have been indexed yet."
+            
+            # Use list comprehension for better performance
+            output = [
+                f"Title: {post.title}\nCategory: {post.category}\n{post.content[:500]}..."
+                for post in results
+            ]
+            
+            return "\n\n---\n\n".join(output)
+            
         except Exception as e:
-            logger.warning("Blog vectorstore load failed: %s", e)
-            return None
-    
-    def search(self, query: str) -> str:
-        """Search blog posts and return relevant content"""
-        if not self.vectorstore:
-            self.vectorstore = self._load_existing_vectorstore()
-        if not self.vectorstore:
-            return "No blog posts available. Try initializing vector stores."
-        
-        try:
-            docs = self.vectorstore.similarity_search(query, k=3)
-            
-            results = []
-            for doc in docs:
-                title = doc.metadata.get('title', 'Unknown')
-                content = doc.page_content[:500]
-                results.append(f"Title: {title}\n{content}...")
-            
-            return "\n\n---\n\n".join(results) if results else "No relevant blog posts found."
-        except Exception as e:
-            error_str = str(e)
-            # Log full error for debugging
-            logger.error(f"Error searching blog posts: {error_str}", exc_info=True)
-            
-            # Return user-friendly error message without exposing full error details
-            if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
-                return "I'm currently unable to search blog posts due to API rate limits. Please try again in a moment."
-            elif "embed" in error_str.lower() or "embedding" in error_str.lower():
-                return "I'm having trouble accessing the blog post search feature at the moment. Please try again later."
-            else:
-                return "I encountered an issue searching blog posts. Please try again or ask about something else."
+            return _handle_search_error(e, "blog posts")
 
 
 class ProjectRetrieverTool:
-    """Tool for retrieving relevant projects"""
+    """Tool for retrieving relevant projects using pgvector."""
     
     def __init__(self):
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model=config.gemini_embedding_model,
-            google_api_key=config.google_api_key
-        )
-        self.vectorstore = self._load_existing_vectorstore()
+        self.embeddings = get_embeddings()
     
-    def _load_existing_vectorstore(self):
-        """Load prebuilt vector store; create empty collection if missing."""
+    def search(self, query: str, k: int = 3) -> str:
+        """Search projects and return relevant content using vector similarity."""
         try:
-            return Chroma(
-                collection_name="projects",
-                embedding_function=self.embeddings,
-                persist_directory=config.chroma_persist_directory
+            # Generate embedding for the query
+            query_embedding = self.embeddings.embed_query(query)
+            
+            # Query Django ORM using L2Distance for vector similarity
+            # Only search projects that have embeddings
+            # Use only() to fetch only required fields for better performance
+            results = (
+                Project.objects
+                .exclude(embedding__isnull=True)
+                .only('title', 'description')
+                .order_by(L2Distance('embedding', query_embedding))[:k]
             )
+            
+            if not results:
+                return "No relevant projects found. The projects may not have been indexed yet."
+            
+            # Use list comprehension for better performance
+            output = [
+                f"Project: {project.title}\n{project.description[:500]}..."
+                for project in results
+            ]
+            
+            return "\n\n---\n\n".join(output)
+            
         except Exception as e:
-            logger.warning("Project vectorstore load failed: %s", e)
-            return None
-    
-    def search(self, query: str) -> str:
-        """Search projects and return relevant content"""
-        if not self.vectorstore:
-            self.vectorstore = self._load_existing_vectorstore()
-        if not self.vectorstore:
-            return "No projects available. Try initializing vector stores."
-        
-        try:
-            docs = self.vectorstore.similarity_search(query, k=3)
-            
-            results = []
-            for doc in docs:
-                title = doc.metadata.get('title', 'Unknown')
-                content = doc.page_content[:500]
-                results.append(f"Project: {title}\n{content}...")
-            
-            return "\n\n---\n\n".join(results) if results else "No relevant projects found."
-        except Exception as e:
-            error_str = str(e)
-            # Log full error for debugging
-            logger.error(f"Error searching projects: {error_str}", exc_info=True)
-            
-            # Return user-friendly error message without exposing full error details
-            if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str or "quota" in error_str.lower():
-                return "I'm currently unable to search projects due to API rate limits. Please try again in a moment."
-            elif "embed" in error_str.lower() or "embedding" in error_str.lower():
-                return "I'm having trouble accessing the project search feature at the moment. Please try again later."
-            else:
-                return "I encountered an issue searching projects. Please try again or ask about something else."
+            return _handle_search_error(e, "projects")
 
 
 # Singleton instances
@@ -123,7 +131,7 @@ _project_retriever = None
 
 
 def get_blog_retriever():
-    """Get or create blog retriever instance"""
+    """Get or create blog retriever instance."""
     global _blog_retriever
     if _blog_retriever is None:
         _blog_retriever = BlogRetrieverTool()
@@ -131,7 +139,7 @@ def get_blog_retriever():
 
 
 def get_project_retriever():
-    """Get or create project retriever instance"""
+    """Get or create project retriever instance."""
     global _project_retriever
     if _project_retriever is None:
         _project_retriever = ProjectRetrieverTool()
@@ -185,7 +193,7 @@ def create_user_info_tool(user_id: int):
             String containing user's basic information
         """
         try:
-            user = User.objects.get(pk=user_id)
+            user = User.objects.only('username', 'email', 'first_name', 'last_name', 'date_joined', 'is_active').get(pk=user_id)
             
             info_parts = [
                 f"Username: {user.username}",
