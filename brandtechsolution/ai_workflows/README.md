@@ -64,7 +64,6 @@ Make sure your `.env` file in `brandtechsolution/` contains:
 
 ```bash
 GOOGLE_API_KEY=your_google_api_key_here
-CHROMA_PERSIST_DIRECTORY=./chroma_db
 GEMINI_CHAT_MODEL=gemini-2.0-flash-exp
 GEMINI_EMBEDDING_MODEL=models/embedding-001
 LANGSMITH_TRACING=False
@@ -117,7 +116,7 @@ Edit `brandtechsolution/config.py` or set environment variables:
 
 ### Vector Store
 
-Vector stores are stored in `chroma_db/` directory (configurable via `CHROMA_PERSIST_DIRECTORY`).
+Vector embeddings are stored securely inside PostgreSQL using the `pgvector` extension. No separate microservice vector database is required.
 
 To rebuild vector stores after adding new blog posts or projects:
 ```bash
@@ -185,7 +184,7 @@ Django API Endpoint
     ↓
 Chatbot Agent (Gemini)
     ↓
-RAG Tools → Vector Store (ChromaDB)
+RAG Tools → Vector Store (pgvector)
     ↓
 Django Checkpointer → Database
     ↓
