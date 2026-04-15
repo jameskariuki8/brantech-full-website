@@ -47,6 +47,13 @@ def projects(request):
     """Projects page view - public access"""
     return render(request, 'brand/projects.html')
 
+def project_page(request, pk):
+    """Single project detail page."""
+    from .models import Project
+    from django.shortcuts import get_object_or_404
+    project = get_object_or_404(Project, pk=pk)
+    return render(request, 'brand/project_detail.html', {'project': project})
+
 def signup_view(request):
     """User signup view"""
     if request.method == 'POST':

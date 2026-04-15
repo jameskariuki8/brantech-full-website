@@ -118,6 +118,10 @@
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
             </a>
+            <a href="#" onclick="showSection('githubSync', this)"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fab fa-github w-6 text-center mr-3"></i>GitHub Manager
+            </a>
             <a href="/appointments"
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
                 <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
@@ -335,6 +339,28 @@
                 <div id="projectsList" class="space-y-4"></div>
             </div>
 
+            <!-- GitHub Sync Section -->
+            <div id="githubSync" class="section hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">GitHub Manager</h2>
+                        <p class="text-gray-500 text-sm">Sync your repositories as projects</p>
+                    </div>
+                    <button onclick="syncSelectedRepos()" id="syncBtn"
+                        class="bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Sync Selected
+                    </button>
+                </div>
+                
+                <!-- Loading indicator -->
+                <div id="githubLoading" class="text-center py-10 text-gray-500 hidden">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                    <p>Loading repositories from GitHub...</p>
+                </div>
+
+                <div id="githubList" class="space-y-4"></div>
+            </div>
+
 
 
         </div>
@@ -383,6 +409,7 @@
             // Load data
             if (sectionName === 'blogs') loadBlogs();
             if (sectionName === 'projects') loadProjects();
+            if (sectionName === 'githubSync') loadGithubRepos();
             // Events removed
             if (sectionName === 'dashboard') loadDashboard();
         }
@@ -458,6 +485,7 @@
                             <div class="flex items-center gap-2 mb-2">
                                 <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded">PROJECT</span>
                                 ${project.featured ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded">FEATURED</span>' : ''}
+                                ${project.is_github_synced ? `<span class="text-xs font-bold text-gray-300 px-2 py-1 bg-gray-800 rounded"><i class="fab fa-github mr-1"></i>${project.github_role || 'synced'}</span>` : ''}
                             </div>
                             <h3 class="text-xl font-bold text-white mb-1">${project.title}</h3>
                             <p class="text-sm text-gray-400 mb-2">${project.short_description || ''}</p>
@@ -472,7 +500,84 @@
             } catch (e) { console.error(e); }
         }
 
+        async function loadGithubRepos() {
+            document.getElementById('githubList').innerHTML = '';
+            document.getElementById('githubLoading').classList.remove('hidden');
+            try {
+                const response = await fetch(`${API_BASE}/github/repos/`, { credentials: 'same-origin' });
+                const data = await response.json();
+                document.getElementById('githubLoading').classList.add('hidden');
+                
+                const repos = data.results || [];
+                const container = document.getElementById('githubList');
+                if (!repos.length) {
+                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No repositories found or PAT is invalid.</div>`;
+                    return;
+                }
+                
+                container.innerHTML = repos.map(repo => `
+                    <div class="bg-dark-card border ${repo.is_synced ? 'border-brand-green/50' : 'border-dark-border'} p-5 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4 hover:border-brand-blue/30 transition-colors">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h3 class="text-lg font-bold ${repo.is_synced ? 'text-brand-green' : 'text-white'} mb-1">${repo.name}</h3>
+                                ${repo.is_private ? '<span class="text-xs font-bold text-yellow-500 px-2 py-1 bg-yellow-900/20 rounded"><i class="fas fa-lock mr-1"></i>Private</span>' : ''}
+                                <span class="text-xs font-bold text-gray-400 px-2 py-1 bg-gray-800 rounded uppercase">${repo.role}</span>
+                                ${repo.is_synced ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded"><i class="fas fa-check mr-1"></i>Synced</span>' : ''}
+                            </div>
+                            <p class="text-sm text-gray-400 mb-2 line-clamp-1">${repo.description}</p>
+                        </div>
+                        <div class="flex items-center justify-end w-24">
+                            <input type="checkbox" value="${repo.id}" class="github-repo-check w-6 h-6 bg-[#06090F] border-dark-border rounded text-brand-blue focus:ring-offset-gray-900 cursor-pointer">
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { 
+                console.error(e); 
+                document.getElementById('githubLoading').classList.add('hidden');
+            }
+        }
 
+        async function syncSelectedRepos() {
+            const checkboxes = document.querySelectorAll('.github-repo-check:checked');
+            const repo_ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            
+            if (repo_ids.length === 0) {
+                alert("Please select at least one repository to sync.");
+                return;
+            }
+            
+            const btn = document.getElementById('syncBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...`;
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/github/sync/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ repo_ids: repo_ids }),
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    alert(`Successfully synced ${data.synced_count} repositories!`);
+                    loadGithubRepos(); // Reload the list
+                    loadProjects(); // Reload projects in background
+                } else {
+                    alert('Error syncing: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Connection error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
 
         // CRUD helpers
         async function addItem(endpoint, form) {

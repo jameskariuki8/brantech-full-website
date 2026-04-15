@@ -208,8 +208,12 @@ def post_detail(request, pk):
 def project_list(request):
     if request.method == "GET":
         projects = Project.objects.all().order_by('-created_at')
-        # Use only() to fetch only required fields for better performance
-        projects = projects.only('id', 'title', 'short_description', 'description', 'project_url', 'github_url', 'featured', 'image')
+        # Include GitHub-specific fields alongside standard ones
+        projects = projects.only(
+            'id', 'title', 'short_description', 'description', 'project_url',
+            'github_url', 'featured', 'image',
+            'is_github_synced', 'commit_count', 'github_role'
+        )
         
         # Add pagination support
         paginated_projects, pagination_meta = paginate_queryset(projects, request, page_size=20)
@@ -224,15 +228,15 @@ def project_list(request):
                 'project_url': p.project_url,
                 'github_url': p.github_url,
                 'featured': p.featured,
-                'image': p.image.url if p.image else None
+                'image': p.image.url if p.image else None,
+                'is_github_synced': p.is_github_synced,
+                'commit_count': p.commit_count,
+                'github_role': p.github_role,
             }
             for p in paginated_projects
         ]
         
-        return JsonResponse({
-            'results': data,
-            'pagination': pagination_meta
-        }, safe=False)
+        return JsonResponse(data, safe=False)
     
     if request.method == "POST":
         if not request.user.is_authenticated:
@@ -272,7 +276,11 @@ def project_detail(request, pk):
             'project_url': project.project_url,
             'github_url': project.github_url,
             'featured': project.featured,
-            'image': project.image.url if project.image else None
+            'image': project.image.url if project.image else None,
+            'is_github_synced': project.is_github_synced,
+            'commit_count': project.commit_count,
+            'github_role': project.github_role,
+            'readme_content': project.readme_content,
         }
         return JsonResponse(data)
 
@@ -300,3 +308,63 @@ def project_detail(request, pk):
             return JsonResponse({'error': 'Unauthorized'}, status=401)
         project.delete()
         return JsonResponse({'message': 'Project deleted successfully'})
+
+# --- GitHub Integration APIs ---
+from .github_service import GitHubService
+
+def is_admin(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+@login_required
+@require_http_methods(["GET"])
+def github_repos_list(request):
+    if not is_admin(request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    try:
+        service = GitHubService()
+        repos = service.get_user_repositories()
+        return JsonResponse({'results': repos})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def github_sync_selected(request):
+    if not is_admin(request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    try:
+        data = get_data(request)
+        repo_ids = data.get('repo_ids', [])
+        if not repo_ids:
+            return JsonResponse({'error': 'No repository IDs provided'}, status=400)
+            
+        service = GitHubService()
+        result = service.sync_repositories(repo_ids)
+        if result.get("success"):
+            return JsonResponse(result)
+        else:
+            return JsonResponse({'error': result.get("error")}, status=500)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@require_http_methods(["GET"])
+def project_commits(request, pk):
+    """
+    Returns last 10 commits for a GitHub-synced project.
+
+    Normal: served instantly from DB (cached_commits field).
+    ?refresh=1: forces a live GitHub fetch and updates the DB cache.
+    """
+    project = get_object_or_404(Project, pk=pk)
+    if not project.is_github_synced or not project.github_repo_id:
+        return JsonResponse({'error': 'This project is not linked to GitHub.'}, status=400)
+    try:
+        force_refresh = request.GET.get('refresh') == '1'
+        service = GitHubService()
+        result = service.get_recent_commits(
+            github_repo_id=project.github_repo_id,
+            force_refresh=force_refresh,
+        )
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
