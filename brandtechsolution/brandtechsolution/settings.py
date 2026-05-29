@@ -150,13 +150,17 @@ STATIC_ROOT = config.static_root
 MEDIA_ROOT = config.media_root
 MEDIA_URL = '/media/'
 
-# WhiteNoise compressed + manifest storage for collected static files
+# WhiteNoise compressed storage for collected static files.
+# NOTE: the strict ManifestStaticFilesStorage variant is intentionally NOT used:
+# brand/css/styles2.css references a missing asset (brand/css/images/bg.jpg),
+# which makes the manifest backend hard-fail collectstatic. CompressedStaticFilesStorage
+# still gzip/brotli-compresses static files but tolerates unresolved url() references.
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
