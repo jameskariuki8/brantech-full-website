@@ -69,6 +69,8 @@ db.sqlite3-journal
 .env
 .env.local
 .env.*.local
+*.env
+cloudflared.env
 
 # ChromaDB / Vector Stores
 chroma_db/

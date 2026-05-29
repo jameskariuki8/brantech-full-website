@@ -29,6 +29,9 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    # Token comes from cloudflared.env (TUNNEL_TOKEN), kept out of argv and out
+    # of the web container's environment. cloudflared reads TUNNEL_TOKEN from env.
+    command: tunnel --no-autoupdate run
+    env_file: ./cloudflared.env
     depends_on:
       - web
