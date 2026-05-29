@@ -326,7 +326,9 @@
       <button class="filter-btn" onclick="filterByCategory('Digital Marketing')">Marketing</button>
       <button class="filter-btn" onclick="filterByCategory('Tech Trends')">Tech Trends</button>
     </div>
-    <div id="blogGrid" class="blog-grid"></div>
+  <div id="blogGrid" class="blog-grid">
+    {% for post in posts %}<a href="{{ post.get_absolute_url }}" class="ssr-post-link" data-category="{{ post.category }}">{{ post.title }}</a>{% endfor %}
+  </div>
   </div>
 
   <div id="blogModal" class="blog-modal">

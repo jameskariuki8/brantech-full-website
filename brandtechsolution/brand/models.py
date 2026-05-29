@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from pgvector.django import VectorField
@@ -51,6 +52,9 @@ class BlogPost(models.Model):
                 n += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("blog_detail", kwargs={"slug": self.slug})
 
     def get_tags_list(self):
         return [tag.strip() for tag in self.tags.split(',') if tag.strip()]

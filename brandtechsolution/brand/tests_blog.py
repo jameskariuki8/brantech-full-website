@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.urls import reverse
 from brand.models import BlogPost
 from brand.markdown_utils import render_markdown
 
@@ -50,3 +51,37 @@ class RenderMarkdownTests(TestCase):
     def test_empty_input_returns_empty_string(self):
         self.assertEqual(render_markdown(""), "")
         self.assertEqual(render_markdown(None), "")
+
+
+class BlogViewTests(TestCase):
+    def setUp(self):
+        self.post = BlogPost.objects.create(
+            title="Indexable Post",
+            excerpt="A short summary.",
+            content="# Heading\n\nThe **body** content.",
+            category="AI & Machine Learning",
+        )
+
+    def test_get_absolute_url(self):
+        self.assertEqual(self.post.get_absolute_url(), f"/blog/{self.post.slug}/")
+
+    def test_detail_returns_200_and_renders_content(self):
+        resp = self.client.get(f"/blog/{self.post.slug}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Indexable Post")
+        self.assertContains(resp, "<strong>body</strong>")
+
+    def test_detail_unknown_slug_404(self):
+        resp = self.client.get("/blog/does-not-exist/")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_detail_increments_view_count(self):
+        before = self.post.view_count
+        self.client.get(f"/blog/{self.post.slug}/")
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.view_count, before + 1)
+
+    def test_list_returns_200_and_links_to_posts(self):
+        resp = self.client.get(reverse("blog"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.post.get_absolute_url())

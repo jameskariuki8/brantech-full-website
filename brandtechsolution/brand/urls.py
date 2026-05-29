@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/projects/<int:pk>/', api_views.project_detail, name='api_project_detail'),
 
     path('blog/', views.blog, name='blog'),
+    path('blog/<slug:slug>/', views.blog_detail, name='blog_detail'),
 
     path('projects/', views.projects, name='projects'),
     path('faq/', views.faq, name='faq'),
