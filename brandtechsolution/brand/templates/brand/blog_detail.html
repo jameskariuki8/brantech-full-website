@@ -19,6 +19,71 @@
   <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}">
   <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
 
+  <style>
+    :root {
+      --neon-blue: #60a5fa;
+      --text-blue-dim: #60a5fa;
+    }
+
+    body {
+      background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%);
+      color: rgba(255, 255, 255, 0.9);
+      min-height: 100vh;
+    }
+
+    .blog-modal-content {
+      background: linear-gradient(180deg, rgba(12, 22, 34, .96), rgba(8, 16, 26, .96));
+      border: 2px solid rgba(96, 165, 250, .25);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 40px rgba(96, 165, 250, .08), 0 0 40px rgba(22, 255, 122, .05);
+    }
+
+    .blog-modal-title {
+      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 14px rgba(96, 165, 250, .35), 0 0 14px rgba(22, 255, 122, .25);
+      font-size: 1.8rem;
+      margin: 0.5rem 0 0.75rem;
+    }
+
+    .blog-modal-meta {
+      color: var(--text-blue-dim);
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .blog-modal-content-text {
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .blog-card-category {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: linear-gradient(90deg, rgba(40, 96, 144, .12) 0%, rgba(22, 255, 122, .12) 100%);
+      border: 1px solid rgba(96, 165, 250, .35);
+      border-radius: 6px;
+      color: var(--neon-blue);
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .blog-tag {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.15rem 0.5rem;
+      background: rgba(96, 165, 250, .1);
+      border: 1px solid rgba(96, 165, 250, .25);
+      border-radius: 4px;
+      color: var(--neon-blue);
+      font-size: 0.8rem;
+    }
+  </style>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",

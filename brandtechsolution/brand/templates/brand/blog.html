@@ -201,88 +201,6 @@
       background: linear-gradient(90deg, rgba(40, 96, 144, .15) 0%, rgba(22, 255, 122, .15) 100%);
     }
 
-    .blog-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 12, .85);
-      backdrop-filter: blur(6px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .blog-modal.show {
-      display: flex;
-    }
-
-    .blog-modal-content {
-      background: linear-gradient(180deg, rgba(12, 22, 34, .96), rgba(8, 16, 26, .96));
-      border: 2px solid rgba(96, 165, 250, .25);
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 40px rgba(96, 165, 250, .08), 0 0 40px rgba(22, 255, 122, .05);
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-      width: 90%;
-    }
-
-    .blog-modal-header {
-      position: sticky;
-      top: 0;
-      background: rgba(12, 22, 34, .98);
-      padding: 1.5rem;
-      border-bottom: 2px solid rgba(96, 165, 250, .25);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .blog-modal-title {
-      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 14px rgba(96, 165, 250, .35), 0 0 14px rgba(22, 255, 122, .25);
-      font-size: 1.8rem;
-      margin: 0;
-    }
-
-    .blog-modal-close {
-      background: linear-gradient(90deg, rgba(40, 96, 144, .1) 0%, rgba(22, 255, 122, .1) 100%);
-      border: 1px solid rgba(96, 165, 250, .25);
-      color: var(--neon-blue);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .blog-modal-close:hover {
-      background: linear-gradient(90deg, rgba(40, 96, 144, .2) 0%, rgba(22, 255, 122, .2) 100%);
-      transform: scale(1.1);
-    }
-
-    .blog-modal-body {
-      padding: 2rem;
-    }
-
-    .blog-modal-meta {
-      color: var(--text-blue-dim);
-      margin-bottom: 1.5rem;
-      font-size: 0.9rem;
-    }
-
-    .blog-modal-content-text {
-      color: rgba(255, 255, 255, 0.9);
-      line-height: 1.7;
-      font-size: 1rem;
-    }
-
     @media (max-width:1024px) {
       .blog-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -320,11 +238,11 @@
 
   <div class="blog-container">
     <div class="blog-filter">
-      <button class="filter-btn active" onclick="filterByCategory('all')">All Posts</button>
-      <button class="filter-btn" onclick="filterByCategory('Web Development')">Web Development</button>
-      <button class="filter-btn" onclick="filterByCategory('AI & Machine Learning')">AI & ML</button>
-      <button class="filter-btn" onclick="filterByCategory('Digital Marketing')">Marketing</button>
-      <button class="filter-btn" onclick="filterByCategory('Tech Trends')">Tech Trends</button>
+      <button class="filter-btn active" onclick="filterByCategory('all', this)">All Posts</button>
+      <button class="filter-btn" onclick="filterByCategory('Web Development', this)">Web Development</button>
+      <button class="filter-btn" onclick="filterByCategory('AI & Machine Learning', this)">AI & ML</button>
+      <button class="filter-btn" onclick="filterByCategory('Digital Marketing', this)">Marketing</button>
+      <button class="filter-btn" onclick="filterByCategory('Tech Trends', this)">Tech Trends</button>
     </div>
   <div id="blogGrid" class="blog-grid">
     {% for post in posts %}
@@ -439,9 +357,9 @@
 
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
   <script>
-    function filterByCategory(category) {
+    function filterByCategory(category, btn) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      if (window.event && window.event.target) window.event.target.classList.add('active');
+      if (btn) btn.classList.add('active');
       document.querySelectorAll('#blogGrid .blog-card').forEach(card => {
         const show = category === 'all' || card.dataset.category === category;
         card.style.display = show ? '' : 'none';
