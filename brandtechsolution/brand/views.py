@@ -27,7 +27,6 @@ def donate(request):
     return render(request, 'brand/donate.html')
 
 
-
 def blog(request):
     """Blog list page (server-rendered, paginated)."""
     post_list = BlogPost.objects.all()  # Meta orders by -created_at
@@ -39,6 +38,7 @@ def blog_detail(request, slug):
     """Server-rendered individual blog post at /blog/<slug>/."""
     post = get_object_or_404(BlogPost, slug=slug)
     BlogPost.objects.filter(pk=post.pk).update(view_count=F('view_count') + 1)
+    # NOTE: post.view_count in memory is now stale (pre-increment); the template intentionally does not render it.
     content_html = render_markdown(post.content)
     return render(request, 'brand/blog_detail.html', {
         'post': post,
