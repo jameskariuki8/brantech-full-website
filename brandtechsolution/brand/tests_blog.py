@@ -1,5 +1,6 @@
 from django.test import TestCase
 from brand.models import BlogPost
+from brand.markdown_utils import render_markdown
 
 
 class BlogSlugTests(TestCase):
@@ -25,3 +26,27 @@ class BlogSlugTests(TestCase):
     def test_blank_title_falls_back_to_post(self):
         post = BlogPost.objects.create(title="!!!", excerpt="x", content="b")
         self.assertEqual(post.slug, "post")
+
+
+class RenderMarkdownTests(TestCase):
+    def test_renders_basic_markdown(self):
+        html = render_markdown("# Title\n\nSome **bold** text")
+        self.assertIn("<h1>Title</h1>", html)
+        self.assertIn("<strong>bold</strong>", html)
+
+    def test_single_newlines_become_breaks(self):
+        html = render_markdown("line one\nline two")
+        self.assertIn("<br", html)
+
+    def test_strips_script_tags(self):
+        html = render_markdown("hello <script>alert('x')</script> world")
+        self.assertNotIn("<script>", html)
+        self.assertNotIn("alert(", html)
+
+    def test_strips_event_handler_attributes(self):
+        html = render_markdown('<img src="x" onerror="alert(1)">')
+        self.assertNotIn("onerror", html)
+
+    def test_empty_input_returns_empty_string(self):
+        self.assertEqual(render_markdown(""), "")
+        self.assertEqual(render_markdown(None), "")
