@@ -1,11 +1,56 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{ post.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ post.title }} — TekLora</title>
+  <meta name="description" content="{{ post.excerpt }}">
+  <link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ post.title }}">
+  <meta property="og:description" content="{{ post.excerpt }}">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  {% if post.image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}">{% endif %}
+
+  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}">
+  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}">
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "{{ post.title|escapejs }}",
+    "description": "{{ post.excerpt|escapejs }}",
+    "datePublished": "{{ post.created_at|date:'c' }}",
+    "dateModified": "{{ post.updated_at|date:'c' }}",
+    {% if post.image %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}",{% endif %}
+    "author": {"@type": "Organization", "name": "TekLora"},
+    "publisher": {"@type": "Organization", "name": "TekLora"},
+    "mainEntityOfPage": {"@type": "WebPage", "@id": "{{ request.build_absolute_uri }}"}
+  }
+  </script>
 </head>
 <body>
-  <h1>{{ post.title }}</h1>
-  <article>{{ content_html|safe }}</article>
+  {% include 'brand/header.html' %}
+
+  <article class="blog-modal-content" style="max-width:820px; margin:6rem auto 3rem; padding:0 1.5rem;">
+    {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}" style="width:100%; border-radius:12px; margin-bottom:1.5rem;">{% endif %}
+    <span class="blog-card-category">{{ post.category }}</span>
+    <h1 class="blog-modal-title">{{ post.title }}</h1>
+    <div class="blog-modal-meta">
+      <span>{{ post.created_at|date:"F j, Y" }}</span>
+      {% for tag in post.get_tags_list %}<span class="blog-tag">#{{ tag }}</span>{% endfor %}
+    </div>
+    <div class="blog-modal-content-text">
+      {{ content_html|safe }}
+    </div>
+    <p style="margin-top:2rem;"><a href="{% url 'blog' %}">&larr; Back to all posts</a></p>
+  </article>
+
+  {% include 'brand/footer.html' %}
 </body>
 </html>
