@@ -32,6 +32,9 @@ class AppSettings(BaseSettings):
     secret_key: str
     debug: bool = True
     allowed_hosts: list[str] = ["teklora.co.ke", "www.teklora.co.ke", "127.0.0.1", "localhost"]
+    # HTTPS origins trusted for CSRF (required behind the Cloudflare Tunnel where
+    # TLS terminates at the edge). Must include the scheme.
+    csrf_trusted_origins: list[str] = ["https://teklora.co.ke", "https://www.teklora.co.ke"]
 
     # ============================================================
     # Email Configuration

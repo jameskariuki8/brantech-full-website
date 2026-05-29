@@ -219,9 +219,12 @@ Persistent data lives in the in-project `./data/` directory (`./data/postgres`,
 Two gitignored files at the **repo root** (next to `docker-compose.yml`):
 
 - **`.env`** — app + database config, based on `brandtechsolution/env.example`.
-  For Docker, set `DATABASE_HOST=db` and `DEBUG=False`. Compose injects these as
-  real environment variables (pydantic-settings reads them directly — no
-  in-container `.env` file is required or baked into the image).
+  For Docker, set `DATABASE_HOST=db` and `DEBUG=False`, and set `ALLOWED_HOSTS`
+  and `CSRF_TRUSTED_ORIGINS` to your real domain — `CSRF_TRUSTED_ORIGINS` (with
+  the `https://` scheme) is **required** behind the tunnel or form/admin POSTs
+  return HTTP 403. Compose injects these as real environment variables
+  (pydantic-settings reads them directly — no in-container `.env` file is
+  required or baked into the image).
 - **`cloudflared.env`** — contains only the tunnel token, kept separate so it
   never enters the web container's environment or the process command line:
 

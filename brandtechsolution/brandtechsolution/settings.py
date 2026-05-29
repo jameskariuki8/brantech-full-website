@@ -41,6 +41,14 @@ ALLOWED_HOSTS = config.allowed_hosts
 # media served via Django) to block MIME-sniffing -> same-origin XSS.
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# HTTPS origins trusted for CSRF. Behind the Cloudflare Tunnel, TLS terminates
+# at the edge and forms POST to https://<domain>; without this Django returns 403.
+CSRF_TRUSTED_ORIGINS = config.csrf_trusted_origins
+
+# The tunnel forwards plain HTTP to web:8000 with X-Forwarded-Proto: https.
+# Trust it so request.is_secure() correctly reflects the original HTTPS request.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # ============================================================
 # APPLICATIONS
 # ============================================================
