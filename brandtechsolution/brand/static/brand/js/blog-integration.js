@@ -111,7 +111,7 @@ class BlogIntegration {
         <div class="flex flex-wrap gap-2 mb-4">
           ${tagsHtml}
         </div>
-        <a href="/blog/${post.slug}/" class="inline-flex items-center text-blue-600 font-semibold hover:text-blue-800 transition-colors">
+        <a href="/blog/" class="inline-flex items-center text-blue-600 font-semibold hover:text-blue-800 transition-colors">
           Read More <i class="fas fa-arrow-right ml-1"></i>
         </a>
       </div>
