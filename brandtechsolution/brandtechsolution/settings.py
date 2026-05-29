@@ -59,6 +59,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.gzip.GZipMiddleware',  # Add response compression
     'django.middleware.common.CommonMiddleware',
@@ -139,21 +140,24 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# Local environment
-LOCAL_STATIC_ROOT = BASE_DIR / "staticfiles"
-LOCAL_MEDIA_ROOT = BASE_DIR / "media"
-
-# EC2 production paths
-PRODUCTION_STATIC_ROOT = "/var/www/brandtech/static"
-PRODUCTION_MEDIA_ROOT = "/var/www/brandtech/media"
-
 STATICFILES_DIRS = [
     BASE_DIR / 'brand' / 'static',
 ]
 
-STATIC_ROOT = PRODUCTION_STATIC_ROOT if os.name != 'nt' else LOCAL_STATIC_ROOT
-MEDIA_ROOT = PRODUCTION_MEDIA_ROOT if os.name != 'nt' else LOCAL_MEDIA_ROOT
+# Roots come from config (env-driven); see brandtechsolution/config.py
+STATIC_ROOT = config.static_root
+MEDIA_ROOT = config.media_root
 MEDIA_URL = '/media/'
+
+# WhiteNoise compressed + manifest storage for collected static files
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # ============================================================
 # EMAIL SETTINGS
