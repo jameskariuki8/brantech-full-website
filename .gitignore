@@ -142,3 +142,6 @@ Thumbs.db
 *.db
 /media
 /staticfiles
+
+# Docker persistent data (bind mounts)
+/data/
