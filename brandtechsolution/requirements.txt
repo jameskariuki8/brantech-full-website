@@ -9,3 +9,5 @@ langchain-text-splitters
 pydantic-settings
 psycopg2-binary
 pgvector
+gunicorn
+whitenoise
