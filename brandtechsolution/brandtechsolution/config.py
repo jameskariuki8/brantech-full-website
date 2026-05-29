@@ -70,6 +70,12 @@ class AppSettings(BaseSettings):
     database_port: str = "5432"
     database_conn_max_age: int = 60
 
+    # ============================================================
+    # Static & Media (filesystem paths)
+    # ============================================================
+    static_root: str = str(BASE_DIR / "staticfiles")
+    media_root: str = str(BASE_DIR / "media")
+
 
 # Create global config instance
 config = AppSettings()
