@@ -24,4 +24,4 @@ class BlogSlugTests(TestCase):
 
     def test_blank_title_falls_back_to_post(self):
         post = BlogPost.objects.create(title="!!!", excerpt="x", content="b")
-        self.assertTrue(post.slug.startswith("post"))
+        self.assertEqual(post.slug, "post")

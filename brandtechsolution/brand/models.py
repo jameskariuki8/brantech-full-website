@@ -43,7 +43,7 @@ class BlogPost(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base = slugify(self.title)[:200] or "post"
+            base = slugify(self.title)[:200] or "post"  # 200 leaves room for "-N" suffix (field max=220)
             slug = base
             n = 2
             while BlogPost.objects.exclude(pk=self.pk).filter(slug=slug).exists():

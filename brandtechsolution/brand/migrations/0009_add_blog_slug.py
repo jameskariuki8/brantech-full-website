@@ -7,7 +7,7 @@ def backfill_slugs(apps, schema_editor):
     for post in BlogPost.objects.all():
         if post.slug:
             continue
-        base = slugify(post.title)[:200] or "post"
+        base = slugify(post.title)[:200] or "post"  # 200 leaves room for "-N" suffix (field max=220)
         slug = base
         n = 2
         while BlogPost.objects.exclude(pk=post.pk).filter(slug=slug).exists():
