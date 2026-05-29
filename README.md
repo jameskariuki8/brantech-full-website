@@ -204,6 +204,69 @@ GOOGLE_API_KEY=your-google-api-key
 - **Frontend**: HTML, CSS, JavaScript
 - **API**: Django REST Framework
 
+## 🐳 Running with Docker (behind Cloudflare Tunnel)
+
+The stack runs three containers — `db` (Postgres + pgvector), `web`
+(gunicorn + WhiteNoise), and `cloudflared` (Cloudflare Tunnel) — with **no host
+ports published**. Inbound traffic arrives only through the tunnel; `cloudflared`
+dials the Cloudflare edge outbound and proxies to `web` over the internal network.
+
+Persistent data lives in the in-project `./data/` directory (`./data/postgres`,
+`./data/media`), which is gitignored.
+
+### 1. Configure environment
+
+Two gitignored files at the **repo root** (next to `docker-compose.yml`):
+
+- **`.env`** — app + database config, based on `brandtechsolution/env.example`.
+  For Docker, set `DATABASE_HOST=db` and `DEBUG=False`. Compose injects these as
+  real environment variables (pydantic-settings reads them directly — no
+  in-container `.env` file is required or baked into the image).
+- **`cloudflared.env`** — contains only the tunnel token, kept separate so it
+  never enters the web container's environment or the process command line:
+
+  ```
+  TUNNEL_TOKEN=your-cloudflare-tunnel-token-here
+  ```
+
+### 2. Create the Cloudflare Tunnel
+
+In the Cloudflare Zero Trust dashboard → Networks → Tunnels, create a tunnel,
+add a **public hostname** routing your domain to `http://web:8000`, and copy the
+tunnel **token** into `cloudflared.env`.
+
+### 3. Build and run
+
+```bash
+docker compose up -d --build
+```
+
+The `web` entrypoint runs `migrate` and `collectstatic` automatically, then
+starts gunicorn.
+
+> **First run / changing DB credentials:** Postgres initializes its data
+> directory only once. If `./data/postgres` already exists, it ignores new
+> credentials in `.env`. To start fresh, stop the stack and remove the directory
+> (`docker run --rm -v "$(pwd)/data:/data" alpine rm -rf /data/postgres`).
+
+### 4. One-off management commands
+
+```bash
+# Create an admin user
+docker compose exec web python manage.py createsuperuser
+
+# Build vector embeddings for blog posts/projects (uses the Gemini API)
+docker compose exec web python manage.py init_vector_stores
+```
+
+### Notes
+
+- Static files are served by WhiteNoise; user-uploaded media is served by Django
+  (`CompressedStaticFilesStorage` is used rather than the strict manifest variant
+  because some bundled CSS references a missing asset).
+- The `web` container runs as root to keep the bind-mounted `./data/media`
+  writable regardless of host UID.
+
 ## 📝 License
 
 This project is proprietary software for Brantech Solution.
