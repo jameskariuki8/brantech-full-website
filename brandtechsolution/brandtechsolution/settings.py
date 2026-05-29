@@ -37,6 +37,10 @@ DEBUG = config.debug
 
 ALLOWED_HOSTS = config.allowed_hosts
 
+# Send X-Content-Type-Options: nosniff on all responses (incl. user-uploaded
+# media served via Django) to block MIME-sniffing -> same-origin XSS.
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
 # ============================================================
 # APPLICATIONS
 # ============================================================
