@@ -57,7 +57,7 @@ def post_list(request):
     if request.method == "GET":
         posts = BlogPost.objects.all().order_by('-created_at')
         # Use only() to fetch only required fields for better performance
-        posts = posts.only('id', 'title', 'category', 'excerpt', 'content', 'tags', 'featured', 'view_count', 'created_at', 'image')
+        posts = posts.only('id', 'title', 'slug', 'category', 'excerpt', 'content', 'tags', 'featured', 'view_count', 'created_at', 'image')
         
         # Add pagination support
         paginated_posts, pagination_meta = paginate_queryset(posts, request, page_size=20)
@@ -66,6 +66,7 @@ def post_list(request):
         data = [
             {
                 'id': post.id,
+                'slug': post.slug,
                 'title': post.title,
                 'category': post.category,
                 'excerpt': post.excerpt,
@@ -117,6 +118,7 @@ def post_detail(request, pk):
     if request.method == "GET":
         data = {
             'id': post.id,
+            'slug': post.slug,
             'title': post.title,
             'category': post.category,
             'excerpt': post.excerpt,

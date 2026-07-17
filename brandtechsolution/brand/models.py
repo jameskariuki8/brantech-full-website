@@ -1,5 +1,7 @@
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from pgvector.django import VectorField
 
 
@@ -21,6 +23,7 @@ def _truncate_for_embedding(text: str, max_chars: int = 1500) -> str:
 
 class BlogPost(models.Model):
     title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
     excerpt = models.TextField(max_length=300)
     content = models.TextField()
     image = models.ImageField(upload_to='blog_images/', blank=True, null=True)
@@ -38,6 +41,20 @@ class BlogPost(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title)[:200] or "post"  # 200 leaves room for "-N" suffix (field max=220)
+            slug = base
+            n = 2
+            while BlogPost.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("blog_detail", kwargs={"slug": self.slug})
 
     def get_tags_list(self):
         return [tag.strip() for tag in self.tags.split(',') if tag.strip()]

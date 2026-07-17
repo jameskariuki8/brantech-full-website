@@ -1,9 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.db import models
+from django.db.models import F
+from .models import BlogPost
+from .markdown_utils import render_markdown
 
 # Create your views here.
 
@@ -23,10 +27,23 @@ def donate(request):
     return render(request, 'brand/donate.html')
 
 
-
 def blog(request):
-    """Blog page view"""
-    return render(request, 'brand/blog.html')
+    """Blog list page (server-rendered, paginated)."""
+    post_list = BlogPost.objects.all()  # Meta orders by -created_at
+    paginator = Paginator(post_list, 9)
+    posts = paginator.get_page(request.GET.get("page"))
+    return render(request, 'brand/blog.html', {'posts': posts})
+
+def blog_detail(request, slug):
+    """Server-rendered individual blog post at /blog/<slug>/."""
+    post = get_object_or_404(BlogPost, slug=slug)
+    BlogPost.objects.filter(pk=post.pk).update(view_count=F('view_count') + 1)
+    # NOTE: post.view_count in memory is now stale (pre-increment); the template intentionally does not render it.
+    content_html = render_markdown(post.content)
+    return render(request, 'brand/blog_detail.html', {
+        'post': post,
+        'content_html': content_html,
+    })
 
 def faq(request):
     """FAQ page view"""

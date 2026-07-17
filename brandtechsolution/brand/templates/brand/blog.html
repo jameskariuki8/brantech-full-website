@@ -201,88 +201,6 @@
       background: linear-gradient(90deg, rgba(40, 96, 144, .15) 0%, rgba(22, 255, 122, .15) 100%);
     }
 
-    .blog-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 12, .85);
-      backdrop-filter: blur(6px);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .blog-modal.show {
-      display: flex;
-    }
-
-    .blog-modal-content {
-      background: linear-gradient(180deg, rgba(12, 22, 34, .96), rgba(8, 16, 26, .96));
-      border: 2px solid rgba(96, 165, 250, .25);
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 40px rgba(96, 165, 250, .08), 0 0 40px rgba(22, 255, 122, .05);
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-      width: 90%;
-    }
-
-    .blog-modal-header {
-      position: sticky;
-      top: 0;
-      background: rgba(12, 22, 34, .98);
-      padding: 1.5rem;
-      border-bottom: 2px solid rgba(96, 165, 250, .25);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .blog-modal-title {
-      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 14px rgba(96, 165, 250, .35), 0 0 14px rgba(22, 255, 122, .25);
-      font-size: 1.8rem;
-      margin: 0;
-    }
-
-    .blog-modal-close {
-      background: linear-gradient(90deg, rgba(40, 96, 144, .1) 0%, rgba(22, 255, 122, .1) 100%);
-      border: 1px solid rgba(96, 165, 250, .25);
-      color: var(--neon-blue);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .blog-modal-close:hover {
-      background: linear-gradient(90deg, rgba(40, 96, 144, .2) 0%, rgba(22, 255, 122, .2) 100%);
-      transform: scale(1.1);
-    }
-
-    .blog-modal-body {
-      padding: 2rem;
-    }
-
-    .blog-modal-meta {
-      color: var(--text-blue-dim);
-      margin-bottom: 1.5rem;
-      font-size: 0.9rem;
-    }
-
-    .blog-modal-content-text {
-      color: rgba(255, 255, 255, 0.9);
-      line-height: 1.7;
-      font-size: 1rem;
-    }
-
     @media (max-width:1024px) {
       .blog-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -320,26 +238,37 @@
 
   <div class="blog-container">
     <div class="blog-filter">
-      <button class="filter-btn active" onclick="filterByCategory('all')">All Posts</button>
-      <button class="filter-btn" onclick="filterByCategory('Web Development')">Web Development</button>
-      <button class="filter-btn" onclick="filterByCategory('AI & Machine Learning')">AI & ML</button>
-      <button class="filter-btn" onclick="filterByCategory('Digital Marketing')">Marketing</button>
-      <button class="filter-btn" onclick="filterByCategory('Tech Trends')">Tech Trends</button>
+      <button class="filter-btn active" onclick="filterByCategory('all', this)">All Posts</button>
+      <button class="filter-btn" onclick="filterByCategory('Web Development', this)">Web Development</button>
+      <button class="filter-btn" onclick="filterByCategory('AI & Machine Learning', this)">AI & ML</button>
+      <button class="filter-btn" onclick="filterByCategory('Digital Marketing', this)">Marketing</button>
+      <button class="filter-btn" onclick="filterByCategory('Tech Trends', this)">Tech Trends</button>
     </div>
-    <div id="blogGrid" class="blog-grid"></div>
+  <div id="blogGrid" class="blog-grid">
+    {% for post in posts %}
+    <a href="{{ post.get_absolute_url }}" class="blog-card" data-category="{{ post.category }}">
+      <div class="blog-card-image">
+        {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
+      </div>
+      <div class="blog-card-content">
+        <span class="blog-card-category">{{ post.category }}</span>
+        <h2 class="blog-card-title">{{ post.title }}</h2>
+        <p class="blog-card-excerpt">{{ post.excerpt }}</p>
+        <span class="blog-card-date">{{ post.created_at|date:"M j, Y" }}</span>
+      </div>
+    </a>
+    {% empty %}
+    <p class="blog-empty">No posts published yet.</p>
+    {% endfor %}
   </div>
 
-  <div id="blogModal" class="blog-modal">
-    <div class="blog-modal-content">
-      <div class="blog-modal-header">
-        <h1 class="blog-modal-title" id="modalTitle"></h1>
-        <button class="blog-modal-close" onclick="closeBlogModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="blog-modal-body">
-        <div class="blog-modal-meta" id="modalMeta"></div>
-        <div class="blog-modal-content-text" id="modalContent"></div>
-      </div>
-    </div>
+  {% if posts.has_other_pages %}
+  <div class="blog-pagination" style="display:flex; gap:1rem; justify-content:center; margin:2rem 0;">
+    {% if posts.has_previous %}<a href="?page={{ posts.previous_page_number }}">&larr; Newer</a>{% endif %}
+    <span>Page {{ posts.number }} of {{ posts.paginator.num_pages }}</span>
+    {% if posts.has_next %}<a href="?page={{ posts.next_page_number }}">Older &rarr;</a>{% endif %}
+  </div>
+  {% endif %}
   </div>
 
   {% include 'brand/footer.html' %}
@@ -428,101 +357,13 @@
 
   <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
   <script>
-    const API_BASE = '/api';
-    let allPosts = [];
-    async function loadBlogPosts() {
-      try {
-        console.log('Loading blog posts from:', `${API_BASE}/posts/`);
-        const response = await fetch(`${API_BASE}/posts/`);
-        console.log('Response status:', response.status);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Loaded posts:', data);
-          allPosts = data;
-          displayBlogPosts(allPosts);
-        } else {
-          console.error('Failed to load posts:', response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error('Error loading blog posts:', error);
-      }
-    }
-    function displayBlogPosts(posts) {
-      const grid = document.getElementById('blogGrid');
-      if (posts.length === 0) {
-        grid.innerHTML = '<p class="text-center text-white col-span-3">No blog posts available.</p>';
-        return;
-      }
-      grid.innerHTML = posts.map(post => {
-        let imageUrl = 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=800&q=80';
-        if (post.image) {
-          if (post.image.startsWith('http')) {
-            imageUrl = post.image;
-          } else if (post.image.startsWith('/media/')) {
-            imageUrl = post.image;
-          } else {
-            imageUrl = '/media/' + post.image;
-          }
-        }
-        return `
-          <div class="blog-card" data-category="${post.category || ''}">
-            <div class="blog-card-image">
-              <img src="${imageUrl}" alt="${post.title}">
-        </div>
-            <div class="blog-card-content">
-              <h3 class="blog-card-title">${post.title}</h3>
-              <p class="blog-card-excerpt">${post.excerpt || post.content?.substring(0, 120) || 'No description available.'}</p>
-              <div class="blog-actions">
-                <button class="blog-btn" onclick="openBlogModal(${post.id})" title="Read More"><i class="fas fa-book-open"></i></button>
-                <button class="blog-btn" onclick="shareBlogPost(${post.id}, '${post.title}')" title="Share"><i class="fas fa-share-alt"></i></button>
-        </div>
-      </div>
-    </div>
-        `;
-      }).join('');
-    }
-    function filterByCategory(category) {
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      let filtered = allPosts;
-      if (category !== 'all') {
-        filtered = allPosts.filter(p => p.category === category);
-      }
-      displayBlogPosts(filtered);
-    }
-    function openBlogModal(postId) {
-      const post = allPosts.find(p => p.id === postId);
-      if (!post) return;
-      document.getElementById('modalTitle').textContent = post.title;
-      document.getElementById('modalMeta').innerHTML = `
-        <span><i class="fas fa-calendar"></i> ${new Date(post.created_at).toLocaleDateString()}</span>
-        ${post.category ? `<span style="margin-left:1rem;"><i class="fas fa-tag"></i> ${post.category}</span>` : ''}
-      `;
-      document.getElementById('modalContent').innerHTML = post.content || post.excerpt || 'No content available.';
-      document.getElementById('blogModal').classList.add('show');
-      document.body.style.overflow = 'hidden';
-      trackView(postId);
-    }
-    function closeBlogModal() {
-      document.getElementById('blogModal').classList.remove('show');
-      document.body.style.overflow = 'auto';
-    }
-    function shareBlogPost(postId, title) {
-      if (navigator.share) {
-        navigator.share({
-          title: title,
-          text: 'Check out this blog post from TekLora',
-          url: window.location.href
-        });
-      } else {
-        navigator.clipboard.writeText(window.location.href);
-        alert('Blog post link copied to clipboard!');
-      }
-    }
-    async function trackView(postId) {
-      try {
-        await fetch(`${API_BASE}/posts/${postId}/increment_view/`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-      } catch (e) { }
+    function filterByCategory(category, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.querySelectorAll('#blogGrid .blog-card').forEach(card => {
+        const show = category === 'all' || card.dataset.category === category;
+        card.style.display = show ? '' : 'none';
+      });
     }
     function initBlogHero() {
       const canvas = document.getElementById('blog-canvas');
@@ -556,13 +397,6 @@
     }
     document.addEventListener('DOMContentLoaded', () => {
       initBlogHero();
-      loadBlogPosts();
-      document.getElementById('blogModal').addEventListener('click', function (e) {
-        if (e.target === this) closeBlogModal();
-      });
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeBlogModal();
-      });
     });
   </script>
 </body>
