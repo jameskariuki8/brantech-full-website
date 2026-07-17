@@ -128,7 +128,10 @@ dmypy.json
 cython_debug/
 
 # BigAddict
-/docs
+# Track specs/plans under docs/superpowers/; keep the rest of docs/ local.
+# /docs/* (not /docs) so git descends far enough for the negation to apply.
+/docs/*
+!/docs/superpowers/
 
 # OS
 .DS_Store
