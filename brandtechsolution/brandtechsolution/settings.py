@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'brand',
     'appointments',
     'ai_workflows',
+    'messaging',
 ]
 
 MIDDLEWARE = [
