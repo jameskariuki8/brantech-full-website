@@ -21,3 +21,17 @@ class Inquiry(models.Model):
 
     def __str__(self):
         return f"{self.name} <{self.email}>"
+
+
+class EmailTemplate(models.Model):
+    name = models.CharField(max_length=200)
+    subject = models.CharField(max_length=255)
+    body_html = models.TextField(help_text="HTML body. Supports {{ name }} and {{ unsubscribe_url }}.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
