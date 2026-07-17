@@ -3,4 +3,5 @@ from . import views
 
 urlpatterns = [
     path("contacts/submit/", views.contact_submit, name="contact_submit"),
+    path("unsubscribe/<str:token>/", views.unsubscribe, name="unsubscribe"),
 ]

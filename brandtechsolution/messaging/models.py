@@ -35,3 +35,17 @@ class EmailTemplate(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Suppression(models.Model):
+    REASON_CHOICES = [
+        ("unsubscribed", "Unsubscribed"),
+        ("bounced", "Bounced"),
+        ("manual", "Manual"),
+    ]
+    email = models.EmailField(unique=True)
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES, default="unsubscribed")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.email} ({self.reason})"

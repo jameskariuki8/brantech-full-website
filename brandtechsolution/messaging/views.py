@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib import messages
+from django.core import signing
 from django.core.mail import send_mail
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
-from .models import Inquiry
+from .models import Inquiry, Suppression
+from .tokens import read_unsubscribe_token
 
 
 def _is_ajax(request):
@@ -62,3 +64,17 @@ def contact_submit(request):
         return JsonResponse({"ok": True})
     messages.success(request, "Thanks! Your message has been sent.")
     return redirect("contacts")
+
+
+def unsubscribe(request, token):
+    try:
+        email = read_unsubscribe_token(token)
+    except signing.BadSignature:
+        return HttpResponse("Invalid or expired unsubscribe link.", status=400)
+
+    Suppression.objects.get_or_create(email=email, defaults={"reason": "unsubscribed"})
+    return HttpResponse(
+        "<h1>You've been unsubscribed</h1>"
+        "<p>You will no longer receive bulk emails from us.</p>",
+        status=200,
+    )
