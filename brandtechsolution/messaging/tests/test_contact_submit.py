@@ -43,3 +43,48 @@ class ContactSubmitTests(TestCase):
         self._post()
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("grace@example.com", mail.outbox[0].body)
+
+    def test_ajax_valid_submission_returns_json_ok(self):
+        data = {
+            "name": "Grace Hopper",
+            "email": "grace@example.com",
+            "phone": "123",
+            "message": "I need a website",
+            "website": "",
+        }
+        resp = self.client.post(
+            reverse("contact_submit"), data, HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"ok": True})
+        self.assertEqual(Inquiry.objects.count(), 1)
+
+    def test_ajax_missing_required_fields_returns_json_error(self):
+        data = {
+            "name": "Grace Hopper",
+            "email": "",
+            "phone": "123",
+            "message": "",
+            "website": "",
+        }
+        resp = self.client.post(
+            reverse("contact_submit"), data, HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(resp.json()["ok"])
+        self.assertEqual(Inquiry.objects.count(), 0)
+
+    def test_ajax_honeypot_filled_returns_json_ok_without_saving(self):
+        data = {
+            "name": "Grace Hopper",
+            "email": "grace@example.com",
+            "phone": "123",
+            "message": "I need a website",
+            "website": "http://spam.example",
+        }
+        resp = self.client.post(
+            reverse("contact_submit"), data, HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"ok": True})
+        self.assertEqual(Inquiry.objects.count(), 0)

@@ -1,17 +1,30 @@
 from django.conf import settings
 from django.contrib import messages
 from django.core.mail import send_mail
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
 from .models import Inquiry
 
 
+def _is_ajax(request):
+    accept = request.headers.get("Accept", "")
+    return (
+        "application/json" in accept
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    )
+
+
 @require_POST
 def contact_submit(request):
     """Public contact-form endpoint. Replaces the old Formspree POST target."""
+    ajax = _is_ajax(request)
+
     # Honeypot: real users never fill the hidden 'website' field.
     if request.POST.get("website"):
+        if ajax:
+            return JsonResponse({"ok": True})
         messages.success(request, "Thanks! Your message has been sent.")
         return redirect("contacts")
 
@@ -21,6 +34,11 @@ def contact_submit(request):
     message = (request.POST.get("message") or "").strip()
 
     if not (name and email and message):
+        if ajax:
+            return JsonResponse(
+                {"ok": False, "error": "Please fill in your name, email, and message."},
+                status=400,
+            )
         messages.error(request, "Please fill in your name, email, and message.")
         return redirect("contacts")
 
@@ -40,5 +58,7 @@ def contact_submit(request):
         # Notification is best-effort; the inquiry is already saved.
         pass
 
+    if ajax:
+        return JsonResponse({"ok": True})
     messages.success(request, "Thanks! Your message has been sent.")
     return redirect("contacts")
