@@ -88,6 +88,7 @@ class Campaign(models.Model):
 class CampaignRecipient(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
+        ("sending", "Sending"),
         ("sent", "Sent"),
         ("failed", "Failed"),
         ("skipped", "Skipped"),

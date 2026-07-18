@@ -56,6 +56,61 @@ class SendEngineTests(TestCase):
         c.refresh_from_db()
         self.assertEqual(c.status, "sending")  # not done yet
 
+    def test_running_twice_does_not_resend(self):
+        c = self._campaign()
+        CampaignRecipient.objects.create(campaign=c, email="a@x.com", name="Ada")
+        c.total = 1
+        c.save(update_fields=["total"])
+        call_command("process_email_outbox")
+        call_command("process_email_outbox")
+        r = CampaignRecipient.objects.get(campaign=c)
+        c.refresh_from_db()
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(r.status, "sent")
+        self.assertEqual(c.sent_count, 1)
+
+    def test_unsubscribe_link_always_present(self):
+        c = Campaign.objects.create(
+            name="C", subject="Hi", body_html="<p>No placeholder here</p>",
+            status="queued", total=1,
+        )
+        CampaignRecipient.objects.create(campaign=c, email="a@x.com")
+        call_command("process_email_outbox")
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        html = msg.alternatives[0][0]
+        self.assertIn("/unsubscribe/", html)
+        self.assertIn("/unsubscribe/", msg.body)
+        self.assertIn("List-Unsubscribe", msg.extra_headers)
+        self.assertIn("/unsubscribe/", msg.extra_headers["List-Unsubscribe"])
+
+    @override_settings(OUTBOX_BATCH_SIZE=1)
+    def test_batch_budget_is_per_run_across_campaigns(self):
+        for addr in ("a@x.com", "b@x.com"):
+            c = self._campaign()
+            c.total = 1
+            c.save(update_fields=["total"])
+            CampaignRecipient.objects.create(campaign=c, email=addr)
+        call_command("process_email_outbox")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(CampaignRecipient.objects.filter(status="sent").count(), 1)
+
+    def test_failed_count_increments_on_failure(self):
+        c = self._campaign()
+        CampaignRecipient.objects.create(campaign=c, email="a@x.com")
+        c.total = 1
+        c.save(update_fields=["total"])
+        with override_settings(
+            EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+            EMAIL_HOST="127.0.0.1", EMAIL_PORT=1,
+        ):
+            for _ in range(3):
+                call_command("process_email_outbox")
+        r = CampaignRecipient.objects.get(campaign=c)
+        c.refresh_from_db()
+        self.assertEqual(r.status, "failed")
+        self.assertEqual(c.failed_count, 1)
+
     def test_failed_send_retries_then_fails(self):
         c = self._campaign()
         CampaignRecipient.objects.create(campaign=c, email="a@x.com")
