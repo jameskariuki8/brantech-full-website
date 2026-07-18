@@ -47,6 +47,7 @@ class AppSettings(BaseSettings):
     email_use_tls: bool = True
     email_host_user: str = ""
     email_host_password: str = ""
+    email_timeout: int = 10
 
     # ============================================================
     # Bulk mail outbox

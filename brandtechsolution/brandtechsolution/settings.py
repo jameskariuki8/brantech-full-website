@@ -183,6 +183,12 @@ EMAIL_PORT = config.email_port
 EMAIL_USE_TLS = config.email_use_tls
 EMAIL_HOST_USER = config.email_host_user
 EMAIL_HOST_PASSWORD = config.email_host_password
+# Bounds how long a single SMTP send can block. This matters for the outbox
+# reaper below: a batch's worst-case send time is roughly
+# OUTBOX_BATCH_SIZE * EMAIL_TIMEOUT seconds, which must stay under
+# OUTBOX_STALE_CLAIM_MINUTES * 60 or the reaper may release rows a live run
+# is still sending, risking duplicate delivery.
+EMAIL_TIMEOUT = config.email_timeout
 
 DEFAULT_FROM_EMAIL = config.email_host_user
 

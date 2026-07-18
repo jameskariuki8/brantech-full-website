@@ -2,6 +2,7 @@ import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
 from django.core import mail
 from django.db.models.query import QuerySet
 from django.core.management import call_command
@@ -224,3 +225,54 @@ class SendEngineTests(TestCase):
         self.assertEqual(r.status, "failed")
         self.assertEqual(r.attempts, 3)
         self.assertEqual(c.status, "failed")
+
+    def test_email_timeout_configured_and_reaper_safe(self):
+        """EMAIL_TIMEOUT bounds a hung SMTP socket so a batch can't outlive
+        the stale-claim reaper window (I1). The invariant below is the
+        property that actually keeps the reaper safe: worst-case batch
+        time (OUTBOX_BATCH_SIZE * EMAIL_TIMEOUT seconds) must stay under
+        the reaper's release window (OUTBOX_STALE_CLAIM_MINUTES minutes).
+        """
+        self.assertIsInstance(settings.EMAIL_TIMEOUT, int)
+        self.assertGreater(settings.EMAIL_TIMEOUT, 0)
+        self.assertLess(
+            settings.OUTBOX_BATCH_SIZE * settings.EMAIL_TIMEOUT,
+            settings.OUTBOX_STALE_CLAIM_MINUTES * 60,
+        )
+
+    @override_settings(OUTBOX_BATCH_SIZE=1)
+    def test_suppressed_rows_dont_consume_budget(self):
+        """A suppressed row must not burn the run's send budget (M1).
+
+        Candidate selection is a per-campaign slice limited to the current
+        budget, so packing both recipients into a single campaign can't
+        exercise the bug within one run: with OUTBOX_BATCH_SIZE=1 only one
+        row is ever fetched as a candidate for that campaign, full stop,
+        regardless of whether the budget is later decremented correctly.
+        To genuinely observe the budget bleeding across to unrelated work
+        in a single run, the suppressed recipient and the normal recipient
+        must sit in separate campaigns (the same cross-campaign-budget
+        pattern as test_batch_budget_is_per_run_across_campaigns) -- the
+        suppressed campaign's row must be processed first and consume the
+        shared budget before the normal campaign is reached. Campaign.Meta
+        orders by "-created_at" (newest first), so the suppressed campaign
+        is created *second* here to land first in that ordering.
+        """
+        Suppression.objects.create(email="blocked@x.com")
+
+        normal_campaign = self._campaign()
+        normal_campaign.total = 1
+        normal_campaign.save(update_fields=["total"])
+        CampaignRecipient.objects.create(campaign=normal_campaign, email="ok@x.com")
+
+        suppressed_campaign = self._campaign()
+        suppressed_campaign.total = 1
+        suppressed_campaign.save(update_fields=["total"])
+        CampaignRecipient.objects.create(
+            campaign=suppressed_campaign, email="blocked@x.com"
+        )
+
+        call_command("process_email_outbox")
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["ok@x.com"])

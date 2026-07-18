@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import timedelta
 
@@ -11,6 +12,8 @@ from django.utils import timezone
 from messaging.models import Campaign, CampaignRecipient, Suppression
 from messaging.rendering import render_body, render_subject, html_to_text
 from messaging.tokens import make_unsubscribe_token
+
+logger = logging.getLogger(__name__)
 
 UNSUBSCRIBE_FOOTER = (
     '<hr><p style="font-size:12px;color:#888;">'
@@ -39,8 +42,8 @@ class Command(BaseCommand):
         # own and is recorded against its recipient's attempt count as usual.
         try:
             connection.open()
-        except Exception:  # noqa: BLE001 - per-recipient handling covers this
-            pass
+        except Exception as exc:  # noqa: BLE001 - per-recipient handling covers this
+            logger.warning("Outbox: SMTP connection open failed: %s", exc)
 
         try:
             for campaign in campaigns:
@@ -60,8 +63,6 @@ class Command(BaseCommand):
                 )
 
                 if candidate_ids:
-                    budget -= len(candidate_ids)
-
                     if suppressed:
                         CampaignRecipient.objects.filter(
                             pk__in=candidate_ids, status="pending", email__in=suppressed
@@ -78,6 +79,10 @@ class Command(BaseCommand):
                     ).update(
                         status="sending", claim_token=token, claimed_at=timezone.now()
                     )
+                    # Budget reflects real send volume: rows filtered out as
+                    # suppressed (or stolen by a concurrent run) above never
+                    # reach "sending" and must not eat into this run's budget.
+                    budget -= claimed
 
                     if claimed:
                         # Filter by token only -- never by status="sending" alone.
@@ -140,6 +145,10 @@ class Command(BaseCommand):
             msg.send()
         except Exception as exc:  # noqa: BLE001 - record and retry/fail
             recipient.attempts += 1
+            logger.warning(
+                "Outbox: send failed for recipient %s (attempt %s): %s",
+                recipient.pk, recipient.attempts, exc,
+            )
             recipient.error = str(exc)[:1000]
             if recipient.attempts >= max_attempts:
                 recipient.status = "failed"
@@ -182,5 +191,10 @@ class Command(BaseCommand):
         failed = c.recipients.filter(status="failed").count()
         sent = c.recipients.filter(status="sent").count()
         c.status = "failed" if (sent == 0 and failed > 0) else "sent"
+        if c.status == "failed":
+            logger.error(
+                "Outbox: campaign %s finished with 0 sent, %s failed",
+                campaign.pk, failed,
+            )
         c.completed_at = timezone.now()
         c.save(update_fields=["status", "completed_at"])
