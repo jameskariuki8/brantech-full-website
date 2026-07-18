@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -49,3 +50,61 @@ class Suppression(models.Model):
 
     def __str__(self):
         return f"{self.email} ({self.reason})"
+
+
+class Campaign(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("queued", "Queued"),
+        ("sending", "Sending"),
+        ("sent", "Sent"),
+        ("paused", "Paused"),
+        ("failed", "Failed"),
+    ]
+    name = models.CharField(max_length=200)
+    subject = models.CharField(max_length=255)
+    body_html = models.TextField()
+    template = models.ForeignKey(
+        "EmailTemplate", null=True, blank=True, on_delete=models.SET_NULL
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    total = models.PositiveIntegerField(default=0)
+    sent_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class CampaignRecipient(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("sent", "Sent"),
+        ("failed", "Failed"),
+        ("skipped", "Skipped"),
+    ]
+    campaign = models.ForeignKey(
+        Campaign, related_name="recipients", on_delete=models.CASCADE
+    )
+    email = models.EmailField()
+    name = models.CharField(max_length=200, blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    attempts = models.PositiveSmallIntegerField(default=0)
+    error = models.TextField(blank=True, default="")
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("campaign", "email")
+        indexes = [models.Index(fields=["campaign", "status"])]
+
+    def __str__(self):
+        return f"{self.email} [{self.status}]"
