@@ -126,6 +126,9 @@
             <a href="#" onclick="showSection('inbox', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-inbox w-6 text-center mr-3"></i>Inbox
             </a>
+            <a href="#" onclick="showSection('templates', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-file-lines w-6 text-center mr-3"></i>Templates
+            </a>
 
         </nav>
 
@@ -187,6 +190,9 @@
             <!-- Inbox Section -->
             {% include 'brand/admin/_inbox.html' %}
 
+            <!-- Templates Section -->
+            {% include 'brand/admin/_templates.html' %}
+
         </div>
     </main>
 
@@ -194,6 +200,7 @@
     <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
     <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
     <script src="{% static 'brand/js/admin/inbox.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
 </body>
 
 </html>
