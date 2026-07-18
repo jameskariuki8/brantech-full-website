@@ -1,0 +1,74 @@
+            <div id="projects" class="section hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Projects</h2>
+                        <p class="text-gray-500 text-sm">Showcase your best work</p>
+                    </div>
+                    <button onclick="showAddForm('project')"
+                        class="bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                        <i class="fas fa-plus mr-2"></i>New Project
+                    </button>
+                </div>
+
+                <!-- Add/Edit Form -->
+                <div id="projectForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
+                    <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Project Details
+                    </h3>
+                    <form id="addProjectForm" class="space-y-6" enctype="multipart/form-data">
+                        <form id="addProjectForm" onsubmit="event.preventDefault(); addItem('projects', this);"
+                            class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Project Title</label>
+                                <input type="text" name="title" required
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Short Description</label>
+                                <textarea name="short_description" rows="2"
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Full Description</label>
+                                <textarea name="description" rows="4" required
+                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Project Image</label>
+                                    <input type="file" name="image" accept="image/*"
+                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-gray-400 focus:outline-none focus:border-brand-blue transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">Live Demo URL</label>
+                                    <input type="url" name="project_url"
+                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-2">GitHub URL</label>
+                                    <input type="url" name="github_url"
+                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                </div>
+                                <div class="flex items-center pt-8">
+                                    <input type="checkbox" name="featured" id="projectFeatured"
+                                        class="w-5 h-5 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
+                                    <label for="projectFeatured" class="ml-2 text-sm text-gray-300">Featured
+                                        Project</label>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
+                                <button type="button" onclick="hideAddForm('project')"
+                                    class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
+                                <button type="submit"
+                                    class="bg-brand-green hover:bg-green-500 text-black px-6 py-2.5 rounded-lg transition-colors font-semibold">Save
+                                    Project</button>
+                            </div>
+                        </form>
+                </div>
+
+                <div id="projectsList" class="space-y-4"></div>
+            </div>
