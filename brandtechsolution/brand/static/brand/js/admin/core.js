@@ -42,6 +42,7 @@ function showSection(sectionName, clickedElement) {
     if (sectionName === 'projects') loadProjects();
     // Events removed
     if (sectionName === 'dashboard') loadDashboard();
+    if (sectionName === 'inbox') loadInbox();
 }
 
 function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
