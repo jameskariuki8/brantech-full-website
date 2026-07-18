@@ -1,3 +1,6 @@
+import uuid
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.core.management.base import BaseCommand
@@ -22,49 +25,90 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         budget = settings.OUTBOX_BATCH_SIZE
         max_attempts = settings.OUTBOX_MAX_ATTEMPTS
+
+        self._release_stale_claims()
+
         suppressed = set(Suppression.objects.values_list("email", flat=True))
 
         campaigns = Campaign.objects.filter(status__in=["queued", "sending"])
         connection = get_connection()
 
-        for campaign in campaigns:
-            if budget <= 0:
-                break
+        # Open once for the whole run: every message otherwise pays a full TLS
+        # handshake, which is what the throttling design exists to avoid. A
+        # failure here must not abort the run -- each send then raises on its
+        # own and is recorded against its recipient's attempt count as usual.
+        try:
+            connection.open()
+        except Exception:  # noqa: BLE001 - per-recipient handling covers this
+            pass
 
-            if campaign.status == "queued":
-                campaign.status = "sending"
-                if campaign.started_at is None:
-                    campaign.started_at = timezone.now()
-                campaign.save(update_fields=["status", "started_at"])
+        try:
+            for campaign in campaigns:
+                if budget <= 0:
+                    break
 
-            candidate_ids = list(
-                campaign.recipients.filter(status="pending")
-                .order_by("id")
-                .values_list("id", flat=True)[:budget]
-            )
+                if campaign.status == "queued":
+                    campaign.status = "sending"
+                    if campaign.started_at is None:
+                        campaign.started_at = timezone.now()
+                    campaign.save(update_fields=["status", "started_at"])
 
-            if candidate_ids:
-                budget -= len(candidate_ids)
+                candidate_ids = list(
+                    campaign.recipients.filter(status="pending")
+                    .order_by("id")
+                    .values_list("id", flat=True)[:budget]
+                )
 
-                if suppressed:
-                    CampaignRecipient.objects.filter(
-                        pk__in=candidate_ids, status="pending", email__in=suppressed
-                    ).update(status="skipped")
+                if candidate_ids:
+                    budget -= len(candidate_ids)
 
-                # Claim the remaining rows atomically before any mail is sent, so a
-                # concurrent run (or a crash mid-batch) cannot re-send them.
-                claimed = CampaignRecipient.objects.filter(
-                    pk__in=candidate_ids, status="pending"
-                ).update(status="sending")
+                    if suppressed:
+                        CampaignRecipient.objects.filter(
+                            pk__in=candidate_ids, status="pending", email__in=suppressed
+                        ).update(status="skipped")
 
-                if claimed:
-                    rows = CampaignRecipient.objects.filter(
-                        pk__in=candidate_ids, status="sending"
-                    ).order_by("id")
-                    for recipient in rows:
-                        self._send_one(campaign, recipient, connection, max_attempts)
+                    # Claim the remaining rows atomically before any mail is sent,
+                    # stamping our own token so we can tell which rows *this* run
+                    # won. A concurrent run may have claimed some of our candidates
+                    # between the SELECT above and this UPDATE; those rows are
+                    # theirs to send, not ours.
+                    token = uuid.uuid4()
+                    claimed = CampaignRecipient.objects.filter(
+                        pk__in=candidate_ids, status="pending"
+                    ).update(
+                        status="sending", claim_token=token, claimed_at=timezone.now()
+                    )
 
-            self._maybe_complete(campaign)
+                    if claimed:
+                        # Filter by token only -- never by status="sending" alone.
+                        rows = CampaignRecipient.objects.filter(
+                            claim_token=token
+                        ).order_by("id")
+                        for recipient in rows:
+                            self._send_one(
+                                campaign, recipient, connection, max_attempts
+                            )
+
+                self._maybe_complete(campaign)
+        finally:
+            try:
+                connection.close()
+            except Exception:  # noqa: BLE001 - nothing useful to do on teardown
+                pass
+
+    def _release_stale_claims(self):
+        """Return rows abandoned mid-send (crash, deploy) to the pending pool.
+
+        Without this a row stuck in "sending" is never re-selected, and the
+        campaign never completes because _maybe_complete() counts it as
+        outstanding forever.
+        """
+        stale_before = timezone.now() - timedelta(
+            minutes=settings.OUTBOX_STALE_CLAIM_MINUTES
+        )
+        CampaignRecipient.objects.filter(
+            status="sending", claimed_at__lt=stale_before
+        ).update(status="pending", claim_token=None, claimed_at=None)
 
     def _send_one(self, campaign, recipient, connection, max_attempts):
         token = make_unsubscribe_token(recipient.email)
@@ -105,13 +149,27 @@ class Command(BaseCommand):
             else:
                 # Release the claim so a later run retries this recipient.
                 recipient.status = "pending"
-            recipient.save(update_fields=["attempts", "error", "status"])
+            # Terminal or released: the claim is over either way, so drop the
+            # token instead of leaving it to linger on a settled row.
+            recipient.claim_token = None
+            recipient.claimed_at = None
+            recipient.save(
+                update_fields=[
+                    "attempts", "error", "status", "claim_token", "claimed_at",
+                ]
+            )
             return
 
         recipient.status = "sent"
         recipient.sent_at = timezone.now()
         recipient.attempts += 1
-        recipient.save(update_fields=["status", "sent_at", "attempts"])
+        recipient.claim_token = None
+        recipient.claimed_at = None
+        recipient.save(
+            update_fields=[
+                "status", "sent_at", "attempts", "claim_token", "claimed_at",
+            ]
+        )
         Campaign.objects.filter(pk=campaign.pk).update(sent_count=F("sent_count") + 1)
 
     def _maybe_complete(self, campaign):

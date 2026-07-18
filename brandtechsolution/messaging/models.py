@@ -102,6 +102,10 @@ class CampaignRecipient(models.Model):
     attempts = models.PositiveSmallIntegerField(default=0)
     error = models.TextField(blank=True, default="")
     sent_at = models.DateTimeField(null=True, blank=True)
+    # Identifies which outbox run claimed this row, so a run only ever sends the
+    # rows it won itself (a status of "sending" alone can belong to another run).
+    claim_token = models.UUIDField(null=True, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("campaign", "email")

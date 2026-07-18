@@ -188,6 +188,7 @@ DEFAULT_FROM_EMAIL = config.email_host_user
 
 OUTBOX_BATCH_SIZE = config.outbox_batch_size
 OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
+OUTBOX_STALE_CLAIM_MINUTES = config.outbox_stale_claim_minutes
 SITE_BASE_URL = config.site_base_url
 
 # ============================================================
