@@ -13,12 +13,12 @@ async function loadInbox() {
                 <div class="flex justify-between items-start gap-4">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="text-xs font-bold px-2 py-1 rounded uppercase ${badge[i.status] || ''}">${i.status}</span>
-                            <span class="text-gray-500 text-xs">${new Date(i.created_at).toLocaleString()}</span>
+                            <span class="text-xs font-bold px-2 py-1 rounded uppercase ${badge[i.status] || ''}">${escapeHtml(i.status)}</span>
+                            <span class="text-gray-500 text-xs">${escapeHtml(new Date(i.created_at).toLocaleString())}</span>
                         </div>
-                        <h3 class="text-lg font-bold text-white">${i.name} <span class="text-sm text-gray-400 font-normal">&lt;${i.email}&gt;</span></h3>
-                        ${i.phone ? `<p class="text-xs text-gray-500 mb-1">${i.phone}</p>` : ''}
-                        <p class="text-gray-300 text-sm whitespace-pre-line mt-2">${i.message}</p>
+                        <h3 class="text-lg font-bold text-white">${escapeHtml(i.name)} <span class="text-sm text-gray-400 font-normal">&lt;${escapeHtml(i.email)}&gt;</span></h3>
+                        ${i.phone ? `<p class="text-xs text-gray-500 mb-1">${escapeHtml(i.phone)}</p>` : ''}
+                        <p class="text-gray-300 text-sm whitespace-pre-line mt-2">${escapeHtml(i.message)}</p>
                     </div>
                     <div class="flex flex-col gap-2">
                         <button onclick="setInquiryStatus(${i.id}, 'read')" class="p-2 text-gray-400 hover:bg-white/5 rounded" title="Mark read"><i class="fas fa-envelope-open"></i></button>

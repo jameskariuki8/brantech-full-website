@@ -6,6 +6,16 @@ function getCookie(name) {
 }
 const CSRF_TOKEN = getCookie('csrftoken');
 
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Toggle Sidebar
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const sidebar = document.getElementById('sidebar');
