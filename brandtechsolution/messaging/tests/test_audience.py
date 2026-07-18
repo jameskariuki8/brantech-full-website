@@ -30,6 +30,11 @@ class AudienceTests(TestCase):
         result = audience.resolve_recipients(["inquiries"], manual_emails=[])
         self.assertEqual(result, [])
 
+    def test_resolve_excludes_suppressed_case_insensitively(self):
+        Suppression.objects.create(email="ADA@X.com")
+        result = audience.resolve_recipients(["inquiries"], manual_emails=[])
+        self.assertEqual(result, [])
+
     def test_resolve_populates_name_from_source(self):
         result = audience.resolve_recipients(["appointments"], manual_emails=[])
         self.assertEqual(result[0]["name"], "Client C")

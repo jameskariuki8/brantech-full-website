@@ -23,7 +23,10 @@ def _iter_source(key):
 
 def resolve_recipients(source_keys, manual_emails):
     """Merge selected sources + manual list into deduped, suppression-filtered dicts."""
-    suppressed = set(Suppression.objects.values_list("email", flat=True))
+    suppressed = {
+        (e or "").strip().lower()
+        for e in Suppression.objects.values_list("email", flat=True)
+    }
     merged = {}  # email(lower) -> name
 
     for key in source_keys:
