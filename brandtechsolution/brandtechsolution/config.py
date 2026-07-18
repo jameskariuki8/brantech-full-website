@@ -49,6 +49,13 @@ class AppSettings(BaseSettings):
     email_host_password: str = ""
 
     # ============================================================
+    # Bulk mail outbox
+    # ============================================================
+    outbox_batch_size: int = 50
+    outbox_max_attempts: int = 3
+    site_base_url: str = "https://teklora.co.ke"
+
+    # ============================================================
     # Gemini API Configuration
     # ============================================================
     google_api_key: str

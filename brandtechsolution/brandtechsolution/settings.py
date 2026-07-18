@@ -186,6 +186,10 @@ EMAIL_HOST_PASSWORD = config.email_host_password
 
 DEFAULT_FROM_EMAIL = config.email_host_user
 
+OUTBOX_BATCH_SIZE = config.outbox_batch_size
+OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
+SITE_BASE_URL = config.site_base_url
+
 # ============================================================
 # AUTHENTICATION REDIRECTS
 # ============================================================

@@ -270,6 +270,16 @@ docker compose exec web python manage.py init_vector_stores
 - The `web` container runs as root to keep the bind-mounted `./data/media`
   writable regardless of host UID.
 
+## Bulk email outbox
+
+Queued campaigns are sent by a management command; run it every minute via cron:
+
+    * * * * * cd /app/brandtechsolution && /app/.venv/bin/python manage.py process_email_outbox >> /var/log/outbox.log 2>&1
+
+Tune `OUTBOX_BATCH_SIZE` (default 50) and cron frequency to stay under your
+Gmail limits (~500/day free, ~2000/day Workspace). Example: batch 20 + a
+per-5-minute cron ≈ safe for a free Gmail account.
+
 ## 📝 License
 
 This project is proprietary software for Brantech Solution.
