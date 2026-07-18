@@ -1,8 +1,10 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 
-from .models import EmailTemplate, Inquiry
-from .serializers import EmailTemplateSerializer, InquirySerializer
+from . import audience
+from .models import Campaign, EmailTemplate, Inquiry
+from .serializers import CampaignSerializer, EmailTemplateSerializer, InquirySerializer
 
 
 class InquiryViewSet(viewsets.ModelViewSet):
@@ -15,6 +17,39 @@ class EmailTemplateViewSet(viewsets.ModelViewSet):
     queryset = EmailTemplate.objects.all()
     serializer_class = EmailTemplateSerializer
     permission_classes = [IsAdminUser]
+
+
+class CampaignViewSet(viewsets.ModelViewSet):
+    queryset = Campaign.objects.all()
+    serializer_class = CampaignSerializer
+    permission_classes = [IsAdminUser]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    @action(detail=True, methods=["post"])
+    def build_recipients(self, request, pk=None):
+        campaign = self.get_object()
+        if campaign.status != "draft":
+            return Response(
+                {"detail": "Recipients can only be built for a draft campaign."},
+                status=400,
+            )
+        sources = request.data.get("sources", []) or []
+        manual = request.data.get("manual_emails", []) or []
+        count = audience.build_recipients(campaign, sources, manual)
+        return Response({"count": count})
+
+    @action(detail=True, methods=["post"])
+    def queue(self, request, pk=None):
+        campaign = self.get_object()
+        if campaign.status != "draft":
+            return Response({"detail": "Only draft campaigns can be queued."}, status=400)
+        if campaign.total == 0:
+            return Response({"detail": "No recipients. Build recipients first."}, status=400)
+        campaign.status = "queued"
+        campaign.save(update_fields=["status"])
+        return Response({"status": campaign.status})
 
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
