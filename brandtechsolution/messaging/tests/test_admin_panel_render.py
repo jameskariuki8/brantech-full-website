@@ -11,5 +11,5 @@ class AdminPanelRenderTests(TestCase):
         resp = self.client.get("/admin-panel/")
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
-        for anchor in ['id="dashboard"', 'id="blogs"', 'id="projects"', 'id="inbox"', 'id="templates"']:
+        for anchor in ['id="dashboard"', 'id="blogs"', 'id="projects"', 'id="inbox"', 'id="templates"', 'id="campaigns"']:
             self.assertIn(anchor, html)
