@@ -274,7 +274,9 @@ docker compose exec web python manage.py init_vector_stores
 
 Queued campaigns are sent by a management command; run it every minute via cron:
 
-    * * * * * cd /app/brandtechsolution && /app/.venv/bin/python manage.py process_email_outbox >> /var/log/outbox.log 2>&1
+    * * * * * cd /app/brandtechsolution && /app/.venv/bin/python manage.py process_email_outbox --verbosity 0 >/dev/null 2>>/var/log/outbox-errors.log
+
+Application DEBUG logging can include credential values, so avoid redirecting full stdout into a persistent log.
 
 Tune `OUTBOX_BATCH_SIZE` (default 50) and cron frequency to stay under your
 Gmail limits (~500/day free, ~2000/day Workspace). Example: batch 20 + a

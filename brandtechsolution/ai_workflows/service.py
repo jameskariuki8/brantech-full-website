@@ -21,6 +21,19 @@ from string import Template
 
 logger = logging.getLogger(__name__)
 
+_SENSITIVE_MARKERS = ("KEY", "SECRET", "TOKEN", "PASSWORD")
+
+
+def _mask_secret(value: str) -> str:
+    """Mask a sensitive value for safe logging."""
+    value = str(value)
+    return f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
+
+
+def _is_sensitive(key: str) -> bool:
+    """Return True if `key` looks like it holds a secret/credential value."""
+    return any(marker in key.upper() for marker in _SENSITIVE_MARKERS)
+
 
 def _set_external_environment():
     """
@@ -46,10 +59,9 @@ def _set_external_environment():
     for key, value in env_overrides.items():
         if value is not None:
             os.environ[key] = str(value)
-            # Log LangSmith config for debugging (mask API key)
-            if key == 'LANGSMITH_API_KEY':
-                masked_key = f"{value[:8]}...{value[-4:]}" if len(str(value)) > 12 else "***"
-                logger.debug(f"[LangSmith] {key}={masked_key}")
+            # Log config for debugging, masking any sensitive value
+            if _is_sensitive(key):
+                logger.debug(f"[LangSmith] {key}={_mask_secret(value)}")
             else:
                 logger.debug(f"[LangSmith] {key}={value}")
 
