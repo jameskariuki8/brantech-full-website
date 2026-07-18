@@ -8,4 +8,5 @@ router.register(r"templates", api.EmailTemplateViewSet, basename="templates")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("extract-emails/", api.extract_emails, name="extract-emails"),
 ]
