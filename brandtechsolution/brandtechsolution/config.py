@@ -47,6 +47,21 @@ class AppSettings(BaseSettings):
     email_use_tls: bool = True
     email_host_user: str = ""
     email_host_password: str = ""
+    email_timeout: int = 10
+
+    # ============================================================
+    # Bulk mail outbox
+    # ============================================================
+    outbox_batch_size: int = 50
+    outbox_max_attempts: int = 3
+    outbox_stale_claim_minutes: int = 15
+    site_base_url: str = "https://teklora.co.ke"
+
+    # ============================================================
+    # Public contact form rate limiting
+    # ============================================================
+    contact_rate_limit_count: int = 5
+    contact_rate_limit_window_seconds: int = 3600
 
     # ============================================================
     # Gemini API Configuration

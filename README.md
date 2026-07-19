@@ -270,6 +270,37 @@ docker compose exec web python manage.py init_vector_stores
 - The `web` container runs as root to keep the bind-mounted `./data/media`
   writable regardless of host UID.
 
+## Bulk email outbox
+
+Queued campaigns are sent by the `process_email_outbox` management command.
+
+**Docker Compose deployments:** the `outbox` service in `docker-compose.yml`
+runs this command automatically in a loop (every 60 seconds) alongside `web`
+and `db`. There is nothing extra to configure or run — `docker compose up`
+starts it for you.
+
+**Non-Docker deployments:** run the command every minute via cron, using the
+`python` interpreter that this project's dependencies are actually installed
+into (e.g. the output of `which python` inside your project's virtualenv —
+do NOT hard-code a path from a different environment's virtualenv layout;
+there is no virtualenv inside the Docker image, so any such path is wrong
+there):
+
+    * * * * * cd /path/to/brandtechsolution && /path/to/your/python manage.py process_email_outbox --verbosity 0 >/dev/null 2>>/var/log/outbox-errors.log
+
+Application DEBUG logging can include credential values, so avoid redirecting full stdout into a persistent log.
+
+Tune `OUTBOX_BATCH_SIZE` (default 50) and cron frequency to stay under your
+Gmail limits (~500/day free, ~2000/day Workspace). Example: batch 20 + a
+per-5-minute cron ≈ safe for a free Gmail account.
+
+`OUTBOX_STALE_CLAIM_MINUTES` controls how long a claimed-but-unfinished batch
+is held before the reaper releases it back to the queue. A single run's
+worst-case duration is bounded by `OUTBOX_BATCH_SIZE × EMAIL_TIMEOUT`
+seconds, and this must stay below `OUTBOX_STALE_CLAIM_MINUTES × 60` — this
+invariant is enforced by an automated test, so raising the batch size or
+timeout requires raising `OUTBOX_STALE_CLAIM_MINUTES` to match.
+
 ## 📝 License
 
 This project is proprietary software for Brantech Solution.

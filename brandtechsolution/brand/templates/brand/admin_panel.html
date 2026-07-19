@@ -122,6 +122,16 @@
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
                 <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
             </a>
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Communications</div>
+            <a href="#" onclick="showSection('inbox', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-inbox w-6 text-center mr-3"></i>Inbox
+            </a>
+            <a href="#" onclick="showSection('templates', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-file-lines w-6 text-center mr-3"></i>Templates
+            </a>
+            <a href="#" onclick="showSection('campaigns', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-paper-plane w-6 text-center mr-3"></i>Campaigns
+            </a>
 
         </nav>
 
@@ -175,412 +185,29 @@
             </div>
 
             <!-- Blog Section -->
-            <div id="blogs" class="section hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Blog Posts</h2>
-                        <p class="text-gray-500 text-sm">Manage your news and articles</p>
-                    </div>
-                    <button onclick="showAddForm('blog')"
-                        class="bg-brand-blue hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center transition-colors">
-                        <i class="fas fa-plus mr-2"></i>Create Post
-                    </button>
-                </div>
-
-                <!-- Add/Edit Form -->
-                <div id="blogForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
-                    <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Blog Post</h3>
-                    <form id="addBlogForm" class="space-y-6" enctype="multipart/form-data">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Title</label>
-                                <input type="text" name="title"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
-                                    placeholder="e.g. The Future of AI" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Category</label>
-                                <select name="category"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
-                                    required>
-                                    <option value="">Select Category</option>
-                                    <option value="Web Development">Web Development</option>
-                                    <option value="AI & Machine Learning">AI & Machine Learning</option>
-                                    <option value="Digital Marketing">Digital Marketing</option>
-                                    <option value="Tech Trends">Tech Trends</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Excerpt</label>
-                            <textarea name="excerpt" rows="2"
-                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
-                                placeholder="Brief summary..." required></textarea>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Content</label>
-                            <textarea name="content" rows="6"
-                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
-                                placeholder="Full article content..." required></textarea>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Cover Image</label>
-                                <input type="file" name="image" accept="image/*"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-blue/10 file:text-brand-blue hover:file:bg-brand-blue/20">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Tags</label>
-                                <input type="text" name="tags"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
-                                    placeholder="tech, ai, coding">
-                            </div>
-                        </div>
-
-                        <div class="flex items-center">
-                            <input type="checkbox" name="featured" id="blogFeatured"
-                                class="w-5 h-5 bg-[#06090F] border-dark-border rounded text-brand-blue focus:ring-offset-gray-900">
-                            <label for="blogFeatured" class="ml-2 text-sm text-gray-300">Mark as Featured Post</label>
-                        </div>
-
-                        <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
-                            <button type="button" onclick="hideAddForm('blog')"
-                                class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
-                            <button type="submit"
-                                class="bg-brand-blue hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg transition-colors font-medium">Save
-                                Post</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="blogsList" class="space-y-4"></div>
-            </div>
+            {% include 'brand/admin/_blogs.html' %}
 
             <!-- Project Section -->
-            <div id="projects" class="section hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Projects</h2>
-                        <p class="text-gray-500 text-sm">Showcase your best work</p>
-                    </div>
-                    <button onclick="showAddForm('project')"
-                        class="bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
-                        <i class="fas fa-plus mr-2"></i>New Project
-                    </button>
-                </div>
+            {% include 'brand/admin/_projects.html' %}
 
-                <!-- Add/Edit Form -->
-                <div id="projectForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
-                    <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Project Details
-                    </h3>
-                    <form id="addProjectForm" class="space-y-6" enctype="multipart/form-data">
-                        <form id="addProjectForm" onsubmit="event.preventDefault(); addItem('projects', this);"
-                            class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Project Title</label>
-                                <input type="text" name="title" required
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Short Description</label>
-                                <textarea name="short_description" rows="2"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Full Description</label>
-                                <textarea name="description" rows="4" required
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
-                            </div>
+            <!-- Inbox Section -->
+            {% include 'brand/admin/_inbox.html' %}
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-400 mb-2">Project Image</label>
-                                    <input type="file" name="image" accept="image/*"
-                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-gray-400 focus:outline-none focus:border-brand-blue transition-colors">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-400 mb-2">Live Demo URL</label>
-                                    <input type="url" name="project_url"
-                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                </div>
-                            </div>
+            <!-- Templates Section -->
+            {% include 'brand/admin/_templates.html' %}
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-400 mb-2">GitHub URL</label>
-                                    <input type="url" name="github_url"
-                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                </div>
-                                <div class="flex items-center pt-8">
-                                    <input type="checkbox" name="featured" id="projectFeatured"
-                                        class="w-5 h-5 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
-                                    <label for="projectFeatured" class="ml-2 text-sm text-gray-300">Featured
-                                        Project</label>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
-                                <button type="button" onclick="hideAddForm('project')"
-                                    class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
-                                <button type="submit"
-                                    class="bg-brand-green hover:bg-green-500 text-black px-6 py-2.5 rounded-lg transition-colors font-semibold">Save
-                                    Project</button>
-                            </div>
-                        </form>
-                </div>
-
-                <div id="projectsList" class="space-y-4"></div>
-            </div>
-
-
+            <!-- Campaigns Section -->
+            {% include 'brand/admin/_campaigns.html' %}
 
         </div>
     </main>
 
-    <script>
-        const API_BASE = '/api';
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-        const CSRF_TOKEN = getCookie('csrftoken');
-
-        // Toggle Sidebar
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobileOverlay');
-
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        });
-
-        overlay.addEventListener('click', () => {
-            sidebar.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
-        });
-
-        function showSection(sectionName, clickedElement) {
-            // Main content sections
-            document.querySelectorAll('.section').forEach(section => { section.classList.add('hidden'); });
-            const targetSection = document.getElementById(sectionName);
-            if (targetSection) targetSection.classList.remove('hidden');
-
-            // Sidebar highlighting
-            document.querySelectorAll('.nav-item').forEach(link => { link.classList.remove('active'); });
-            if (clickedElement) clickedElement.classList.add('active');
-
-            // Close mobile menu on navigate
-            if (window.innerWidth < 1024) {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-
-            // Load data
-            if (sectionName === 'blogs') loadBlogs();
-            if (sectionName === 'projects') loadProjects();
-            // Events removed
-            if (sectionName === 'dashboard') loadDashboard();
-        }
-
-        function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
-        function hideAddForm(type) {
-            document.getElementById(`${type}Form`).classList.add('hidden');
-            const form = document.getElementById(`add${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
-            form.reset();
-            // Reset header back to 'Add' state visually if needed, simplified here
-        }
-
-        async function loadDashboard() {
-            try {
-                const common = { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
-                const [blogs, projects] = await Promise.all([
-                    fetch(`${API_BASE}/posts/`, common).then(r => r.json()),
-                    fetch(`${API_BASE}/projects/`, common).then(r => r.json())
-                ]);
-
-                document.getElementById('blogCount').textContent = blogs.length || 0;
-                document.getElementById('projectCount').textContent = projects.length || 0;
-
-
-
-            } catch (error) { console.error('Error loading dashboard:', error); }
-        }
-
-        async function loadBlogs() {
-            try {
-                const response = await fetch(`${API_BASE}/posts/`, { credentials: 'same-origin' });
-                const blogs = await response.json();
-                const container = document.getElementById('blogsList');
-                if (!blogs.length) {
-                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No posts found. Create your first one!</div>`;
-                    return;
-                }
-                container.innerHTML = blogs.map(blog => `
-                    <div class="bg-dark-card border border-dark-border p-5 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4 hover:border-brand-blue/30 transition-colors group">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded uppercase">${blog.category}</span>
-                                ${blog.featured ? '<span class="text-xs font-bold text-purple-400 px-2 py-1 bg-purple-900/20 rounded">FEATURED</span>' : ''}
-                                <span class="text-gray-500 text-xs">${new Date(blog.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-brand-blue transition-colors">${blog.title}</h3>
-                            <p class="text-gray-400 text-sm line-clamp-2 mb-3">${blog.excerpt || ''}</p>
-                            <div class="flex items-center text-xs text-gray-500 gap-4">
-                                <span><i class="fas fa-eye mr-1"></i>${blog.view_count || 0}</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="editBlog(${blog.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteItem('posts', ${blog.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-
-        async function loadProjects() {
-            try {
-                const response = await fetch(`${API_BASE}/projects/`, { credentials: 'same-origin' });
-                const projects = await response.json();
-                const container = document.getElementById('projectsList');
-                if (!projects.length) {
-                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No projects found. Add one!</div>`;
-                    return;
-                }
-                container.innerHTML = projects.map(project => `
-                    <div class="bg-dark-card border border-dark-border p-5 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4 hover:border-brand-green/30 transition-colors group">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded">PROJECT</span>
-                                ${project.featured ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded">FEATURED</span>' : ''}
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-1">${project.title}</h3>
-                            <p class="text-sm text-gray-400 mb-2">${project.short_description || ''}</p>
-                            <a href="${project.project_url || '#'}" target="_blank" class="text-xs text-brand-blue hover:underline">${project.project_url || 'No Live Link'}</a>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="editProject(${project.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteItem('projects', ${project.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-
-
-
-        // CRUD helpers
-        async function addItem(endpoint, form) {
-            const formData = new FormData(form);
-            if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
-            try {
-                const response = await fetch(`${API_BASE}/${endpoint}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                if (response.ok) {
-                    alert('Saved successfully!');
-                    form.reset();
-                    // hideAddForm call moved to specific blocks below to ensure correct ID is used
-                    if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); }
-                    if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); }
-                } else {
-                    alert('Error saving item');
-                }
-            } catch (e) { console.error(e); alert('Error'); }
-        }
-
-        async function updateItem(endpoint, id, form) {
-            const formData = new FormData(form);
-            if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
-
-            try {
-                // Use POST for updates to support file uploads (Django doesn't handle multipart PUT well)
-                const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                if (response.ok) {
-                    alert('Updated!');
-                    form.reset();
-                    form.onsubmit = null; // Remove override
-
-                    // Reset UI text
-                    const type = endpoint === 'posts' ? 'blog' : 'project';
-                    document.querySelector(`#${type}Form h3`).textContent = type === 'blog' ? 'New Blog Post' : 'New Project Details';
-                    document.querySelector(`#${type}Form button[type="submit"]`).textContent = type === 'blog' ? 'Save Post' : 'Save Project';
-
-                    if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); }; }
-                    if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); }; }
-                } else { alert('Update failed'); }
-            } catch (e) { console.error(e); alert('Error'); }
-        }
-
-        async function deleteItem(endpoint, id) {
-            if (!confirm('Delete this item permanently?')) return;
-            try {
-                const res = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                if (res.ok) {
-                    if (endpoint === 'posts') loadBlogs();
-                    if (endpoint === 'projects') loadProjects();
-                } else { alert('Delete failed'); }
-            } catch (e) { console.error(e); }
-        }
-
-        // Edit Pre-fill
-        async function editBlog(id) {
-            try {
-                const blog = await fetch(`${API_BASE}/posts/${id}/`).then(r => r.json());
-                const form = document.getElementById('addBlogForm');
-                form.title.value = blog.title;
-                form.category.value = blog.category;
-                form.excerpt.value = blog.excerpt;
-                form.content.value = blog.content;
-                form.tags.value = blog.tags;
-                form.featured.checked = blog.featured;
-
-                document.querySelector('#blogForm h3').textContent = 'Edit Blog Post';
-                const btn = document.querySelector('#blogForm button[type="submit"]');
-                btn.textContent = 'Update Post';
-
-                form.onsubmit = async (e) => { e.preventDefault(); await updateItem('posts', id, e.target); };
-                showAddForm('blog');
-            } catch (e) { console.error(e); }
-        }
-
-        async function editProject(id) {
-            try {
-                const p = await fetch(`${API_BASE}/projects/${id}/`).then(r => r.json());
-                const form = document.getElementById('addProjectForm');
-                form.title.value = p.title || '';
-                if (form.short_description && p.short_description) form.short_description.value = p.short_description;
-                form.description.value = p.description || '';
-                form.project_url.value = p.project_url || '';
-                form.github_url.value = p.github_url || '';
-                form.featured.checked = p.featured;
-
-                document.querySelector('#projectForm h3').textContent = 'Edit Project';
-                const btn = document.querySelector('#projectForm button[type="submit"]');
-                btn.textContent = 'Update Project';
-
-                form.onsubmit = async (e) => { e.preventDefault(); await updateItem('projects', id, e.target); };
-                showAddForm('project');
-            } catch (e) { console.error(e); }
-        }
-
-        // Bind initial submits
-        document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); };
-        document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
-
-
-
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDashboard();
-            // Highlight dashboard initially
-            document.querySelector('a[onclick*="dashboard"]').classList.add('active');
-        });
-
-    </script>
+    <script src="{% static 'brand/js/admin/core.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/inbox.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
 </body>
 
 </html>

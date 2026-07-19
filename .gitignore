@@ -150,3 +150,4 @@ Thumbs.db
 
 # Docker persistent data (bind mounts)
 /data/
+.superpowers/

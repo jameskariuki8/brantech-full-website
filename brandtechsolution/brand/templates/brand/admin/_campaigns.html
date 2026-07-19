@@ -1,0 +1,39 @@
+<div id="campaigns" class="section hidden">
+    <div class="flex justify-between items-center mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Campaigns</h2>
+            <p class="text-gray-500 text-sm">Compose and send bulk email</p>
+        </div>
+        <button onclick="showAddForm('campaign')" class="bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg flex items-center"><i class="fas fa-plus mr-2"></i>New Campaign</button>
+    </div>
+
+    <div id="campaignForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
+        <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Campaign</h3>
+        <form id="addCampaignForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Campaign name (internal)</label>
+                <input type="text" name="name" required class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Use a template (optional)</label>
+                <select id="campaignTemplate" onchange="applyTemplate()" class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    <option value="">— none —</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Subject</label>
+                <input type="text" name="subject" required class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">HTML Body</label>
+                <textarea name="body_html" rows="8" required class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-brand-blue"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
+                <button type="button" onclick="hideAddForm('campaign')" class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5">Cancel</button>
+                <button type="submit" class="bg-brand-green hover:bg-green-500 text-black px-6 py-2.5 rounded-lg font-semibold">Create Draft</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="campaignsList" class="space-y-4"></div>
+</div>

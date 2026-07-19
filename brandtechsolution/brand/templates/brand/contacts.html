@@ -100,7 +100,16 @@
         <span
           class="absolute bottom-10 left-10 w-32 h-32 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full blur-[60px] opacity-20"></span>
 
-        <form action="https://formspree.io/f/mpwvkpvk" method="POST" autocomplete="off" class="relative z-10">
+        <form action="{% url 'contact_submit' %}" method="POST" autocomplete="off" class="relative z-10">
+          {% csrf_token %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="mb-4 rounded-lg px-4 py-3 text-sm {% if message.tags == 'error' %}bg-red-500/10 text-red-400{% else %}bg-green-500/10 text-green-400{% endif %}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+          <!-- Honeypot: hidden from users, bots fill it -->
+          <input type="text" name="website" tabindex="-1" autocomplete="off"
+                 style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
           <h3 class="text-2xl font-bold mb-6 text-white">Contact us</h3>
 
           <div class="relative mb-6">

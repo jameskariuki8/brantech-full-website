@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'brand',
     'appointments',
     'ai_workflows',
+    'messaging',
 ]
 
 MIDDLEWARE = [
@@ -182,8 +183,23 @@ EMAIL_PORT = config.email_port
 EMAIL_USE_TLS = config.email_use_tls
 EMAIL_HOST_USER = config.email_host_user
 EMAIL_HOST_PASSWORD = config.email_host_password
+# Bounds how long a single SMTP send can block. This matters for the outbox
+# reaper below: a batch's worst-case send time is roughly
+# OUTBOX_BATCH_SIZE * EMAIL_TIMEOUT seconds, which must stay under
+# OUTBOX_STALE_CLAIM_MINUTES * 60 or the reaper may release rows a live run
+# is still sending, risking duplicate delivery.
+EMAIL_TIMEOUT = config.email_timeout
 
 DEFAULT_FROM_EMAIL = config.email_host_user
+
+OUTBOX_BATCH_SIZE = config.outbox_batch_size
+OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
+OUTBOX_STALE_CLAIM_MINUTES = config.outbox_stale_claim_minutes
+SITE_BASE_URL = config.site_base_url
+
+# Public contact form rate limiting (per-IP, via Django's default cache).
+CONTACT_RATE_LIMIT_COUNT = config.contact_rate_limit_count
+CONTACT_RATE_LIMIT_WINDOW_SECONDS = config.contact_rate_limit_window_seconds
 
 # ============================================================
 # AUTHENTICATION REDIRECTS
