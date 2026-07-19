@@ -301,6 +301,32 @@ seconds, and this must stay below `OUTBOX_STALE_CLAIM_MINUTES × 60` — this
 invariant is enforced by an automated test, so raising the batch size or
 timeout requires raising `OUTBOX_STALE_CLAIM_MINUTES` to match.
 
+### Email placeholders
+
+Templates and campaigns support these merge fields in both the subject and body:
+
+| Placeholder | Renders as |
+|---|---|
+| `{{ name }}` | Recipient's full name (may be blank) |
+| `{{ first_name }}` | First word of the recipient's name |
+| `{{ email }}` | Recipient's email address |
+| `{{ date }}` | Send date, e.g. July 19, 2026 |
+| `{{ year }}` | Send year |
+| `{{ unsubscribe_url }}` | Per-recipient unsubscribe link (appended automatically if omitted) |
+
+Spacing is flexible — `{{name}}`, `{{ name }}` and `{{  name  }}` all work.
+Unknown placeholders render as empty text rather than leaking a literal
+`{{ typo }}` into a recipient's inbox; the editor warns about them when you
+hit **Preview**, so check that before sending.
+
+The editor stores what you author as `body_source` and derives the
+CSS-inlined `body_html` that is actually sent, so editing is lossless and
+re-saving never compounds inline styles. The **Source** button exposes the
+raw HTML for pasted designs; switching back to the visual editor may
+simplify markup Quill does not model. Alignment and indentation are
+deliberately absent from the toolbar because email clients discard the CSS
+classes Quill uses to implement them.
+
 ## 📝 License
 
 This project is proprietary software for Brantech Solution.
