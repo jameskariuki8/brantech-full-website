@@ -61,3 +61,43 @@ class BodySourceApiTests(TestCase):
         campaign = Campaign.objects.get()
         self.assertEqual(campaign.body_source, "<p>Hi</p>")
         self.assertIn("style=", campaign.body_html)
+
+    def test_template_without_body_source_is_rejected(self):
+        resp = self.client.post("/api/messaging/templates/", data={
+            "name": "T", "subject": "s",
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("body_source", resp.json())
+        self.assertEqual(EmailTemplate.objects.count(), 0)
+
+    def test_template_with_blank_body_source_is_rejected(self):
+        resp = self.client.post("/api/messaging/templates/", data={
+            "name": "T", "subject": "s", "body_source": "",
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("body_source", resp.json())
+        self.assertEqual(EmailTemplate.objects.count(), 0)
+
+    def test_campaign_without_body_source_is_rejected(self):
+        resp = self.client.post("/api/messaging/campaigns/", data={
+            "name": "C", "subject": "s",
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("body_source", resp.json())
+        self.assertEqual(Campaign.objects.count(), 0)
+
+    def test_patch_template_subject_only_leaves_body_html_unchanged(self):
+        resp = self.client.post("/api/messaging/templates/", data={
+            "name": "T", "subject": "s", "body_source": "<p>Hello</p>",
+        })
+        tpl_id = resp.json()["id"]
+        original_html = EmailTemplate.objects.get(id=tpl_id).body_html
+        resp = self.client.patch(
+            f"/api/messaging/templates/{tpl_id}/",
+            data='{"subject": "new subject"}',
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        tpl = EmailTemplate.objects.get(id=tpl_id)
+        self.assertEqual(tpl.subject, "new subject")
+        self.assertEqual(tpl.body_html, original_html)

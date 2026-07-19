@@ -11,7 +11,7 @@ class CampaignApiTests(TestCase):
 
     def _make_campaign(self):
         resp = self.client.post("/api/messaging/campaigns/", data={
-            "name": "Launch", "subject": "Hello", "body_html": "<p>Hi {{ name }}</p>",
+            "name": "Launch", "subject": "Hello", "body_source": "<p>Hi {{ name }}</p>",
         })
         self.assertEqual(resp.status_code, 201)
         return resp.json()["id"]

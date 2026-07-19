@@ -11,11 +11,19 @@ class InquirySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "name", "email", "phone", "message", "created_at"]
 
 
-class EmailBodyMixin:
+class EmailBodyMixin(serializers.Serializer):
     """Sanitize the authored body and derive the inlined body sent to recipients.
 
     Clients submit `body_source`; `body_html` is always derived, never accepted.
+
+    Inherits from `serializers.Serializer` (rather than being a plain mixin)
+    so that DRF's `SerializerMetaclass` picks up the `body_source` declared
+    field into `_declared_fields` and propagates it to subclasses; a plain
+    class attribute is invisible to that machinery and would be silently
+    replaced by the model-inferred field (`required=False, allow_blank=True`).
     """
+
+    body_source = serializers.CharField(allow_blank=False)
 
     def validate_body_source(self, value):
         return sanitize_email_html(value)

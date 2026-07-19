@@ -14,6 +14,12 @@ const EMAIL_TOOLBAR = [
 let PLACEHOLDER_CACHE = null;
 const EMAIL_EDITORS = {};
 
+// Quill has no blot for table markup (among other things), and reconciling
+// foreign DOM through quill.root.innerHTML silently drops what it cannot
+// model. The sanitizer explicitly allows tables, so anything matching this
+// must be opened in Source mode rather than flattened.
+const UNMODELLED_MARKUP_RE = /<\s*(table|thead|tbody|tr|td|th)\b/i;
+
 async function loadPlaceholderRegistry() {
     if (PLACEHOLDER_CACHE) return PLACEHOLDER_CACHE;
     const res = await fetch(`${API_BASE}/messaging/placeholders/`, { credentials: 'same-origin' });
@@ -63,32 +69,63 @@ function createEmailEditor(prefix) {
 
     let sourceMode = false;
 
+    // Show either the Source textarea or the Quill visual editor, keeping
+    // sourceMode, the toggle button label, and toolbar visibility in sync.
+    // Does not touch content — callers sync textarea/quill beforehand.
+    function showMode(toSource) {
+        if (toSource) {
+            container.classList.add('hidden');
+            document.querySelector(`#${prefix}EditorWrap .ql-toolbar`)?.classList.add('hidden');
+            textarea.classList.remove('hidden');
+            toggleBtn.textContent = 'Visual';
+        } else {
+            textarea.classList.add('hidden');
+            container.classList.remove('hidden');
+            document.querySelector(`#${prefix}EditorWrap .ql-toolbar`)?.classList.remove('hidden');
+            toggleBtn.textContent = 'Source';
+        }
+        sourceMode = toSource;
+    }
+
     const editor = {
         getValue() {
             return sourceMode ? textarea.value : quill.root.innerHTML;
         },
         setValue(html) {
             const value = html || '';
+            // Always populate the textarea first so Source mode (and a
+            // subsequent getValue()) has the untouched markup regardless of
+            // which view ends up active.
             textarea.value = value;
-            quill.root.innerHTML = value;
+            if (UNMODELLED_MARKUP_RE.test(value)) {
+                // Quill has no blot for this markup (e.g. tables) and would
+                // silently flatten it on load. Open in Source mode instead
+                // of destroying it, and say why.
+                showMode(true);
+                if (warning) {
+                    warning.classList.remove('hidden');
+                    warning.innerHTML =
+                        'This content contains markup (such as tables) the visual editor can\'t represent, so it was opened in Source mode to preserve it.';
+                }
+            } else {
+                quill.root.innerHTML = value;
+                showMode(false);
+                if (warning) {
+                    warning.classList.add('hidden');
+                    warning.innerHTML = '';
+                }
+            }
         },
         toggleSource() {
             if (sourceMode) {
                 // Source -> visual. Quill may normalise markup it cannot model.
                 if (!confirm('Switch back to the visual editor? It may simplify HTML it does not support.')) return;
                 quill.root.innerHTML = textarea.value;
-                textarea.classList.add('hidden');
-                container.classList.remove('hidden');
-                document.querySelector(`#${prefix}EditorWrap .ql-toolbar`)?.classList.remove('hidden');
-                toggleBtn.textContent = 'Source';
+                showMode(false);
             } else {
                 textarea.value = quill.root.innerHTML;
-                container.classList.add('hidden');
-                document.querySelector(`#${prefix}EditorWrap .ql-toolbar`)?.classList.add('hidden');
-                textarea.classList.remove('hidden');
-                toggleBtn.textContent = 'Visual';
+                showMode(true);
             }
-            sourceMode = !sourceMode;
         },
         insertPlaceholder(key) {
             const token = `{{ ${key} }}`;
