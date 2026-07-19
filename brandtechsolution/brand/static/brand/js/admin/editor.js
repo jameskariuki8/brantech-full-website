@@ -14,11 +14,22 @@ const EMAIL_TOOLBAR = [
 let PLACEHOLDER_CACHE = null;
 const EMAIL_EDITORS = {};
 
-// Quill has no blot for table markup (among other things), and reconciling
-// foreign DOM through quill.root.innerHTML silently drops what it cannot
-// model. The sanitizer explicitly allows tables, so anything matching this
-// must be opened in Source mode rather than flattened.
-const UNMODELLED_MARKUP_RE = /<\s*(table|thead|tbody|tr|td|th)\b/i;
+// Quill can only faithfully round-trip the formats our restricted toolbar
+// produces. Anything else - inline styles, <hr>, <div>, <img>, tables - is
+// silently dropped when loaded into the visual editor, so bodies containing
+// it open in Source mode to preserve them. False positives are harmless:
+// Source mode edits the raw HTML and loses nothing.
+const QUILL_SAFE_TAGS = new Set([
+    'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's',
+    'a', 'ul', 'ol', 'li', 'h2', 'h3', 'blockquote',
+]);
+
+function isQuillSafe(html) {
+    if (!html) return true;
+    if (/\sstyle\s*=/i.test(html)) return false;
+    const tags = html.match(/<\s*\/?\s*([a-zA-Z][a-zA-Z0-9]*)\b/g) || [];
+    return tags.every(tag => QUILL_SAFE_TAGS.has(tag.replace(/[<>/\s]/g, '').toLowerCase()));
+}
 
 async function loadPlaceholderRegistry() {
     if (PLACEHOLDER_CACHE) return PLACEHOLDER_CACHE;
@@ -97,15 +108,16 @@ function createEmailEditor(prefix) {
             // subsequent getValue()) has the untouched markup regardless of
             // which view ends up active.
             textarea.value = value;
-            if (UNMODELLED_MARKUP_RE.test(value)) {
-                // Quill has no blot for this markup (e.g. tables) and would
-                // silently flatten it on load. Open in Source mode instead
-                // of destroying it, and say why.
+            if (!isQuillSafe(value)) {
+                // Quill has no way to faithfully represent this content
+                // (e.g. tables, inline styles, <hr>) and would silently
+                // flatten it on load. Open in Source mode instead of
+                // destroying it, and say why.
                 showMode(true);
                 if (warning) {
                     warning.classList.remove('hidden');
                     warning.innerHTML =
-                        'This content contains markup (such as tables) the visual editor can\'t represent, so it was opened in Source mode to preserve it.';
+                        'This content contains formatting (such as tables, inline styles, or horizontal rules) the visual editor can\'t reproduce, so it was opened in Source mode to preserve it exactly.';
                 }
             } else {
                 quill.root.innerHTML = value;

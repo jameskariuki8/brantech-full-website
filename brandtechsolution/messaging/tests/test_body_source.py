@@ -101,3 +101,19 @@ class BodySourceApiTests(TestCase):
         tpl = EmailTemplate.objects.get(id=tpl_id)
         self.assertEqual(tpl.subject, "new subject")
         self.assertEqual(tpl.body_html, original_html)
+
+    def test_patch_campaign_subject_only_leaves_body_html_unchanged(self):
+        resp = self.client.post("/api/messaging/campaigns/", data={
+            "name": "C", "subject": "s", "body_source": "<p>Hello</p>",
+        })
+        campaign_id = resp.json()["id"]
+        original_html = Campaign.objects.get(id=campaign_id).body_html
+        resp = self.client.patch(
+            f"/api/messaging/campaigns/{campaign_id}/",
+            data='{"subject": "new subject"}',
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        campaign = Campaign.objects.get(id=campaign_id)
+        self.assertEqual(campaign.subject, "new subject")
+        self.assertEqual(campaign.body_html, original_html)
