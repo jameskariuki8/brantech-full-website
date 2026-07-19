@@ -58,6 +58,12 @@ class AppSettings(BaseSettings):
     site_base_url: str = "https://teklora.co.ke"
 
     # ============================================================
+    # Public contact form rate limiting
+    # ============================================================
+    contact_rate_limit_count: int = 5
+    contact_rate_limit_window_seconds: int = 3600
+
+    # ============================================================
     # Gemini API Configuration
     # ============================================================
     google_api_key: str

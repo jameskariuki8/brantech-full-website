@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Confirm unsubscribe</title>
+</head>
+<body>
+    <h1>Unsubscribe from our mailing list?</h1>
+    <p>You are about to stop receiving bulk emails at <strong>{{ email }}</strong>.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirm unsubscribe</button>
+    </form>
+</body>
+</html>

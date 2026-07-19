@@ -197,6 +197,10 @@ OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
 OUTBOX_STALE_CLAIM_MINUTES = config.outbox_stale_claim_minutes
 SITE_BASE_URL = config.site_base_url
 
+# Public contact form rate limiting (per-IP, via Django's default cache).
+CONTACT_RATE_LIMIT_COUNT = config.contact_rate_limit_count
+CONTACT_RATE_LIMIT_WINDOW_SECONDS = config.contact_rate_limit_window_seconds
+
 # ============================================================
 # AUTHENTICATION REDIRECTS
 # ============================================================

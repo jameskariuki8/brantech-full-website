@@ -1,11 +1,15 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.core import mail
+from django.core.cache import cache
 from django.test import override_settings
 from messaging.models import Inquiry
 
 
 class ContactSubmitTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
     def _post(self, **overrides):
         data = {
             "name": "Grace Hopper",

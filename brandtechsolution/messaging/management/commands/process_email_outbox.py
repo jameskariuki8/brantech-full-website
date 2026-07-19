@@ -165,6 +165,7 @@ class Command(BaseCommand):
                 connection=connection,
             )
             msg.extra_headers["List-Unsubscribe"] = f"<{unsubscribe_url}>"
+            msg.extra_headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
             msg.attach_alternative(html_body, "text/html")
             msg.send()
         except Exception as exc:  # noqa: BLE001 - record and retry/fail
