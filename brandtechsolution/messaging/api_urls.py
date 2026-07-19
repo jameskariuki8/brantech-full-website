@@ -10,4 +10,6 @@ router.register(r"campaigns", api.CampaignViewSet, basename="campaigns")
 urlpatterns = [
     path("", include(router.urls)),
     path("extract-emails/", api.extract_emails, name="extract-emails"),
+    path("placeholders/", api.placeholders, name="placeholders"),
+    path("preview/", api.preview, name="preview"),
 ]

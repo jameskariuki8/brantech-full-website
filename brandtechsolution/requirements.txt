@@ -13,6 +13,7 @@ gunicorn
 whitenoise
 markdown
 nh3
+css-inline
 openpyxl
 python-docx
 pypdf

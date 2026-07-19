@@ -10,7 +10,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from messaging.models import Campaign, CampaignRecipient, Suppression
-from messaging.rendering import render_body, render_subject, html_to_text
+from messaging.placeholders import build_context
+from messaging.rendering import html_to_text, render_html, render_text
 from messaging.tokens import make_unsubscribe_token
 
 logger = logging.getLogger(__name__)
@@ -144,8 +145,9 @@ class Command(BaseCommand):
         unsubscribe_url = settings.SITE_BASE_URL.rstrip("/") + reverse(
             "unsubscribe", args=[token]
         )
-        subject = render_subject(campaign.subject, recipient.name)
-        html_body = render_body(campaign.body_html, recipient.name, unsubscribe_url)
+        context = build_context(recipient, unsubscribe_url)
+        subject = render_text(campaign.subject, context)
+        html_body = render_html(campaign.body_html, context)
         if unsubscribe_url not in html_body:
             html_body += UNSUBSCRIBE_FOOTER.format(url=unsubscribe_url)
         text_body = html_to_text(html_body)

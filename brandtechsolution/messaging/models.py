@@ -27,6 +27,11 @@ class Inquiry(models.Model):
 class EmailTemplate(models.Model):
     name = models.CharField(max_length=200)
     subject = models.CharField(max_length=255)
+    body_source = models.TextField(
+        blank=True,
+        default="",
+        help_text="Authored HTML as edited. Sanitized but not CSS-inlined.",
+    )
     body_html = models.TextField(help_text="HTML body. Supports {{ name }} and {{ unsubscribe_url }}.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -63,6 +68,11 @@ class Campaign(models.Model):
     ]
     name = models.CharField(max_length=200)
     subject = models.CharField(max_length=255)
+    body_source = models.TextField(
+        blank=True,
+        default="",
+        help_text="Authored HTML as edited. Sanitized but not CSS-inlined.",
+    )
     body_html = models.TextField()
     template = models.ForeignKey(
         "EmailTemplate", null=True, blank=True, on_delete=models.SET_NULL
