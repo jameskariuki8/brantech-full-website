@@ -13,13 +13,19 @@ async function loadTemplates() {
                 <button onclick="deleteTemplate(${t.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded"><i class="fas fa-trash"></i></button>
             </div>
         </div>`).join('') : `<div class="text-center py-10 text-gray-600">No templates yet.</div>`;
+    if (!getEmailEditor('template')) createEmailEditor('template');
 }
 
 async function saveTemplate(event) {
     event.preventDefault();
     const form = event.target;
     const id = form.id.value;
-    const payload = { name: form.name.value, subject: form.subject.value, body_html: form.body_html.value };
+    const editor = getEmailEditor('template');
+    const payload = {
+        name: form.name.value,
+        subject: form.subject.value,
+        body_source: editor ? editor.getValue() : '',
+    };
     const url = id ? `${API_BASE}/messaging/templates/${id}/` : `${API_BASE}/messaging/templates/`;
     const method = id ? 'PUT' : 'POST';
     const res = await fetch(url, {
@@ -34,7 +40,9 @@ async function saveTemplate(event) {
 async function editTemplate(id) {
     const t = await fetch(`${API_BASE}/messaging/templates/${id}/`, { credentials: 'same-origin' }).then(r => r.json());
     const form = document.getElementById('addTemplateForm');
-    form.id.value = t.id; form.name.value = t.name; form.subject.value = t.subject; form.body_html.value = t.body_html;
+    form.id.value = t.id; form.name.value = t.name; form.subject.value = t.subject;
+    const editor = getEmailEditor('template');
+    if (editor) editor.setValue(t.body_source || '');
     showAddForm('template');
 }
 

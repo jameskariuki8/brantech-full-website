@@ -11,5 +11,12 @@ class AdminPanelRenderTests(TestCase):
         resp = self.client.get("/admin-panel/")
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
-        for anchor in ['id="dashboard"', 'id="blogs"', 'id="projects"', 'id="inbox"', 'id="templates"', 'id="campaigns"']:
+        for anchor in [
+            'id="dashboard"', 'id="blogs"', 'id="projects"', 'id="inbox"', 'id="templates"', 'id="campaigns"',
+            'id="templateEditorContainer"',
+            'id="templateSourceToggle"',
+            'id="templatePreviewFrame"',
+        ]:
             self.assertIn(anchor, html)
+        for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js', 'templates.js', 'campaigns.js', 'editor.js']:
+            self.assertIn(script, html)
