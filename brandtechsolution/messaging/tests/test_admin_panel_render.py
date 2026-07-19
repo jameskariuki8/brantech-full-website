@@ -16,6 +16,8 @@ class AdminPanelRenderTests(TestCase):
             'id="templateEditorContainer"',
             'id="templateSourceToggle"',
             'id="templatePreviewFrame"',
+            'id="campaignEditorContainer"',
+            'id="campaignPreviewFrame"',
         ]:
             self.assertIn(anchor, html)
         for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js', 'templates.js', 'campaigns.js', 'editor.js']:

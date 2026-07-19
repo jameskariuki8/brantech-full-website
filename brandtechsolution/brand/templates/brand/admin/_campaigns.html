@@ -22,11 +22,31 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-2">Subject</label>
-                <input type="text" name="subject" required class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                <input type="text" name="subject" id="campaignSubjectInput" required class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                <select id="campaignSubjectPlaceholderMenu"
+                    class="mt-2 bg-[#06090F] border border-dark-border rounded px-2 py-1 text-xs text-gray-300"></select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-400 mb-2">HTML Body</label>
-                <textarea name="body_html" rows="8" required class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-brand-blue"></textarea>
+                <div class="flex items-center justify-between mb-2 gap-2">
+                    <label class="block text-sm font-medium text-gray-400">Email body</label>
+                    <div class="flex items-center gap-2">
+                        <select id="campaignPlaceholderMenu"
+                            class="bg-[#06090F] border border-dark-border rounded px-2 py-1 text-xs text-gray-300"></select>
+                        <button type="button" id="campaignSourceToggle"
+                            class="px-3 py-1 text-xs rounded border border-dark-border text-gray-300 hover:text-white hover:bg-white/5">Source</button>
+                        <button type="button" id="campaignPreviewBtn"
+                            class="px-3 py-1 text-xs rounded border border-dark-border text-gray-300 hover:text-white hover:bg-white/5">Preview</button>
+                    </div>
+                </div>
+                <div id="campaignEditorWrap">
+                    <div id="campaignEditorContainer"></div>
+                    <textarea id="campaignSourceTextarea" rows="12"
+                        class="hidden w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-brand-blue"></textarea>
+                </div>
+                <div id="campaignUnknownWarning"
+                    class="hidden mt-2 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-900/40 rounded px-3 py-2"></div>
+                <iframe id="campaignPreviewFrame" title="Email preview"
+                    class="hidden w-full h-80 mt-3 rounded-lg border border-dark-border bg-white" sandbox=""></iframe>
             </div>
             <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
                 <button type="button" onclick="hideAddForm('campaign')" class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5">Cancel</button>

@@ -6,6 +6,8 @@ async function loadCampaigns() {
     const sel = document.getElementById('campaignTemplate');
     if (sel) sel.innerHTML = `<option value="">— none —</option>` + TEMPLATE_CACHE.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
 
+    if (!getEmailEditor('campaign')) createEmailEditor('campaign');
+
     const items = await fetch(`${API_BASE}/messaging/campaigns/`, { credentials: 'same-origin' }).then(r => r.json());
     const container = document.getElementById('campaignsList');
     const statusColor = { draft: 'text-gray-400 bg-white/5', queued: 'text-brand-blue bg-blue-900/20', sending: 'text-yellow-400 bg-yellow-900/20', sent: 'text-brand-green bg-green-900/20', paused: 'text-orange-400 bg-orange-900/20', failed: 'text-red-400 bg-red-900/20' };
@@ -46,13 +48,21 @@ function applyTemplate() {
     const id = document.getElementById('campaignTemplate').value;
     const t = TEMPLATE_CACHE.find(x => String(x.id) === String(id));
     const form = document.getElementById('addCampaignForm');
-    if (t) { form.subject.value = t.subject; form.body_html.value = t.body_html; }
+    if (!t) return;
+    form.subject.value = t.subject;
+    const editor = getEmailEditor('campaign');
+    if (editor) editor.setValue(t.body_source || '');
 }
 
 async function createCampaign(event) {
     event.preventDefault();
     const form = event.target;
-    const payload = { name: form.name.value, subject: form.subject.value, body_html: form.body_html.value };
+    const editor = getEmailEditor('campaign');
+    const payload = {
+        name: form.name.value,
+        subject: form.subject.value,
+        body_source: editor ? editor.getValue() : '',
+    };
     const res = await fetch(`${API_BASE}/messaging/campaigns/`, {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
