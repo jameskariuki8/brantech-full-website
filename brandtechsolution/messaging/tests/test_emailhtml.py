@@ -25,6 +25,27 @@ class SanitizeTests(TestCase):
         self.assertEqual(emailhtml.sanitize_email_html(""), "")
         self.assertEqual(emailhtml.sanitize_email_html(None), "")
 
+    def test_strips_class_attribute(self):
+        out = emailhtml.sanitize_email_html(
+            '<p class="fixed inset-0" style="color:red">x</p>'
+        )
+        self.assertNotIn("class", out)
+        self.assertIn('style="color:red"', out)
+
+    def test_strips_javascript_url_scheme(self):
+        out = emailhtml.sanitize_email_html('<a href="javascript:alert(1)">x</a>')
+        self.assertNotIn("javascript:", out)
+
+    def test_strips_data_url_scheme_on_image(self):
+        out = emailhtml.sanitize_email_html(
+            '<img src="data:text/html;base64,PHNjcmlwdD4=" alt="a">'
+        )
+        self.assertNotIn("data:", out)
+
+    def test_keeps_safe_http_url(self):
+        out = emailhtml.sanitize_email_html('<a href="https://example.com">x</a>')
+        self.assertIn("https://example.com", out)
+
 
 class InlineTests(TestCase):
     def test_base_css_becomes_inline_style(self):

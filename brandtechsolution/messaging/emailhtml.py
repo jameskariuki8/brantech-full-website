@@ -23,7 +23,15 @@ ALLOWED_TAGS = {
 }
 
 ALLOWED_ATTRIBUTES = {
-    "*": {"style", "class"},
+    # "class" is intentionally excluded: it isn't in the approved design
+    # spec (style, href, src, alt, width, height), email clients ignore
+    # classes, and inline_email_css has already converted styling into
+    # inline `style` attributes by the time a body is sent. The staff
+    # admin panel loads Tailwind from a CDN, so allowing arbitrary
+    # `class` values here would let authored markup pull in real layout
+    # utilities (e.g. class="fixed inset-0 z-50") if a body were ever
+    # rendered inside that page - an unnecessary UI-redress surface.
+    "*": {"style"},
     "a": {"href", "title", "target"},
     "img": {"src", "alt", "width", "height"},
     "td": {"colspan", "rowspan", "align", "valign"},
