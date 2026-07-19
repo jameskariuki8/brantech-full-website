@@ -100,3 +100,38 @@ def extract_emails(request):
     except Exception:
         return Response({"detail": "Could not parse file."}, status=400)
     return Response({"emails": emails, "count": len(emails)})
+
+
+from .emailhtml import inline_email_css, sanitize_email_html
+from .placeholders import PLACEHOLDERS, sample_context, unknown_placeholders
+from .rendering import render_html, render_text
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def placeholders(request):
+    """Registry that drives the editor's insert-placeholder menu."""
+    return Response(PLACEHOLDERS)
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def preview(request):
+    """Render a draft exactly the way the sender will, using sample values."""
+    subject_source = request.data.get("subject") or ""
+    body_source = request.data.get("body_source") or ""
+
+    context = sample_context()
+    prepared_html = inline_email_css(sanitize_email_html(body_source))
+
+    unknown = []
+    for text in (subject_source, body_source):
+        for key in unknown_placeholders(text):
+            if key not in unknown:
+                unknown.append(key)
+
+    return Response({
+        "subject": render_text(subject_source, context),
+        "body_html": render_html(prepared_html, context),
+        "unknown": unknown,
+    })
