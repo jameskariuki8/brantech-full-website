@@ -28,7 +28,7 @@ brand/static/brand/js/admin/
   editor.js          # Quill setup, placeholder insert, source toggle, preview (shared)
 ```
 
-No migration: `body_html` remains a `TextField`.
+**Migration required:** a `body_source` `TextField` is added to both `EmailTemplate` and `Campaign` (see §3).
 
 ## 1. Placeholder registry (`messaging/placeholders.py`)
 
@@ -77,16 +77,29 @@ Subject and body use the same context, eliminating today's asymmetry.
 
 ## 3. Email HTML pipeline (`messaging/emailhtml.py`)
 
-`prepare_email_html(html) -> str`, applied when a template or campaign body is saved:
+Two single-responsibility functions, and **both outputs are stored**:
 
-1. **Sanitize** with `nh3` against an email-safe allowlist — permits structural/formatting tags (`p`, `br`, `strong`, `em`, `u`, `a`, `ul`, `ol`, `li`, `h1`–`h4`, `blockquote`, `hr`, `img`, `table`/`tr`/`td`/`th`, `span`, `div`) and the `style`, `href`, `src`, `alt`, `width`, `height` attributes. Strips `<script>`, event handlers, and other unsafe constructs.
-2. **Inline CSS** using `css-inline`: the sanitized fragment is wrapped in a minimal document carrying a small `BASE_EMAIL_CSS` stylesheet (readable defaults for body text, headings, links, lists, blockquote), inlined, then the body fragment is returned with the now-redundant `<style>` block removed.
+- `sanitize_email_html(html) -> str` — `nh3` against an email-safe allowlist: permits structural/formatting tags (`p`, `br`, `strong`, `em`, `u`, `a`, `ul`, `ol`, `li`, `h1`–`h4`, `blockquote`, `hr`, `img`, `table`/`tr`/`td`/`th`, `span`, `div`) and the `style`, `href`, `src`, `alt`, `width`, `height` attributes. Strips `<script>`, event handlers, and other unsafe constructs.
+- `inline_email_css(html) -> str` — wraps the sanitized fragment in a minimal document carrying a small `BASE_EMAIL_CSS` stylesheet (readable defaults for body text, headings, links, lists, blockquote), inlines it with `css-inline`, and returns the body fragment with the now-redundant `<style>` block removed.
 
-Sanitize-before-inline so the inliner only ever processes clean input.
+### Why both are stored
 
-Applied at **save**, not send: the send path stays fast, and campaigns already snapshot `body_html` at build time. Consequence to accept: changing `BASE_EMAIL_CSS` later does not retroactively restyle existing templates.
+`EmailTemplate` and `Campaign` each carry two fields:
 
-**Call site:** invoked in the DRF serializers — `EmailTemplateSerializer.validate_body_html` and `CampaignSerializer.validate_body_html` — so every write path (create, update, and a campaign seeded from a template) is covered by one rule, and the models stay free of presentation logic. Because the function is idempotent, re-saving an already-prepared body is safe.
+| Field | Contents | Used for |
+|---|---|---|
+| `body_source` | Sanitized authored HTML, **not** inlined | Loading back into the editor; regenerating `body_html` |
+| `body_html` | `inline_email_css(body_source)` | Sending (and campaign snapshots) |
+
+Storing only the inlined result would mean re-opening a template shows markup bloated with `style` attributes that Quill then re-normalizes, and every save would re-inline already-inlined content. Keeping the source separate makes editing lossless and re-inlining deterministic — the round trip is `body_source → editor → body_source`, never through the inlined form.
+
+It also removes the downside of inlining at save time: because the source is retained, `body_html` can be **regenerated** from `body_source` after a `BASE_EMAIL_CSS` change. (A management command to bulk-regenerate is enabled by this design but is **not** in scope here.)
+
+Sanitize-before-inline, so the inliner only ever processes clean input. Inlining stays at **save**, not send, keeping the send path fast; campaigns continue to snapshot `body_html` at build time, so an in-flight campaign is unaffected by later template edits.
+
+**Call site:** invoked in the DRF serializers — `EmailTemplateSerializer` and `CampaignSerializer` — so every write path (create, update, and a campaign seeded from a template) is covered by one rule and the models stay free of presentation logic. Clients submit `body_source`; the server derives `body_html`, which is **read-only** in the API. Seeding a campaign from a template copies `body_source` and re-derives `body_html`.
+
+**Migration:** adds `body_source` (`TextField`, blank, default `""`) to `EmailTemplate` and `Campaign`, with a data migration backfilling `body_source = body_html` for existing rows (current stored values are un-inlined authored HTML, so they are valid sources).
 
 **New dependency:** `css-inline` (Rust-backed, no lxml requirement), added to `brandtechsolution/requirements.txt`.
 
@@ -110,13 +123,15 @@ This protects HTML pasted from a designer or marketplace while keeping the visua
 Both staff-only (`IsAdminUser`), consistent with every other admin endpoint:
 
 - **`GET /api/messaging/placeholders/`** → `[{key, label, description, sample}, …]` from the registry. Drives the insert menu.
-- **`POST /api/messaging/preview/`** with `{subject, body_html}` → `{subject, body_html, unknown: [...]}`. Renders through the **same renderer used at send time** with `sample_context()`, so the preview is faithful rather than an approximation, and returns unknown placeholder keys for the typo warning.
+- **`POST /api/messaging/preview/`** with `{subject, body_source}` → `{subject, body_html, unknown: [...]}`. The submitted source is run through the full save pipeline (`sanitize_email_html` → `inline_email_css`) and then the **same renderer used at send time** with `sample_context()`, so the preview reflects exactly what will be delivered rather than an approximation. Returns unknown placeholder keys for the typo warning.
 
 The preview response is displayed in a **sandboxed `<iframe>`** so the admin panel's Tailwind styles cannot leak in and flatter the result.
 
 ## 6. UI integration
 
-`_templates.html` and `_campaigns.html` each gain: the Quill container plus hidden input for the body, the Source toggle, the insert-placeholder controls (body and subject), a "Preview" button, the preview iframe, and an inline warning area listing unknown placeholders. Existing dark-theme Tailwind language (`bg-dark-card`, `border-dark-border`, `brand-blue`) is preserved; Quill's default theme is overridden to match.
+`_templates.html` and `_campaigns.html` each gain: the Quill container plus hidden input for the body, the Source toggle, the insert-placeholder controls (body and subject), a "Preview" button, the preview iframe, and an inline warning area listing unknown placeholders.
+
+Editing loads **`body_source`** into the editor (never the inlined `body_html`), and submits `body_source`. `applyTemplate()` in `campaigns.js` copies the template's `body_source` into the campaign form, letting the server re-derive the campaign's `body_html`. Existing dark-theme Tailwind language (`bg-dark-card`, `border-dark-border`, `brand-blue`) is preserved; Quill's default theme is overridden to match.
 
 Untrusted values rendered into these views continue to pass through the existing `escapeHtml` helper — the stored-XSS fix must not regress.
 
@@ -124,7 +139,8 @@ Untrusted values rendered into these views continue to pass through the existing
 
 - **Placeholders:** spacing variants resolve; `first_name` derives from `name` and is blank when `name` is blank; `date`/`year` deterministic via injected `now`; `unknown_placeholders` reports typos and ignores valid keys.
 - **Rendering:** unknown key renders empty; `render_html` escapes `&`, `<`, `>` in values while `render_text` does not; subject and body resolve the same keys; `html_to_text` unescapes entities.
-- **Email HTML:** sanitizer strips `<script>` and `onerror=` while preserving `<a href>`, `<img src>`, and `style`; inlining converts a stylesheet rule into an inline `style` attribute; `prepare_email_html` is idempotent on already-inlined input.
+- **Email HTML:** sanitizer strips `<script>` and `onerror=` while preserving `<a href>`, `<img src>`, and `style`; `inline_email_css` converts a stylesheet rule into an inline `style` attribute.
+- **Source/derived split:** saving stores sanitized-but-not-inlined HTML in `body_source` and inlined HTML in `body_html`; `body_html` is read-only via the API and always equals `inline_email_css(body_source)`; an edit round trip (`save → reload → save`) leaves `body_source` byte-identical, proving no compounding inline styles; seeding a campaign from a template copies the source and re-derives the inlined body; the data migration backfills `body_source` from existing `body_html`.
 - **Endpoints:** both are staff-only (anonymous → 401/403); preview returns rendered output plus the unknown list.
 - **Regression:** the existing 67 messaging tests pass against the rewritten renderer, including the send-engine suite.
 
