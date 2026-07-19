@@ -84,15 +84,39 @@ class Command(BaseCommand):
                     # reach "sending" and must not eat into this run's budget.
                     budget -= claimed
 
+                    paused = False
                     if claimed:
                         # Filter by token only -- never by status="sending" alone.
                         rows = CampaignRecipient.objects.filter(
                             claim_token=token
                         ).order_by("id")
                         for recipient in rows:
+                            # Re-check live status before every send: an operator
+                            # may have paused this campaign mid-run. Without this,
+                            # a paused campaign keeps sending its already-claimed
+                            # batch to completion.
+                            current_status = (
+                                Campaign.objects.filter(pk=campaign.pk)
+                                .values_list("status", flat=True)
+                                .first()
+                            )
+                            if current_status != "sending":
+                                paused = True
+                                break
                             self._send_one(
                                 campaign, recipient, connection, max_attempts
                             )
+
+                        if paused:
+                            # Release the rest of this run's claim -- unsent rows
+                            # must not be stranded in "sending"; they go back to
+                            # "pending" so a resume picks them up again.
+                            CampaignRecipient.objects.filter(
+                                claim_token=token, status="sending"
+                            ).update(status="pending", claim_token=None, claimed_at=None)
+
+                    if paused:
+                        continue
 
                 self._maybe_complete(campaign)
         finally:

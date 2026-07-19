@@ -240,6 +240,46 @@ class SendEngineTests(TestCase):
             settings.OUTBOX_STALE_CLAIM_MINUTES * 60,
         )
 
+    @override_settings(OUTBOX_BATCH_SIZE=50)
+    def test_pause_mid_batch_stops_and_strands_nothing(self):
+        """An operator-triggered pause must halt an in-flight run immediately.
+
+        The batch size is large enough to claim every recipient in one go.
+        We patch the send path so that right after the first successful send
+        the campaign flips to "paused" in the DB (simulating a concurrent
+        pause request from an operator). The loop must notice this before
+        sending recipient #2 and stop -- leaving the remaining claimed rows
+        back in "pending" (not stranded in "sending") and the campaign still
+        "paused" (never flipped to "sent" by _maybe_complete).
+        """
+        from messaging.management.commands.process_email_outbox import Command
+
+        c = self._campaign()
+        emails = [f"r{i}@x.com" for i in range(5)]
+        for e in emails:
+            CampaignRecipient.objects.create(campaign=c, email=e)
+        c.total = len(emails)
+        c.save(update_fields=["total"])
+
+        real_send_one = Command._send_one
+        sent_calls = {"n": 0}
+
+        def send_one_then_pause(self, campaign, recipient, connection, max_attempts):
+            real_send_one(self, campaign, recipient, connection, max_attempts)
+            sent_calls["n"] += 1
+            if sent_calls["n"] == 1:
+                Campaign.objects.filter(pk=campaign.pk).update(status="paused")
+
+        with patch.object(Command, "_send_one", send_one_then_pause):
+            call_command("process_email_outbox")
+
+        c.refresh_from_db()
+        self.assertLess(len(mail.outbox), len(emails))
+        self.assertEqual(c.status, "paused")
+        self.assertEqual(
+            CampaignRecipient.objects.filter(campaign=c, status="sending").count(), 0
+        )
+
     @override_settings(OUTBOX_BATCH_SIZE=1)
     def test_suppressed_rows_dont_consume_budget(self):
         """A suppressed row must not burn the run's send budget (M1).

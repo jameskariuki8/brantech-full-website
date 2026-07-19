@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
 
 from . import audience
 from .models import Campaign, EmailTemplate, Inquiry
@@ -51,10 +52,32 @@ class CampaignViewSet(viewsets.ModelViewSet):
         campaign.save(update_fields=["status"])
         return Response({"status": campaign.status})
 
+    @action(detail=True, methods=["post"])
+    def pause(self, request, pk=None):
+        campaign = self.get_object()
+        if campaign.status not in ("queued", "sending"):
+            return Response(
+                {"detail": "Only queued or sending campaigns can be paused."},
+                status=400,
+            )
+        campaign.status = "paused"
+        campaign.save(update_fields=["status"])
+        return Response({"status": campaign.status})
+
+    @action(detail=True, methods=["post"])
+    def resume(self, request, pk=None):
+        campaign = self.get_object()
+        if campaign.status != "paused":
+            return Response(
+                {"detail": "Only paused campaigns can be resumed."}, status=400
+            )
+        campaign.status = "queued"
+        campaign.save(update_fields=["status"])
+        return Response({"status": campaign.status})
+
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser
-from rest_framework.response import Response
 
 from .imports import extract_emails_from_file, UnsupportedFileType
 

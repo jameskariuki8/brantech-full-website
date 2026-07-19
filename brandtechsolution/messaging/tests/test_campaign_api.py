@@ -46,3 +46,43 @@ class CampaignApiTests(TestCase):
         resp = self.client.post(f"/api/messaging/campaigns/{cid}/queue/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Campaign.objects.get(id=cid).status, "queued")
+
+    def _make_queued_campaign(self):
+        cid = self._make_campaign()
+        self.client.post(
+            f"/api/messaging/campaigns/{cid}/build_recipients/",
+            data={"sources": ["inquiries"], "manual_emails": []},
+            content_type="application/json",
+        )
+        resp = self.client.post(f"/api/messaging/campaigns/{cid}/queue/")
+        self.assertEqual(resp.status_code, 200)
+        return cid
+
+    def test_staff_can_pause_queued_campaign(self):
+        cid = self._make_queued_campaign()
+        resp = self.client.post(f"/api/messaging/campaigns/{cid}/pause/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["status"], "paused")
+        self.assertEqual(Campaign.objects.get(id=cid).status, "paused")
+
+    def test_staff_can_resume_paused_campaign(self):
+        cid = self._make_queued_campaign()
+        resp = self.client.post(f"/api/messaging/campaigns/{cid}/pause/")
+        self.assertEqual(resp.status_code, 200)
+        resp = self.client.post(f"/api/messaging/campaigns/{cid}/resume/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["status"], "queued")
+        self.assertEqual(Campaign.objects.get(id=cid).status, "queued")
+
+    def test_pausing_draft_campaign_is_rejected(self):
+        cid = self._make_campaign()
+        resp = self.client.post(f"/api/messaging/campaigns/{cid}/pause/")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(Campaign.objects.get(id=cid).status, "draft")
+
+    def test_anonymous_cannot_pause(self):
+        cid = self._make_queued_campaign()
+        self.client.logout()
+        resp = self.client.post(f"/api/messaging/campaigns/{cid}/pause/")
+        self.assertIn(resp.status_code, (401, 403))
+        self.assertEqual(Campaign.objects.get(id=cid).status, "queued")

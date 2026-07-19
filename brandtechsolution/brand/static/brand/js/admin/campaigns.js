@@ -31,6 +31,12 @@ async function loadCampaigns() {
                         <button onclick="buildRecipients(${c.id})" class="bg-dark-card border border-dark-border hover:border-brand-blue text-white text-xs px-3 py-1.5 rounded">Build recipients</button>
                         <button onclick="queueCampaign(${c.id})" class="bg-brand-green hover:bg-green-500 text-black text-xs font-semibold px-3 py-1.5 rounded">Queue send (${c.total})</button>
                     ` : ``}
+                    ${(c.status === 'queued' || c.status === 'sending') ? `
+                        <button onclick="pauseCampaign(${c.id})" class="bg-dark-card border border-orange-500 hover:bg-orange-900/20 text-orange-400 text-xs font-semibold px-3 py-1.5 rounded">Pause</button>
+                    ` : ``}
+                    ${c.status === 'paused' ? `
+                        <button onclick="resumeCampaign(${c.id})" class="bg-brand-green hover:bg-green-500 text-black text-xs font-semibold px-3 py-1.5 rounded">Resume</button>
+                    ` : ``}
                 </div>
             </div>
         </div>`).join('') : `<div class="text-center py-10 text-gray-600">No campaigns yet.</div>`;
@@ -94,6 +100,24 @@ async function queueCampaign(id) {
     });
     const data = await res.json();
     if (res.ok) { alert('Queued! Sending will begin shortly.'); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
+}
+
+async function pauseCampaign(id) {
+    if (!confirm('Pause this campaign? In-flight sending will stop before the next email.')) return;
+    const res = await fetch(`${API_BASE}/messaging/campaigns/${id}/pause/`, {
+        method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN },
+    });
+    const data = await res.json();
+    if (res.ok) { alert('Campaign paused.'); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
+}
+
+async function resumeCampaign(id) {
+    if (!confirm('Resume this campaign?')) return;
+    const res = await fetch(`${API_BASE}/messaging/campaigns/${id}/resume/`, {
+        method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN },
+    });
+    const data = await res.json();
+    if (res.ok) { alert('Campaign resumed.'); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
