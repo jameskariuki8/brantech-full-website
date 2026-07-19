@@ -62,6 +62,10 @@ function hideAddForm(type) {
     document.getElementById(`${type}Form`).classList.add('hidden');
     const form = document.getElementById(`add${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
     form.reset();
+    if (typeof getEmailEditor === 'function') {
+        const editor = getEmailEditor(type);
+        if (editor) editor.setValue('');
+    }
     // Reset header back to 'Add' state visually if needed, simplified here
 }
 
