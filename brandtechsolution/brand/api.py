@@ -2,13 +2,13 @@ from rest_framework import viewsets
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.shortcuts import render, get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from .models import BlogPost, Project, Event
+from .permissions import StaffWriteOrReadOnly
 from .serializers import BlogPostSerializer, ProjectSerializer, EventSerializer
 
-@method_decorator(csrf_exempt, name='dispatch')
 class BlogPostViewSet(viewsets.ModelViewSet):
+    permission_classes = [StaffWriteOrReadOnly]
+
     # Optimize queryset by selecting only frequently accessed fields
     queryset = BlogPost.objects.all().order_by('-updated_at').only(
         'id', 'title', 'excerpt', 'content', 'image', 'tags', 
@@ -28,8 +28,9 @@ class BlogPostViewSet(viewsets.ModelViewSet):
         post.save(update_fields=['view_count'])
         return Response({'view_count': post.view_count})
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ProjectViewSet(viewsets.ModelViewSet):
+    permission_classes = [StaffWriteOrReadOnly]
+
     # Optimize queryset by selecting only frequently accessed fields
     queryset = Project.objects.all().only(
         'id', 'title', 'short_description', 'description', 
@@ -42,8 +43,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         context['request'] = self.request
         return context
 
-@method_decorator(csrf_exempt, name='dispatch')
 class EventViewSet(viewsets.ModelViewSet):
+    permission_classes = [StaffWriteOrReadOnly]
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     
