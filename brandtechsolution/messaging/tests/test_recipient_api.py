@@ -178,6 +178,35 @@ class RecipientAddTests(RecipientApiTestBase):
         self.assertIn(resp.status_code, (401, 403))
         self.assertFalse(CampaignRecipient.objects.exists())
 
+    def test_add_refuses_when_campaign_completes_before_insert_lands(self):
+        # Simulates the race from the finding: `CampaignRecipientSerializer
+        # .validate` checks the campaign's status before the insert, but
+        # the outbox sender's `_maybe_complete` can flip the campaign to
+        # "sent" between that check and the row actually landing (it only
+        # scans queued/sending campaigns, so a `pending` row created after
+        # would be stranded and never sent). Mutate the campaign's status
+        # in the database from inside the serializer's own `create()` --
+        # i.e. after validation passed but before `perform_create`'s
+        # guarded increment runs -- to land in that exact window without
+        # needing real threads.
+        from unittest.mock import patch
+
+        from messaging.serializers import CampaignRecipientSerializer
+
+        original_create = CampaignRecipientSerializer.create
+
+        def sneaky_create(self, validated_data):
+            Campaign.objects.filter(pk=validated_data["campaign"].pk).update(status="sent")
+            return original_create(self, validated_data)
+
+        with patch.object(CampaignRecipientSerializer, "create", sneaky_create):
+            resp = self._add("ada@example.com")
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(CampaignRecipient.objects.filter(campaign=self.campaign).exists())
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 0)
+
 
 class RecipientRemoveTests(RecipientApiTestBase):
     def _delete(self, recipient):
@@ -367,6 +396,46 @@ class RecipientValidateActionTests(RecipientApiTestBase):
         )
         self.assertEqual(resp.status_code, 404)
 
+    def test_validate_rejects_a_non_numeric_campaign_id_in_body(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/validate/",
+            data={"campaign": "abc"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_validate_rejects_an_out_of_range_campaign_id_in_body(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/validate/",
+            data={"campaign": 999999999999999999999999},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_validate_treats_campaign_zero_as_not_found_not_missing(self):
+        # 0 is falsy but a present value -- must 404 (no such campaign), not
+        # be reported as "A campaign id is required."
+        resp = self.client.post(
+            "/api/messaging/recipients/validate/",
+            data={"campaign": 0},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_validate_rejects_a_sent_campaign(self):
+        campaign = self._campaign(name="Done", status="sent")
+        row = self._recipient(campaign=campaign)
+        resp = self._validate(campaign)
+        self.assertEqual(resp.status_code, 400)
+        row.refresh_from_db()
+        self.assertIsNone(row.validated_at)
+        self.assertEqual(row.validation_status, "unknown")
+
+    def test_validate_rejects_a_failed_campaign(self):
+        campaign = self._campaign(name="Dead", status="failed")
+        resp = self._validate(campaign)
+        self.assertEqual(resp.status_code, 400)
+
     def test_anonymous_cannot_validate(self):
         self.client.logout()
         resp = self._validate()
@@ -443,3 +512,91 @@ class RecipientRemoveInvalidTests(RecipientApiTestBase):
         self.client.logout()
         resp = self._remove_invalid()
         self.assertIn(resp.status_code, (401, 403))
+
+    def test_rejects_a_non_numeric_campaign_id_in_body(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/remove_invalid/",
+            data={"campaign": "abc"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_rejects_an_out_of_range_campaign_id_in_body(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/remove_invalid/",
+            data={"campaign": 999999999999999999999999},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_treats_campaign_zero_as_not_found_not_missing(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/remove_invalid/",
+            data={"campaign": 0},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_total_never_goes_below_zero(self):
+        # total is a PositiveIntegerField; the set-based rewrite must keep
+        # the same underflow guard the per-row loop had.
+        self._recipient(email="a@nope.invalid", validation_status="invalid_domain")
+        self._recipient(email="b", validation_status="invalid_syntax")
+        resp = self._remove_invalid()
+        self.assertEqual(resp.json()["removed"], 2)
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 0)
+
+    def test_already_skipped_flagged_row_in_active_campaign_counts_as_removed(self):
+        # Removal is idempotent: a flagged row that's already `skipped`
+        # (e.g. removed once already) is reported as removed again rather
+        # than as skipped-refused.
+        campaign = self._campaign(name="Q", status="queued", total=1)
+        row = self._recipient(campaign=campaign, email="x@nope.invalid",
+                              status="skipped", validation_status="invalid_domain")
+        resp = self._remove_invalid(campaign)
+        body = resp.json()
+        self.assertEqual(body["removed"], 1)
+        self.assertEqual(body["skipped"], 0)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "skipped")
+
+    def test_already_skipped_flagged_row_in_draft_campaign_is_deleted(self):
+        # Draft eligibility includes rows already `skipped` -- there's no
+        # in-flight send to protect in a draft campaign.
+        self.campaign.total = 1
+        self.campaign.save(update_fields=["total"])
+        row = self._recipient(email="x@nope.invalid", status="skipped",
+                              validation_status="invalid_domain")
+        resp = self._remove_invalid()
+        body = resp.json()
+        self.assertEqual(body["removed"], 1)
+        self.assertEqual(body["skipped"], 0)
+        self.assertFalse(CampaignRecipient.objects.filter(pk=row.pk).exists())
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 0)
+
+    def test_mixed_flagged_and_dispatched_rows_report_correct_counts(self):
+        # A single request covering every category at once: flagged+pending
+        # (removed), flagged+dispatched (skipped, untouched), and unknown
+        # (ignored entirely) -- exercising the set-based rewrite's queries
+        # together rather than each in isolation.
+        campaign = self._campaign(name="S", status="sending", total=3)
+        pending_row = self._recipient(campaign=campaign, email="a@nope.invalid",
+                                      validation_status="invalid_domain")
+        sent_row = self._recipient(campaign=campaign, email="bad-syntax",
+                                   status="sent", validation_status="invalid_syntax")
+        unknown_row = self._recipient(campaign=campaign, email="c@example.com",
+                                      validation_status="unknown")
+        resp = self._remove_invalid(campaign)
+        body = resp.json()
+        self.assertEqual(body["removed"], 1)
+        self.assertEqual(body["skipped"], 1)
+        pending_row.refresh_from_db()
+        self.assertEqual(pending_row.status, "skipped")
+        sent_row.refresh_from_db()
+        self.assertEqual(sent_row.status, "sent")
+        unknown_row.refresh_from_db()
+        self.assertEqual(unknown_row.status, "pending")
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.total, 3)

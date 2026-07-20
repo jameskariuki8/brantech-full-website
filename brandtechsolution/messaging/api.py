@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from . import audience
 from .models import Campaign, CampaignRecipient, EmailTemplate, Inquiry
 from .serializers import (
+    ADDABLE_CAMPAIGN_STATUSES,
     CampaignRecipientSerializer,
     CampaignSerializer,
     EmailTemplateSerializer,
@@ -99,8 +100,32 @@ class RecipientPagination(PageNumberPagination):
 POSTGRES_BIGINT_MAX = 9223372036854775807
 
 
-REMOVABLE_CAMPAIGN_STATUSES = {"draft", "queued", "sending", "paused"}
+# A campaign whose record can still be mutated -- recipients added/removed,
+# the MX pass re-run. `sent`/`failed` campaigns are history and immutable.
+MUTABLE_CAMPAIGN_STATUSES = {"draft", "queued", "sending", "paused"}
 DISPATCHED_RECIPIENT_STATUSES = {"sending", "sent", "failed"}
+
+
+def _parse_campaign_id(value):
+    """Parse a campaign id from a query parameter or request-body value.
+
+    Shared by the `campaign` query parameter (list) and the `campaign` body
+    field (validate / remove_invalid) so the two can't drift apart: both
+    used to be parsed differently, and only the query-parameter path
+    defended against a non-numeric or out-of-range id, which crashed the
+    body path with a 500 instead of a 400.
+
+    str.isdigit() accepts non-ASCII digit characters (e.g. U+00B2 '²') that
+    int() cannot parse, which would raise ValueError (500) instead of the
+    intended 400 -- so parse defensively rather than pre-checking digits.
+    """
+    try:
+        numeric_id = int(value)
+    except (TypeError, ValueError):
+        raise ValidationError({"detail": "campaign must be a numeric id."})
+    if numeric_id < 0 or numeric_id > POSTGRES_BIGINT_MAX:
+        raise ValidationError({"detail": "campaign must be a numeric id."})
+    return numeric_id
 
 
 def _remove_recipient(recipient):
@@ -115,7 +140,7 @@ def _remove_recipient(recipient):
     On failure, returns the reason as a string for the caller to surface.
     """
     campaign = recipient.campaign
-    if campaign.status not in REMOVABLE_CAMPAIGN_STATUSES:
+    if campaign.status not in MUTABLE_CAMPAIGN_STATUSES:
         return f"Cannot change recipients of a {campaign.status} campaign."
 
     if recipient.status in DISPATCHED_RECIPIENT_STATUSES:
@@ -183,17 +208,8 @@ class CampaignRecipientViewSet(
         campaign_id = self.request.query_params.get("campaign")
         if not campaign_id:
             raise ValidationError({"detail": "A campaign query parameter is required."})
-        # str.isdigit() accepts non-ASCII digit characters (e.g. U+00B2 '²')
-        # that int() cannot parse, which would raise ValueError (500) instead
-        # of the intended 400. Parse defensively so int() is never reached
-        # with a value it can't handle.
-        try:
-            numeric_campaign_id = int(campaign_id)
-        except (TypeError, ValueError):
-            raise ValidationError({"detail": "campaign must be a numeric id."})
-        if numeric_campaign_id < 0 or numeric_campaign_id > POSTGRES_BIGINT_MAX:
-            raise ValidationError({"detail": "campaign must be a numeric id."})
-        qs = qs.filter(campaign_id=campaign_id)
+        numeric_campaign_id = _parse_campaign_id(campaign_id)
+        qs = qs.filter(campaign_id=numeric_campaign_id)
 
         search = (self.request.query_params.get("search") or "").strip()
         if search:
@@ -203,7 +219,23 @@ class CampaignRecipientViewSet(
     def perform_create(self, serializer):
         with transaction.atomic():
             recipient = serializer.save()
-            Campaign.objects.filter(pk=recipient.campaign_id).update(total=F("total") + 1)
+            # Re-assert the campaign's status atomically with the insert:
+            # `serializer.validate()` already checked it, but that read
+            # happened before this transaction started. Between then and
+            # here, the outbox sender's `_maybe_complete` could have flipped
+            # the campaign to `sent` (it only scans queued/sending
+            # campaigns), which would otherwise strand this row -- inserted,
+            # counted in `total`, but never sent. Guard the increment on
+            # status the same way `_remove_recipient` guards its update; if
+            # nothing matches, roll back the whole transaction, including
+            # the insert.
+            updated = Campaign.objects.filter(
+                pk=recipient.campaign_id, status__in=ADDABLE_CAMPAIGN_STATUSES
+            ).update(total=F("total") + 1)
+            if not updated:
+                raise ValidationError(
+                    {"detail": "This campaign finished before the recipient could be added."}
+                )
 
     def destroy(self, request, *args, **kwargs):
         recipient = self.get_object()
@@ -214,9 +246,13 @@ class CampaignRecipientViewSet(
 
     def _campaign_from_body(self, request):
         campaign_id = request.data.get("campaign")
-        if not campaign_id:
+        # `campaign_id` may legitimately be 0 (falsy) -- distinguish "absent"
+        # from "present but zero" so {"campaign": 0} 404s instead of being
+        # reported as missing.
+        if campaign_id is None or campaign_id == "":
             raise ValidationError({"detail": "A campaign id is required."})
-        return get_object_or_404(Campaign, pk=campaign_id)
+        numeric_campaign_id = _parse_campaign_id(campaign_id)
+        return get_object_or_404(Campaign, pk=numeric_campaign_id)
 
     @action(detail=False, methods=["post"])
     def validate(self, request):
@@ -227,13 +263,27 @@ class CampaignRecipientViewSet(
         stall the build request.
         """
         campaign = self._campaign_from_body(request)
+        if campaign.status not in MUTABLE_CAMPAIGN_STATUSES:
+            return Response(
+                {"detail": f"Cannot change recipients of a {campaign.status} campaign."},
+                status=400,
+            )
         return Response(validate_campaign_recipients(campaign))
 
     @action(detail=False, methods=["post"])
     def remove_invalid(self, request):
-        """Remove every flagged recipient, honouring the usual removal rules."""
+        """Remove every flagged recipient, honouring the usual removal rules.
+
+        Set-based rather than a per-row loop over `_remove_recipient`: a
+        campaign with thousands of flagged rows would otherwise cost
+        thousands of round trips (a DELETE plus a Campaign update per draft
+        row, or a guarded UPDATE plus a re-read per non-draft row), each in
+        its own tiny transaction. This does the same work in a handful of
+        queries, all inside one transaction, so a partial failure can't
+        leave rows removed with `total` left un-decremented.
+        """
         campaign = self._campaign_from_body(request)
-        if campaign.status not in REMOVABLE_CAMPAIGN_STATUSES:
+        if campaign.status not in MUTABLE_CAMPAIGN_STATUSES:
             return Response(
                 {"detail": f"Cannot change recipients of a {campaign.status} campaign."},
                 status=400,
@@ -242,15 +292,38 @@ class CampaignRecipientViewSet(
         flagged = CampaignRecipient.objects.filter(
             campaign=campaign,
             validation_status__in=["invalid_syntax", "invalid_domain"],
-        ).select_related("campaign")
+        )
 
-        removed = 0
-        skipped = 0
-        for recipient in flagged:
-            if _remove_recipient(recipient) is None:
-                removed += 1
+        with transaction.atomic():
+            # Rows already dispatched (sending/sent/failed) are refused
+            # outright, same as `_remove_recipient` -- never deleted, never
+            # re-marked, always reported as skipped.
+            skipped = flagged.filter(status__in=DISPATCHED_RECIPIENT_STATUSES).count()
+
+            if campaign.status == "draft":
+                # Eligible rows -- flagged and not dispatched -- are deleted
+                # outright. This includes rows already `skipped`: a draft
+                # campaign has no in-flight send to protect.
+                removed, _deleted_by_model = (
+                    flagged.exclude(status__in=DISPATCHED_RECIPIENT_STATUSES).delete()
+                )
+                if removed:
+                    # total is a PositiveIntegerField -- only decrement if
+                    # enough headroom exists, mirroring the per-row guard
+                    # this replaces so it can never go negative.
+                    Campaign.objects.filter(pk=campaign.pk, total__gte=removed).update(
+                        total=F("total") - removed
+                    )
             else:
-                skipped += 1
+                # Queued/sending/paused: flag pending rows as skipped via a
+                # single guarded UPDATE (the sender only claims `pending`
+                # rows, so this is race-safe the same way the single-row
+                # helper's guarded UPDATE is). Rows already skipped count as
+                # successfully removed -- removal is idempotent.
+                already_skipped = flagged.filter(status="skipped").count()
+                updated = flagged.filter(status="pending").update(status="skipped")
+                removed = updated + already_skipped
+
         return Response({"removed": removed, "skipped": skipped})
 
 
