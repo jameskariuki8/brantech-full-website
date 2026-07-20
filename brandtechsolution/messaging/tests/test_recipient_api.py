@@ -271,3 +271,50 @@ class RecipientRemoveTests(RecipientApiTestBase):
         resp = self._delete(row)
         self.assertIn(resp.status_code, (401, 403))
         self.assertTrue(CampaignRecipient.objects.filter(pk=row.pk).exists())
+
+    def test_removal_refused_when_sender_claims_row_between_read_and_write(self):
+        # Simulates the race from the finding: _remove_recipient is handed
+        # an in-memory recipient object whose `.status` still reads
+        # "pending" -- as it would have been read by get_object() earlier
+        # in the request -- but the row in the database has since been
+        # claimed by the outbox sender (marked "sending" with a
+        # claim_token set) in order to dispatch it. The skip write must be
+        # a guarded UPDATE keyed on the database's current status, not the
+        # stale in-memory value, so it must not clobber the sender's claim
+        # back to "skipped" and must refuse instead.
+        import uuid
+
+        from django.utils import timezone
+
+        from messaging.api import _remove_recipient
+
+        campaign = self._campaign(name="Q", status="queued", total=1)
+        row = self._recipient(campaign=campaign)
+        self.assertEqual(row.status, "pending")
+
+        # Mutate the row in the database directly (bypassing `row`, the
+        # in-memory object) to simulate the sender claiming it after the
+        # object was constructed/read but before the skip write runs.
+        CampaignRecipient.objects.filter(pk=row.pk).update(
+            status="sending",
+            claim_token=uuid.uuid4(),
+            claimed_at=timezone.now(),
+        )
+
+        error = _remove_recipient(row)
+        self.assertIsNotNone(error)
+        self.assertIn("already being sent", error)
+
+        row.refresh_from_db()
+        self.assertEqual(row.status, "sending")
+        self.assertIsNotNone(row.claim_token)
+
+    def test_removing_an_already_skipped_recipient_is_idempotent(self):
+        campaign = self._campaign(name="Q", status="queued", total=1)
+        row = self._recipient(campaign=campaign, status="skipped")
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 204)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "skipped")
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.total, 1)

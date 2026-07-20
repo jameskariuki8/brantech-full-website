@@ -120,17 +120,38 @@ def _remove_recipient(recipient):
         return f"This message is already {recipient.status} and cannot be withdrawn."
 
     if campaign.status == "draft":
-        recipient.delete()
-        # total is a PositiveIntegerField, so guard the decrement rather than
-        # letting a stale counter underflow into a database error.
-        Campaign.objects.filter(pk=campaign.pk, total__gt=0).update(
-            total=F("total") - 1
-        )
+        with transaction.atomic():
+            recipient.delete()
+            # total is a PositiveIntegerField, so guard the decrement rather
+            # than letting a stale counter underflow into a database error.
+            Campaign.objects.filter(pk=campaign.pk, total__gt=0).update(
+                total=F("total") - 1
+            )
         return None
 
-    recipient.status = "skipped"
-    recipient.save(update_fields=["status"])
-    return None
+    # Guarded UPDATE, mirroring the outbox sender's own claiming pattern
+    # (see process_email_outbox.py). recipient.status here is only the
+    # value read by get_object() and may be stale: between that read and
+    # this write, the sender may have claimed the row (pending -> sending)
+    # to send it. Keying the write on `status="pending"` at the database
+    # level closes that race -- a claimed row will no longer match and so
+    # will not be overwritten to "skipped" out from under the sender.
+    updated = CampaignRecipient.objects.filter(
+        pk=recipient.pk, status="pending"
+    ).update(status="skipped")
+    if updated:
+        return None
+
+    # Nothing matched pending=... reread to find out why.
+    current_status = (
+        CampaignRecipient.objects.filter(pk=recipient.pk)
+        .values_list("status", flat=True)
+        .first()
+    )
+    if current_status is None or current_status == "skipped":
+        # Already gone or already skipped -- removal is idempotent.
+        return None
+    return "This message is already being sent and cannot be withdrawn."
 
 
 class CampaignRecipientViewSet(
