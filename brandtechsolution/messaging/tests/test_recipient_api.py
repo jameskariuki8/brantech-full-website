@@ -37,6 +37,12 @@ class RecipientListTests(RecipientApiTestBase):
         )
         self.assertEqual(resp.status_code, 400)
 
+    def test_list_rejects_a_non_ascii_digit_campaign(self):
+        # str.isdigit() returns True for '²' (superscript two), which
+        # int() cannot parse. This must return 400, not crash with a 500.
+        resp = self.client.get("/api/messaging/recipients/?campaign=%C2%B2")
+        self.assertEqual(resp.status_code, 400)
+
     def test_list_returns_only_that_campaigns_recipients(self):
         self._recipient(email="mine@example.com")
         other = self._campaign(name="Other")

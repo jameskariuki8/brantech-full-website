@@ -124,7 +124,15 @@ class CampaignRecipientViewSet(
         campaign_id = self.request.query_params.get("campaign")
         if not campaign_id:
             raise ValidationError({"detail": "A campaign query parameter is required."})
-        if not str(campaign_id).isdigit() or int(campaign_id) > POSTGRES_BIGINT_MAX:
+        # str.isdigit() accepts non-ASCII digit characters (e.g. U+00B2 '²')
+        # that int() cannot parse, which would raise ValueError (500) instead
+        # of the intended 400. Parse defensively so int() is never reached
+        # with a value it can't handle.
+        try:
+            numeric_campaign_id = int(campaign_id)
+        except (TypeError, ValueError):
+            raise ValidationError({"detail": "campaign must be a numeric id."})
+        if numeric_campaign_id < 0 or numeric_campaign_id > POSTGRES_BIGINT_MAX:
             raise ValidationError({"detail": "campaign must be a numeric id."})
         qs = qs.filter(campaign_id=campaign_id)
 
