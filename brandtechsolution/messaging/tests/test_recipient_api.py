@@ -1,4 +1,8 @@
+from unittest.mock import patch
+
+import dns.resolver
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase
 
 from messaging.models import Campaign, CampaignRecipient, Suppression
@@ -318,3 +322,124 @@ class RecipientRemoveTests(RecipientApiTestBase):
         self.assertEqual(row.status, "skipped")
         campaign.refresh_from_db()
         self.assertEqual(campaign.total, 1)
+
+
+class RecipientValidateActionTests(RecipientApiTestBase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    def _validate(self, campaign=None):
+        return self.client.post(
+            "/api/messaging/recipients/validate/",
+            data={"campaign": (campaign or self.campaign).id},
+            content_type="application/json",
+        )
+
+    def test_validate_returns_counts(self):
+        self._recipient(email="ada@example.com")
+        with patch("messaging.validation._query_mx", return_value=["mx1"]):
+            resp = self._validate()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(
+            resp.json(),
+            {"valid": 1, "invalid_syntax": 0, "invalid_domain": 0, "unknown": 0},
+        )
+
+    def test_validate_flags_a_dead_domain(self):
+        row = self._recipient(email="ada@nope.invalid")
+        with patch("messaging.validation._query_mx", side_effect=dns.resolver.NXDOMAIN):
+            self._validate()
+        row.refresh_from_db()
+        self.assertEqual(row.validation_status, "invalid_domain")
+
+    def test_validate_requires_a_campaign(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/validate/", data={}, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_validate_rejects_an_unknown_campaign(self):
+        resp = self.client.post(
+            "/api/messaging/recipients/validate/",
+            data={"campaign": 999999},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_anonymous_cannot_validate(self):
+        self.client.logout()
+        resp = self._validate()
+        self.assertIn(resp.status_code, (401, 403))
+
+
+class RecipientRemoveInvalidTests(RecipientApiTestBase):
+    def _remove_invalid(self, campaign=None):
+        return self.client.post(
+            "/api/messaging/recipients/remove_invalid/",
+            data={"campaign": (campaign or self.campaign).id},
+            content_type="application/json",
+        )
+
+    def test_removes_only_flagged_rows(self):
+        self.campaign.total = 3
+        self.campaign.save(update_fields=["total"])
+        good = self._recipient(email="ada@example.com", validation_status="valid")
+        self._recipient(email="bad", validation_status="invalid_syntax")
+        self._recipient(email="x@nope.invalid", validation_status="invalid_domain")
+
+        resp = self._remove_invalid()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["removed"], 2)
+
+        remaining = list(CampaignRecipient.objects.filter(campaign=self.campaign))
+        self.assertEqual([r.pk for r in remaining], [good.pk])
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 1)
+
+    def test_unknown_rows_are_not_removed(self):
+        # "unknown" means never checked -- not the same as known-bad.
+        row = self._recipient(validation_status="unknown")
+        resp = self._remove_invalid()
+        self.assertEqual(resp.json()["removed"], 0)
+        self.assertTrue(CampaignRecipient.objects.filter(pk=row.pk).exists())
+
+    def test_sending_campaign_marks_flagged_rows_skipped(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, email="x@nope.invalid",
+                              validation_status="invalid_domain")
+        resp = self._remove_invalid(campaign)
+        self.assertEqual(resp.json()["removed"], 1)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "skipped")
+
+    def test_dispatched_rows_are_reported_as_skipped_not_removed(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, email="x@nope.invalid",
+                              status="sent", validation_status="invalid_domain")
+        resp = self._remove_invalid(campaign)
+        body = resp.json()
+        self.assertEqual(body["removed"], 0)
+        self.assertEqual(body["skipped"], 1)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "sent")
+
+    def test_finished_campaign_is_rejected(self):
+        campaign = self._campaign(name="Done", status="sent", total=1)
+        row = self._recipient(campaign=campaign, validation_status="invalid_domain")
+        resp = self._remove_invalid(campaign)
+        self.assertEqual(resp.status_code, 400)
+        self.assertTrue(CampaignRecipient.objects.filter(pk=row.pk).exists())
+
+    def test_other_campaigns_are_untouched(self):
+        other = self._campaign(name="Other", total=1)
+        stranger = self._recipient(campaign=other, email="x@nope.invalid",
+                                   validation_status="invalid_domain")
+        self._recipient(email="y@nope.invalid", validation_status="invalid_domain")
+        self._remove_invalid()
+        self.assertTrue(CampaignRecipient.objects.filter(pk=stranger.pk).exists())
+
+    def test_anonymous_cannot_remove_invalid(self):
+        self.client.logout()
+        resp = self._remove_invalid()
+        self.assertIn(resp.status_code, (401, 403))

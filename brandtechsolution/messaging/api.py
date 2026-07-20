@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.db.models import F, Q
+from django.shortcuts import get_object_or_404
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -15,6 +16,7 @@ from .serializers import (
     EmailTemplateSerializer,
     InquirySerializer,
 )
+from .validation import validate_campaign_recipients
 
 
 class InquiryViewSet(viewsets.ModelViewSet):
@@ -209,6 +211,47 @@ class CampaignRecipientViewSet(
         if error:
             return Response({"detail": error}, status=400)
         return Response(status=204)
+
+    def _campaign_from_body(self, request):
+        campaign_id = request.data.get("campaign")
+        if not campaign_id:
+            raise ValidationError({"detail": "A campaign id is required."})
+        return get_object_or_404(Campaign, pk=campaign_id)
+
+    @action(detail=False, methods=["post"])
+    def validate(self, request):
+        """Run the MX pass over one campaign and report the resulting counts.
+
+        Deliberately an explicit action rather than part of building the
+        audience: DNS is slow, and a list spanning many domains would otherwise
+        stall the build request.
+        """
+        campaign = self._campaign_from_body(request)
+        return Response(validate_campaign_recipients(campaign))
+
+    @action(detail=False, methods=["post"])
+    def remove_invalid(self, request):
+        """Remove every flagged recipient, honouring the usual removal rules."""
+        campaign = self._campaign_from_body(request)
+        if campaign.status not in REMOVABLE_CAMPAIGN_STATUSES:
+            return Response(
+                {"detail": f"Cannot change recipients of a {campaign.status} campaign."},
+                status=400,
+            )
+
+        flagged = CampaignRecipient.objects.filter(
+            campaign=campaign,
+            validation_status__in=["invalid_syntax", "invalid_domain"],
+        ).select_related("campaign")
+
+        removed = 0
+        skipped = 0
+        for recipient in flagged:
+            if _remove_recipient(recipient) is None:
+                removed += 1
+            else:
+                skipped += 1
+        return Response({"removed": removed, "skipped": skipped})
 
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
