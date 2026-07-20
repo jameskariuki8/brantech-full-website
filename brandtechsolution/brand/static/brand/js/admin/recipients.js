@@ -37,7 +37,7 @@ function closeRecipients() {
     loadCampaigns();
 }
 
-async function loadRecipients() {
+async function loadRecipients(isRetry = false) {
     if (!RECIPIENTS.campaignId) return;
     const params = new URLSearchParams({
         campaign: RECIPIENTS.campaignId,
@@ -48,6 +48,15 @@ async function loadRecipients() {
     const res = await fetch(`${API_BASE}/messaging/recipients/?${params}`, { credentials: 'same-origin' });
     const container = document.getElementById('recipientsList');
     if (!res.ok) {
+        // Removing the last row on page N leaves RECIPIENTS.page at N; the
+        // next fetch requests a now out-of-range page and DRF 404s. Step
+        // back one page and retry exactly once (isRetry guards against
+        // looping) rather than surfacing a hard error. A genuine failure on
+        // page 1 (or a retry that still fails) still shows the message.
+        if (!isRetry && res.status === 404 && RECIPIENTS.page > 1) {
+            RECIPIENTS.page -= 1;
+            return loadRecipients(true);
+        }
         container.innerHTML = `<div class="p-4 text-sm text-red-400">Could not load recipients.</div>`;
         return;
     }
