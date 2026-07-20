@@ -17,3 +17,4 @@ css-inline
 openpyxl
 python-docx
 pypdf
+dnspython
