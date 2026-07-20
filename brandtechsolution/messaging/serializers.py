@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from .emailhtml import inline_email_css, sanitize_email_html
-from .models import Campaign, EmailTemplate, Inquiry
+from .models import Campaign, CampaignRecipient, EmailTemplate, Inquiry, Suppression
+from .validation import validate_syntax
 
 
 class InquirySerializer(serializers.ModelSerializer):
@@ -62,3 +63,43 @@ class CampaignSerializer(EmailBodyMixin, serializers.ModelSerializer):
             "id", "body_html", "status", "total", "sent_count", "failed_count",
             "created_at", "started_at", "completed_at",
         ]
+
+
+ADDABLE_CAMPAIGN_STATUSES = {"draft", "queued", "sending", "paused"}
+
+
+class CampaignRecipientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CampaignRecipient
+        fields = [
+            "id", "campaign", "email", "name", "status",
+            "validation_status", "validated_at", "sent_at",
+        ]
+        read_only_fields = [
+            "id", "status", "validation_status", "validated_at", "sent_at",
+        ]
+
+    def validate_email(self, value):
+        # Match how audience.resolve_recipients() stores addresses, so the
+        # unique_together check and the send path see the same string.
+        return (value or "").strip().lower()
+
+    def validate(self, attrs):
+        campaign = attrs.get("campaign")
+        if campaign and campaign.status not in ADDABLE_CAMPAIGN_STATUSES:
+            raise serializers.ValidationError(
+                {"detail": f"Cannot add recipients to a {campaign.status} campaign."}
+            )
+
+        email = attrs.get("email")
+        if email and Suppression.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                {"detail": f"{email} has unsubscribed or bounced and cannot be added."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        validated_data["validation_status"] = (
+            "valid" if validate_syntax(validated_data["email"]) else "invalid_syntax"
+        )
+        return super().create(validated_data)

@@ -18,7 +18,10 @@ class AdminPanelRenderTests(TestCase):
             'id="templatePreviewFrame"',
             'id="campaignEditorContainer"',
             'id="campaignPreviewFrame"',
+            'id="recipientsModal"',
+            'id="recipientsList"',
+            'id="addRecipientForm"',
         ]:
             self.assertIn(anchor, html)
-        for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js', 'templates.js', 'campaigns.js', 'editor.js']:
+        for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js', 'templates.js', 'campaigns.js', 'editor.js', 'recipients.js']:
             self.assertIn(script, html)

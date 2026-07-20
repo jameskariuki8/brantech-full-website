@@ -23,6 +23,7 @@ async function loadCampaigns() {
                     <p class="text-xs text-gray-500 mt-2">${c.sent_count}/${c.total} sent${c.failed_count ? ` · ${c.failed_count} failed` : ''}</p>
                 </div>
                 <div class="flex flex-col gap-2 w-48">
+                    <button type="button" data-action="open-recipients" data-campaign-id="${c.id}" data-campaign-name="${escapeHtml(c.name)}" class="bg-dark-card border border-dark-border hover:border-brand-blue text-white text-xs px-3 py-1.5 rounded">View recipients (${c.total})</button>
                     ${c.status === 'draft' ? `
                         <label class="text-xs text-gray-400">Audience:</label>
                         <label class="text-xs text-gray-300"><input type="checkbox" class="aud" data-c="${c.id}" value="inquiries"> Inquiries</label>
@@ -133,4 +134,17 @@ async function resumeCampaign(id) {
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('addCampaignForm');
     if (form) form.addEventListener('submit', createCampaign);
+
+    // Delegated listener: #campaignsList is a stable ancestor across
+    // loadCampaigns() re-renders (only its innerHTML is replaced), so this
+    // is registered once here rather than per-render, which would otherwise
+    // stack duplicate handlers and fire the click multiple times.
+    const campaignsList = document.getElementById('campaignsList');
+    if (campaignsList) {
+        campaignsList.addEventListener('click', (event) => {
+            const btn = event.target.closest('[data-action="open-recipients"]');
+            if (!btn) return;
+            openRecipients(Number(btn.dataset.campaignId), btn.dataset.campaignName);
+        });
+    }
 });

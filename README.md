@@ -301,6 +301,55 @@ seconds, and this must stay below `OUTBOX_STALE_CLAIM_MINUTES × 60` — this
 invariant is enforced by an automated test, so raising the batch size or
 timeout requires raising `OUTBOX_STALE_CLAIM_MINUTES` to match.
 
+### Managing campaign recipients
+
+Every campaign card has a **View recipients (N)** button that opens the
+recipient list. From there you can search by email or name, add an address
+by hand, and remove individual addresses.
+
+What removal does depends on how far the campaign has got:
+
+| Campaign status | Removing a recipient |
+|---|---|
+| `draft` | Deletes the row and gives the slot back (`total` decreases) |
+| `queued` / `sending` / `paused` | Marks the row `skipped`; it is never emailed, and `total` is left alone so the send record stays coherent |
+| `sent` / `failed` | Refused — the campaign is finished and its history is immutable |
+
+An address that has already been sent, failed, or is in flight is never
+withdrawn, whatever the campaign's status.
+
+**A removal persists across a rebuild.** Removing a recipient records a
+durable, per-campaign exclusion for that address, independent of the
+recipient row itself (which may be deleted, in the `draft` case). Pressing
+**Build recipients** again — for example to add one more manual address, or
+after picking up new source records — re-resolves the audience but drops
+any address with an active exclusion, so a removed address does not
+silently reappear. Manually re-adding that exact address is the one way to
+undo this: an explicit add clears the exclusion, so it wins over the
+earlier removal and a later rebuild keeps the address.
+
+Adding is allowed for `draft`, `queued`, `sending` and `paused` campaigns —
+a new row is simply picked up by the next outbox run. Suppressed
+(unsubscribed or bounced) addresses are refused.
+
+### Email validation
+
+Addresses carry a validation status: `unknown`, `valid`, `invalid_syntax` or
+`invalid_domain`.
+
+- **Syntax** is checked automatically whenever recipients are built or added.
+  It costs nothing and never touches the network.
+- **Domains** are checked only when you press **Check domains**, which looks
+  up MX records for every recipient. DNS is slow, so this is deliberately a
+  button rather than something that happens during Build. Results are cached
+  per domain for an hour, so a list of 500 addresses on a handful of domains
+  costs a handful of lookups.
+
+**Flagged addresses are still sent to.** The outbox does not skip them —
+validation only tells you what looks undeliverable, and **Remove all
+invalid** acts on it in one click. Nothing is dropped from a send without
+you asking for it.
+
 ### Email placeholders
 
 Templates and campaigns support these merge fields in both the subject and body:

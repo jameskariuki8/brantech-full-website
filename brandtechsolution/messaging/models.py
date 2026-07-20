@@ -109,6 +109,18 @@ class CampaignRecipient(models.Model):
     email = models.EmailField()
     name = models.CharField(max_length=200, blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    VALIDATION_CHOICES = [
+        ("unknown", "Not checked"),
+        ("valid", "Valid"),
+        ("invalid_syntax", "Malformed address"),
+        ("invalid_domain", "Domain has no mail server"),
+    ]
+    validation_status = models.CharField(
+        max_length=20, choices=VALIDATION_CHOICES, default="unknown"
+    )
+    # Set by the MX pass only. A row whose syntax was checked at build time
+    # but whose domain has never been looked up leaves this null.
+    validated_at = models.DateTimeField(null=True, blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     error = models.TextField(blank=True, default="")
     sent_at = models.DateTimeField(null=True, blank=True)
@@ -123,3 +135,29 @@ class CampaignRecipient(models.Model):
 
     def __str__(self):
         return f"{self.email} [{self.status}]"
+
+
+class CampaignExclusion(models.Model):
+    """Durable record that an address was deliberately removed from a campaign.
+
+    Removing a draft recipient deletes its `CampaignRecipient` row outright,
+    and removing one from an in-flight campaign only marks the row
+    `skipped` -- neither leaves any trace that the removal was intentional.
+    `build_recipients` re-resolves the audience from its sources on every
+    call, so without this the removed address would simply be recreated by
+    the next rebuild. This row has to outlive the recipient row it excludes,
+    so `build_recipients` can filter the address back out even after the
+    original row is gone.
+    """
+
+    campaign = models.ForeignKey(
+        Campaign, related_name="exclusions", on_delete=models.CASCADE
+    )
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("campaign", "email")
+
+    def __str__(self):
+        return f"{self.email} excluded from campaign {self.campaign_id}"
