@@ -23,6 +23,7 @@ async function loadCampaigns() {
                     <p class="text-xs text-gray-500 mt-2">${c.sent_count}/${c.total} sent${c.failed_count ? ` · ${c.failed_count} failed` : ''}</p>
                 </div>
                 <div class="flex flex-col gap-2 w-48">
+                    <button onclick="openRecipients(${c.id}, '${escapeHtml(c.name)}')" class="bg-dark-card border border-dark-border hover:border-brand-blue text-white text-xs px-3 py-1.5 rounded">View recipients (${c.total})</button>
                     ${c.status === 'draft' ? `
                         <label class="text-xs text-gray-400">Audience:</label>
                         <label class="text-xs text-gray-300"><input type="checkbox" class="aud" data-c="${c.id}" value="inquiries"> Inquiries</label>
