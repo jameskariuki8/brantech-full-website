@@ -135,3 +135,29 @@ class CampaignRecipient(models.Model):
 
     def __str__(self):
         return f"{self.email} [{self.status}]"
+
+
+class CampaignExclusion(models.Model):
+    """Durable record that an address was deliberately removed from a campaign.
+
+    Removing a draft recipient deletes its `CampaignRecipient` row outright,
+    and removing one from an in-flight campaign only marks the row
+    `skipped` -- neither leaves any trace that the removal was intentional.
+    `build_recipients` re-resolves the audience from its sources on every
+    call, so without this the removed address would simply be recreated by
+    the next rebuild. This row has to outlive the recipient row it excludes,
+    so `build_recipients` can filter the address back out even after the
+    original row is gone.
+    """
+
+    campaign = models.ForeignKey(
+        Campaign, related_name="exclusions", on_delete=models.CASCADE
+    )
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("campaign", "email")
+
+    def __str__(self):
+        return f"{self.email} excluded from campaign {self.campaign_id}"

@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from . import audience
-from .models import Campaign, CampaignRecipient, EmailTemplate, Inquiry
+from .models import Campaign, CampaignExclusion, CampaignRecipient, EmailTemplate, Inquiry
 from .serializers import (
     ADDABLE_CAMPAIGN_STATUSES,
     CampaignRecipientSerializer,
@@ -137,6 +137,12 @@ def _remove_recipient(recipient):
                                   `pending` rows, so it will never be emailed
       sent/failed              -> refuse; a finished campaign's record is history
 
+    Every successful removal also records a CampaignExclusion for the
+    campaign+email so a later `build_recipients` rebuild does not silently
+    resurrect the address -- see CampaignExclusion's docstring. A repeat
+    removal of the same address must not raise on the unique constraint, so
+    this always uses get_or_create.
+
     On failure, returns the reason as a string for the caller to surface.
     """
     campaign = recipient.campaign
@@ -148,12 +154,14 @@ def _remove_recipient(recipient):
 
     if campaign.status == "draft":
         with transaction.atomic():
+            email = recipient.email
             recipient.delete()
             # total is a PositiveIntegerField, so guard the decrement rather
             # than letting a stale counter underflow into a database error.
             Campaign.objects.filter(pk=campaign.pk, total__gt=0).update(
                 total=F("total") - 1
             )
+            CampaignExclusion.objects.get_or_create(campaign=campaign, email=email)
         return None
 
     # Guarded UPDATE, mirroring the outbox sender's own claiming pattern
@@ -167,6 +175,7 @@ def _remove_recipient(recipient):
         pk=recipient.pk, status="pending"
     ).update(status="skipped")
     if updated:
+        CampaignExclusion.objects.get_or_create(campaign=campaign, email=recipient.email)
         return None
 
     # Nothing matched pending=... reread to find out why.
@@ -177,6 +186,7 @@ def _remove_recipient(recipient):
     )
     if current_status is None or current_status == "skipped":
         # Already gone or already skipped -- removal is idempotent.
+        CampaignExclusion.objects.get_or_create(campaign=campaign, email=recipient.email)
         return None
     return "This message is already being sent and cannot be withdrawn."
 
@@ -219,6 +229,12 @@ class CampaignRecipientViewSet(
     def perform_create(self, serializer):
         with transaction.atomic():
             recipient = serializer.save()
+            # A manual add is the admin overriding an earlier removal of this
+            # exact address -- clear the exclusion in the same transaction as
+            # the insert so a later rebuild doesn't drop the address again.
+            CampaignExclusion.objects.filter(
+                campaign_id=recipient.campaign_id, email=recipient.email
+            ).delete()
             # Re-assert the campaign's status atomically with the insert:
             # `serializer.validate()` already checked it, but that read
             # happened before this transaction started. Between then and
@@ -281,6 +297,11 @@ class CampaignRecipientViewSet(
         its own tiny transaction. This does the same work in a handful of
         queries, all inside one transaction, so a partial failure can't
         leave rows removed with `total` left un-decremented.
+
+        Also records a CampaignExclusion for every row actually removed or
+        marked skipped, in bulk, for the same reason `_remove_recipient`
+        does for a single row: without it, a later rebuild would resurrect
+        these addresses. `ignore_conflicts=True` makes a repeat run safe.
         """
         campaign = self._campaign_from_body(request)
         if campaign.status not in MUTABLE_CAMPAIGN_STATUSES:
@@ -304,9 +325,10 @@ class CampaignRecipientViewSet(
                 # Eligible rows -- flagged and not dispatched -- are deleted
                 # outright. This includes rows already `skipped`: a draft
                 # campaign has no in-flight send to protect.
-                removed, _deleted_by_model = (
-                    flagged.exclude(status__in=DISPATCHED_RECIPIENT_STATUSES).delete()
-                )
+                eligible = flagged.exclude(status__in=DISPATCHED_RECIPIENT_STATUSES)
+                # Emails must be captured before the delete empties the queryset.
+                removed_emails = list(eligible.values_list("email", flat=True))
+                removed, _deleted_by_model = eligible.delete()
                 if removed:
                     # total is a PositiveIntegerField -- only decrement if
                     # enough headroom exists, mirroring the per-row guard
@@ -314,15 +336,29 @@ class CampaignRecipientViewSet(
                     Campaign.objects.filter(pk=campaign.pk, total__gte=removed).update(
                         total=F("total") - removed
                     )
+                    CampaignExclusion.objects.bulk_create(
+                        [CampaignExclusion(campaign=campaign, email=e) for e in removed_emails],
+                        ignore_conflicts=True,
+                    )
             else:
                 # Queued/sending/paused: flag pending rows as skipped via a
                 # single guarded UPDATE (the sender only claims `pending`
                 # rows, so this is race-safe the same way the single-row
                 # helper's guarded UPDATE is). Rows already skipped count as
                 # successfully removed -- removal is idempotent.
-                already_skipped = flagged.filter(status="skipped").count()
-                updated = flagged.filter(status="pending").update(status="skipped")
-                removed = updated + already_skipped
+                already_skipped_emails = list(
+                    flagged.filter(status="skipped").values_list("email", flat=True)
+                )
+                pending = flagged.filter(status="pending")
+                pending_emails = list(pending.values_list("email", flat=True))
+                updated = pending.update(status="skipped")
+                removed = updated + len(already_skipped_emails)
+                exclusion_emails = set(already_skipped_emails) | set(pending_emails)
+                if exclusion_emails:
+                    CampaignExclusion.objects.bulk_create(
+                        [CampaignExclusion(campaign=campaign, email=e) for e in exclusion_emails],
+                        ignore_conflicts=True,
+                    )
 
         return Response({"removed": removed, "skipped": skipped})
 

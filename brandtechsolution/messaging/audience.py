@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 
 from appointments.models import Appointment
-from .models import CampaignRecipient, Inquiry, Suppression
+from .models import CampaignExclusion, CampaignRecipient, Inquiry, Suppression
 from .validation import validate_syntax
 
 SOURCE_KEYS = {"inquiries", "users", "appointments"}
@@ -52,8 +52,22 @@ def resolve_recipients(source_keys, manual_emails):
 
 
 def build_recipients(campaign, source_keys, manual_emails):
-    """Materialize resolved recipients as CampaignRecipient rows; set campaign.total."""
+    """Materialize resolved recipients as CampaignRecipient rows; set campaign.total.
+
+    Drops any address the admin has deliberately removed from this campaign
+    before (see CampaignExclusion) -- otherwise a rebuild would silently
+    resurrect it. `resolve_recipients` already normalises candidates via
+    `.strip().lower()`, so the exclusion set is normalised the same way to
+    match.
+    """
     recipients = resolve_recipients(source_keys, manual_emails)
+    excluded = {
+        (e or "").strip().lower()
+        for e in CampaignExclusion.objects.filter(campaign=campaign).values_list(
+            "email", flat=True
+        )
+    }
+    recipients = [r for r in recipients if r["email"] not in excluded]
     CampaignRecipient.objects.bulk_create(
         [
             CampaignRecipient(

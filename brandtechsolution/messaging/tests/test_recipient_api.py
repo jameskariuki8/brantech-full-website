@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase
 
-from messaging.models import Campaign, CampaignRecipient, Suppression
+from messaging.models import Campaign, CampaignExclusion, CampaignRecipient, Inquiry, Suppression
 
 
 class RecipientApiTestBase(TestCase):
@@ -207,6 +207,31 @@ class RecipientAddTests(RecipientApiTestBase):
         self.campaign.refresh_from_db()
         self.assertEqual(self.campaign.total, 0)
 
+    def test_adding_a_previously_excluded_address_clears_the_exclusion(self):
+        # An explicit manual add is the admin overriding their earlier
+        # removal, and it must win -- otherwise a removal can never be undone.
+        CampaignExclusion.objects.create(campaign=self.campaign, email="ada@example.com")
+        resp = self._add("ada@example.com")
+        self.assertEqual(resp.status_code, 201)
+        self.assertFalse(
+            CampaignExclusion.objects.filter(
+                campaign=self.campaign, email="ada@example.com"
+            ).exists()
+        )
+
+    def test_clearing_the_exclusion_lets_a_later_rebuild_keep_the_address(self):
+        from messaging import audience
+
+        CampaignExclusion.objects.create(campaign=self.campaign, email="ada@example.com")
+        self._add("ada@example.com")
+        n = audience.build_recipients(self.campaign, [], ["ada@example.com"])
+        self.assertEqual(n, 1)
+        self.assertTrue(
+            CampaignRecipient.objects.filter(
+                campaign=self.campaign, email="ada@example.com"
+            ).exists()
+        )
+
 
 class RecipientRemoveTests(RecipientApiTestBase):
     def _delete(self, recipient):
@@ -351,6 +376,71 @@ class RecipientRemoveTests(RecipientApiTestBase):
         self.assertEqual(row.status, "skipped")
         campaign.refresh_from_db()
         self.assertEqual(campaign.total, 1)
+
+    def test_draft_removal_records_an_exclusion(self):
+        row = self._recipient(email="ada@example.com")
+        self._delete(row)
+        self.assertTrue(
+            CampaignExclusion.objects.filter(
+                campaign=self.campaign, email="ada@example.com"
+            ).exists()
+        )
+
+    def test_queued_removal_records_an_exclusion(self):
+        campaign = self._campaign(name="Q", status="queued", total=1)
+        row = self._recipient(campaign=campaign, email="ada@example.com")
+        self._delete(row)
+        self.assertTrue(
+            CampaignExclusion.objects.filter(campaign=campaign, email="ada@example.com").exists()
+        )
+
+    def test_sending_removal_records_an_exclusion(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, email="ada@example.com")
+        self._delete(row)
+        self.assertTrue(
+            CampaignExclusion.objects.filter(campaign=campaign, email="ada@example.com").exists()
+        )
+
+    def test_paused_removal_records_an_exclusion(self):
+        campaign = self._campaign(name="P", status="paused", total=1)
+        row = self._recipient(campaign=campaign, email="ada@example.com")
+        self._delete(row)
+        self.assertTrue(
+            CampaignExclusion.objects.filter(campaign=campaign, email="ada@example.com").exists()
+        )
+
+    def test_refused_removal_of_dispatched_row_records_no_exclusion(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, email="ada@example.com", status="sent")
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(
+            CampaignExclusion.objects.filter(campaign=campaign, email="ada@example.com").exists()
+        )
+
+    def test_refused_removal_from_sent_campaign_records_no_exclusion(self):
+        campaign = self._campaign(name="Done", status="sent", total=1)
+        row = self._recipient(campaign=campaign, email="ada@example.com")
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(
+            CampaignExclusion.objects.filter(campaign=campaign, email="ada@example.com").exists()
+        )
+
+    def test_removing_the_same_recipient_twice_does_not_raise(self):
+        campaign = self._campaign(name="Q", status="queued", total=1)
+        row = self._recipient(campaign=campaign, email="ada@example.com")
+        resp1 = self._delete(row)
+        self.assertEqual(resp1.status_code, 204)
+        resp2 = self._delete(row)
+        self.assertEqual(resp2.status_code, 204)
+        self.assertEqual(
+            CampaignExclusion.objects.filter(
+                campaign=campaign, email="ada@example.com"
+            ).count(),
+            1,
+        )
 
 
 class RecipientValidateActionTests(RecipientApiTestBase):
@@ -600,3 +690,86 @@ class RecipientRemoveInvalidTests(RecipientApiTestBase):
         self.assertEqual(unknown_row.status, "pending")
         campaign.refresh_from_db()
         self.assertEqual(campaign.total, 3)
+
+    def test_records_exclusions_for_removed_rows_in_a_draft_campaign(self):
+        self.campaign.total = 1
+        self.campaign.save(update_fields=["total"])
+        self._recipient(email="bad@example.com", validation_status="invalid_syntax")
+        self._remove_invalid()
+        self.assertTrue(
+            CampaignExclusion.objects.filter(
+                campaign=self.campaign, email="bad@example.com"
+            ).exists()
+        )
+
+    def test_records_exclusions_for_rows_marked_skipped_in_an_active_campaign(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        self._recipient(campaign=campaign, email="x@nope.invalid",
+                        validation_status="invalid_domain")
+        self._remove_invalid(campaign)
+        self.assertTrue(
+            CampaignExclusion.objects.filter(
+                campaign=campaign, email="x@nope.invalid"
+            ).exists()
+        )
+
+    def test_does_not_record_an_exclusion_for_a_dispatched_row(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        self._recipient(campaign=campaign, email="x@nope.invalid", status="sent",
+                        validation_status="invalid_domain")
+        self._remove_invalid(campaign)
+        self.assertFalse(
+            CampaignExclusion.objects.filter(
+                campaign=campaign, email="x@nope.invalid"
+            ).exists()
+        )
+
+    def test_a_rebuild_does_not_resurrect_rows_removed_by_remove_invalid(self):
+        from messaging import audience
+
+        self.campaign.total = 1
+        self.campaign.save(update_fields=["total"])
+        self._recipient(email="bad@example.com", validation_status="invalid_syntax")
+        self._remove_invalid()
+
+        n = audience.build_recipients(self.campaign, [], ["bad@example.com"])
+        self.assertEqual(n, 0)
+        self.assertFalse(
+            CampaignRecipient.objects.filter(
+                campaign=self.campaign, email="bad@example.com"
+            ).exists()
+        )
+
+
+class RecipientRemovalPersistsAcrossRebuildTests(RecipientApiTestBase):
+    """The exact scenario from the review: build, remove, rebuild -- the
+    removed address must not silently come back."""
+
+    def _build(self, campaign=None, sources=None, manual=None):
+        return self.client.post(
+            f"/api/messaging/campaigns/{(campaign or self.campaign).id}/build_recipients/",
+            data={"sources": sources or [], "manual_emails": manual or []},
+            content_type="application/json",
+        )
+
+    def test_removed_recipient_stays_removed_after_rebuild_with_extra_manual_address(self):
+        Inquiry.objects.create(name="N1", email="n1@x.com", message="m")
+        resp = self._build(sources=["inquiries"])
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["count"], 1)
+
+        row = CampaignRecipient.objects.get(campaign=self.campaign, email="n1@x.com")
+        del_resp = self.client.delete(f"/api/messaging/recipients/{row.id}/")
+        self.assertEqual(del_resp.status_code, 204)
+
+        resp = self._build(sources=["inquiries"], manual=["n2@x.com"])
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["count"], 1)
+
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 1)
+        emails = set(
+            CampaignRecipient.objects.filter(campaign=self.campaign)
+            .values_list("email", flat=True)
+        )
+        self.assertEqual(emails, {"n2@x.com"})

@@ -318,6 +318,16 @@ What removal does depends on how far the campaign has got:
 An address that has already been sent, failed, or is in flight is never
 withdrawn, whatever the campaign's status.
 
+**A removal persists across a rebuild.** Removing a recipient records a
+durable, per-campaign exclusion for that address, independent of the
+recipient row itself (which may be deleted, in the `draft` case). Pressing
+**Build recipients** again — for example to add one more manual address, or
+after picking up new source records — re-resolves the audience but drops
+any address with an active exclusion, so a removed address does not
+silently reappear. Manually re-adding that exact address is the one way to
+undo this: an explicit add clears the exclusion, so it wins over the
+earlier removal and a later rebuild keeps the address.
+
 Adding is allowed for `draft`, `queued`, `sending` and `paused` campaigns —
 a new row is simply picked up by the next outbox run. Suppressed
 (unsubscribed or bounced) addresses are refused.
