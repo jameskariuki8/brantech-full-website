@@ -12,6 +12,7 @@ import dns.resolver
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Count
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -93,16 +94,26 @@ def validate_campaign_recipients(campaign):
         validation_status="invalid_syntax"
     )
 
+    changed = []
     for row in rows:
         domain = (row.email or "").rsplit("@", 1)[-1]
         row.validation_status = "valid" if domain_has_mx(domain) else "invalid_domain"
         row.validated_at = now
-        row.save(update_fields=["validation_status", "validated_at"])
+        changed.append(row)
+
+    if changed:
+        CampaignRecipient.objects.bulk_update(
+            changed, ["validation_status", "validated_at"], batch_size=500
+        )
 
     counts = {"valid": 0, "invalid_syntax": 0, "invalid_domain": 0, "unknown": 0}
-    for status in CampaignRecipient.objects.filter(campaign=campaign).values_list(
-        "validation_status", flat=True
-    ):
+    aggregated = (
+        CampaignRecipient.objects.filter(campaign=campaign)
+        .values("validation_status")
+        .annotate(n=Count("id"))
+    )
+    for entry in aggregated:
+        status = entry["validation_status"]
         if status in counts:
-            counts[status] += 1
+            counts[status] = entry["n"]
     return counts
