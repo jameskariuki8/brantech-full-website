@@ -12,6 +12,7 @@ import dns.resolver
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -76,3 +77,32 @@ def domain_has_mx(domain):
 
     cache.set(key, result, MX_CACHE_SECONDS)
     return result
+
+
+def validate_campaign_recipients(campaign):
+    """Run the MX pass over one campaign's recipients and return status counts.
+
+    Rows already flagged `invalid_syntax` are left alone -- there is no domain
+    worth looking up in a malformed address. Everything else is re-checked and
+    stamped, so re-running the pass refreshes a stale verdict.
+    """
+    from .models import CampaignRecipient
+
+    now = timezone.now()
+    rows = CampaignRecipient.objects.filter(campaign=campaign).exclude(
+        validation_status="invalid_syntax"
+    )
+
+    for row in rows:
+        domain = (row.email or "").rsplit("@", 1)[-1]
+        row.validation_status = "valid" if domain_has_mx(domain) else "invalid_domain"
+        row.validated_at = now
+        row.save(update_fields=["validation_status", "validated_at"])
+
+    counts = {"valid": 0, "invalid_syntax": 0, "invalid_domain": 0, "unknown": 0}
+    for status in CampaignRecipient.objects.filter(campaign=campaign).values_list(
+        "validation_status", flat=True
+    ):
+        if status in counts:
+            counts[status] += 1
+    return counts
