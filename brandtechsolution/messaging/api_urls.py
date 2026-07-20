@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register(r"inquiries", api.InquiryViewSet, basename="inquiries")
 router.register(r"templates", api.EmailTemplateViewSet, basename="templates")
 router.register(r"campaigns", api.CampaignViewSet, basename="campaigns")
+router.register(r"recipients", api.CampaignRecipientViewSet, basename="recipients")
 
 urlpatterns = [
     path("", include(router.urls)),

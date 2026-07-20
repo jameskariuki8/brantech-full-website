@@ -1,11 +1,19 @@
+from django.db.models import F, Q
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from . import audience
-from .models import Campaign, EmailTemplate, Inquiry
-from .serializers import CampaignSerializer, EmailTemplateSerializer, InquirySerializer
+from .models import Campaign, CampaignRecipient, EmailTemplate, Inquiry
+from .serializers import (
+    CampaignRecipientSerializer,
+    CampaignSerializer,
+    EmailTemplateSerializer,
+    InquirySerializer,
+)
 
 
 class InquiryViewSet(viewsets.ModelViewSet):
@@ -74,6 +82,43 @@ class CampaignViewSet(viewsets.ModelViewSet):
         campaign.status = "queued"
         campaign.save(update_fields=["status"])
         return Response({"status": campaign.status})
+
+
+class RecipientPagination(PageNumberPagination):
+    # Declared explicitly: this project sets no DEFAULT_PAGINATION_CLASS, so
+    # without this the endpoint would return every recipient in one response.
+    page_size = 50
+
+
+class CampaignRecipientViewSet(viewsets.ModelViewSet):
+    serializer_class = CampaignRecipientSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = RecipientPagination
+
+    def get_queryset(self):
+        qs = CampaignRecipient.objects.select_related("campaign").order_by("id")
+
+        # Scoping applies to `list` only. get_object() runs this same method for
+        # detail routes, where no `campaign` query parameter is present -- making
+        # it mandatory there would break DELETE.
+        if self.action != "list":
+            return qs
+
+        campaign_id = self.request.query_params.get("campaign")
+        if not campaign_id:
+            raise ValidationError({"detail": "A campaign query parameter is required."})
+        if not str(campaign_id).isdigit():
+            raise ValidationError({"detail": "campaign must be a numeric id."})
+        qs = qs.filter(campaign_id=campaign_id)
+
+        search = (self.request.query_params.get("search") or "").strip()
+        if search:
+            qs = qs.filter(Q(email__icontains=search) | Q(name__icontains=search))
+        return qs
+
+    def perform_create(self, serializer):
+        recipient = serializer.save()
+        Campaign.objects.filter(pk=recipient.campaign_id).update(total=F("total") + 1)
 
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
