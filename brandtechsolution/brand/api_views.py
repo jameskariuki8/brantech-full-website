@@ -2,9 +2,21 @@ import json
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage
 from .models import BlogPost, Project
+
+def staff_required(request):
+    """Return an error response unless the request comes from a staff member.
+
+    Returns None when the request may proceed. Reads on these endpoints are
+    public; only the write branches call this.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    return None
+
 
 # Helper to parse FormData or JSON
 def get_data(request):
@@ -86,8 +98,9 @@ def post_list(request):
         }, safe=False)
     
     if request.method == "POST":
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        denied = staff_required(request)
+        if denied:
+            return denied
         try:
             # Handle FormData
             title = request.POST.get('title')
@@ -175,8 +188,9 @@ def post_detail(request, pk):
             
     # Redefining logic to support POST for updates on detail view
     if request.method == "POST" or request.method == "PUT":
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        denied = staff_required(request)
+        if denied:
+            return denied
         try:
             # If PUT, request.POST might be empty. 
             # Let's check if we have data. If not, maybe it's a JSON body?
@@ -199,8 +213,9 @@ def post_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        denied = staff_required(request)
+        if denied:
+            return denied
         post.delete()
         return JsonResponse({'message': 'Post deleted successfully'})
 
@@ -237,8 +252,9 @@ def project_list(request):
         }, safe=False)
     
     if request.method == "POST":
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        denied = staff_required(request)
+        if denied:
+            return denied
         try:
             title = request.POST.get('title')
             short_description = request.POST.get('short_description')
@@ -279,8 +295,9 @@ def project_detail(request, pk):
         return JsonResponse(data)
 
     if request.method == "POST" or request.method == "PUT":
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        denied = staff_required(request)
+        if denied:
+            return denied
         try:
             project.title = request.POST.get('title', project.title)
             project.short_description = request.POST.get('short_description', project.short_description)
@@ -298,7 +315,8 @@ def project_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        denied = staff_required(request)
+        if denied:
+            return denied
         project.delete()
         return JsonResponse({'message': 'Project deleted successfully'})
