@@ -1632,10 +1632,10 @@ document.addEventListener('DOMContentLoaded', () => {
 In `brand/static/brand/js/admin/campaigns.js`, inside the `<div class="flex flex-col gap-2 w-48">` block, add this line **immediately after the opening `<div ...w-48">`** and before the `${c.status === 'draft' ? ...}` block, so it appears for campaigns in every status:
 
 ```javascript
-                    <button onclick="openRecipients(${c.id}, '${escapeHtml(c.name).replace(/'/g, '&#39;')}')" class="bg-dark-card border border-dark-border hover:border-brand-blue text-white text-xs px-3 py-1.5 rounded">View recipients (${c.total})</button>
+                    <button onclick="openRecipients(${c.id}, '${escapeHtml(c.name)}')" class="bg-dark-card border border-dark-border hover:border-brand-blue text-white text-xs px-3 py-1.5 rounded">View recipients (${c.total})</button>
 ```
 
-`escapeHtml` already converts `'` to `&#39;`, so the extra `.replace` is a no-op belt-and-braces guard against the attribute-context quote — keep it, since this string is interpolated inside a single-quoted `onclick` attribute.
+The campaign name lands inside a single-quoted `onclick` attribute, so the quote characters must be neutralised — `escapeHtml` already converts both `'` and `"` to entities, which covers it. Do not add a second `.replace()` on top; it would match nothing.
 
 - [ ] **Step 6: Load the script**
 
