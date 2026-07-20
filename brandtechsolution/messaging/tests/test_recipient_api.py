@@ -31,6 +31,12 @@ class RecipientListTests(RecipientApiTestBase):
         resp = self.client.get("/api/messaging/recipients/?campaign=abc")
         self.assertEqual(resp.status_code, 400)
 
+    def test_list_rejects_a_campaign_id_beyond_postgres_bigint_range(self):
+        resp = self.client.get(
+            "/api/messaging/recipients/?campaign=999999999999999999999999"
+        )
+        self.assertEqual(resp.status_code, 400)
+
     def test_list_returns_only_that_campaigns_recipients(self):
         self._recipient(email="mine@example.com")
         other = self._campaign(name="Other")

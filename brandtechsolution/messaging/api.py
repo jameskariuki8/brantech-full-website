@@ -1,5 +1,6 @@
+from django.db import transaction
 from django.db.models import F, Q
-from rest_framework import viewsets
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
@@ -90,7 +91,23 @@ class RecipientPagination(PageNumberPagination):
     page_size = 50
 
 
-class CampaignRecipientViewSet(viewsets.ModelViewSet):
+# Postgres bigint max: the `campaign` FK is a BigAutoField and production runs
+# PostgreSQL, so a numeric-looking id beyond this overflows the column and
+# raises DataError (500) instead of the intended 400.
+POSTGRES_BIGINT_MAX = 9223372036854775807
+
+
+class CampaignRecipientViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    # Built from explicit mixins rather than ModelViewSet: recipient rows should
+    # only be listed, added, and removed via the API. ModelViewSet would also
+    # route retrieve/update/partial_update, none of which are requested or
+    # tested, plus a destroy with unoverridden semantics (see perform_destroy /
+    # a later task for status-dependent removal).
     serializer_class = CampaignRecipientSerializer
     permission_classes = [IsAdminUser]
     pagination_class = RecipientPagination
@@ -107,7 +124,7 @@ class CampaignRecipientViewSet(viewsets.ModelViewSet):
         campaign_id = self.request.query_params.get("campaign")
         if not campaign_id:
             raise ValidationError({"detail": "A campaign query parameter is required."})
-        if not str(campaign_id).isdigit():
+        if not str(campaign_id).isdigit() or int(campaign_id) > POSTGRES_BIGINT_MAX:
             raise ValidationError({"detail": "campaign must be a numeric id."})
         qs = qs.filter(campaign_id=campaign_id)
 
@@ -117,8 +134,9 @@ class CampaignRecipientViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        recipient = serializer.save()
-        Campaign.objects.filter(pk=recipient.campaign_id).update(total=F("total") + 1)
+        with transaction.atomic():
+            recipient = serializer.save()
+            Campaign.objects.filter(pk=recipient.campaign_id).update(total=F("total") + 1)
 
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
