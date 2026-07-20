@@ -97,6 +97,42 @@ class RecipientPagination(PageNumberPagination):
 POSTGRES_BIGINT_MAX = 9223372036854775807
 
 
+REMOVABLE_CAMPAIGN_STATUSES = {"draft", "queued", "sending", "paused"}
+DISPATCHED_RECIPIENT_STATUSES = {"sending", "sent", "failed"}
+
+
+def _remove_recipient(recipient):
+    """Remove one recipient from its campaign. Returns None on success.
+
+    Behaviour depends on how far the campaign has progressed:
+      draft                    -> delete outright and give the slot back
+      queued/sending/paused    -> mark skipped; the sender only claims
+                                  `pending` rows, so it will never be emailed
+      sent/failed              -> refuse; a finished campaign's record is history
+
+    On failure, returns the reason as a string for the caller to surface.
+    """
+    campaign = recipient.campaign
+    if campaign.status not in REMOVABLE_CAMPAIGN_STATUSES:
+        return f"Cannot change recipients of a {campaign.status} campaign."
+
+    if recipient.status in DISPATCHED_RECIPIENT_STATUSES:
+        return f"This message is already {recipient.status} and cannot be withdrawn."
+
+    if campaign.status == "draft":
+        recipient.delete()
+        # total is a PositiveIntegerField, so guard the decrement rather than
+        # letting a stale counter underflow into a database error.
+        Campaign.objects.filter(pk=campaign.pk, total__gt=0).update(
+            total=F("total") - 1
+        )
+        return None
+
+    recipient.status = "skipped"
+    recipient.save(update_fields=["status"])
+    return None
+
+
 class CampaignRecipientViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -145,6 +181,13 @@ class CampaignRecipientViewSet(
         with transaction.atomic():
             recipient = serializer.save()
             Campaign.objects.filter(pk=recipient.campaign_id).update(total=F("total") + 1)
+
+    def destroy(self, request, *args, **kwargs):
+        recipient = self.get_object()
+        error = _remove_recipient(recipient)
+        if error:
+            return Response({"detail": error}, status=400)
+        return Response(status=204)
 
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes

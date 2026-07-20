@@ -173,3 +173,101 @@ class RecipientAddTests(RecipientApiTestBase):
         resp = self._add("ada@example.com")
         self.assertIn(resp.status_code, (401, 403))
         self.assertFalse(CampaignRecipient.objects.exists())
+
+
+class RecipientRemoveTests(RecipientApiTestBase):
+    def _delete(self, recipient):
+        return self.client.delete(f"/api/messaging/recipients/{recipient.id}/")
+
+    def test_draft_removal_deletes_the_row(self):
+        self.campaign.total = 1
+        self.campaign.save(update_fields=["total"])
+        row = self._recipient()
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(CampaignRecipient.objects.filter(pk=row.pk).exists())
+
+    def test_draft_removal_decrements_total(self):
+        self.campaign.total = 3
+        self.campaign.save(update_fields=["total"])
+        row = self._recipient()
+        self._delete(row)
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 2)
+
+    def test_total_never_goes_below_zero(self):
+        # total is a PositiveIntegerField; an underflow would be a database error.
+        row = self._recipient()
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 204)
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.total, 0)
+
+    def test_queued_removal_marks_skipped_and_keeps_total(self):
+        campaign = self._campaign(name="Q", status="queued", total=1)
+        row = self._recipient(campaign=campaign)
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 204)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "skipped")
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.total, 1)
+
+    def test_sending_campaign_removal_marks_skipped(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign)
+        self._delete(row)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "skipped")
+
+    def test_paused_campaign_removal_marks_skipped(self):
+        campaign = self._campaign(name="P", status="paused", total=1)
+        row = self._recipient(campaign=campaign)
+        self._delete(row)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "skipped")
+
+    def test_already_sent_row_is_not_touched(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, status="sent")
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "sent")
+
+    def test_in_flight_row_is_not_touched(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, status="sending")
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "sending")
+
+    def test_failed_row_is_not_touched(self):
+        campaign = self._campaign(name="S", status="sending", total=1)
+        row = self._recipient(campaign=campaign, status="failed")
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        row.refresh_from_db()
+        self.assertEqual(row.status, "failed")
+
+    def test_removal_from_sent_campaign_is_rejected(self):
+        campaign = self._campaign(name="Done", status="sent", total=1)
+        row = self._recipient(campaign=campaign)
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        self.assertTrue(CampaignRecipient.objects.filter(pk=row.pk).exists())
+
+    def test_removal_from_failed_campaign_is_rejected(self):
+        campaign = self._campaign(name="Dead", status="failed", total=1)
+        row = self._recipient(campaign=campaign)
+        resp = self._delete(row)
+        self.assertEqual(resp.status_code, 400)
+        self.assertTrue(CampaignRecipient.objects.filter(pk=row.pk).exists())
+
+    def test_anonymous_cannot_remove(self):
+        row = self._recipient()
+        self.client.logout()
+        resp = self._delete(row)
+        self.assertIn(resp.status_code, (401, 403))
+        self.assertTrue(CampaignRecipient.objects.filter(pk=row.pk).exists())
