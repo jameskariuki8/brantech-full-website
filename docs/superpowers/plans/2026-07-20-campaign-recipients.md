@@ -16,7 +16,9 @@
 - **Every value rendered into the admin panel MUST pass through the shared `escapeHtml()` helper** from `core.js`. Recipient names and emails originate partly from the public contact form and are untrusted. A stored-XSS bug of exactly this kind was fixed previously and must not regress.
 - **Recipient emails are stored lowercased and stripped.** `audience.resolve_recipients()` already does this; every new write path must match.
 - **The outbox sender (`messaging/management/commands/process_email_outbox.py`) is NOT modified by this plan.** A row flagged `invalid_domain` stays `pending` and is still attempted. This is an explicit product decision.
-- **Test command:** `python manage.py test <label> --keepdb`. The `--keepdb` flag is required — without it the runner prompts interactively and the run aborts.
+- **Python interpreter:** `/home/bigaddict/Projects/Codebases/brantech-full-website/brandtechsolution/.venv/bin/python`. Plain `python`/`python3` do NOT have Django installed. Every command below that starts `python manage.py …` must be run with this absolute interpreter path. Export it once per shell for convenience: `PY=/home/bigaddict/Projects/Codebases/brantech-full-website/brandtechsolution/.venv/bin/python`.
+- **Test command:** `$PY manage.py test <label> --keepdb`. The `--keepdb` flag is required — without it the runner prompts interactively and the run aborts.
+- **Baseline:** `$PY manage.py test messaging --keepdb` reports **104 tests, OK** before this plan begins. No task may reduce that count or introduce a failure.
 - **Validation status values:** exactly `unknown`, `valid`, `invalid_syntax`, `invalid_domain`.
 - **Campaign statuses:** `draft`, `queued`, `sending`, `sent`, `paused`, `failed`.
 - **Recipient statuses:** `pending`, `sending`, `sent`, `failed`, `skipped`.
@@ -67,7 +69,7 @@ Pure functions with no database involvement. `domain_has_mx` performs a DNS look
 Run:
 
 ```bash
-python -m pip install dnspython
+$PY -m pip install dnspython
 ```
 
 Expected: `Successfully installed dnspython-2.x.x` (or `Requirement already satisfied`).
@@ -164,7 +166,7 @@ Note `import dns.exception` is reached via `import dns.resolver` (the `dns.resol
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_validation --keepdb -v 2
+$PY manage.py test messaging.tests.test_validation --keepdb -v 2
 ```
 
 Expected: FAIL — `ModuleNotFoundError: No module named 'messaging.validation'`.
@@ -259,7 +261,7 @@ def domain_has_mx(domain):
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_validation --keepdb -v 2
+$PY manage.py test messaging.tests.test_validation --keepdb -v 2
 ```
 
 Expected: PASS — `Ran 14 tests ... OK`.
@@ -323,7 +325,7 @@ Check the existing imports at the top of `test_audience.py` — add whatever of 
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_audience --keepdb -v 2
+$PY manage.py test messaging.tests.test_audience --keepdb -v 2
 ```
 
 Expected: FAIL — `AttributeError: 'CampaignRecipient' object has no attribute 'validation_status'`.
@@ -352,7 +354,7 @@ In `messaging/models.py`, inside `class CampaignRecipient`, immediately after th
 Run:
 
 ```bash
-python manage.py makemigrations messaging
+$PY manage.py makemigrations messaging
 ```
 
 Expected: `Migrations for 'messaging': messaging/migrations/0009_campaignrecipient_validation_status_and_more.py` listing two `AddField` operations. Record the exact generated filename — it is needed for the commit.
@@ -360,7 +362,7 @@ Expected: `Migrations for 'messaging': messaging/migrations/0009_campaignrecipie
 Run:
 
 ```bash
-python manage.py migrate messaging
+$PY manage.py migrate messaging
 ```
 
 Expected: `Applying messaging.0009_...  OK`.
@@ -399,7 +401,7 @@ Nothing else in the function changes: the `count`/`campaign.total` write below i
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_audience --keepdb -v 2
+$PY manage.py test messaging.tests.test_audience --keepdb -v 2
 ```
 
 Expected: PASS, including the pre-existing audience tests.
@@ -504,7 +506,7 @@ class ValidateCampaignRecipientsTests(TestCase):
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_validation --keepdb -v 2
+$PY manage.py test messaging.tests.test_validation --keepdb -v 2
 ```
 
 Expected: FAIL — `ImportError: cannot import name 'validate_campaign_recipients'`.
@@ -556,7 +558,7 @@ from django.utils import timezone
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_validation --keepdb -v 2
+$PY manage.py test messaging.tests.test_validation --keepdb -v 2
 ```
 
 Expected: PASS — all 20 tests.
@@ -760,7 +762,7 @@ class RecipientAddTests(RecipientApiTestBase):
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_recipient_api --keepdb -v 2
+$PY manage.py test messaging.tests.test_recipient_api --keepdb -v 2
 ```
 
 Expected: FAIL — every test 404s, because `/api/messaging/recipients/` is not routed.
@@ -900,7 +902,7 @@ router.register(r"recipients", api.CampaignRecipientViewSet, basename="recipient
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_recipient_api --keepdb -v 2
+$PY manage.py test messaging.tests.test_recipient_api --keepdb -v 2
 ```
 
 Expected: PASS — 20 tests.
@@ -1034,7 +1036,7 @@ class RecipientRemoveTests(RecipientApiTestBase):
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_recipient_api.RecipientRemoveTests --keepdb -v 2
+$PY manage.py test messaging.tests.test_recipient_api.RecipientRemoveTests --keepdb -v 2
 ```
 
 Expected: FAIL — the default `ModelViewSet.destroy` deletes unconditionally, so `test_queued_removal_marks_skipped_and_keeps_total` and the sent/failed-campaign tests fail (204 instead of 400, rows gone).
@@ -1096,7 +1098,7 @@ Then add this method to `CampaignRecipientViewSet`, after `perform_create`:
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_recipient_api --keepdb -v 2
+$PY manage.py test messaging.tests.test_recipient_api --keepdb -v 2
 ```
 
 Expected: PASS — 32 tests.
@@ -1262,7 +1264,7 @@ class RecipientRemoveInvalidTests(RecipientApiTestBase):
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_recipient_api --keepdb -v 2
+$PY manage.py test messaging.tests.test_recipient_api --keepdb -v 2
 ```
 
 Expected: FAIL — the two action URLs 404.
@@ -1329,7 +1331,7 @@ Note the method is named `validate` on a **viewset**, not a serializer — there
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_recipient_api --keepdb -v 2
+$PY manage.py test messaging.tests.test_recipient_api --keepdb -v 2
 ```
 
 Expected: PASS — 44 tests.
@@ -1339,7 +1341,7 @@ Expected: PASS — 44 tests.
 Run:
 
 ```bash
-python manage.py test messaging --keepdb
+$PY manage.py test messaging --keepdb
 ```
 
 Expected: OK, with no failures. The previously-passing 104 messaging tests plus the new ones.
@@ -1395,7 +1397,7 @@ In `messaging/tests/test_admin_panel_render.py`, extend the two loops in `test_p
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_admin_panel_render --keepdb -v 2
+$PY manage.py test messaging.tests.test_admin_panel_render --keepdb -v 2
 ```
 
 Expected: FAIL — `AssertionError: 'id="recipientsModal"' not found in ...`.
@@ -1652,7 +1654,7 @@ In `brand/templates/brand/admin_panel.html`, after the `campaigns.js` line (line
 Run:
 
 ```bash
-python manage.py test messaging.tests.test_admin_panel_render --keepdb -v 2
+$PY manage.py test messaging.tests.test_admin_panel_render --keepdb -v 2
 ```
 
 Expected: PASS.
@@ -1717,7 +1719,7 @@ you asking for it.
 Run:
 
 ```bash
-python manage.py test messaging --keepdb
+$PY manage.py test messaging --keepdb
 ```
 
 Expected: OK, no failures.
