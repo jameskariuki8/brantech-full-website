@@ -109,6 +109,18 @@ class CampaignRecipient(models.Model):
     email = models.EmailField()
     name = models.CharField(max_length=200, blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    VALIDATION_CHOICES = [
+        ("unknown", "Not checked"),
+        ("valid", "Valid"),
+        ("invalid_syntax", "Malformed address"),
+        ("invalid_domain", "Domain has no mail server"),
+    ]
+    validation_status = models.CharField(
+        max_length=20, choices=VALIDATION_CHOICES, default="unknown"
+    )
+    # Set by the MX pass only. A row whose syntax was checked at build time
+    # but whose domain has never been looked up leaves this null.
+    validated_at = models.DateTimeField(null=True, blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     error = models.TextField(blank=True, default="")
     sent_at = models.DateTimeField(null=True, blank=True)

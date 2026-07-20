@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 
 from appointments.models import Appointment
 from .models import CampaignRecipient, Inquiry, Suppression
+from .validation import validate_syntax
 
 SOURCE_KEYS = {"inquiries", "users", "appointments"}
 
@@ -55,7 +56,14 @@ def build_recipients(campaign, source_keys, manual_emails):
     recipients = resolve_recipients(source_keys, manual_emails)
     CampaignRecipient.objects.bulk_create(
         [
-            CampaignRecipient(campaign=campaign, email=r["email"], name=r["name"])
+            CampaignRecipient(
+                campaign=campaign,
+                email=r["email"],
+                name=r["name"],
+                validation_status=(
+                    "valid" if validate_syntax(r["email"]) else "invalid_syntax"
+                ),
+            )
             for r in recipients
         ],
         ignore_conflicts=True,

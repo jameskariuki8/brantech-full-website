@@ -3,6 +3,7 @@ from django.test import TestCase
 from appointments.models import Appointment
 from messaging.models import Campaign, CampaignRecipient, Inquiry, Suppression
 from messaging import audience
+from messaging.audience import build_recipients
 
 
 class AudienceTests(TestCase):
@@ -46,3 +47,29 @@ class AudienceTests(TestCase):
         self.assertEqual(n, 2)
         self.assertEqual(c.total, 2)
         self.assertEqual(CampaignRecipient.objects.filter(campaign=c).count(), 2)
+
+
+class BuildRecipientsValidationTests(TestCase):
+    def _campaign(self):
+        return Campaign.objects.create(
+            name="C", subject="S", body_source="<p>x</p>", body_html="<p>x</p>"
+        )
+
+    def test_well_formed_address_is_marked_valid(self):
+        campaign = self._campaign()
+        build_recipients(campaign, [], ["ada@example.com"])
+        row = CampaignRecipient.objects.get(campaign=campaign, email="ada@example.com")
+        self.assertEqual(row.validation_status, "valid")
+
+    def test_malformed_address_is_marked_invalid_syntax(self):
+        campaign = self._campaign()
+        build_recipients(campaign, [], ["not-an-email"])
+        row = CampaignRecipient.objects.get(campaign=campaign, email="not-an-email")
+        self.assertEqual(row.validation_status, "invalid_syntax")
+
+    def test_build_does_not_stamp_validated_at(self):
+        # Syntax is checked at build; the MX pass is a separate, explicit action.
+        campaign = self._campaign()
+        build_recipients(campaign, [], ["ada@example.com"])
+        row = CampaignRecipient.objects.get(campaign=campaign, email="ada@example.com")
+        self.assertIsNone(row.validated_at)
