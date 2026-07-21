@@ -45,9 +45,15 @@ def create_presets(apps, schema_editor):
         group.permissions.set(perms)
 
 
-def remove_presets(apps, schema_editor):
-    Group = apps.get_model("auth", "Group")
-    Group.objects.filter(name__in=PRESETS).delete()
+def noop_reverse(apps, schema_editor):
+    """Reversing drops nothing: once created, these groups are user-owned.
+
+    Preset roles are ordinary, freely editable auth.Group rows. A user who
+    keeps a preset's name but customises its permissions and adds members
+    would lose that group and all its memberships on any reverse (a
+    rollback, `migrate staff 0001`, or a future squash) if we deleted by
+    name here.
+    """
 
 
 class Migration(migrations.Migration):
@@ -61,5 +67,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_presets, remove_presets),
+        migrations.RunPython(create_presets, noop_reverse),
     ]
