@@ -116,3 +116,74 @@ class RoleWriteTest(TestCase):
         self.assertEqual(resp.status_code, 204)
         self.assertFalse(Group.objects.filter(name="Support").exists())
         self.assertTrue(AuditEntry.objects.filter(action="group_deleted").exists())
+
+    def test_create_without_capabilities_key_is_a_clean_400(self):
+        """Regression: missing `capabilities` on POST must raise DRF validation
+        (400), not fall through to create()'s validated_data.pop("capabilities")
+        KeyError, which DRF's exception handler does not catch and which
+        surfaces as an unhandled 500."""
+        resp = self.client.post(
+            "/api/staff/roles/",
+            json.dumps({"name": "Interns"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(Group.objects.filter(name="Interns").exists())
+
+    def test_put_without_capabilities_key_is_rejected(self):
+        """Regression: a full replace (PUT) omitting `capabilities` must not
+        fail open and silently preserve the role's existing permissions -
+        it should be rejected as a 400, same as any other missing required
+        field on a non-partial update."""
+        group = Group.objects.get(name="Editor")
+        before = list(group.permissions.values_list("codename", flat=True))
+        resp = self.client.put(
+            f"/api/staff/roles/{group.pk}/",
+            json.dumps({"name": "Editor"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        group.refresh_from_db()
+        self.assertEqual(
+            list(group.permissions.values_list("codename", flat=True)), before
+        )
+
+    def test_patch_without_capabilities_key_leaves_them_unchanged(self):
+        """Guard against over-correction: PATCH is partial by design, so
+        omitting `capabilities` must still succeed and leave the role's
+        existing capabilities untouched."""
+        group = Group.objects.get(name="Editor")
+        before = list(group.permissions.values_list("codename", flat=True))
+        resp = self.client.patch(
+            f"/api/staff/roles/{group.pk}/",
+            json.dumps({"name": "Senior Editor"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        group.refresh_from_db()
+        self.assertEqual(group.name, "Senior Editor")
+        self.assertEqual(
+            list(group.permissions.values_list("codename", flat=True)), before
+        )
+
+    def test_create_response_includes_member_count(self):
+        """Regression: create() built the Group via plain Group.objects.create(),
+        bypassing the annotated get_queryset(), so member_count silently
+        disappeared from the create response while list/retrieve/update kept it."""
+        resp = self.client.post(
+            "/api/staff/roles/",
+            json.dumps({"name": "Interns", "capabilities": []}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["member_count"], 0)
+
+    def test_read_still_returns_capabilities(self):
+        """Regression guard for the write_only=True fix: capabilities must
+        still appear in read responses via to_representation()'s override,
+        proving write_only excludes the field from input defaulting/output
+        machinery without removing it from the actual response body."""
+        resp = self.client.get("/api/staff/roles/")
+        self.assertEqual(resp.status_code, 200)
+        by_name = {r["name"]: r for r in resp.json()["results"]}
+        self.assertIn("manage_blog", by_name["Editor"]["capabilities"])
