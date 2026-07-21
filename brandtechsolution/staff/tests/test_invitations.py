@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 
 from django.contrib.auth.models import Group, Permission, User
 from django.core import mail, signing
@@ -243,3 +244,136 @@ class InvitationResendTest(TestCase):
         self.invitation.save()
         self.assertEqual(self._resend().status_code, 404)
         self.assertEqual(len(mail.outbox), 0)
+
+
+class AcceptanceCollisionTest(TestCase):
+    """The invited address may be registered through the public /signup/
+    page between the invitation being issued and being accepted."""
+
+    def setUp(self):
+        self.invitation = StaffInvitation.objects.create(email="new@example.com")
+        self.token = make_invitation_token(self.invitation.pk)
+
+    def _accept(self):
+        return self.client.post(
+            f"/staff/invite/{self.token}/",
+            {"password1": "Sunfish-Bracket-41", "password2": "Sunfish-Bracket-41"},
+        )
+
+    def test_a_taken_username_is_refused_cleanly(self):
+        # Previously an unhandled IntegrityError - a 500, not a 409.
+        User.objects.create_user("new@example.com", password="x")
+        self.assertEqual(self._accept().status_code, 409)
+
+    def test_a_taken_email_on_another_username_is_refused(self):
+        # Two accounts sharing one address would make password reset ambiguous.
+        User.objects.create_user("someone", email="new@example.com", password="x")
+        self.assertEqual(self._accept().status_code, 409)
+
+    def test_a_refused_acceptance_does_not_burn_the_invitation(self):
+        user = User.objects.create_user("new@example.com", password="x")
+        self.assertEqual(self._accept().status_code, 409)
+        self.invitation.refresh_from_db()
+        self.assertIsNone(self.invitation.accepted_at)
+        # Once the colliding account is gone the original link still works.
+        user.delete()
+        self.assertEqual(self._accept().status_code, 302)
+
+
+class PasswordPolicyTest(TestCase):
+    def setUp(self):
+        self.invitation = StaffInvitation.objects.create(email="new@example.com")
+        self.token = make_invitation_token(self.invitation.pk)
+
+    def _accept(self, password):
+        return self.client.post(
+            f"/staff/invite/{self.token}/",
+            {"password1": password, "password2": password},
+        )
+
+    def test_configured_validators_are_applied(self):
+        # This is the only form in the codebase that mints is_staff accounts,
+        # so AUTH_PASSWORD_VALIDATORS must not be bypassed here.
+        for weak in ["1234567890", "password12", "new@example.com"]:
+            with self.subTest(password=weak):
+                self.assertEqual(self._accept(weak).status_code, 200)
+                self.assertFalse(User.objects.filter(username=weak).exists())
+        self.assertFalse(StaffInvitation.objects.get(pk=self.invitation.pk).accepted_at)
+
+    def test_a_strong_password_is_accepted(self):
+        self.assertEqual(self._accept("Sunfish-Bracket-41").status_code, 302)
+
+
+class ReinviteAfterAcceptanceTest(TestCase):
+    def test_an_accepted_address_can_be_invited_again(self):
+        # Someone leaves, their account is deleted, they are re-hired. A plain
+        # unique=True on email would block this permanently with no API path
+        # to clear the stale row.
+        admin = staff_with("manage_staff", username="admin")
+        StaffInvitation.objects.create(
+            email="alum@example.com", accepted_at=timezone.now()
+        )
+        self.client.force_login(admin)
+        resp = self.client.post(
+            "/api/staff/invitations/",
+            json.dumps({"email": "alum@example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201)
+
+    def test_a_second_pending_invitation_is_still_refused(self):
+        # DRF builds a condition-aware validator from Meta.constraints, so a
+        # duplicate PENDING invitation is still a clean 400, not a 500.
+        admin = staff_with("manage_staff", username="admin")
+        StaffInvitation.objects.create(email="dup@example.com")
+        self.client.force_login(admin)
+        resp = self.client.post(
+            "/api/staff/invitations/",
+            json.dumps({"email": "dup@example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("already exists", str(resp.json()["email"]))
+
+
+class ResendCollisionTest(TestCase):
+    def test_resend_is_refused_once_the_address_is_taken(self):
+        # Resending here would mail a link that can only ever 409.
+        admin = staff_with("manage_staff", username="admin")
+        invitation = StaffInvitation.objects.create(email="new@example.com")
+        User.objects.create_user("new@example.com", password="x")
+        self.client.force_login(admin)
+        resp = self.client.post(f"/api/staff/invitations/{invitation.pk}/resend/")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class ConcurrentAcceptanceTest(TestCase):
+    """The guarded UPDATE, tested as the sole defence.
+
+    test_a_token_cannot_be_used_twice is sequential: by the time the second
+    request arrives, the pre-read at views.py already returns None and
+    short-circuits to 410, so the guarded UPDATE is never reached and that
+    test passes even with the guard removed. Here a competing acceptance
+    lands *after* the pre-read - during password validation - so the guard
+    is the only thing standing between one link and two accounts.
+    """
+
+    def test_a_second_acceptance_landing_mid_request_is_refused(self):
+        invitation = StaffInvitation.objects.create(email="new@example.com")
+        token = make_invitation_token(invitation.pk)
+
+        def claim_it_first(*args, **kwargs):
+            StaffInvitation.objects.filter(pk=invitation.pk).update(
+                accepted_at=timezone.now()
+            )
+            User.objects.create_user("new@example.com", password="x", is_staff=True)
+
+        with mock.patch("staff.views.validate_password", side_effect=claim_it_first):
+            resp = self.client.post(
+                f"/staff/invite/{token}/",
+                {"password1": "Sunfish-Bracket-41", "password2": "Sunfish-Bracket-41"},
+            )
+
+        self.assertEqual(resp.status_code, 410)
+        self.assertEqual(User.objects.filter(username="new@example.com").count(), 1)

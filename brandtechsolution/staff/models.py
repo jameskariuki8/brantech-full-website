@@ -31,6 +31,8 @@ class AuditEntry(models.Model):
 
     ACTION_CHOICES = [
         ("invite_sent", "Invitation sent"),
+        ("invite_resent", "Invitation resent"),
+        ("invite_send_failed", "Invitation email failed"),
         ("invite_revoked", "Invitation revoked"),
         ("invite_accepted", "Invitation accepted"),
         ("roles_changed", "Roles changed"),
@@ -74,7 +76,7 @@ class AuditEntry(models.Model):
 class StaffInvitation(models.Model):
     """A pending staff account. No User row exists until it is accepted."""
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField()
     groups = models.ManyToManyField("auth.Group", blank=True)
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
@@ -86,6 +88,17 @@ class StaffInvitation(models.Model):
     class Meta:
         ordering = ["-created_at"]
         default_permissions = ()
+        constraints = [
+            # Only PENDING invitations are unique. Accepted rows are kept as
+            # history, and a plain unique=True on email would let one of them
+            # block that address from ever being invited again - which is the
+            # ordinary case of someone leaving and later being re-hired.
+            models.UniqueConstraint(
+                fields=["email"],
+                condition=models.Q(accepted_at__isnull=True),
+                name="unique_pending_invitation_email",
+            ),
+        ]
 
     def __str__(self):
         return self.email

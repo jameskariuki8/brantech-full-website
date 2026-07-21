@@ -1,9 +1,9 @@
 from django.contrib.auth.models import Group, User
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
@@ -197,9 +197,22 @@ class InvitationViewSet(
                 detail={"email": invitation.email,
                         "roles": sorted(g.name for g in invitation.groups.all())},
             )
-        # Sent after the transaction commits: a failed send must not leave a
-        # committed audit entry describing an email that never went out.
-        send_invitation(invitation, self.request)
+        # Deliberately outside the transaction, and deliberately NOT rolling
+        # it back on failure: if the mail server is down we keep the
+        # invitation row so it can be resent, rather than losing it. The
+        # trade-off is that the audit entry can outlive a send that failed,
+        # so the failure is recorded too instead of surfacing as a 500.
+        try:
+            send_invitation(invitation, self.request)
+        except Exception:
+            record(
+                actor=self.request.user,
+                action="invite_send_failed",
+                summary=(
+                    f"Invitation email to {invitation.email} could not be sent"
+                ),
+                detail={"email": invitation.email},
+            )
 
     @action(detail=True, methods=["post"])
     def resend(self, request, pk=None):
@@ -211,6 +224,18 @@ class InvitationViewSet(
         accepted one 404s here rather than re-opening a closed account.
         """
         invitation = self.get_object()
+
+        # The address may have been registered through the public /signup/
+        # page since the invitation was issued, in which case accepting it
+        # cannot succeed - so resending would only mail a link that dead-ends.
+        if User.objects.filter(
+            Q(username__iexact=invitation.email) | Q(email__iexact=invitation.email)
+        ).exists():
+            raise ValidationError(
+                "An account now exists for this address. Revoke this invitation "
+                "and edit that person's roles instead."
+            )
+
         send_invitation(invitation, request)
         record(
             actor=request.user,
