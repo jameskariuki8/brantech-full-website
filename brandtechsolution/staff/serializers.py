@@ -1,4 +1,4 @@
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Group, Permission, User
 from django.db.models import Count
 from rest_framework import serializers
 
@@ -64,3 +64,27 @@ class RoleSerializer(serializers.ModelSerializer):
             ).values_list("codename", flat=True)
         )
         return data
+
+
+class PersonSerializer(serializers.ModelSerializer):
+    # `roles` is read-only and computed by get_roles(); `role_ids` is the
+    # write path (source="groups") and is write_only=True so DRF's default
+    # get_attribute() never looks for a `role_ids` attribute on the User
+    # instance when rendering a response - that attribute doesn't exist and
+    # would raise AttributeError on read otherwise.
+    roles = serializers.SerializerMethodField()
+    role_ids = serializers.PrimaryKeyRelatedField(
+        source="groups", queryset=Group.objects.all(), many=True, write_only=True,
+        required=False,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "username", "email", "first_name", "last_name",
+            "is_active", "is_superuser", "roles", "role_ids", "date_joined",
+        ]
+        read_only_fields = ["username", "is_superuser", "date_joined"]
+
+    def get_roles(self, obj):
+        return sorted(g.name for g in obj.groups.all())
