@@ -42,7 +42,13 @@ class PeopleListTest(TestCase):
 
 class RoleAssignmentTest(TestCase):
     def setUp(self):
-        self.admin = staff_with("manage_staff", username="admin")
+        # Also holds the Editor role's capabilities: assigning that role
+        # below is a grant, and grants are only permitted for capabilities
+        # the actor already has (see GrantRestrictionTest).
+        self.admin = staff_with(
+            "manage_staff", "manage_blog", "publish_blog", "manage_projects",
+            username="admin",
+        )
         self.target = staff_with(username="target")
         self.client.force_login(self.admin)
 
@@ -126,3 +132,119 @@ class SelfLockoutTest(TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, 200)
+
+
+class SuperuserProtectionTest(TestCase):
+    """A non-superuser must not be able to alter a superuser account, even
+    with manage_staff. Only another superuser (or the superuser themself) may."""
+
+    def setUp(self):
+        self.admin = staff_with("manage_staff", username="admin")
+        self.root = User.objects.create_superuser("root", password="p")
+        self.client.force_login(self.admin)
+
+    def test_non_superuser_cannot_change_a_superusers_roles(self):
+        """Regression: a manage_staff holder could otherwise reassign the
+        site's one superuser's roles, stripping their standing."""
+        editor = Group.objects.get(name="Editor")
+        resp = self.client.patch(
+            f"/api/staff/people/{self.root.pk}/",
+            json.dumps({"role_ids": [editor.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.root.refresh_from_db()
+        self.assertEqual(list(self.root.groups.all()), [])
+
+    def test_non_superuser_cannot_deactivate_a_superuser(self):
+        """Regression: a manage_staff holder could otherwise deactivate the
+        owner's superuser account and lock them out of their own site."""
+        resp = self.client.patch(
+            f"/api/staff/people/{self.root.pk}/",
+            json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.root.refresh_from_db()
+        self.assertTrue(self.root.is_active)
+
+    def test_superuser_can_modify_another_superuser(self):
+        """The protection rule must not over-correct into locking superusers
+        out of managing each other."""
+        other_root = User.objects.create_superuser("root2", password="p")
+        self.client.force_login(self.root)
+        resp = self.client.patch(
+            f"/api/staff/people/{other_root.pk}/",
+            json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        other_root.refresh_from_db()
+        self.assertFalse(other_root.is_active)
+
+
+class GrantRestrictionTest(TestCase):
+    """A non-superuser may only grant roles carrying capabilities they
+    themselves hold; removing roles remains unrestricted de-escalation."""
+
+    def setUp(self):
+        self.admin = staff_with("manage_staff", "view_inbox", username="admin")
+        self.target = staff_with(username="target")
+        self.client.force_login(self.admin)
+
+    def test_cannot_add_role_with_capabilities_actor_lacks(self):
+        """Regression: an actor could grant capabilities (e.g. manage_campaigns)
+        they do not hold themselves via a preset role like Marketing."""
+        marketing = Group.objects.get(name="Marketing")
+        resp = self.client.patch(
+            f"/api/staff/people/{self.target.pk}/",
+            json.dumps({"role_ids": [marketing.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.target.refresh_from_db()
+        self.assertEqual(list(self.target.groups.all()), [])
+
+    def test_can_add_role_whose_capabilities_actor_fully_holds(self):
+        inbox_role = Group.objects.create(name="Inbox Viewer")
+        inbox_role.permissions.add(
+            Permission.objects.get(
+                codename="view_inbox", content_type__app_label="staff"
+            )
+        )
+        resp = self.client.patch(
+            f"/api/staff/people/{self.target.pk}/",
+            json.dumps({"role_ids": [inbox_role.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertEqual(list(self.target.groups.all()), [inbox_role])
+
+    def test_can_remove_role_with_capabilities_actor_lacks(self):
+        """De-escalation must stay unrestricted: an admin cleaning up an
+        account should be able to remove a role even if they don't personally
+        hold all its capabilities."""
+        marketing = Group.objects.get(name="Marketing")
+        self.target.groups.add(marketing)
+        resp = self.client.patch(
+            f"/api/staff/people/{self.target.pk}/",
+            json.dumps({"role_ids": []}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertEqual(list(self.target.groups.all()), [])
+
+    def test_superuser_can_grant_any_role(self):
+        root = User.objects.create_superuser("root", password="p")
+        self.client.force_login(root)
+        marketing = Group.objects.get(name="Marketing")
+        resp = self.client.patch(
+            f"/api/staff/people/{self.target.pk}/",
+            json.dumps({"role_ids": [marketing.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.target.refresh_from_db()
+        self.assertEqual(list(self.target.groups.all()), [marketing])

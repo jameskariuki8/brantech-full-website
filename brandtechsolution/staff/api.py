@@ -112,6 +112,37 @@ class PersonViewSet(
                 "You cannot change your own roles or deactivate your own account."
             )
 
+        # The site currently has exactly one superuser: the owner. Without
+        # this check, anyone delegated manage_staff could reassign the
+        # owner's roles or deactivate their account and lock them out of
+        # their own site. Superusers remain the escape hatch and can manage
+        # each other (including themselves) freely.
+        if target.is_superuser and not actor.is_superuser:
+            raise PermissionDenied(
+                "You cannot change a superuser's roles or active state."
+            )
+
+        # An actor may only grant capabilities they already hold. Only
+        # additions are checked - removing a role is de-escalation and stays
+        # unrestricted, so an admin can still clean up an account even if
+        # they don't personally hold every capability being stripped.
+        # Superusers pass has_perm() for everything, but the exemption is
+        # spelled out here rather than left incidental.
+        if not actor.is_superuser and "groups" in serializer.validated_data:
+            current_roles = set(target.groups.all())
+            new_roles = set(serializer.validated_data["groups"])
+            for role in new_roles - current_roles:
+                role_codenames = role.permissions.filter(
+                    content_type__app_label="staff"
+                ).values_list("codename", flat=True)
+                for codename in role_codenames:
+                    if not actor.has_perm(f"staff.{codename}"):
+                        raise PermissionDenied(
+                            f"You cannot grant the '{role.name}' role: it "
+                            f"includes the '{codename}' capability, which "
+                            "you do not hold yourself."
+                        )
+
         with transaction.atomic():
             before_roles = sorted(g.name for g in target.groups.all())
             was_active = target.is_active
