@@ -1,15 +1,16 @@
 """Access control on the public content APIs.
 
 These endpoints are readable by anyone (the public blog and projects pages
-fetch them), but writing must require a staff account. Two separate route
-sets reach the same models -- the function views in api_views.py and the
-router viewsets in api.py -- so both are covered here.
+fetch them), but writing must require staff plus the relevant capability
+(manage_blog / manage_projects). The duplicate router viewsets in api.py and
+the unused /api/events/ route have been deleted; DeletedRouteTest confirms
+they stay gone.
 """
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 
-from brand.models import BlogPost, Event, Project
+from brand.models import BlogPost, Project
 
 
 class ContentApiReadAccessTest(TestCase):
@@ -84,6 +85,13 @@ class StaffCanStillWriteTest(TestCase):
 
     def setUp(self):
         self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff.user_permissions.add(
+            *Permission.objects.filter(
+                codename__in=("manage_blog", "manage_projects"),
+                content_type__app_label="staff",
+            )
+        )
+        self.staff = User.objects.get(pk=self.staff.pk)
         self.client.force_login(self.staff)
 
     def test_staff_can_create_post(self):
@@ -111,64 +119,68 @@ class StaffCanStillWriteTest(TestCase):
         self.assertTrue(Project.objects.filter(title="legit").exists())
 
 
-class EventApiPermissionTest(TestCase):
-    """/api/events/ is a router viewset with no shadowing function view."""
-
-    EVENT = {
-        "title": "anon event",
-        "description": "x",
-        "event_type": "webinar",
-        "date": "2027-01-01T10:00:00Z",
-    }
-
-    def test_anonymous_cannot_create_event(self):
-        resp = self.client.post("/api/events/", self.EVENT)
-        self.assertIn(resp.status_code, (401, 403))
-        self.assertFalse(Event.objects.filter(title="anon event").exists())
-
-    def test_anonymous_cannot_delete_event(self):
-        ev = Event.objects.create(
-            title="victim", description="x", event_type="webinar",
-            date="2027-01-01T10:00:00Z",
+def staff_with(*codenames):
+    user = User.objects.create_user("cap", password="p", is_staff=True)
+    if codenames:
+        user.user_permissions.add(
+            *Permission.objects.filter(
+                codename__in=codenames, content_type__app_label="staff"
+            )
         )
-        resp = self.client.delete(f"/api/events/{ev.pk}/")
-        self.assertIn(resp.status_code, (401, 403))
-        self.assertTrue(Event.objects.filter(pk=ev.pk).exists())
+    return User.objects.get(pk=user.pk)
 
-    def test_non_staff_cannot_create_event(self):
-        self.client.force_login(User.objects.create_user("randomer", password="p"))
-        resp = self.client.post("/api/events/", self.EVENT)
+
+class ContentCapabilityTest(TestCase):
+    def setUp(self):
+        self.post = BlogPost.objects.create(
+            title="t", content="c", excerpt="e", category="cat"
+        )
+
+    def test_staff_without_manage_blog_cannot_create(self):
+        self.client.force_login(staff_with())
+        resp = self.client.post(
+            "/api/posts/",
+            {"title": "x", "content": "c", "excerpt": "e", "category": "cat"},
+        )
         self.assertEqual(resp.status_code, 403)
-        self.assertFalse(Event.objects.filter(title="anon event").exists())
 
-    def test_staff_can_create_event(self):
-        self.client.force_login(
-            User.objects.create_user("staff", password="p", is_staff=True)
+    def test_manage_blog_can_create(self):
+        self.client.force_login(staff_with("manage_blog"))
+        resp = self.client.post(
+            "/api/posts/",
+            {"title": "x", "content": "c", "excerpt": "e", "category": "cat"},
         )
-        resp = self.client.post("/api/events/", self.EVENT)
         self.assertEqual(resp.status_code, 201)
 
-
-class RouterBypassTest(TestCase):
-    """The function views shadow the router only on <int:pk> paths.
-
-    DRF's DefaultRouter also serves format-suffixed routes such as
-    /api/posts.json, which no function view shadows. If the viewsets are
-    unprotected, those are an unauthenticated way to the same models.
-    """
-
-    def test_anonymous_cannot_create_post_via_format_suffix(self):
+    def test_manage_blog_does_not_grant_project_access(self):
+        self.client.force_login(staff_with("manage_blog"))
         resp = self.client.post(
-            "/api/posts.json",
-            {"title": "pwned", "content": "x", "excerpt": "x", "category": "x"},
+            "/api/projects/",
+            {"title": "x", "description": "d", "short_description": "s"},
         )
-        self.assertIn(resp.status_code, (401, 403))
-        self.assertFalse(BlogPost.objects.filter(title="pwned").exists())
+        self.assertEqual(resp.status_code, 403)
 
-    def test_anonymous_cannot_create_project_via_format_suffix(self):
+    def test_manage_projects_can_create_projects(self):
+        self.client.force_login(staff_with("manage_projects"))
         resp = self.client.post(
-            "/api/projects.json",
-            {"title": "pwned", "description": "x", "short_description": "x"},
+            "/api/projects/",
+            {"title": "x", "description": "d", "short_description": "s"},
         )
-        self.assertIn(resp.status_code, (401, 403))
-        self.assertFalse(Project.objects.filter(title="pwned").exists())
+        self.assertEqual(resp.status_code, 201)
+
+    def test_reads_remain_public(self):
+        self.assertEqual(self.client.get("/api/posts/").status_code, 200)
+        self.assertEqual(self.client.get("/api/projects/").status_code, 200)
+
+
+class DeletedRouteTest(TestCase):
+    """The duplicate router routes and the unused events route are gone."""
+
+    def test_events_route_is_gone(self):
+        self.assertEqual(self.client.get("/api/events/").status_code, 404)
+
+    def test_posts_format_suffix_route_is_gone(self):
+        self.assertEqual(self.client.get("/api/posts.json").status_code, 404)
+
+    def test_projects_format_suffix_route_is_gone(self):
+        self.assertEqual(self.client.get("/api/projects.json").status_code, 404)

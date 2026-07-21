@@ -5,15 +5,16 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage
 from .models import BlogPost, Project
 
-def staff_required(request):
-    """Return an error response unless the request comes from a staff member.
+def capability_required_json(request, codename):
+    """Return an error response unless the request carries a capability.
 
-    Returns None when the request may proceed. Reads on these endpoints are
-    public; only the write branches call this.
+    Returns None when the request may proceed. These are plain JSON views
+    rather than DRF, so they return a response instead of raising.
     """
-    if not request.user.is_authenticated:
+    user = request.user
+    if not user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
-    if not request.user.is_staff:
+    if not (user.is_staff and user.has_perm(f'staff.{codename}')):
         return JsonResponse({'error': 'Forbidden'}, status=403)
     return None
 
@@ -98,7 +99,7 @@ def post_list(request):
         }, safe=False)
     
     if request.method == "POST":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_blog')
         if denied:
             return denied
         try:
@@ -188,11 +189,11 @@ def post_detail(request, pk):
             
     # Redefining logic to support POST for updates on detail view
     if request.method == "POST" or request.method == "PUT":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_blog')
         if denied:
             return denied
         try:
-            # If PUT, request.POST might be empty. 
+            # If PUT, request.POST might be empty.
             # Let's check if we have data. If not, maybe it's a JSON body?
             # But we are sending FormData. 
             # I'll update the JS to send POST. That's the most robust fix.
@@ -213,7 +214,7 @@ def post_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_blog')
         if denied:
             return denied
         post.delete()
@@ -252,7 +253,7 @@ def project_list(request):
         }, safe=False)
     
     if request.method == "POST":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_projects')
         if denied:
             return denied
         try:
@@ -295,7 +296,7 @@ def project_detail(request, pk):
         return JsonResponse(data)
 
     if request.method == "POST" or request.method == "PUT":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_projects')
         if denied:
             return denied
         try:
@@ -315,7 +316,7 @@ def project_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_projects')
         if denied:
             return denied
         project.delete()
