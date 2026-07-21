@@ -60,6 +60,9 @@ class BlogViewTests(TestCase):
             excerpt="A short summary.",
             content="# Heading\n\nThe **body** content.",
             category="AI & Machine Learning",
+            # Posts now default to draft, and the public views filter those
+            # out. These tests are about the published reading experience.
+            status="published",
         )
 
     def test_get_absolute_url(self):
