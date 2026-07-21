@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 
@@ -97,3 +99,83 @@ class PublishCapabilityTest(TestCase):
              "category": "cat", "status": "draft"},
         )
         self.assertEqual(resp.status_code, 403)
+
+
+class DraftLeakPathsTest(TestCase):
+    """Task 6 review finding: drafts leaked through three other paths besides
+    the two server-rendered public views (/api/posts/, /api/posts/<pk>/,
+    /api/blog-posts/, and the AI chat retriever tool)."""
+
+    def setUp(self):
+        self.draft = BlogPost.objects.create(
+            title="Secret draft post", content="c", excerpt="e",
+            category="cat", status="draft",
+        )
+        self.live = BlogPost.objects.create(
+            title="Live published post", content="c", excerpt="e",
+            category="cat", status="published",
+        )
+
+    # --- Leak 1: brand/api_views.py post_list / post_detail ---
+
+    def test_anonymous_post_list_hides_draft_title(self):
+        resp = self.client.get("/api/posts/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "Secret draft post")
+        self.assertContains(resp, "Live published post")
+
+    def test_anonymous_post_detail_404s_for_draft(self):
+        resp = self.client.get(f"/api/posts/{self.draft.pk}/")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_staff_without_manage_blog_cannot_see_draft_in_list(self):
+        self.client.force_login(staff_with())
+        resp = self.client.get("/api/posts/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "Secret draft post")
+
+    def test_staff_without_manage_blog_gets_404_for_draft_detail(self):
+        self.client.force_login(staff_with())
+        resp = self.client.get(f"/api/posts/{self.draft.pk}/")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_staff_with_manage_blog_sees_draft_in_list(self):
+        self.client.force_login(staff_with("manage_blog"))
+        resp = self.client.get("/api/posts/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Secret draft post")
+
+    def test_staff_with_manage_blog_sees_draft_detail(self):
+        self.client.force_login(staff_with("manage_blog"))
+        resp = self.client.get(f"/api/posts/{self.draft.pk}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["status"], "draft")
+
+    # --- Leak 2: brand/api.py blog_posts_api ---
+
+    def test_anonymous_blog_posts_api_hides_draft_title(self):
+        resp = self.client.get("/api/blog-posts/")
+        self.assertEqual(resp.status_code, 200)
+        titles = [item["title"] for item in resp.json()]
+        self.assertNotIn("Secret draft post", titles)
+        self.assertIn("Live published post", titles)
+
+    # --- Leak 3: ai_workflows/tools.py BlogRetrieverTool.search ---
+
+    def test_blog_retriever_tool_excludes_drafts(self):
+        self.draft.embedding = [0.1] * 3072
+        self.draft.save(update_fields=["embedding"])
+        self.live.embedding = [0.1] * 3072
+        self.live.save(update_fields=["embedding"])
+
+        # Patch the embeddings seam (ai_workflows.tools.get_embeddings) so
+        # BlogRetrieverTool.__init__ never touches the real Gemini API.
+        mock_embeddings = MagicMock()
+        mock_embeddings.embed_query.return_value = [0.1] * 3072
+        with patch("ai_workflows.tools.get_embeddings", return_value=mock_embeddings):
+            from ai_workflows.tools import BlogRetrieverTool
+            tool = BlogRetrieverTool()
+            result = tool.search("anything", k=5)
+
+        self.assertIn("Live published post", result)
+        self.assertNotIn("Secret draft post", result)

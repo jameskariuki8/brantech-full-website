@@ -7,7 +7,7 @@ from .serializers import BlogPostSerializer
 @api_view(['GET'])
 def blog_posts_api(request):
     # Optimize by selecting only required fields
-    posts = BlogPost.objects.all().order_by('-updated_at').only(
+    posts = BlogPost.objects.filter(status='published').order_by('-updated_at').only(
         'id', 'title', 'excerpt', 'content', 'image', 'tags',
         'category', 'featured', 'view_count', 'created_at', 'updated_at'
     )

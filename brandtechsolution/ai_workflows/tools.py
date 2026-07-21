@@ -68,6 +68,7 @@ class BlogRetrieverTool:
             # Use only() to fetch only required fields for better performance
             results = (
                 BlogPost.objects
+                .filter(status='published')
                 .exclude(embedding__isnull=True)
                 .only('title', 'category', 'content')
                 .order_by(L2Distance('embedding', query_embedding))[:k]

@@ -1,5 +1,5 @@
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage
@@ -17,6 +17,17 @@ def capability_required_json(request, codename):
     if not (user.is_staff and user.has_perm(f'staff.{codename}')):
         return JsonResponse({'error': 'Forbidden'}, status=403)
     return None
+
+
+def can_view_drafts(request):
+    """Whether the request is allowed to see draft (unpublished) blog posts.
+
+    Only staff with the manage_blog capability get the unfiltered view;
+    everyone else (including anonymous visitors and staff lacking that
+    capability) only ever sees published posts.
+    """
+    user = request.user
+    return user.is_authenticated and user.is_staff and user.has_perm('staff.manage_blog')
 
 
 # Helper to parse FormData or JSON
@@ -69,6 +80,8 @@ def paginate_queryset(queryset, request, page_size=20):
 def post_list(request):
     if request.method == "GET":
         posts = BlogPost.objects.all().order_by('-created_at')
+        if not can_view_drafts(request):
+            posts = posts.filter(status='published')
         # Use only() to fetch only required fields for better performance
         posts = posts.only('id', 'title', 'slug', 'category', 'excerpt', 'content', 'tags', 'featured', 'status', 'view_count', 'created_at', 'image')
         
@@ -129,8 +142,10 @@ def post_list(request):
 @require_http_methods(["GET", "POST", "PUT", "DELETE"])
 def post_detail(request, pk):
     post = get_object_or_404(BlogPost, pk=pk)
-    
+
     if request.method == "GET":
+        if post.status != 'published' and not can_view_drafts(request):
+            raise Http404("Post not found")
         data = {
             'id': post.id,
             'slug': post.slug,
