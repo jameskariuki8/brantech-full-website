@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 
-from messaging.models import Campaign, EmailTemplate, Inquiry
+from messaging.models import Campaign, CampaignRecipient, EmailTemplate, Inquiry
 
 
 def staff_with(*codenames):
@@ -69,7 +69,10 @@ class CampaignSendCapabilityTest(TestCase):
             status="draft", total=5,
         )
 
-    def test_manage_campaigns_can_edit_but_not_queue(self):
+    def test_manage_campaigns_can_read_but_not_queue(self):
+        # Renamed from test_manage_campaigns_can_edit_but_not_queue: the GET
+        # here only proves read access, not write access. Genuine write
+        # coverage lives in test_manage_campaigns_can_edit_a_campaign below.
         self.client.force_login(staff_with("manage_campaigns"))
         self.assertEqual(
             self.client.get(f"/api/messaging/campaigns/{self.campaign.pk}/").status_code,
@@ -79,6 +82,38 @@ class CampaignSendCapabilityTest(TestCase):
         self.assertEqual(resp.status_code, 403)
         self.campaign.refresh_from_db()
         self.assertEqual(self.campaign.status, "draft")
+
+    def test_manage_campaigns_can_edit_a_campaign(self):
+        self.client.force_login(staff_with("manage_campaigns"))
+        resp = self.client.patch(
+            f"/api/messaging/campaigns/{self.campaign.pk}/",
+            {"name": "Updated name"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.campaign.refresh_from_db()
+        self.assertEqual(self.campaign.name, "Updated name")
+
+    def test_manage_campaigns_can_delete_a_campaign(self):
+        self.client.force_login(staff_with("manage_campaigns"))
+        resp = self.client.delete(f"/api/messaging/campaigns/{self.campaign.pk}/")
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Campaign.objects.filter(pk=self.campaign.pk).exists())
+
+    def test_manage_recipients_can_build_recipients(self):
+        self.client.force_login(staff_with("manage_recipients"))
+        resp = self.client.post(
+            f"/api/messaging/campaigns/{self.campaign.pk}/build_recipients/",
+            {"sources": [], "manual_emails": ["new@example.com"]},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["count"], 1)
+        self.assertTrue(
+            CampaignRecipient.objects.filter(
+                campaign=self.campaign, email="new@example.com"
+            ).exists()
+        )
 
     def test_send_campaigns_can_queue(self):
         self.client.force_login(staff_with("manage_campaigns", "send_campaigns"))
@@ -124,6 +159,23 @@ class RecipientCapabilityTest(TestCase):
         self.client.force_login(staff_with("manage_campaigns"))
         resp = self.client.get(f"/api/messaging/recipients/?campaign={campaign.pk}")
         self.assertEqual(resp.status_code, 403)
+
+    def test_manage_recipients_allows_access(self):
+        campaign = Campaign.objects.create(
+            name="c", subject="s", body_source="<p>b</p>", body_html="<p>b</p>",
+        )
+        self.client.force_login(staff_with("manage_recipients"))
+        resp = self.client.post(
+            "/api/messaging/recipients/",
+            {"campaign": campaign.pk, "email": "new@example.com", "name": "New"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(
+            CampaignRecipient.objects.filter(
+                campaign=campaign, email="new@example.com"
+            ).exists()
+        )
 
 
 class HelperEndpointCapabilityTest(TestCase):
