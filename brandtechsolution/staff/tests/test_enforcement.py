@@ -56,6 +56,25 @@ class HasCapabilityTest(TestCase):
     def test_superuser_is_allowed(self):
         self.assertTrue(self._check(User.objects.create_superuser("r", password="p")))
 
+    def test_deactivated_staff_is_denied(self):
+        """Mirrors the decorator-side deactivation test: has_capability()
+        must deny a deactivated staff account even though is_staff is True
+        and the capability was granted. This relies on has_perm() denying
+        inactive users (via ModelBackend and the superuser bypass both
+        requiring is_active). If has_capability() were ever changed to
+        check is_staff and a cached/raw permission set without going
+        through is_active-aware has_perm(), a deactivated account would
+        keep API access."""
+        user = grant(
+            User.objects.create_user("u", password="p", is_staff=True),
+            "send_campaigns",
+        )
+        user.is_active = False
+        user.save()
+        user = User.objects.get(pk=user.pk)  # drop the permission cache
+
+        self.assertFalse(self._check(user))
+
 
 class CapabilityRequiredTest(TestCase):
     def setUp(self):
@@ -83,6 +102,47 @@ class CapabilityRequiredTest(TestCase):
 
         request = self.factory.get("/appointments/")
         request.user = User.objects.create_user("u", password="p", is_staff=True)
+        with self.assertRaises(PermissionDenied):
+            self.view(request)
+
+    def test_non_staff_with_the_capability_is_denied(self):
+        """is_staff is a floor here too: the DRF side already covers this
+        case (test_non_staff_with_the_permission_is_denied above), but the
+        decorator has its own is_staff check and can regress independently.
+        If someone later simplified the decorator to check only
+        has_perm(), a non-staff user who signed up through the public
+        /signup/ page and was (incorrectly) granted a capability would be
+        able to reach panel views."""
+        from django.core.exceptions import PermissionDenied
+
+        request = self.factory.get("/appointments/")
+        request.user = grant(
+            User.objects.create_user("u", password="p"), "manage_appointments"
+        )
+        with self.assertRaises(PermissionDenied):
+            self.view(request)
+
+    def test_deactivated_staff_is_denied(self):
+        """Deactivating a staff account must revoke panel access even
+        though is_staff and the capability grant are still in place. This
+        currently works only as a side effect of Django internals:
+        ModelBackend.get_all_permissions() returns empty for an inactive
+        user and PermissionsMixin.has_perm()'s superuser bypass requires
+        is_active. If that reliance were ever removed or replaced with a
+        naive is_staff-and-has_perm check that ignores is_active, a
+        deactivated staff account would silently regain access."""
+        from django.core.exceptions import PermissionDenied
+
+        user = grant(
+            User.objects.create_user("u", password="p", is_staff=True),
+            "manage_appointments",
+        )
+        user.is_active = False
+        user.save()
+        user = User.objects.get(pk=user.pk)  # drop the permission cache
+
+        request = self.factory.get("/appointments/")
+        request.user = user
         with self.assertRaises(PermissionDenied):
             self.view(request)
 
