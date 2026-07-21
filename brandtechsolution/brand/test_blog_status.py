@@ -179,3 +179,90 @@ class DraftLeakPathsTest(TestCase):
 
         self.assertIn("Live published post", result)
         self.assertNotIn("Secret draft post", result)
+
+
+class PanelFormStatusTest(TestCase):
+    """The panel's status control, from the server's side.
+
+    The select is rendered disabled for a user without publish_blog, and a
+    disabled control is omitted from FormData - so these requests carry no
+    status key at all. That must remain a normal, successful edit.
+    """
+
+    def setUp(self):
+        self.draft = BlogPost.objects.create(
+            title="t", content="c", excerpt="e", category="cat", status="draft"
+        )
+        self.live = BlogPost.objects.create(
+            title="t2", content="c", excerpt="e", category="cat", status="published"
+        )
+
+    def test_edit_without_a_status_key_succeeds_and_keeps_the_status(self):
+        self.client.force_login(staff_with("manage_blog"))
+        for post in (self.draft, self.live):
+            before = post.status
+            resp = self.client.post(
+                f"/api/posts/{post.pk}/",
+                {"title": "edited", "content": "c", "excerpt": "e",
+                 "category": "cat"},
+            )
+            self.assertEqual(resp.status_code, 200)
+            post.refresh_from_db()
+            self.assertEqual(post.title, "edited")
+            self.assertEqual(post.status, before)
+
+    def test_resubmitting_the_current_status_is_not_a_publish(self):
+        """The control is enabled for a publish_blog holder and always posts a
+        value; leaving it alone must not be treated as a transition."""
+        self.client.force_login(staff_with("manage_blog"))
+        resp = self.client.post(
+            f"/api/posts/{self.live.pk}/",
+            {"title": "edited", "content": "c", "excerpt": "e",
+             "category": "cat", "status": "published"},
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_an_unknown_status_is_rejected(self):
+        self.client.force_login(staff_with("manage_blog", "publish_blog"))
+        resp = self.client.post(
+            f"/api/posts/{self.draft.pk}/",
+            {"title": "t", "content": "c", "excerpt": "e",
+             "category": "cat", "status": "bogus"},
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.draft.refresh_from_db()
+        self.assertEqual(self.draft.status, "draft")
+
+
+class CreateWithStatusTest(TestCase):
+    """Creating straight into published is a publish and is gated as one."""
+
+    payload = {"title": "n", "content": "c", "excerpt": "e", "category": "cat"}
+
+    def test_create_defaults_to_draft(self):
+        self.client.force_login(staff_with("manage_blog"))
+        resp = self.client.post("/api/posts/", self.payload)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(BlogPost.objects.get(title="n").status, "draft")
+
+    def test_create_as_published_needs_publish_blog(self):
+        self.client.force_login(staff_with("manage_blog"))
+        resp = self.client.post(
+            "/api/posts/", {**self.payload, "status": "published"}
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(BlogPost.objects.filter(title="n").exists())
+
+    def test_create_as_published_with_publish_blog(self):
+        self.client.force_login(staff_with("manage_blog", "publish_blog"))
+        resp = self.client.post(
+            "/api/posts/", {**self.payload, "status": "published"}
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(BlogPost.objects.get(title="n").status, "published")
+
+    def test_create_with_an_unknown_status_is_rejected(self):
+        self.client.force_login(staff_with("manage_blog", "publish_blog"))
+        resp = self.client.post("/api/posts/", {**self.payload, "status": "bogus"})
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(BlogPost.objects.filter(title="n").exists())

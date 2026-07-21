@@ -48,4 +48,9 @@ async function editProject(id) {
 }
 
 // Bind initial submit
-document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
+// The section is only rendered for holders of manage_projects, so the form
+// may legitimately be absent.
+const addProjectFormEl = document.getElementById('addProjectForm');
+if (addProjectFormEl) {
+    addProjectFormEl.onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
+}

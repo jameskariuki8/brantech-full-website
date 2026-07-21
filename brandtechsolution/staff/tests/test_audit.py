@@ -60,3 +60,63 @@ class AuditRecordTest(TestCase):
             list(AuditEntry.objects.values_list("summary", flat=True)),
             ["second", "first"],
         )
+
+
+class ActivityApiTest(TestCase):
+    """The /api/staff/activity/ feed backing the panel's Activity tab."""
+
+    def setUp(self):
+        self.actor = User.objects.create_user("actor", password="p", is_staff=True)
+        record(actor=self.actor, action="invite_sent", summary="actor invited x@y.com")
+        record(actor=None, action="invite_accepted", summary="x@y.com joined")
+
+    def _login(self, *codenames):
+        from django.contrib.auth.models import Permission
+
+        user = User.objects.create_user("viewer", password="p", is_staff=True)
+        if codenames:
+            user.user_permissions.add(
+                *Permission.objects.filter(
+                    codename__in=codenames, content_type__app_label="staff"
+                )
+            )
+        self.client.force_login(User.objects.get(pk=user.pk))
+
+    def test_requires_manage_staff(self):
+        self._login("manage_blog")
+        self.assertEqual(self.client.get("/api/staff/activity/").status_code, 403)
+
+    def test_anonymous_is_refused(self):
+        self.assertIn(
+            self.client.get("/api/staff/activity/").status_code, (401, 403)
+        )
+
+    def test_lists_newest_first_and_is_paginated(self):
+        self._login("manage_staff")
+        resp = self.client.get("/api/staff/activity/")
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertIn("results", body)
+        self.assertEqual(
+            [e["summary"] for e in body["results"]],
+            ["x@y.com joined", "actor invited x@y.com"],
+        )
+
+    def test_a_null_actor_renders_as_system(self):
+        self._login("manage_staff")
+        body = self.client.get("/api/staff/activity/").json()
+        self.assertEqual(body["results"][0]["actor_name"], "system")
+        self.assertEqual(body["results"][1]["actor_name"], "actor")
+
+    def test_the_feed_is_append_only(self):
+        self._login("manage_staff")
+        entry = AuditEntry.objects.first()
+        self.assertEqual(
+            self.client.post(
+                "/api/staff/activity/", {"summary": "forged"}
+            ).status_code,
+            405,
+        )
+        self.assertEqual(
+            self.client.delete(f"/api/staff/activity/{entry.pk}/").status_code, 404
+        )

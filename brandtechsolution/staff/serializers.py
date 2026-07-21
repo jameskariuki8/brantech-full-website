@@ -3,7 +3,7 @@ from django.db.models import Count
 from rest_framework import serializers
 
 from .capabilities import CODENAMES
-from .models import StaffInvitation
+from .models import AuditEntry, StaffInvitation
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -89,6 +89,20 @@ class PersonSerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj):
         return sorted(g.name for g in obj.groups.all())
+
+
+class AuditEntrySerializer(serializers.ModelSerializer):
+    # A SerializerMethodField rather than CharField(source="actor.username",
+    # default=...): DRF asserts you may not set both read_only and default,
+    # and `actor` is SET_NULL, so the None case has to be handled explicitly.
+    actor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditEntry
+        fields = ["id", "action", "summary", "actor_name", "created_at"]
+
+    def get_actor_name(self, obj):
+        return obj.actor.username if obj.actor else "system"
 
 
 class InvitationSerializer(serializers.ModelSerializer):

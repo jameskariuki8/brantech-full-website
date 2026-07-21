@@ -10,9 +10,14 @@ from rest_framework.response import Response
 from .audit import record
 from .capabilities import CAPABILITY_GROUPS
 from .emails import send_invitation
-from .models import StaffInvitation
+from .models import AuditEntry, StaffInvitation
 from .permissions import enforce_grantable_roles, has_capability
-from .serializers import InvitationSerializer, PersonSerializer, RoleSerializer
+from .serializers import (
+    AuditEntrySerializer,
+    InvitationSerializer,
+    PersonSerializer,
+    RoleSerializer,
+)
 
 
 class StaffPagination(PageNumberPagination):
@@ -160,6 +165,18 @@ class PersonViewSet(
                     summary=f"{actor} {verb} {person}",
                     target_user=person,
                 )
+
+
+class AuditViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """The activity feed. Read-only by construction: no create, update or
+    destroy route is mixed in, matching AuditEntry's append-only contract."""
+
+    serializer_class = AuditEntrySerializer
+    permission_classes = [has_capability("manage_staff")]
+    pagination_class = StaffPagination
+    queryset = AuditEntry.objects.select_related(
+        "actor", "target_user", "target_group"
+    )
 
 
 class InvitationViewSet(

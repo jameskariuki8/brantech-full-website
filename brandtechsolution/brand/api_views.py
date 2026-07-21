@@ -126,6 +126,18 @@ def post_list(request):
             featured = request.POST.get('featured') == 'true'
             image = request.FILES.get('image')
 
+            # Creating straight into 'published' is a publish, so it needs the
+            # same capability as the draft -> published transition below.
+            # Omitting the key keeps the model default ('draft'), which is what
+            # the panel sends when the status control is disabled.
+            status = request.POST.get('status', 'draft')
+            if status not in ('draft', 'published'):
+                return JsonResponse({'error': 'Invalid status'}, status=400)
+            if status != 'draft':
+                denied = capability_required_json(request, 'publish_blog')
+                if denied:
+                    return denied
+
             post = BlogPost.objects.create(
                 title=title,
                 category=category,
@@ -133,6 +145,7 @@ def post_list(request):
                 content=content,
                 tags=tags,
                 featured=featured,
+                status=status,
                 image=image
             )
             return JsonResponse({'id': post.id, 'message': 'Post created successfully'}, status=201)
@@ -216,6 +229,8 @@ def post_detail(request, pk):
             # I'll update the JS to send POST. That's the most robust fix.
 
             requested_status = request.POST.get('status', post.status)
+            if requested_status not in ('draft', 'published'):
+                return JsonResponse({'error': 'Invalid status'}, status=400)
             if requested_status != post.status:
                 denied = capability_required_json(request, 'publish_blog')
                 if denied:

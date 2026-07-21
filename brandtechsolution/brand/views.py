@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import models
 from django.db.models import F
+from staff.capabilities import CODENAMES
 from .models import BlogPost
 from .markdown_utils import render_markdown
 
@@ -56,7 +57,18 @@ def contacts(request):
 @login_required(login_url='/login/')
 @user_passes_test(is_admin, login_url='/login/')
 def admin_panel_page(request):
-    return render(request, 'brand/admin_panel.html')
+    """The panel shell.
+
+    `capabilities` is the held set, serialised to JavaScript via json_script;
+    `can` is the same set as a dict so templates can write `{% if can.x %}`.
+    Superusers pass has_perm() unconditionally, so they hold everything.
+    This gating is cosmetic - each API enforces its own capability.
+    """
+    held = sorted(c for c in CODENAMES if request.user.has_perm(f'staff.{c}'))
+    return render(request, 'brand/admin_panel.html', {
+        'capabilities': held,
+        'can': {c: True for c in held},
+    })
 
 
 

@@ -55,6 +55,7 @@ function showSection(sectionName, clickedElement) {
     if (sectionName === 'inbox') loadInbox();
     if (sectionName === 'templates') loadTemplates();
     if (sectionName === 'campaigns') loadCampaigns();
+    if (sectionName === 'staff') loadStaff();
 }
 
 function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
