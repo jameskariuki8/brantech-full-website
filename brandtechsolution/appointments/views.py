@@ -5,12 +5,12 @@ from django.http import HttpRequest
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
 from datetime import datetime, timedelta
 from django.db import IntegrityError
 from django.db.models import Q
 import json
 from appointments.models import Appointment
+from staff.decorators import capability_required
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
@@ -27,7 +27,7 @@ class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     login_url = '/login/'
     
     def test_func(self):
-        return self.request.user.is_staff or self.request.user.is_superuser
+        return self.request.user.has_perm("staff.manage_appointments")
 
     def get_queryset(self):
         qs = super().get_queryset().order_by(*self.ordering)
@@ -217,7 +217,7 @@ def check_availability(request: HttpRequest):
             "error": f"An error occurred: {str(e)}"
         }, status=500)
 
-@staff_member_required
+@capability_required("manage_appointments")
 def admin_manage_appointment(request, appointment_id):
     """
     Admin view to manage individual appointments.
