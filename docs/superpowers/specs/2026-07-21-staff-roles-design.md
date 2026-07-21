@@ -101,9 +101,18 @@ deleted.
 | Role | Capabilities |
 |---|---|
 | Editor | `manage_blog`, `publish_blog`, `manage_projects` |
-| Marketing | `manage_templates`, `manage_campaigns`, `manage_recipients`, `send_campaigns` |
+| Marketing | `manage_templates`, `manage_campaigns`, `manage_recipients` |
 | Support | `view_inbox`, `handle_inquiries`, `manage_appointments` |
-| Administrator | All eleven |
+| Administrator | All eleven, including `send_campaigns` |
+
+`send_campaigns` is deliberately withheld from Marketing. Marketing can build a
+campaign end to end — template, audience, recipient list — and then it waits for
+an administrator to send it. Sending is the one irreversible, externally visible
+action in the system, so it starts reserved.
+
+This is a default, not a constraint: `send_campaigns` is an ordinary capability
+and can be ticked into Marketing, or any other role, from the Roles tab at any
+time. The presets only decide the starting position.
 
 ## Architecture
 
@@ -245,6 +254,12 @@ tabs:
 Files follow the existing panel convention:
 `brand/templates/brand/admin/_staff.html` and
 `brand/static/brand/js/admin/staff.js`.
+
+Because `send_campaigns` is separated from `manage_campaigns`, a user who can
+build a campaign but not send it must not simply find the Send button missing.
+A campaign that is ready but un-sendable by the current user shows, in place of
+the button, that it is awaiting an administrator. There is no request or
+approval workflow — the state is informational only.
 
 Nav gating is server-rendered from the user's capability set. A
 `window.CAPABILITIES` block exposes the same set to JavaScript so buttons can be
