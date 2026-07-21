@@ -1,10 +1,14 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
+from messaging.tests import grant_all_capabilities
+
 
 class PlaceholderApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
 
     def test_anonymous_denied(self):
         self.assertIn(
@@ -25,7 +29,9 @@ class PlaceholderApiTests(TestCase):
 
 class PreviewApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
 
     def test_anonymous_denied(self):
         resp = self.client.post(

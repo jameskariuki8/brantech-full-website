@@ -1,12 +1,13 @@
 from django.db import transaction
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
+
+from staff.permissions import has_capability
 
 from . import audience
 from .models import Campaign, CampaignExclusion, CampaignRecipient, EmailTemplate, Inquiry
@@ -23,19 +24,35 @@ from .validation import validate_campaign_recipients
 class InquiryViewSet(viewsets.ModelViewSet):
     queryset = Inquiry.objects.all()
     serializer_class = InquirySerializer
-    permission_classes = [IsAdminUser]
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [has_capability("view_inbox")()]
+        return [has_capability("handle_inquiries")()]
 
 
 class EmailTemplateViewSet(viewsets.ModelViewSet):
     queryset = EmailTemplate.objects.all()
     serializer_class = EmailTemplateSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [has_capability("manage_templates")]
 
 
 class CampaignViewSet(viewsets.ModelViewSet):
     queryset = Campaign.objects.all()
     serializer_class = CampaignSerializer
-    permission_classes = [IsAdminUser]
+
+    # Sending is the one irreversible, externally visible action, so it is
+    # gated separately from ordinary campaign editing.
+    ACTION_CAPABILITIES = {
+        "build_recipients": "manage_recipients",
+        "queue": "send_campaigns",
+        "pause": "send_campaigns",
+        "resume": "send_campaigns",
+    }
+
+    def get_permissions(self):
+        capability = self.ACTION_CAPABILITIES.get(self.action, "manage_campaigns")
+        return [has_capability(capability)()]
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -203,7 +220,7 @@ class CampaignRecipientViewSet(
     # tested, plus a destroy with unoverridden semantics (see perform_destroy /
     # a later task for status-dependent removal).
     serializer_class = CampaignRecipientSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [has_capability("manage_recipients")]
     pagination_class = RecipientPagination
 
     def get_queryset(self):
@@ -372,7 +389,7 @@ MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([has_capability("manage_campaigns")])
 @parser_classes([MultiPartParser])
 def extract_emails(request):
     upload = request.FILES.get("file")
@@ -395,14 +412,14 @@ from .rendering import render_html, render_text
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([has_capability("manage_campaigns")])
 def placeholders(request):
     """Registry that drives the editor's insert-placeholder menu."""
     return Response(PLACEHOLDERS)
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([has_capability("manage_campaigns")])
 def preview(request):
     """Render a draft exactly the way the sender will, using sample values."""
     subject_source = request.data.get("subject") or ""

@@ -6,11 +6,14 @@ from django.core.cache import cache
 from django.test import TestCase
 
 from messaging.models import Campaign, CampaignExclusion, CampaignRecipient, Inquiry, Suppression
+from messaging.tests import grant_all_capabilities
 
 
 class RecipientApiTestBase(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
         self.client.force_login(self.staff)
         self.campaign = self._campaign()
 

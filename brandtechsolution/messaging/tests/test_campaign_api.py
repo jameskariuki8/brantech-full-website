@@ -1,11 +1,14 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from messaging.models import Campaign, CampaignRecipient, Inquiry
+from messaging.tests import grant_all_capabilities
 
 
 class CampaignApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
         self.client.force_login(self.staff)
         Inquiry.objects.create(name="Ada", email="ada@x.com", message="m")
 

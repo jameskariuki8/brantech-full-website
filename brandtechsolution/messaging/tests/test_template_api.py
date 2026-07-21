@@ -1,11 +1,14 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from messaging.models import EmailTemplate
+from messaging.tests import grant_all_capabilities
 
 
 class EmailTemplateApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
 
     def test_anonymous_cannot_create(self):
         resp = self.client.post("/api/messaging/templates/", data={
