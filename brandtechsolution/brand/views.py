@@ -29,14 +29,14 @@ def donate(request):
 
 def blog(request):
     """Blog list page (server-rendered, paginated)."""
-    post_list = BlogPost.objects.all()  # Meta orders by -created_at
+    post_list = BlogPost.objects.filter(status='published')  # Meta orders by -created_at
     paginator = Paginator(post_list, 9)
     posts = paginator.get_page(request.GET.get("page"))
     return render(request, 'brand/blog.html', {'posts': posts})
 
 def blog_detail(request, slug):
     """Server-rendered individual blog post at /blog/<slug>/."""
-    post = get_object_or_404(BlogPost, slug=slug)
+    post = get_object_or_404(BlogPost, slug=slug, status='published')
     BlogPost.objects.filter(pk=post.pk).update(view_count=F('view_count') + 1)
     # NOTE: post.view_count in memory is now stale (pre-increment); the template intentionally does not render it.
     content_html = render_markdown(post.content)

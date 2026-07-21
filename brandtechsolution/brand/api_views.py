@@ -70,7 +70,7 @@ def post_list(request):
     if request.method == "GET":
         posts = BlogPost.objects.all().order_by('-created_at')
         # Use only() to fetch only required fields for better performance
-        posts = posts.only('id', 'title', 'slug', 'category', 'excerpt', 'content', 'tags', 'featured', 'view_count', 'created_at', 'image')
+        posts = posts.only('id', 'title', 'slug', 'category', 'excerpt', 'content', 'tags', 'featured', 'status', 'view_count', 'created_at', 'image')
         
         # Add pagination support
         paginated_posts, pagination_meta = paginate_queryset(posts, request, page_size=20)
@@ -86,6 +86,7 @@ def post_list(request):
                 'content': post.content,
                 'tags': post.tags,
                 'featured': post.featured,
+                'status': post.status,
                 'view_count': post.view_count,
                 'created_at': post.created_at.isoformat(),
                 'image': post.image.url if post.image else None
@@ -139,6 +140,7 @@ def post_detail(request, pk):
             'content': post.content,
             'tags': post.tags,
             'featured': post.featured,
+            'status': post.status,
             'view_count': post.view_count,
             'created_at': post.created_at.isoformat(),
             'image': post.image.url if post.image else None
@@ -195,16 +197,23 @@ def post_detail(request, pk):
         try:
             # If PUT, request.POST might be empty.
             # Let's check if we have data. If not, maybe it's a JSON body?
-            # But we are sending FormData. 
+            # But we are sending FormData.
             # I'll update the JS to send POST. That's the most robust fix.
-            
+
+            requested_status = request.POST.get('status', post.status)
+            if requested_status != post.status:
+                denied = capability_required_json(request, 'publish_blog')
+                if denied:
+                    return denied
+            post.status = requested_status
+
             post.title = request.POST.get('title', post.title)
             post.category = request.POST.get('category', post.category)
             post.excerpt = request.POST.get('excerpt', post.excerpt)
             post.content = request.POST.get('content', post.content)
             post.tags = request.POST.get('tags', post.tags)
             post.featured = request.POST.get('featured') == 'true'
-            
+
             if 'image' in request.FILES:
                 post.image = request.FILES['image']
                 
