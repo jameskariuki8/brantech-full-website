@@ -54,8 +54,30 @@ class RoleViewSet(viewsets.ModelViewSet):
             ).values_list("codename", flat=True)
         )
 
+    def _enforce_grantable_capabilities(self, serializer):
+        """Refuse to ADD a capability the actor does not hold themselves.
+
+        enforce_grantable_roles guards granting a role to a person, but
+        editing a role reaches the same place by another door: a manage_staff
+        holder who belongs to a role can otherwise tick every capability into
+        that role and reload, granting themselves the whole registry. Only
+        additions are checked - removing a capability is de-escalation.
+        """
+        actor = self.request.user
+        if actor.is_superuser:
+            return
+        before = set(self._codenames(serializer.instance)) if serializer.instance else set()
+        after = set(serializer.validated_data.get("capabilities", []))
+        for codename in sorted(after - before):
+            if not actor.has_perm(f"staff.{codename}"):
+                raise PermissionDenied(
+                    f"You cannot add the '{codename}' capability to a role: "
+                    "you do not hold it yourself."
+                )
+
     def perform_create(self, serializer):
         with transaction.atomic():
+            self._enforce_grantable_capabilities(serializer)
             group = serializer.save()
             record(
                 actor=self.request.user,
@@ -67,6 +89,7 @@ class RoleViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         with transaction.atomic():
+            self._enforce_grantable_capabilities(serializer)
             before = self._codenames(serializer.instance)
             group = serializer.save()
             record(

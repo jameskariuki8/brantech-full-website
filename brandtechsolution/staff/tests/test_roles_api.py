@@ -53,7 +53,11 @@ class RoleListTest(TestCase):
 
 class RoleWriteTest(TestCase):
     def setUp(self):
-        self.admin = staff_with("manage_staff")
+        # Also holds the capabilities these tests write into roles: adding a
+        # capability to a role is a grant, and grants are restricted to what
+        # the actor holds (see CapabilityGrantRestrictionTest). Mirrors the
+        # same fixture fix in test_people_api.py's RoleAssignmentTest.
+        self.admin = staff_with("manage_staff", "manage_blog", "view_inbox")
         self.client.force_login(self.admin)
 
     def test_create_a_role(self):
@@ -187,3 +191,56 @@ class RoleWriteTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         by_name = {r["name"]: r for r in resp.json()["results"]}
         self.assertIn("manage_blog", by_name["Editor"]["capabilities"])
+
+
+class CapabilityGrantRestrictionTest(TestCase):
+    """A manage_staff holder must not be able to grant themselves the rest of
+    the registry by editing a role they belong to.
+
+    enforce_grantable_roles guards granting a ROLE to a PERSON; this guards
+    adding a CAPABILITY to a ROLE, which reaches the same place.
+    """
+
+    def setUp(self):
+        self.role = Group.objects.create(name="Office")
+        self.role.permissions.set(
+            Permission.objects.filter(
+                codename="manage_staff", content_type__app_label="staff"
+            )
+        )
+        self.actor = User.objects.create_user("office", password="p", is_staff=True)
+        self.actor.groups.add(self.role)
+        self.actor = User.objects.get(pk=self.actor.pk)
+        self.client.force_login(self.actor)
+
+    def _put(self, capabilities):
+        return self.client.put(
+            f"/api/staff/roles/{self.role.pk}/",
+            json.dumps({"name": "Office", "capabilities": capabilities}),
+            content_type="application/json",
+        )
+
+    def test_cannot_add_a_capability_the_actor_does_not_hold(self):
+        resp = self._put(["manage_staff", "send_campaigns", "publish_blog"])
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(
+            User.objects.get(pk=self.actor.pk).has_perm("staff.send_campaigns")
+        )
+
+    def test_cannot_create_a_role_carrying_capabilities_the_actor_lacks(self):
+        resp = self.client.post(
+            "/api/staff/roles/",
+            json.dumps({"name": "Escalation", "capabilities": ["send_campaigns"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(Group.objects.filter(name="Escalation").exists())
+
+    def test_can_still_remove_a_capability(self):
+        # De-escalation stays unrestricted.
+        self.assertEqual(self._put([]).status_code, 200)
+        self.assertEqual(list(self.role.permissions.all()), [])
+
+    def test_a_superuser_is_exempt(self):
+        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        self.assertEqual(self._put(["manage_staff", "send_campaigns"]).status_code, 200)
