@@ -27,7 +27,8 @@ class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     login_url = '/login/'
     
     def test_func(self):
-        return self.request.user.has_perm("staff.manage_appointments")
+        user = self.request.user
+        return user.is_staff and user.has_perm("staff.manage_appointments")
 
     def get_queryset(self):
         qs = super().get_queryset().order_by(*self.ordering)
