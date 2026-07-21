@@ -34,10 +34,19 @@ class RoleSerializer(serializers.ModelSerializer):
         return value
 
     def _apply(self, group, codenames):
+        # Only this app's capabilities are replaced. A group can also carry
+        # ordinary Django permissions - anything made through /admin/ before
+        # this feature existed probably does - and the panel has no UI for
+        # those, so a plain .set() would silently destroy them on any edit,
+        # with the audit trail recording only the capability change.
+        keep = list(group.permissions.exclude(content_type__app_label="staff"))
         group.permissions.set(
-            Permission.objects.filter(
-                codename__in=codenames, content_type__app_label="staff"
+            list(
+                Permission.objects.filter(
+                    codename__in=codenames, content_type__app_label="staff"
+                )
             )
+            + keep
         )
 
     def create(self, validated_data):

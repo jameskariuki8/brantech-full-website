@@ -244,3 +244,66 @@ class CapabilityGrantRestrictionTest(TestCase):
     def test_a_superuser_is_exempt(self):
         self.client.force_login(User.objects.create_superuser("root", password="p"))
         self.assertEqual(self._put(["manage_staff", "send_campaigns"]).status_code, 200)
+
+
+class NonCapabilityPermissionTest(TestCase):
+    """An auth.Group can carry ANY Django permission, not just this app's
+    capabilities. Groups made through /admin/ before this feature existed
+    generally do.
+
+    Treating the capability registry as the boundary left those permissions
+    unrestricted, which was a path from manage_staff to is_superuser: grant a
+    role carrying auth.change_user, accept it on an account you control, then
+    tick is_superuser in /admin/, which exposes that field to any holder of
+    change_user.
+    """
+
+    def setUp(self):
+        self.legacy = Group.objects.create(name="LegacyOps")
+        self.legacy.permissions.add(Permission.objects.get(codename="change_user"))
+        self.actor = staff_with("manage_staff", username="actor")
+        self.client.force_login(self.actor)
+        self.victim = User.objects.create_user("victim", password="p", is_staff=True)
+
+    def test_cannot_grant_a_role_carrying_a_permission_the_actor_lacks(self):
+        resp = self.client.patch(
+            f"/api/staff/people/{self.victim.pk}/",
+            json.dumps({"role_ids": [self.legacy.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(
+            User.objects.get(pk=self.victim.pk).has_perm("auth.change_user")
+        )
+
+    def test_cannot_invite_with_a_role_carrying_a_permission_the_actor_lacks(self):
+        resp = self.client.post(
+            "/api/staff/invitations/",
+            json.dumps({"email": "new@example.com", "role_ids": [self.legacy.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_a_superuser_may_still_grant_it(self):
+        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        resp = self.client.patch(
+            f"/api/staff/people/{self.victim.pk}/",
+            json.dumps({"role_ids": [self.legacy.pk]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_editing_a_role_preserves_its_non_capability_permissions(self):
+        # The panel has no UI for ordinary Django permissions, so replacing
+        # the whole set on every edit destroyed them silently - and the audit
+        # entry recorded only the capability change.
+        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        resp = self.client.put(
+            f"/api/staff/roles/{self.legacy.pk}/",
+            json.dumps({"name": "LegacyOps", "capabilities": ["manage_blog"]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        codenames = set(self.legacy.permissions.values_list("codename", flat=True))
+        self.assertIn("manage_blog", codenames)
+        self.assertIn("change_user", codenames)

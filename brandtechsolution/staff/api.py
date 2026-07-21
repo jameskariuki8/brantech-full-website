@@ -276,7 +276,23 @@ class InvitationViewSet(
                 "and edit that person's roles instead."
             )
 
-        send_invitation(invitation, request)
+        # Mirrors perform_create: a mail failure is reported and audited, not
+        # surfaced as a 500. The invitation is untouched either way, so the
+        # admin can simply try again once mail is working.
+        try:
+            send_invitation(invitation, request)
+        except Exception:
+            record(
+                actor=request.user,
+                action="invite_send_failed",
+                summary=f"Invitation email to {invitation.email} could not be sent",
+                detail={"email": invitation.email},
+            )
+            raise ValidationError(
+                "The invitation could not be sent. Check the mail "
+                "configuration and try again."
+            )
+
         record(
             actor=request.user,
             action="invite_resent",

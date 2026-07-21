@@ -16,6 +16,20 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+// escapeHtml() makes a value safe as TEXT, but an href is a second context:
+// `javascript:alert(1)` contains no character escapeHtml touches, and would
+// still execute on click. Anything not plainly http(s) or a relative path
+// becomes '#'. Staff-supplied content is not trusted here - a manage_projects
+// holder must not be able to plant a payload that runs in an administrator's
+// session and calls the staff API with their cookies.
+function safeUrl(value) {
+    if (!value) return '#';
+    const raw = String(value).trim();
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^\/(?!\/)/.test(raw)) return raw;
+    return '#';
+}
+
 // Toggle Sidebar
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const sidebar = document.getElementById('sidebar');

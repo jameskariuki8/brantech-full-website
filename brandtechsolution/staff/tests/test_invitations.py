@@ -377,3 +377,32 @@ class ConcurrentAcceptanceTest(TestCase):
 
         self.assertEqual(resp.status_code, 410)
         self.assertEqual(User.objects.filter(username="new@example.com").count(), 1)
+
+
+class SendFailureTest(TestCase):
+    """A mail-server problem must not surface as a 500, and must leave a
+    record - otherwise an admin sees a crash and cannot tell whether the
+    invitation went out."""
+
+    def setUp(self):
+        self.admin = staff_with("manage_staff", username="admin")
+        self.client.force_login(self.admin)
+
+    def test_create_survives_a_send_failure_and_audits_it(self):
+        with mock.patch("staff.api.send_invitation", side_effect=RuntimeError("smtp")):
+            resp = self.client.post(
+                "/api/staff/invitations/",
+                json.dumps({"email": "new@example.com"}),
+                content_type="application/json",
+            )
+        self.assertEqual(resp.status_code, 201)
+        # The invitation survives so it can be resent once mail works.
+        self.assertTrue(StaffInvitation.objects.filter(email="new@example.com").exists())
+        self.assertTrue(AuditEntry.objects.filter(action="invite_send_failed").exists())
+
+    def test_resend_reports_a_send_failure_instead_of_500ing(self):
+        invitation = StaffInvitation.objects.create(email="new@example.com")
+        with mock.patch("staff.api.send_invitation", side_effect=RuntimeError("smtp")):
+            resp = self.client.post(f"/api/staff/invitations/{invitation.pk}/resend/")
+        self.assertEqual(resp.status_code, 400)
+        self.assertTrue(AuditEntry.objects.filter(action="invite_send_failed").exists())
