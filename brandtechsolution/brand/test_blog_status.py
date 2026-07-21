@@ -212,8 +212,12 @@ class PanelFormStatusTest(TestCase):
             self.assertEqual(post.status, before)
 
     def test_resubmitting_the_current_status_is_not_a_publish(self):
-        """The control is enabled for a publish_blog holder and always posts a
-        value; leaving it alone must not be treated as a transition."""
+        """Posting the status a post already has is not a transition.
+
+        The actor here holds only manage_blog, so this also covers the case
+        where someone re-enables the disabled control in devtools and submits
+        the unchanged value: no transition, so no publish_blog needed.
+        """
         self.client.force_login(staff_with("manage_blog"))
         resp = self.client.post(
             f"/api/posts/{self.live.pk}/",

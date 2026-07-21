@@ -24,7 +24,7 @@ async function loadBlogs() {
                     <h3 class="text-xl font-bold text-white mb-2 group-hover:text-brand-blue transition-colors">${escapeHtml(blog.title)}</h3>
                     <p class="text-gray-400 text-sm line-clamp-2 mb-3">${escapeHtml(blog.excerpt || '')}</p>
                     <div class="flex items-center text-xs text-gray-500 gap-4">
-                        <span><i class="fas fa-eye mr-1"></i>${blog.view_count || 0}</span>
+                        <span><i class="fas fa-eye mr-1"></i>${escapeHtml(blog.view_count || 0)}</span>
                     </div>
                 </div>
                 <div class="flex gap-2">

@@ -1,8 +1,13 @@
 async function loadProjects() {
     try {
         const response = await fetch(`${API_BASE}/projects/`, { credentials: 'same-origin' });
-        const projects = await response.json();
+        const payload = await response.json();
+        // /api/projects/ is paginated and answers {results, pagination}; a bare
+        // array read made the list permanently show "No projects found", the
+        // same bug loadBlogs() had.
+        const projects = Array.isArray(payload) ? payload : (payload.results || []);
         const container = document.getElementById('projectsList');
+        if (!container) return;
         if (!projects.length) {
             container.innerHTML = `<div class="text-center py-10 text-gray-600">No projects found. Add one!</div>`;
             return;

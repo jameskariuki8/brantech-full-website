@@ -70,6 +70,19 @@ function hideAddForm(type) {
     // Reset header back to 'Add' state visually if needed, simplified here
 }
 
+// /api/posts/ and /api/projects/ answer {results, pagination} where
+// pagination.total_items is the true row count. Reading .length off that
+// object yields undefined, which is why both dashboard cards read 0. Falls
+// back to the page length, and then to a bare array, so an unpaginated
+// response still counts.
+function payloadCount(payload) {
+    if (Array.isArray(payload)) return payload.length;
+    if (payload && payload.pagination && typeof payload.pagination.total_items === 'number') {
+        return payload.pagination.total_items;
+    }
+    return (payload && payload.results ? payload.results.length : 0);
+}
+
 async function loadDashboard() {
     try {
         const common = { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
@@ -78,8 +91,8 @@ async function loadDashboard() {
             fetch(`${API_BASE}/projects/`, common).then(r => r.json())
         ]);
 
-        document.getElementById('blogCount').textContent = blogs.length || 0;
-        document.getElementById('projectCount').textContent = projects.length || 0;
+        document.getElementById('blogCount').textContent = payloadCount(blogs);
+        document.getElementById('projectCount').textContent = payloadCount(projects);
 
 
 

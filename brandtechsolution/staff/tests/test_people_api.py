@@ -248,3 +248,59 @@ class GrantRestrictionTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.target.refresh_from_db()
         self.assertEqual(list(self.target.groups.all()), [marketing])
+
+
+class RolePaginationTest(TestCase):
+    """role_ids is a FULL REPLACEMENT of a user's groups, so the panel must
+    know about every role before it builds that list.
+
+    auth.Group is a shared table and StaffPagination.page_size is 50. The
+    panel used to read one page, so past 50 groups a membership that sorted
+    onto page 2 was never rendered, never checked, and was silently dropped
+    by an unrelated edit - with an audit entry recording the removal as
+    deliberate. staff.js now follows `next` to build a complete list; these
+    pin the API guarantees that fix depends on.
+    """
+
+    def setUp(self):
+        self.admin = staff_with("manage_staff", username="admin")
+        self.client.force_login(self.admin)
+
+    def test_every_role_is_reachable_by_following_next(self):
+        for i in range(60):
+            Group.objects.create(name=f"role-{i:03d}")
+        seen, url = [], "/api/staff/roles/"
+        while url:
+            body = self.client.get(url).json()
+            seen.extend(r["name"] for r in body["results"])
+            url = body["next"]
+        self.assertEqual(len(seen), Group.objects.count())
+        self.assertIn("role-059", seen)
+
+    def test_a_role_included_in_role_ids_is_kept(self):
+        keep = Group.objects.create(name="zulu-team")
+        person = User.objects.create_user("someone", password="p", is_staff=True)
+        person.groups.add(keep)
+
+        resp = self.client.patch(
+            f"/api/staff/people/{person.pk}/",
+            json.dumps({"role_ids": [keep.pk], "is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(list(person.groups.all()), [keep])
+
+    def test_a_role_omitted_from_role_ids_is_removed(self):
+        # The other half of the contract: omission really is removal, which is
+        # exactly why the panel must render every role before building it.
+        drop = Group.objects.create(name="zulu-team")
+        person = User.objects.create_user("someone", password="p", is_staff=True)
+        person.groups.add(drop)
+
+        resp = self.client.patch(
+            f"/api/staff/people/{person.pk}/",
+            json.dumps({"role_ids": []}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(list(person.groups.all()), [])

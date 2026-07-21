@@ -14,8 +14,8 @@ const STAFF_API = '/api/staff';
 let CAPABILITY_GROUPS = [];
 let ROLES = [];
 
-async function staffFetch(path, options = {}) {
-    const response = await fetch(`${STAFF_API}${path}`, {
+async function apiFetch(url, options = {}) {
+    const response = await fetch(url, {
         credentials: 'same-origin',
         headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
         ...options,
@@ -31,28 +31,51 @@ async function staffFetch(path, options = {}) {
     return response.status === 204 ? null : response.json();
 }
 
-async function loadStaff() {
-    try {
-        if (!CAPABILITY_GROUPS.length) {
-            CAPABILITY_GROUPS = await staffFetch('/capabilities/');
-        }
-        await Promise.all([loadPeople(), loadRoles(), loadActivity()]);
-    } catch (e) {
-        console.error(e);
-        alert(`Could not load staff data: ${e.message}`);
-    }
+async function staffFetch(path, options = {}) {
+    return apiFetch(`${STAFF_API}${path}`, options);
 }
 
-async function loadPeople() {
-    const container = document.getElementById('staffPeopleList');
-    if (!container) return;
+// DRF returns `next` as an absolute URL. Only follow it if it points back at
+// this origin, so a misconfigured or spoofed link cannot make the panel send
+// its session cookie somewhere else.
+function sameOriginNext(next) {
+    if (!next) return null;
+    try {
+        const url = new URL(next, window.location.href);
+        return url.origin === window.location.origin ? url.toString() : null;
+    } catch (e) { return null; }
+}
 
-    const [people, invitations] = await Promise.all([
-        staffFetch('/people/'),
-        staffFetch('/invitations/'),
-    ]);
+// Follows `next` and concatenates every page.
+//
+// ROLES has to be COMPLETE, not merely the first page. roleCheckboxes()
+// renders only what is in ROLES, selectedRoleIds() returns only the checked
+// boxes, and that array is PATCHed as role_ids, which PersonSerializer treats
+// as a FULL REPLACEMENT of the user's groups. auth.Group is a shared table and
+// StaffPagination.page_size is 50, so past 50 groups a membership that sorted
+// onto page 2 would never be rendered, never be checked, and be silently
+// removed by an unrelated edit - with an audit entry recording the removal as
+// deliberate. The page cap is a guard against a malformed cursor looping.
+async function staffFetchAll(path) {
+    let url = `${STAFF_API}${path}`;
+    const rows = [];
+    for (let page = 0; url && page < 200; page += 1) {
+        const data = await apiFetch(url);
+        rows.push(...(data.results || []));
+        url = sameOriginNext(data.next);
+    }
+    return rows;
+}
 
-    const inviteRows = invitations.results.map(inv => `
+// Each paginated list: where its rows go, which button reveals its next page,
+// how one row renders, and what to show when it is empty.
+const STAFF_LISTS = {
+    invitations: {
+        path: '/invitations/',
+        container: 'staffInvitesList',
+        more: 'staffInvitesMore',
+        empty: '',
+        row: inv => `
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex justify-between items-center gap-4">
             <div>
                 <div class="text-white font-medium">${escapeHtml(inv.email)}</div>
@@ -65,9 +88,14 @@ async function loadPeople() {
                 <button type="button" data-action="revoke-invite" data-id="${escapeHtml(inv.id)}"
                     class="text-xs text-red-400 hover:text-red-300">Revoke</button>
             </div>
-        </div>`).join('');
-
-    const peopleRows = people.results.map(p => `
+        </div>`,
+    },
+    people: {
+        path: '/people/',
+        container: 'staffPeopleList',
+        more: 'staffPeopleMore',
+        empty: '<p class="text-gray-500 text-sm">Nobody yet.</p>',
+        row: p => `
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex justify-between items-center gap-4">
             <div>
                 <div class="text-white font-medium">${escapeHtml(p.username)}</div>
@@ -81,18 +109,78 @@ async function loadPeople() {
                 <button type="button" data-action="edit-person" data-id="${escapeHtml(p.id)}"
                     class="text-xs text-brand-blue hover:text-blue-400">Edit roles</button>
             </div>
-        </div>`).join('');
+        </div>`,
+    },
+    activity: {
+        path: '/activity/',
+        container: 'staffActivityList',
+        more: 'staffActivityMore',
+        empty: '<p class="text-gray-500 text-sm">Nothing yet.</p>',
+        row: entry => `
+        <div class="bg-dark-card border border-dark-border rounded-lg px-4 py-3 flex justify-between items-center gap-4">
+            <span class="text-sm text-gray-300">${escapeHtml(entry.summary)}</span>
+            <span class="text-xs text-gray-600 whitespace-nowrap">
+                ${escapeHtml(new Date(entry.created_at).toLocaleString())}
+            </span>
+        </div>`,
+    },
+};
 
-    container.innerHTML = (inviteRows + peopleRows) ||
-        '<p class="text-gray-500 text-sm">Nobody yet.</p>';
+// The `next` cursor for each list, so Load more knows where to continue.
+const STAFF_CURSORS = { invitations: null, people: null, activity: null };
+
+async function loadList(key, append = false) {
+    const config = STAFF_LISTS[key];
+    const container = document.getElementById(config.container);
+    if (!container) return;
+    if (append && !STAFF_CURSORS[key]) return;
+
+    const data = await apiFetch(append ? STAFF_CURSORS[key] : `${STAFF_API}${config.path}`);
+    const rows = (data.results || []).map(config.row).join('');
+    if (append) {
+        container.insertAdjacentHTML('beforeend', rows);
+    } else {
+        container.innerHTML = rows || config.empty;
+    }
+
+    STAFF_CURSORS[key] = sameOriginNext(data.next);
+    const more = document.getElementById(config.more);
+    if (more) more.classList.toggle('hidden', !STAFF_CURSORS[key]);
+}
+
+async function loadStaff() {
+    const inviteBtn = document.getElementById('inviteBtn');
+    const newRoleBtn = document.getElementById('newRoleBtn');
+    try {
+        if (!CAPABILITY_GROUPS.length) {
+            CAPABILITY_GROUPS = await staffFetch('/capabilities/');
+        }
+        // Roles first and awaited: both modals build their checkboxes from
+        // ROLES / CAPABILITY_GROUPS, and their buttons stay disabled until
+        // those are populated.
+        await loadRoles();
+        if (inviteBtn) inviteBtn.disabled = false;
+        if (newRoleBtn) newRoleBtn.disabled = false;
+        await Promise.all([loadPeople(), loadActivity()]);
+    } catch (e) {
+        console.error(e);
+        alert(`Could not load staff data: ${e.message}`);
+    }
+}
+
+async function loadPeople() {
+    await Promise.all([loadList('invitations'), loadList('people')]);
+}
+
+async function loadActivity() {
+    await loadList('activity');
 }
 
 async function loadRoles() {
     const container = document.getElementById('staffRolesList');
     if (!container) return;
 
-    const data = await staffFetch('/roles/');
-    ROLES = data.results;
+    ROLES = await staffFetchAll('/roles/');
     container.innerHTML = ROLES.map(role => `
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex justify-between items-center gap-4">
             <div>
@@ -109,20 +197,6 @@ async function loadRoles() {
                     class="text-xs text-red-400 hover:text-red-300">Delete</button>
             </div>
         </div>`).join('') || '<p class="text-gray-500 text-sm">No roles yet.</p>';
-}
-
-async function loadActivity() {
-    const container = document.getElementById('staffActivityList');
-    if (!container) return;
-
-    const data = await staffFetch('/activity/');
-    container.innerHTML = data.results.map(entry => `
-        <div class="bg-dark-card border border-dark-border rounded-lg px-4 py-3 flex justify-between items-center gap-4">
-            <span class="text-sm text-gray-300">${escapeHtml(entry.summary)}</span>
-            <span class="text-xs text-gray-600 whitespace-nowrap">
-                ${escapeHtml(new Date(entry.created_at).toLocaleString())}
-            </span>
-        </div>`).join('') || '<p class="text-gray-500 text-sm">Nothing yet.</p>';
 }
 
 function capabilityCheckboxes(selected) {
@@ -190,7 +264,7 @@ function wireRoleSave() {
                 await staffFetch('/roles/', { method: 'POST', body: payload });
             }
             closeStaffModal();
-            await Promise.all([loadRoles(), loadPeople()]);
+            await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
         } catch (e) { alert(`Could not save the role: ${e.message}`); }
     });
 }
@@ -245,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ email, role_ids: selectedRoleIds() }),
                 });
                 closeStaffModal();
-                await loadPeople();
+                await Promise.all([loadPeople(), loadActivity()]);
                 alert('Invitation sent.');
             } catch (e) { alert(`Could not send the invitation: ${e.message}`); }
         });
@@ -276,17 +350,37 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!button) return;
         const id = Number(button.dataset.id);
 
+        // Load more: continue from the stored `next` cursor and append.
+        // The button is disabled for the duration so a double click cannot
+        // fire two appends of the same page.
+        if (button.dataset.action === 'load-more') {
+            const key = button.dataset.list;
+            if (!STAFF_LISTS[key]) return;
+            button.disabled = true;
+            try {
+                await loadList(key, true);
+            } catch (e) {
+                alert(`Could not load more: ${e.message}`);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Every mutation below writes an audit entry, so each refreshes the
+        // Activity pane as well as the list it changed - otherwise a user
+        // watching Activity sees nothing until they re-enter the section.
         if (button.dataset.action === 'revoke-invite') {
             if (!confirm('Revoke this invitation? The link stops working.')) return;
             try {
                 await staffFetch(`/invitations/${id}/`, { method: 'DELETE' });
-                await loadPeople();
+                await Promise.all([loadPeople(), loadActivity()]);
             } catch (e) { alert(`Could not revoke: ${e.message}`); }
         }
 
         if (button.dataset.action === 'resend-invite') {
             try {
                 await staffFetch(`/invitations/${id}/resend/`, { method: 'POST' });
+                await loadActivity();
                 alert('Invitation resent.');
             } catch (e) { alert(`Could not resend: ${e.message}`); }
         }
@@ -296,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirm(`Delete the role "${role ? role.name : ''}"? Members keep their accounts but lose these capabilities.`)) return;
             try {
                 await staffFetch(`/roles/${id}/`, { method: 'DELETE' });
-                await Promise.all([loadRoles(), loadPeople()]);
+                await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
             } catch (e) { alert(`Could not delete: ${e.message}`); }
         }
 

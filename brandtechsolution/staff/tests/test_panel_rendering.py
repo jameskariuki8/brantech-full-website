@@ -49,6 +49,43 @@ class CapabilityExposureTest(TestCase):
         resp = self.client.get("/admin-panel/")
         self.assertNotContains(resp, "send_campaigns")
 
+    def test_send_campaigns_is_exposed_to_a_holder(self):
+        # campaigns.js swaps the Send button for "awaiting an administrator"
+        # when send_campaigns is absent. There is no JS harness, so the one
+        # half a Django test can pin is that the flag it reads is correct in
+        # both directions - the negative case is above.
+        self.client.force_login(staff_with("manage_campaigns", "send_campaigns"))
+        resp = self.client.get("/admin-panel/")
+        self.assertContains(resp, "send_campaigns")
+
+
+class CapabilityNamingTest(TestCase):
+    """`can` is a SimpleNamespace, not a dict, because Django falls back to
+    attribute lookup - so with a dict a codename like `items` or `get` would
+    resolve to a bound method and render that section for everyone.
+
+    The namespace removes that class of bug, but a codename shadowing a
+    dunder or a namespace attribute would still be a trap, so pin the naming
+    rule itself rather than only the current implementation.
+    """
+
+    def test_no_codename_collides_with_a_dict_or_object_attribute(self):
+        from types import SimpleNamespace
+
+        from staff.capabilities import CODENAMES
+
+        collisions = sorted(
+            set(CODENAMES) & (set(dir({})) | set(dir(SimpleNamespace())))
+        )
+        self.assertEqual(collisions, [])
+
+    def test_no_codename_starts_with_an_underscore(self):
+        # Django refuses to resolve template variables beginning with "_",
+        # so such a capability would silently never gate anything.
+        from staff.capabilities import CODENAMES
+
+        self.assertEqual([c for c in CODENAMES if c.startswith("_")], [])
+
 
 class BlogStatusControlTest(TestCase):
     """The publish_blog capability is unreachable from the panel unless the
