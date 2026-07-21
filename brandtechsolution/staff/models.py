@@ -69,3 +69,23 @@ class AuditEntry(models.Model):
 
     def __str__(self):
         return self.summary
+
+
+class StaffInvitation(models.Model):
+    """A pending staff account. No User row exists until it is accepted."""
+
+    email = models.EmailField(unique=True)
+    groups = models.ManyToManyField("auth.Group", blank=True)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name="invitations_sent",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        default_permissions = ()
+
+    def __str__(self):
+        return self.email

@@ -1,4 +1,39 @@
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
+
+
+def enforce_grantable_roles(actor, roles):
+    """Raise PermissionDenied if `actor` is granting a role carrying a
+    capability they do not hold themselves.
+
+    A non-superuser may only grant capabilities they already possess -
+    otherwise they could hand out (or claim, via an invitation to their own
+    second address) capabilities beyond their own standing. Superusers are
+    exempt: has_perm() already returns True for them unconditionally, so the
+    check would be a no-op, but the exemption is spelled out here rather
+    than left incidental.
+
+    `roles` should be the set of roles being newly added (e.g. group
+    membership being granted), not the full set a target ends up with -
+    removing a role is de-escalation and is never restricted by this check.
+
+    Shared by PersonViewSet.perform_update (granting roles to an existing
+    account) and InvitationViewSet.perform_create (inviting someone with
+    roles is a grant too, made before any account exists).
+    """
+    if actor.is_superuser:
+        return
+    for role in roles:
+        role_codenames = role.permissions.filter(
+            content_type__app_label="staff"
+        ).values_list("codename", flat=True)
+        for codename in role_codenames:
+            if not actor.has_perm(f"staff.{codename}"):
+                raise PermissionDenied(
+                    f"You cannot grant the '{role.name}' role: it "
+                    f"includes the '{codename}' capability, which "
+                    "you do not hold yourself."
+                )
 
 
 def has_capability(codename):

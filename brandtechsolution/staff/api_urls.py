@@ -6,6 +6,7 @@ from . import api
 router = DefaultRouter()
 router.register(r"roles", api.RoleViewSet, basename="roles")
 router.register(r"people", api.PersonViewSet, basename="people")
+router.register(r"invitations", api.InvitationViewSet, basename="invitations")
 
 urlpatterns = [
     path("", include(router.urls)),

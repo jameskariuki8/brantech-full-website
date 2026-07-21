@@ -2,15 +2,17 @@ from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.db.models import Count
 from rest_framework import mixins, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from .audit import record
 from .capabilities import CAPABILITY_GROUPS
-from .permissions import has_capability
-from .serializers import PersonSerializer, RoleSerializer
+from .emails import send_invitation
+from .models import StaffInvitation
+from .permissions import enforce_grantable_roles, has_capability
+from .serializers import InvitationSerializer, PersonSerializer, RoleSerializer
 
 
 class StaffPagination(PageNumberPagination):
@@ -126,22 +128,10 @@ class PersonViewSet(
         # additions are checked - removing a role is de-escalation and stays
         # unrestricted, so an admin can still clean up an account even if
         # they don't personally hold every capability being stripped.
-        # Superusers pass has_perm() for everything, but the exemption is
-        # spelled out here rather than left incidental.
-        if not actor.is_superuser and "groups" in serializer.validated_data:
+        if "groups" in serializer.validated_data:
             current_roles = set(target.groups.all())
             new_roles = set(serializer.validated_data["groups"])
-            for role in new_roles - current_roles:
-                role_codenames = role.permissions.filter(
-                    content_type__app_label="staff"
-                ).values_list("codename", flat=True)
-                for codename in role_codenames:
-                    if not actor.has_perm(f"staff.{codename}"):
-                        raise PermissionDenied(
-                            f"You cannot grant the '{role.name}' role: it "
-                            f"includes the '{codename}' capability, which "
-                            "you do not hold yourself."
-                        )
+            enforce_grantable_roles(actor, new_roles - current_roles)
 
         with transaction.atomic():
             before_roles = sorted(g.name for g in target.groups.all())
@@ -170,3 +160,72 @@ class PersonViewSet(
                     summary=f"{actor} {verb} {person}",
                     target_user=person,
                 )
+
+
+class InvitationViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = InvitationSerializer
+    permission_classes = [has_capability("manage_staff")]
+    pagination_class = StaffPagination
+
+    def get_queryset(self):
+        return StaffInvitation.objects.filter(
+            accepted_at__isnull=True
+        ).prefetch_related("groups")
+
+    def perform_create(self, serializer):
+        # Inviting someone with roles is a grant, made before any account
+        # exists: without this check a manage_staff holder could invite a
+        # second address of their own carrying the Administrator role and
+        # accept that invitation themselves, trivially escalating past the
+        # same restriction PersonViewSet.perform_update enforces on existing
+        # accounts. Checked before serializer.save() so a forbidden request
+        # never creates the invitation row.
+        roles = serializer.validated_data.get("groups", [])
+        enforce_grantable_roles(self.request.user, roles)
+
+        with transaction.atomic():
+            invitation = serializer.save(invited_by=self.request.user)
+            record(
+                actor=self.request.user,
+                action="invite_sent",
+                summary=f"{self.request.user} invited {invitation.email}",
+                detail={"email": invitation.email,
+                        "roles": sorted(g.name for g in invitation.groups.all())},
+            )
+        # Sent after the transaction commits: a failed send must not leave a
+        # committed audit entry describing an email that never went out.
+        send_invitation(invitation, self.request)
+
+    @action(detail=True, methods=["post"])
+    def resend(self, request, pk=None):
+        """Send a fresh link for an invitation that is still pending.
+
+        No model change is needed: tokens are signed with a timestamp at
+        generation, so a newly minted token carries a full 7-day window on
+        its own. get_queryset() already excludes accepted invitations, so an
+        accepted one 404s here rather than re-opening a closed account.
+        """
+        invitation = self.get_object()
+        send_invitation(invitation, request)
+        record(
+            actor=request.user,
+            action="invite_resent",
+            summary=f"{request.user} resent the invitation to {invitation.email}",
+            detail={"email": invitation.email},
+        )
+        return Response({"status": "sent"})
+
+    def perform_destroy(self, instance):
+        with transaction.atomic():
+            record(
+                actor=self.request.user,
+                action="invite_revoked",
+                summary=f"{self.request.user} revoked the invitation to {instance.email}",
+                detail={"email": instance.email},
+            )
+            instance.delete()

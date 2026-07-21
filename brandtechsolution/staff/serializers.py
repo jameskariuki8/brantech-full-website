@@ -3,6 +3,7 @@ from django.db.models import Count
 from rest_framework import serializers
 
 from .capabilities import CODENAMES
+from .models import StaffInvitation
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -88,3 +89,29 @@ class PersonSerializer(serializers.ModelSerializer):
 
     def get_roles(self, obj):
         return sorted(g.name for g in obj.groups.all())
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    roles = serializers.SerializerMethodField()
+    role_ids = serializers.PrimaryKeyRelatedField(
+        source="groups", queryset=Group.objects.all(), many=True, write_only=True,
+        required=False,
+    )
+
+    class Meta:
+        model = StaffInvitation
+        fields = ["id", "email", "roles", "role_ids", "created_at", "accepted_at"]
+        read_only_fields = ["created_at", "accepted_at"]
+
+    def get_roles(self, obj):
+        return sorted(g.name for g in obj.groups.all())
+
+    def validate_email(self, value):
+        email = value.strip().lower()
+        if User.objects.filter(username__iexact=email).exists() or \
+                User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists. "
+                "Edit that person's roles instead."
+            )
+        return email
