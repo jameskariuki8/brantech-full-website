@@ -30,6 +30,13 @@ class BlogPost(models.Model):
     tags = models.CharField(max_length=200, blank=True, default='', help_text="Comma-separated tags")
     category = models.CharField(max_length=100, default='General')
     featured = models.BooleanField(default=False)
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+    ]
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default='draft', db_index=True
+    )
     view_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

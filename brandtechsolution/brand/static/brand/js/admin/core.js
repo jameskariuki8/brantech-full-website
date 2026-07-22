@@ -16,6 +16,20 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+// escapeHtml() makes a value safe as TEXT, but an href is a second context:
+// `javascript:alert(1)` contains no character escapeHtml touches, and would
+// still execute on click. Anything not plainly http(s) or a relative path
+// becomes '#'. Staff-supplied content is not trusted here - a manage_projects
+// holder must not be able to plant a payload that runs in an administrator's
+// session and calls the staff API with their cookies.
+function safeUrl(value) {
+    if (!value) return '#';
+    const raw = String(value).trim();
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^\/(?!\/)/.test(raw)) return raw;
+    return '#';
+}
+
 // Toggle Sidebar
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const sidebar = document.getElementById('sidebar');
@@ -55,6 +69,7 @@ function showSection(sectionName, clickedElement) {
     if (sectionName === 'inbox') loadInbox();
     if (sectionName === 'templates') loadTemplates();
     if (sectionName === 'campaigns') loadCampaigns();
+    if (sectionName === 'staff') loadStaff();
 }
 
 function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
@@ -69,6 +84,19 @@ function hideAddForm(type) {
     // Reset header back to 'Add' state visually if needed, simplified here
 }
 
+// /api/posts/ and /api/projects/ answer {results, pagination} where
+// pagination.total_items is the true row count. Reading .length off that
+// object yields undefined, which is why both dashboard cards read 0. Falls
+// back to the page length, and then to a bare array, so an unpaginated
+// response still counts.
+function payloadCount(payload) {
+    if (Array.isArray(payload)) return payload.length;
+    if (payload && payload.pagination && typeof payload.pagination.total_items === 'number') {
+        return payload.pagination.total_items;
+    }
+    return (payload && payload.results ? payload.results.length : 0);
+}
+
 async function loadDashboard() {
     try {
         const common = { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
@@ -77,8 +105,8 @@ async function loadDashboard() {
             fetch(`${API_BASE}/projects/`, common).then(r => r.json())
         ]);
 
-        document.getElementById('blogCount').textContent = blogs.length || 0;
-        document.getElementById('projectCount').textContent = projects.length || 0;
+        document.getElementById('blogCount').textContent = payloadCount(blogs);
+        document.getElementById('projectCount').textContent = payloadCount(projects);
 
 
 
