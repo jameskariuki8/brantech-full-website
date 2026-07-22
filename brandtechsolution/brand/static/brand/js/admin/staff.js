@@ -99,7 +99,9 @@ const STAFF_LISTS = {
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex justify-between items-center gap-4">
             <div>
                 <div class="text-white font-medium">${escapeHtml(p.username)}</div>
-                <div class="text-xs text-gray-500">${escapeHtml(p.roles.join(', ') || 'no roles')}</div>
+                <div class="text-xs text-gray-500">${p.is_superuser
+                    ? 'All capabilities &middot; superusers bypass every check'
+                    : escapeHtml(p.roles.join(', ') || 'no roles')}</div>
             </div>
             <div class="flex items-center gap-3">
                 ${p.is_superuser ? '<span class="text-xs px-2 py-1 rounded bg-purple-500/10 text-purple-400">Superuser</span>' : ''}

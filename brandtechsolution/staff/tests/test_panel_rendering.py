@@ -122,3 +122,30 @@ class SectionGatingTest(TestCase):
         self.client.force_login(staff_with("view_inbox"))
         resp = self.client.get("/admin-panel/")
         self.assertNotContains(resp, 'id="blogsList"')
+
+
+class TemplateCommentTest(TestCase):
+    """Django's {# #} comment is SINGLE-LINE ONLY.
+
+    A multi-line one is not a comment at all - the opening line has no
+    closing marker, so the whole block renders as visible text on the page.
+    Two of them shipped into the Staff & Roles section and were only caught
+    by opening the panel in a browser, because no test asserted the absence
+    of comment syntax and there is no JS/render harness.
+    """
+
+    def _panel(self):
+        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        return self.client.get("/admin-panel/")
+
+    def test_no_template_comment_syntax_reaches_the_page(self):
+        body = self._panel().content.decode()
+        for marker in ("{#", "#}", "{% comment %}", "{% endcomment %}"):
+            self.assertNotIn(marker, body, f"{marker} rendered into the panel")
+
+    def test_no_comment_prose_leaks_into_the_page(self):
+        # The markers above would also be absent if a comment were merely
+        # malformed in some new way, so check for the prose itself too.
+        body = self._panel().content.decode()
+        for phrase in ["Disabled until loadStaff", "paginate independently"]:
+            self.assertNotIn(phrase, body)
