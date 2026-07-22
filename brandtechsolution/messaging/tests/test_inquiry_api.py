@@ -1,11 +1,14 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from messaging.models import Inquiry
+from messaging.tests import grant_all_capabilities
 
 
 class InquiryApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
         self.inq = Inquiry.objects.create(name="A", email="a@x.com", message="m")
 
     def test_anonymous_cannot_list(self):

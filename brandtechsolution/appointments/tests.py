@@ -1,5 +1,5 @@
 from django.test import TestCase, Client
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.urls import reverse
 from django.utils import timezone
 from datetime import datetime, timedelta, date, time
@@ -85,6 +85,12 @@ class AppointmentViewsTest(TestCase):
             password='staffpass123',
             is_staff=True
         )
+        self.staff_user.user_permissions.add(
+            *Permission.objects.filter(
+                codename="manage_appointments", content_type__app_label="staff"
+            )
+        )
+        self.staff_user = User.objects.get(pk=self.staff_user.pk)
         self.appointment = Appointment.objects.create(
             email="appointment@example.com",
             phone="1234567890",
@@ -314,12 +320,17 @@ class AppointmentViewsTest(TestCase):
         self.assertIn('error', data)
     
     def test_admin_manage_appointment_requires_staff(self):
-        """Test that admin manage requires staff status"""
+        """Test that admin manage requires staff status.
+
+        The signed-in user is authenticated but lacks the manage_appointments
+        capability, so capability_required denies with 403 rather than
+        redirecting (redirects are reserved for anonymous users).
+        """
         self.client.login(username='testuser', password='testpass123')
         response = self.client.get(
             reverse('appointments:admin_manage', args=[self.appointment.id])
         )
-        self.assertEqual(response.status_code, 302)  # Redirect to login
+        self.assertEqual(response.status_code, 403)  # Forbidden
     
     def test_admin_manage_appointment_staff_access(self):
         """Test that staff can access admin manage"""

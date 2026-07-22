@@ -1,8 +1,13 @@
 async function loadProjects() {
     try {
         const response = await fetch(`${API_BASE}/projects/`, { credentials: 'same-origin' });
-        const projects = await response.json();
+        const payload = await response.json();
+        // /api/projects/ is paginated and answers {results, pagination}; a bare
+        // array read made the list permanently show "No projects found", the
+        // same bug loadBlogs() had.
+        const projects = Array.isArray(payload) ? payload : (payload.results || []);
         const container = document.getElementById('projectsList');
+        if (!container) return;
         if (!projects.length) {
             container.innerHTML = `<div class="text-center py-10 text-gray-600">No projects found. Add one!</div>`;
             return;
@@ -14,9 +19,9 @@ async function loadProjects() {
                         <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded">PROJECT</span>
                         ${project.featured ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded">FEATURED</span>' : ''}
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-1">${project.title}</h3>
-                    <p class="text-sm text-gray-400 mb-2">${project.short_description || ''}</p>
-                    <a href="${project.project_url || '#'}" target="_blank" class="text-xs text-brand-blue hover:underline">${project.project_url || 'No Live Link'}</a>
+                    <h3 class="text-xl font-bold text-white mb-1">${escapeHtml(project.title)}</h3>
+                    <p class="text-sm text-gray-400 mb-2">${escapeHtml(project.short_description || '')}</p>
+                    <a href="${escapeHtml(safeUrl(project.project_url))}" target="_blank" rel="noopener noreferrer" class="text-xs text-brand-blue hover:underline">${escapeHtml(project.project_url || 'No Live Link')}</a>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="editProject(${project.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
@@ -48,4 +53,9 @@ async function editProject(id) {
 }
 
 // Bind initial submit
-document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
+// The section is only rendered for holders of manage_projects, so the form
+// may legitimately be absent.
+const addProjectFormEl = document.getElementById('addProjectForm');
+if (addProjectFormEl) {
+    addProjectFormEl.onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
+}

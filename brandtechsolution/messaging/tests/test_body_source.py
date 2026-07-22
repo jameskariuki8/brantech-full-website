@@ -2,11 +2,14 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 
 from messaging.models import Campaign, EmailTemplate
+from messaging.tests import grant_all_capabilities
 
 
 class BodySourceApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
         self.client.force_login(self.staff)
 
     def test_template_stores_source_and_derives_inlined_html(self):

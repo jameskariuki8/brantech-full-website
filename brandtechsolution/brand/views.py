@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import models
 from django.db.models import F
+from types import SimpleNamespace
+from staff.capabilities import CODENAMES
 from .models import BlogPost
 from .markdown_utils import render_markdown
 
@@ -29,14 +31,14 @@ def donate(request):
 
 def blog(request):
     """Blog list page (server-rendered, paginated)."""
-    post_list = BlogPost.objects.all()  # Meta orders by -created_at
+    post_list = BlogPost.objects.filter(status='published')  # Meta orders by -created_at
     paginator = Paginator(post_list, 9)
     posts = paginator.get_page(request.GET.get("page"))
     return render(request, 'brand/blog.html', {'posts': posts})
 
 def blog_detail(request, slug):
     """Server-rendered individual blog post at /blog/<slug>/."""
-    post = get_object_or_404(BlogPost, slug=slug)
+    post = get_object_or_404(BlogPost, slug=slug, status='published')
     BlogPost.objects.filter(pk=post.pk).update(view_count=F('view_count') + 1)
     # NOTE: post.view_count in memory is now stale (pre-increment); the template intentionally does not render it.
     content_html = render_markdown(post.content)
@@ -56,7 +58,28 @@ def contacts(request):
 @login_required(login_url='/login/')
 @user_passes_test(is_admin, login_url='/login/')
 def admin_panel_page(request):
-    return render(request, 'brand/admin_panel.html')
+    """The panel shell.
+
+    `capabilities` is the held set, serialised to JavaScript via json_script;
+    `can` is the same set as an object so templates can write `{% if can.x %}`.
+    Superusers pass has_perm() unconditionally, so they hold everything.
+    This gating is cosmetic - each API enforces its own capability.
+
+    `can` is a SimpleNamespace and deliberately not a dict. Django resolves
+    `can.x` by dictionary lookup first and *attribute* lookup second, so with a
+    dict a future capability codename that collided with a dict method name
+    (items, keys, values, get, update, copy, pop, clear) would resolve to a
+    bound method - truthy - and render that section for every user. None of the
+    current codenames collide, so this was latent rather than live; a namespace
+    removes the class of bug outright, since its only attributes are the
+    codenames and dunders, and Django refuses to resolve names starting with an
+    underscore. test_panel_rendering.CapabilityNamingTest pins the guarantee.
+    """
+    held = sorted(c for c in CODENAMES if request.user.has_perm(f'staff.{c}'))
+    return render(request, 'brand/admin_panel.html', {
+        'capabilities': held,
+        'can': SimpleNamespace(**{c: True for c in held}),
+    })
 
 
 

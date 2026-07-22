@@ -1,0 +1,46 @@
+"""The panel's capability list.
+
+This is the single source of truth. It feeds StaffCapability.Meta.permissions,
+the API's capability-list endpoint and the UI checkboxes, so those three cannot
+drift apart.
+"""
+
+CAPABILITY_GROUPS = [
+    (
+        "Content",
+        [
+            ("manage_blog", "Manage blog posts"),
+            ("publish_blog", "Publish blog posts"),
+            ("manage_projects", "Manage projects"),
+            ("manage_appointments", "Manage appointments"),
+        ],
+    ),
+    (
+        "Communications",
+        [
+            ("view_inbox", "View inbox"),
+            ("handle_inquiries", "Reply to and archive inquiries"),
+            ("manage_templates", "Manage email templates"),
+            ("manage_campaigns", "Create and edit campaigns"),
+            ("manage_recipients", "Manage campaign recipients"),
+            ("send_campaigns", "Send campaigns"),
+        ],
+    ),
+    (
+        "Administration",
+        [
+            ("manage_staff", "Manage staff and roles"),
+        ],
+    ),
+]
+
+ALL_CAPABILITIES = [
+    pair for _label, pairs in CAPABILITY_GROUPS for pair in pairs
+]
+
+CODENAMES = [codename for codename, _label in ALL_CAPABILITIES]
+
+
+def permission_tuples():
+    """The list Django's Meta.permissions expects."""
+    return list(ALL_CAPABILITIES)

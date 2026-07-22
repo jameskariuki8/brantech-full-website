@@ -9,6 +9,7 @@ This repository contains the Django web application for **Brantech Solution** �
 - **Appointment Booking**: Full appointment management system with availability checking
 - **AI Chatbot**: Intelligent chatbot powered by Google Gemini with RAG (Retrieval-Augmented Generation) capabilities
 - **Admin Panel**: Comprehensive admin interface for managing content
+- **Staff Roles & Permissions**: Capability-based access control for the admin panel, with email invitations and an append-only audit log
 - **REST API**: Full API endpoints for blog posts and projects
 
 ## 🛠️ Project Setup Guide
@@ -110,6 +111,7 @@ brandtechsolution/
 ├── brand/              # Main website app (home, blog, projects, etc.)
 ├── appointments/       # Appointment booking system
 ├── ai_workflows/       # AI chatbot with LangChain/Gemini integration
+├── staff/              # Capabilities, roles, invitations and the audit log
 ├── brandtechsolution/  # Django project settings
 ├── media/              # User-uploaded files (images, etc.)
 ├── staticfiles/        # Collected static files
@@ -150,6 +152,25 @@ brandtechsolution/
 - `GET /appointments/get/` - Get appointment details
 - `GET /appointments/admin/manage/<id>/` - Admin appointment management
 
+### Staff & Roles API
+
+All of these require the `manage_staff` capability (see
+[Staff roles and permissions](#staff-roles-and-permissions)).
+
+- `GET /api/staff/capabilities/` - The capability registry, grouped as the UI shows it
+- `GET|POST /api/staff/roles/` - List and create roles
+- `GET|PUT|PATCH|DELETE /api/staff/roles/<id>/` - Read, edit and delete a role
+- `GET /api/staff/people/` - List staff accounts
+- `GET|PUT|PATCH /api/staff/people/<id>/` - Read and edit one account's roles and active state
+- `GET|POST /api/staff/invitations/` - List pending invitations and issue a new one
+- `POST /api/staff/invitations/<id>/resend/` - Send a fresh link
+- `DELETE /api/staff/invitations/<id>/` - Revoke an invitation
+- `GET /api/staff/activity/` - The audit log (read-only)
+
+Accepting an invitation happens outside the API, at
+`GET|POST /staff/invite/<token>/`, which is public by design — the invitee has
+no account yet.
+
 ## 🧪 Running Tests
 
 ```bash
@@ -174,6 +195,19 @@ python manage.py test ai_workflows
 6. Collect static files: `python manage.py collectstatic`
 7. Set up proper media file serving
 8. Configure environment variables on your server
+
+### Upgrading an existing deployment: staff roles
+
+This release adds migrations for the new `staff` app and a `status` field on
+`BlogPost`. Run `python manage.py migrate` on deploy. The blog migration
+backfills every existing post to `published`, so nothing disappears from the
+public site. No new Python dependencies are added, so a plain container
+restart is sufficient once migrations have run. (Under Docker Compose the
+`web` entrypoint already runs `migrate` for you.)
+
+The staff migration also creates the four preset roles. See
+[Staff roles and permissions](#staff-roles-and-permissions) for what they
+grant and how to invite people.
 
 ### Environment Variables for Production
 
@@ -375,6 +409,160 @@ raw HTML for pasted designs; switching back to the visual editor may
 simplify markup Quill does not model. Alignment and indentation are
 deliberately absent from the toolbar because email clients discard the CSS
 classes Quill uses to implement them.
+
+## Staff roles and permissions
+
+Access to the admin panel is controlled by eleven **capabilities**. A
+capability is an ordinary Django permission, defined once in
+`brandtechsolution/staff/capabilities.py` — that module is the single source
+of truth, feeding the permission rows, the `/api/staff/capabilities/` endpoint
+and the UI's checkboxes, so the three cannot drift apart.
+
+Capabilities are never granted to a person directly. They are ticked into a
+**role** (an `auth.Group`), and people are given roles.
+
+### The capabilities
+
+| Codename | Label | What it gates |
+|---|---|---|
+| `manage_blog` | Manage blog posts | Creating, editing and deleting blog posts; also the panel's unfiltered post list, which is the only place drafts are visible |
+| `publish_blog` | Publish blog posts | Changing a post's status — both draft → published and published → draft. Creating a post straight into `published` counts as a publish and needs it too |
+| `manage_projects` | Manage projects | Creating, editing and deleting projects |
+| `manage_appointments` | Manage appointments | The appointments list and the admin appointment management views |
+| `view_inbox` | View inbox | Reading inquiries |
+| `handle_inquiries` | Reply to and archive inquiries | Any write to an inquiry — replying, archiving, deleting |
+| `manage_templates` | Manage email templates | Creating, editing and deleting email templates |
+| `manage_campaigns` | Create and edit campaigns | Creating and editing campaigns; the default gate for every campaign action not listed below |
+| `manage_recipients` | Manage campaign recipients | Building a campaign's audience and adding or removing individual recipients |
+| `send_campaigns` | Send campaigns | Queueing, pausing and resuming a campaign — i.e. actually sending |
+| `manage_staff` | Manage staff and roles | Everything under **Staff & Roles**: roles, people, invitations and the activity log |
+
+Note that `manage_campaigns` and `send_campaigns` are deliberately separate.
+Sending is the one irreversible, externally visible action in the panel, so
+editing a campaign and pushing it out the door are different permissions.
+
+### Preset roles
+
+Four roles are created by a data migration. They are ordinary groups: rename
+them, re-tick their capabilities, delete them, or add your own.
+
+| Role | Capabilities |
+|---|---|
+| **Editor** | `manage_blog`, `publish_blog`, `manage_projects` |
+| **Marketing** | `manage_templates`, `manage_campaigns`, `manage_recipients` |
+| **Support** | `view_inbox`, `handle_inquiries`, `manage_appointments` |
+| **Administrator** | All eleven |
+
+**Marketing deliberately does not include `send_campaigns`.** Sending is the
+irreversible, externally visible action, so it starts reserved to
+administrators. There is nothing special about it beyond that: it is an
+ordinary capability and can be ticked into any role from the **Roles** tab.
+The preset only decides the starting position.
+
+Reversing the migration does not delete these groups. Once created they are
+yours — a rollback that dropped them by name would take their memberships and
+any customisation with them.
+
+### Inviting someone
+
+**Staff & Roles → Invite person**, then an email address and the roles they
+should start with. The invitee gets a link and sets their own password; no
+account exists until they do, and the password they choose must satisfy the
+project's configured `AUTH_PASSWORD_VALIDATORS`.
+
+- Links expire after **7 days**. The expiry lives in the signed token itself,
+  so it needs no cleanup job. (`STAFF_INVITATION_MAX_AGE`, in seconds,
+  overrides the default if you ever need a different window.)
+- **Resend** issues a fresh link with a fresh 7-day window.
+- **Revoke** deletes the invitation and invalidates its link.
+- An invitation is **single-use**. Two people racing the same link produce one
+  account, not two.
+- If the address gets registered through the public `/signup/` page before the
+  invitation is accepted, acceptance is refused with a clear message rather
+  than failing obscurely — grant that existing account the roles instead. A
+  resend is refused for the same reason, rather than mailing a link that would
+  dead-end.
+- The email is sent directly rather than through the campaign outbox, so it
+  never queues behind a bulk send. If delivery fails the invitation row is
+  kept so it can be resent, and the failure is written to the audit log.
+
+### What a new account can see
+
+**A staff account with no capabilities sees the dashboard and nothing else.**
+That is the expected state for someone just invited and given no roles — not
+a bug. Give them a role and the relevant sections appear.
+
+### The rails
+
+Three restrictions keep `manage_staff` safe to delegate.
+
+**You can only grant capabilities you hold yourself.** A non-superuser cannot
+hand out a capability they do not have. This applies in all three places a
+grant can happen:
+
+1. assigning roles to a person,
+2. inviting someone with roles (a grant made before any account exists —
+   otherwise you could invite a second address of your own and accept it),
+3. adding a capability to a role (otherwise you could tick everything into a
+   role you belong to and reload).
+
+**Removing is always allowed.** De-escalation is never restricted, so an
+administrator can still strip an account clean even if they do not personally
+hold every capability being removed. This is the rail that makes delegating
+`manage_staff` safe: a delegate can administer everyone else, but cannot
+bootstrap themselves upward.
+
+**Superuser accounts are protected.** A non-superuser holding `manage_staff`
+cannot change a superuser's roles or active state — otherwise a delegate could
+lock the owner out of their own site.
+
+**You cannot lock yourself out.** A non-superuser cannot edit their own roles
+or deactivate their own account. One flat rule, rather than
+last-admin-standing arithmetic.
+
+Superusers bypass every capability check (Django's `has_perm()` returns `True`
+for them unconditionally) and are exempt from all three rails above. They are
+the escape hatch, and can manage each other and themselves freely.
+
+### Notes for maintainers
+
+**`is_staff` is a required floor, in addition to any capability.** The site has
+a public `/signup/` page that creates ordinary non-staff users, so a
+capability alone is not enough: an account without `is_staff` is refused even
+if it somehow holds the permission. Every enforcement path checks both.
+
+**Nav gating is cosmetic.** The panel template hides sections a user cannot
+use, and exposes the held set to JavaScript as `window.CAPABILITIES`. That is
+a convenience, not the security boundary — every API enforces its own
+capability independently on every request. Do not read the template's `{% if
+can.x %}` blocks as enforcement.
+
+Enforcement is spelled the way each layer wants it, but always means the same
+thing:
+
+- DRF views use `has_capability("codename")` from `staff/permissions.py`.
+- Plain Django views use the `@capability_required("codename")` decorator from
+  `staff/decorators.py`.
+- The hand-rolled JSON views in `brand/api_views.py` call
+  `capability_required_json(request, "codename")`.
+
+### The audit log
+
+Role and account changes are recorded in an **append-only** log, visible under
+**Staff & Roles → Activity**. There is no update or delete route on it by
+construction. Each entry's summary is rendered at write time, so it still
+reads correctly after the user or role it names has been deleted.
+
+Recorded: invitations sent, resent, failed to send, revoked and accepted; role
+assignments changed; accounts deactivated and reactivated; roles created,
+updated and deleted.
+
+### Blog drafts
+
+Blog posts are now created as **drafts** and need `publish_blog` to go live.
+The public blog list and post pages show published posts only; a draft 404s
+for the public. Someone with `manage_blog` but not `publish_blog` can write
+and edit freely but cannot change a post's status in either direction.
 
 ## 📝 License
 

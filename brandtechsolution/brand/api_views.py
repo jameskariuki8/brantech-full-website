@@ -1,21 +1,33 @@
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage
 from .models import BlogPost, Project
 
-def staff_required(request):
-    """Return an error response unless the request comes from a staff member.
+def capability_required_json(request, codename):
+    """Return an error response unless the request carries a capability.
 
-    Returns None when the request may proceed. Reads on these endpoints are
-    public; only the write branches call this.
+    Returns None when the request may proceed. These are plain JSON views
+    rather than DRF, so they return a response instead of raising.
     """
-    if not request.user.is_authenticated:
+    user = request.user
+    if not user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
-    if not request.user.is_staff:
+    if not (user.is_staff and user.has_perm(f'staff.{codename}')):
         return JsonResponse({'error': 'Forbidden'}, status=403)
     return None
+
+
+def can_view_drafts(request):
+    """Whether the request is allowed to see draft (unpublished) blog posts.
+
+    Only staff with the manage_blog capability get the unfiltered view;
+    everyone else (including anonymous visitors and staff lacking that
+    capability) only ever sees published posts.
+    """
+    user = request.user
+    return user.is_authenticated and user.is_staff and user.has_perm('staff.manage_blog')
 
 
 # Helper to parse FormData or JSON
@@ -68,8 +80,10 @@ def paginate_queryset(queryset, request, page_size=20):
 def post_list(request):
     if request.method == "GET":
         posts = BlogPost.objects.all().order_by('-created_at')
+        if not can_view_drafts(request):
+            posts = posts.filter(status='published')
         # Use only() to fetch only required fields for better performance
-        posts = posts.only('id', 'title', 'slug', 'category', 'excerpt', 'content', 'tags', 'featured', 'view_count', 'created_at', 'image')
+        posts = posts.only('id', 'title', 'slug', 'category', 'excerpt', 'content', 'tags', 'featured', 'status', 'view_count', 'created_at', 'image')
         
         # Add pagination support
         paginated_posts, pagination_meta = paginate_queryset(posts, request, page_size=20)
@@ -85,6 +99,7 @@ def post_list(request):
                 'content': post.content,
                 'tags': post.tags,
                 'featured': post.featured,
+                'status': post.status,
                 'view_count': post.view_count,
                 'created_at': post.created_at.isoformat(),
                 'image': post.image.url if post.image else None
@@ -98,7 +113,7 @@ def post_list(request):
         }, safe=False)
     
     if request.method == "POST":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_blog')
         if denied:
             return denied
         try:
@@ -111,6 +126,18 @@ def post_list(request):
             featured = request.POST.get('featured') == 'true'
             image = request.FILES.get('image')
 
+            # Creating straight into 'published' is a publish, so it needs the
+            # same capability as the draft -> published transition below.
+            # Omitting the key keeps the model default ('draft'), which is what
+            # the panel sends when the status control is disabled.
+            status = request.POST.get('status', 'draft')
+            if status not in ('draft', 'published'):
+                return JsonResponse({'error': 'Invalid status'}, status=400)
+            if status != 'draft':
+                denied = capability_required_json(request, 'publish_blog')
+                if denied:
+                    return denied
+
             post = BlogPost.objects.create(
                 title=title,
                 category=category,
@@ -118,6 +145,7 @@ def post_list(request):
                 content=content,
                 tags=tags,
                 featured=featured,
+                status=status,
                 image=image
             )
             return JsonResponse({'id': post.id, 'message': 'Post created successfully'}, status=201)
@@ -127,8 +155,10 @@ def post_list(request):
 @require_http_methods(["GET", "POST", "PUT", "DELETE"])
 def post_detail(request, pk):
     post = get_object_or_404(BlogPost, pk=pk)
-    
+
     if request.method == "GET":
+        if post.status != 'published' and not can_view_drafts(request):
+            raise Http404("Post not found")
         data = {
             'id': post.id,
             'slug': post.slug,
@@ -138,6 +168,7 @@ def post_detail(request, pk):
             'content': post.content,
             'tags': post.tags,
             'featured': post.featured,
+            'status': post.status,
             'view_count': post.view_count,
             'created_at': post.created_at.isoformat(),
             'image': post.image.url if post.image else None
@@ -188,22 +219,31 @@ def post_detail(request, pk):
             
     # Redefining logic to support POST for updates on detail view
     if request.method == "POST" or request.method == "PUT":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_blog')
         if denied:
             return denied
         try:
-            # If PUT, request.POST might be empty. 
+            # If PUT, request.POST might be empty.
             # Let's check if we have data. If not, maybe it's a JSON body?
-            # But we are sending FormData. 
+            # But we are sending FormData.
             # I'll update the JS to send POST. That's the most robust fix.
-            
+
+            requested_status = request.POST.get('status', post.status)
+            if requested_status not in ('draft', 'published'):
+                return JsonResponse({'error': 'Invalid status'}, status=400)
+            if requested_status != post.status:
+                denied = capability_required_json(request, 'publish_blog')
+                if denied:
+                    return denied
+            post.status = requested_status
+
             post.title = request.POST.get('title', post.title)
             post.category = request.POST.get('category', post.category)
             post.excerpt = request.POST.get('excerpt', post.excerpt)
             post.content = request.POST.get('content', post.content)
             post.tags = request.POST.get('tags', post.tags)
             post.featured = request.POST.get('featured') == 'true'
-            
+
             if 'image' in request.FILES:
                 post.image = request.FILES['image']
                 
@@ -213,7 +253,7 @@ def post_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_blog')
         if denied:
             return denied
         post.delete()
@@ -252,7 +292,7 @@ def project_list(request):
         }, safe=False)
     
     if request.method == "POST":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_projects')
         if denied:
             return denied
         try:
@@ -295,7 +335,7 @@ def project_detail(request, pk):
         return JsonResponse(data)
 
     if request.method == "POST" or request.method == "PUT":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_projects')
         if denied:
             return denied
         try:
@@ -315,7 +355,7 @@ def project_detail(request, pk):
             return JsonResponse({'error': str(e)}, status=400)
 
     if request.method == "DELETE":
-        denied = staff_required(request)
+        denied = capability_required_json(request, 'manage_projects')
         if denied:
             return denied
         project.delete()

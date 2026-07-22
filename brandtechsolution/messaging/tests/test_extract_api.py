@@ -2,10 +2,14 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
+from messaging.tests import grant_all_capabilities
+
 
 class ExtractApiTests(TestCase):
     def setUp(self):
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = grant_all_capabilities(
+            User.objects.create_user("staff", password="p", is_staff=True)
+        )
 
     def _file(self):
         return SimpleUploadedFile("c.txt", b"a@x.com b@x.com", content_type="text/plain")

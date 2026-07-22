@@ -123,29 +123,52 @@
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
                 <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
             </a>
+            {% if can.manage_blog or can.manage_projects or can.manage_appointments %}
             <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
+            {% endif %}
+            {% if can.manage_blog %}
             <a href="#" onclick="showSection('blogs', this)"
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
             </a>
+            {% endif %}
+            {% if can.manage_projects %}
             <a href="#" onclick="showSection('projects', this)"
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
             </a>
+            {% endif %}
+            {% if can.manage_appointments %}
             <a href="/appointments"
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
                 <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
             </a>
+            {% endif %}
+            {% if can.view_inbox or can.manage_templates or can.manage_campaigns %}
             <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Communications</div>
+            {% endif %}
+            {% if can.view_inbox %}
             <a href="#" onclick="showSection('inbox', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-inbox w-6 text-center mr-3"></i>Inbox
             </a>
+            {% endif %}
+            {% if can.manage_templates %}
             <a href="#" onclick="showSection('templates', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-file-lines w-6 text-center mr-3"></i>Templates
             </a>
+            {% endif %}
+            {% if can.manage_campaigns %}
             <a href="#" onclick="showSection('campaigns', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-paper-plane w-6 text-center mr-3"></i>Campaigns
             </a>
+            {% endif %}
+            {% if can.manage_staff %}
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Administration</div>
+            <a href="#" onclick="showSection('staff', this)"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-users-gear w-6 text-center mr-3"></i>Staff &amp; Roles
+            </a>
+            {% endif %}
 
         </nav>
 
@@ -199,23 +222,33 @@
             </div>
 
             <!-- Blog Section -->
-            {% include 'brand/admin/_blogs.html' %}
+            {% if can.manage_blog %}{% include 'brand/admin/_blogs.html' %}{% endif %}
 
             <!-- Project Section -->
-            {% include 'brand/admin/_projects.html' %}
+            {% if can.manage_projects %}{% include 'brand/admin/_projects.html' %}{% endif %}
 
             <!-- Inbox Section -->
-            {% include 'brand/admin/_inbox.html' %}
+            {% if can.view_inbox %}{% include 'brand/admin/_inbox.html' %}{% endif %}
 
             <!-- Templates Section -->
-            {% include 'brand/admin/_templates.html' %}
+            {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
 
             <!-- Campaigns Section -->
-            {% include 'brand/admin/_campaigns.html' %}
+            {% if can.manage_campaigns %}{% include 'brand/admin/_campaigns.html' %}{% endif %}
+
+            <!-- Staff & Roles Section -->
+            {% if can.manage_staff %}{% include 'brand/admin/_staff.html' %}{% endif %}
 
         </div>
     </main>
 
+    {{ capabilities|json_script:"capabilityData" }}
+    <script>
+        // json_script escapes the payload safely; never hand-interpolate this
+        // list into JavaScript. Gating in JS is cosmetic - the APIs enforce.
+        window.CAPABILITIES = JSON.parse(document.getElementById('capabilityData').textContent);
+        window.can = (codename) => window.CAPABILITIES.includes(codename);
+    </script>
     <script src="{% static 'brand/js/admin/core.js' %}" defer></script>
     <script src="{% static 'brand/js/admin/editor.js' %}" defer></script>
     <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
@@ -224,6 +257,7 @@
     <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
     <script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
     <script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>
+    <script src="{% static 'brand/js/admin/staff.js' %}" defer></script>
 </body>
 
 </html>

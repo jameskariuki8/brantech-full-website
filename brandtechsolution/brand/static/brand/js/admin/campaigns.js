@@ -10,6 +10,11 @@ async function loadCampaigns() {
 
     const items = await fetch(`${API_BASE}/messaging/campaigns/`, { credentials: 'same-origin' }).then(r => r.json());
     const container = document.getElementById('campaignsList');
+    // send_campaigns is separate from manage_campaigns, so a marketer who can
+    // build a campaign but not send it should see why the button is absent
+    // rather than find it silently missing. Cosmetic only - the campaign
+    // send/pause/resume endpoints enforce the capability themselves.
+    const canSend = typeof window.can === 'function' ? window.can('send_campaigns') : false;
     const statusColor = { draft: 'text-gray-400 bg-white/5', queued: 'text-brand-blue bg-blue-900/20', sending: 'text-yellow-400 bg-yellow-900/20', sent: 'text-brand-green bg-green-900/20', paused: 'text-orange-400 bg-orange-900/20', failed: 'text-red-400 bg-red-900/20' };
     container.innerHTML = items.length ? items.map(c => `
         <div class="bg-dark-card border border-dark-border p-5 rounded-lg">
@@ -32,12 +37,14 @@ async function loadCampaigns() {
                         <textarea id="manual-${c.id}" placeholder="paste emails, comma/space separated" class="bg-[#06090F] border border-dark-border rounded px-2 py-1 text-xs text-white" rows="2"></textarea>
                         <input type="file" id="import-${c.id}" onchange="importEmails(event)" data-c="${c.id}" class="text-xs text-gray-400" accept=".csv,.txt,.xlsx,.pdf,.docx">
                         <button onclick="buildRecipients(${c.id})" class="bg-dark-card border border-dark-border hover:border-brand-blue text-white text-xs px-3 py-1.5 rounded">Build recipients</button>
-                        <button onclick="queueCampaign(${c.id})" class="bg-brand-green hover:bg-green-500 text-black text-xs font-semibold px-3 py-1.5 rounded">Queue send (${c.total})</button>
+                        ${canSend
+                            ? `<button onclick="queueCampaign(${c.id})" class="bg-brand-green hover:bg-green-500 text-black text-xs font-semibold px-3 py-1.5 rounded">Queue send (${c.total})</button>`
+                            : `<span class="text-xs text-gray-500 italic">Ready — awaiting an administrator to send</span>`}
                     ` : ``}
-                    ${(c.status === 'queued' || c.status === 'sending') ? `
+                    ${(c.status === 'queued' || c.status === 'sending') && canSend ? `
                         <button onclick="pauseCampaign(${c.id})" class="bg-dark-card border border-orange-500 hover:bg-orange-900/20 text-orange-400 text-xs font-semibold px-3 py-1.5 rounded">Pause</button>
                     ` : ``}
-                    ${c.status === 'paused' ? `
+                    ${c.status === 'paused' && canSend ? `
                         <button onclick="resumeCampaign(${c.id})" class="bg-brand-green hover:bg-green-500 text-black text-xs font-semibold px-3 py-1.5 rounded">Resume</button>
                     ` : ``}
                 </div>
