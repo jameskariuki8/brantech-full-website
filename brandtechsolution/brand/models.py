@@ -143,3 +143,28 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.date.strftime('%Y-%m-%d')}"
+
+
+class BlogLike(models.Model):
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='likes')
+    browser_id = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'browser_id')
+
+
+class BlogComment(models.Model):
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')
+    browser_id = models.CharField(max_length=255)
+    user_name = models.CharField(max_length=100, default='Anonymous')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user_name} on {self.post.title}"
+

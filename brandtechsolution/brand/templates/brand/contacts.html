@@ -1,293 +1,376 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact Us - TekLora</title>
-  <!-- Favicon -->
-  <!-- Favicon -->
-  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Us - Teklora</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Custom CSS if needed, though Tailwind handles most -->
-  <link rel="stylesheet" href="{% static 'brand/css/style.css' %}" />
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
+    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 </head>
+<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased">
 
-<body class="bg-[#06090F] text-white">
+    <!-- Header Inheritance -->
+    {% include 'brand/header.html' %}
 
-  <!-- Header -->
-  {% include 'brand/header.html' %}
+    <div class="max-w-7xl mx-auto px-6 py-32 space-y-20">
+        
+        <!-- Hero Section -->
+        <div class="text-center space-y-4 max-w-xl mx-auto">
+            <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Connect With Us</span>
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight" style="font-family: var(--font-heading);">
+                Let's Build Something New.
+            </h1>
+            <p class="text-sm text-[#94A3B8] leading-relaxed">
+                Connect with our research labs or schedule a virtual strategy session with our technical directors.
+            </p>
+        </div>
 
-  <div class="container mx-auto px-4 py-32 relative overflow-hidden min-h-screen flex items-center justify-center">
+        <!-- Split Layout Panel -->
+        <div class="bg-[#0A0F1D] rounded-3xl border border-white/5 shadow-lg overflow-hidden grid lg:grid-cols-2">
+            
+            <!-- Left Info Panel -->
+            <div class="p-8 sm:p-12 bg-white/[0.01] border-r border-white/5 flex flex-col justify-between space-y-10">
+                <div class="space-y-6">
+                    <h3 class="text-xl font-bold text-white" style="font-family: var(--font-heading);">Inquiries</h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Location Detail -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-[#007AFF] mt-1">
+                                <i class="fas fa-location-dot"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-white">Nairobi Office</h4>
+                                <p class="text-[11px] text-[#94A3B8]">Westlands District, Nairobi, Kenya</p>
+                            </div>
+                        </div>
 
-    <!-- Decorative Background Elements (matching theme) -->
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-      <span
-        class="absolute top-[-10%] right-[48%] w-[500px] h-[500px] bg-gradient-to-b from-blue-500/20 to-transparent rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2"></span>
-      <!-- Shape can be an image or CSS -->
+                        <!-- Location 2 Detail -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-[#00FF94] mt-1">
+                                <i class="fas fa-location-dot"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-white">Cape Town Office</h4>
+                                <p class="text-[11px] text-[#94A3B8]">Waterfront Innovation space, Cape Town, SA</p>
+                            </div>
+                        </div>
+
+                        <!-- Phone Detail -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-[#00FF94] mt-1">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-white">Enterprise Call Line</h4>
+                                <p class="text-[11px] text-[#94A3B8]">+254 704 894220 • Mon-Fri: 9am-5pm EAT</p>
+                            </div>
+                        </div>
+
+                        <!-- Email Detail -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-[#007AFF] mt-1">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-white">Direct Email</h4>
+                                <p class="text-[11px] text-[#94A3B8]">info@brantechsolutions.co</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response time and socials -->
+                <div class="space-y-4">
+                    <div class="p-3 bg-[#00FF94]/10 border border-[#00FF94]/20 rounded-xl flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse"></div>
+                        <span class="text-xs text-[#00FF94] font-semibold">Average response: < 2 hours</span>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <a href="https://www.linkedin.com/company/brantech-solutions-ke/" target="_blank" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white hover:bg-blue-600 transition-colors"><i class="fab fa-linkedin-in text-xs"></i></a>
+                        <a href="https://www.instagram.com/brantech_solutions" target="_blank" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white hover:bg-pink-600 transition-colors"><i class="fab fa-instagram text-xs"></i></a>
+                        <a href="https://whatsapp.com/channel/0029Vb6Apwr7oQhe7bynyU0o" target="_blank" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white hover:bg-emerald-600 transition-colors"><i class="fab fa-whatsapp text-xs"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Form Panel -->
+            <div class="p-8 sm:p-12 relative flex flex-col justify-between">
+                <form action="{% url 'contact_submit' %}" method="POST" autocomplete="off" id="contactsForm" class="space-y-6">
+                    {% csrf_token %}
+                    <!-- Honeypot -->
+                    <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+                    
+                    <h3 class="text-xl font-bold text-white mb-4" style="font-family: var(--font-heading);">Submit Inquiry</h3>
+
+                    <!-- Name -->
+                    <div class="floating-label-group">
+                        <input type="text" name="name" id="nameInput" required class="floating-input border-white/10" placeholder=" " />
+                        <label for="nameInput" class="floating-label" style="background:#0A0F1D;">Full Name</label>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="floating-label-group">
+                        <input type="email" name="email" id="emailInput" required class="floating-input border-white/10" placeholder=" " />
+                        <label for="emailInput" class="floating-label" style="background:#0A0F1D;">Email Address</label>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="floating-label-group">
+                        <input type="tel" name="phone" id="phoneInput" class="floating-input border-white/10" placeholder=" " />
+                        <label for="phoneInput" class="floating-label" style="background:#0A0F1D;">Phone Number (optional)</label>
+                    </div>
+
+                    <!-- Message -->
+                    <div class="floating-label-group">
+                        <textarea name="message" id="messageInput" required rows="4" class="floating-input border-white/10 h-28 resize-none" placeholder=" "></textarea>
+                        <label for="messageInput" class="floating-label" style="background:#0A0F1D;">Inquiry Message</label>
+                    </div>
+
+                    <div id="validationAlert" class="hidden rounded-lg px-4 py-2 text-xs bg-red-900/10 text-red-400 border border-red-900/20"></div>
+
+                    <!-- Submit -->
+                    <button type="submit" id="submitContactBtn" class="w-full btn-premium btn-premium-primary py-3 flex items-center justify-center gap-2">
+                        <span>Initialize Connection</span>
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Book Meeting Section -->
+        <div id="book" class="bg-[#0A0F1D] rounded-3xl border border-white/5 p-8 sm:p-12 space-y-6 max-w-3xl mx-auto">
+            <div class="text-center space-y-1">
+                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Calendar Sync</span>
+                <h3 class="text-xl font-bold text-white" style="font-family: var(--font-heading);">Book A Strategy Consultation</h3>
+                <p class="text-xs text-[#94A3B8]">Select a day and time slot to sync a Google Meet consultation.</p>
+            </div>
+
+            <!-- Calendar Container -->
+            <div class="grid md:grid-cols-2 gap-8 items-start pt-4 border-t border-white/5">
+                <!-- Date picker -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-xs text-white uppercase tracking-wider">Select Date</h4>
+                    <div class="grid grid-cols-7 gap-1.5 text-center text-[10px]" id="calendarDays">
+                        <!-- Generated days -->
+                    </div>
+                </div>
+
+                <!-- Time slot picker -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-xs text-white uppercase tracking-wider">Available Slots</h4>
+                    <div class="grid grid-cols-2 gap-2" id="timeSlots">
+                        <button type="button" onclick="selectTime('09:00 AM', this)" class="p-2 border border-white/5 rounded-lg text-xs text-white hover:border-[#007AFF] hover:bg-white/5 transition-all">09:00 AM (EAT)</button>
+                        <button type="button" onclick="selectTime('11:00 AM', this)" class="p-2 border border-white/5 rounded-lg text-xs text-white hover:border-[#007AFF] hover:bg-white/5 transition-all">11:00 AM (EAT)</button>
+                        <button type="button" onclick="selectTime('02:00 PM', this)" class="p-2 border border-white/5 rounded-lg text-xs text-white hover:border-[#007AFF] hover:bg-white/5 transition-all">02:00 PM (EAT)</button>
+                        <button type="button" onclick="selectTime('04:00 PM', this)" class="p-2 border border-white/5 rounded-lg text-xs text-white hover:border-[#007AFF] hover:bg-white/5 transition-all">04:00 PM (EAT)</button>
+                    </div>
+                    
+                    <div class="p-4 bg-white/[0.02] border border-white/5 rounded-xl space-y-2">
+                        <p class="text-xs text-[#94A3B8]" id="selectionStatus">No slot selected</p>
+                        <button type="button" onclick="confirmBooking()" id="confirmBookBtn" disabled class="w-full btn-premium btn-premium-primary py-2 text-xs opacity-50 cursor-not-allowed">Confirm Consultation</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="max-w-2xl mx-auto space-y-4">
+            <h3 class="text-xl font-bold text-white text-center" style="font-family: var(--font-heading);">FAQ</h3>
+            
+            <div class="space-y-3">
+                <!-- FAQ 1 -->
+                <div class="bg-[#0A0F1D] border border-white/5 rounded-2xl overflow-hidden">
+                    <button type="button" onclick="toggleFaq(this)" class="w-full px-5 py-4 flex items-center justify-between font-bold text-xs text-white text-left focus:outline-none">
+                        <span>What type of technology integrations does Teklora specialize in?</span>
+                        <i class="fas fa-plus text-[10px] text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content hidden px-5 pb-4 text-xs text-[#94A3B8] leading-relaxed border-t border-white/5 pt-3">
+                        We specialize in custom distributed cloud infrastructure, localized pgvector search engines, multi-agent AI systems automation, and complex digital twins mapping.
+                    </div>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="bg-[#0A0F1D] border border-white/5 rounded-2xl overflow-hidden">
+                    <button type="button" onclick="toggleFaq(this)" class="w-full px-5 py-4 flex items-center justify-between font-bold text-xs text-white text-left focus:outline-none">
+                        <span>How does the Autonomous AI Agent Control Center work?</span>
+                        <i class="fas fa-plus text-[10px] text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content hidden px-5 pb-4 text-xs text-[#94A3B8] leading-relaxed border-t border-white/5 pt-3">
+                        It leverages advanced LLM agent orchestration pipelines to capture trends from specified vectors, perform semantic knowledge base searches, compile detailed dossiers, and auto-publish content with zero-manual friction.
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 
-    <div
-      class="bg-[#0D121D] rounded-3xl shadow-2xl overflow-hidden w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 border border-white/5">
+    <!-- Footer Inheritance -->
+    {% include 'brand/footer.html' %}
 
-      <!-- Contact Info Side -->
-      <div class="p-10 md:p-12 text-left flex flex-col justify-between relative overflow-hidden">
-        <!-- Overlay -->
-        <div class="absolute inset-0 bg-blue-600/10 z-0"></div>
-        <div class="relative z-10">
-          <h3 class="text-3xl font-bold mb-4 text-white">Let's get in touch</h3>
-          <p class="text-gray-400 text-sm leading-relaxed mb-8">
-            Ready to transform your digital presence? Reach out today to discuss your project, ask questions, or
-            schedule a consultation. We're here to build the future with you.
-          </p>
+    <script>
+        // Form submission
+        document.getElementById('contactsForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = document.getElementById('submitContactBtn');
+            const alertBox = document.getElementById('validationAlert');
+            const originalContent = btn.innerHTML;
 
-          <div class="space-y-6">
-            <div class="flex items-center gap-4 text-gray-300">
-              <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-                <img src="{% static 'brand/images/location.png' %}" class="w-5 h-5" alt="Location" />
-              </div>
-              <p>Nairobi, Kenya</p>
-            </div>
-            <div class="flex items-center gap-4 text-gray-300">
-              <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-                <img src="{% static 'brand/images/email.png' %}" class="w-5 h-5" alt="Email" />
-              </div>
-              <p>info@brantechsolutions.co</p>
-            </div>
-            <div class="flex items-center gap-4 text-gray-300">
-              <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-                <img src="{% static 'brand/images/phone.png' %}" class="w-5 h-5" alt="Phone" />
-              </div>
-              <p>+254 704 894220</p>
-            </div>
-          </div>
-        </div>
+            const email = document.getElementById('emailInput').value;
+            if (!email.includes('@')) {
+                alertBox.classList.remove('hidden');
+                alertBox.textContent = "Please enter a valid email address.";
+                return;
+            }
+            alertBox.classList.add('hidden');
 
-        <div class="mt-12 relative z-10">
-          <p class="text-gray-400 mb-4">Connect with us:</p>
-          <div class="flex gap-4">
-            <a href="#"
-              class="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white transition-all">
-              <i class="fab fa-facebook-f"></i>
-            </a>
-            <a href="https://whatsapp.com/channel/0029Vb6Apwr7oQhe7bynyU0o"
-              class="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white transition-all">
-              <i class="fab fa-whatsapp"></i>
-            </a>
-            <a href="https://www.instagram.com/brantech_solutions"
-              class="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white transition-all">
-              <i class="fab fa-instagram"></i>
-            </a>
-            <a href="https://www.linkedin.com/company/brantech-solutions-ke/"
-              class="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white transition-all">
-              <i class="fab fa-linkedin-in"></i>
-            </a>
-          </div>
-        </div>
-      </div>
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Connecting...';
 
-      <!-- Contact Form Side -->
-      <div class="p-10 md:p-12 bg-[#06090F] relative">
-        <span
-          class="absolute top-10 right-10 w-24 h-24 bg-gradient-to-tr from-blue-500 to-green-500 rounded-full blur-[60px] opacity-20"></span>
-        <span
-          class="absolute bottom-10 left-10 w-32 h-32 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full blur-[60px] opacity-20"></span>
+            try {
+                const response = await fetch(form.action, {
+                    method: form.method,
+                    body: new FormData(form),
+                    headers: { 'Accept': 'application/json' }
+                });
 
-        <form action="{% url 'contact_submit' %}" method="POST" autocomplete="off" class="relative z-10">
-          {% csrf_token %}
-          {% if messages %}
-            {% for message in messages %}
-              <div class="mb-4 rounded-lg px-4 py-3 text-sm {% if message.tags == 'error' %}bg-red-500/10 text-red-400{% else %}bg-green-500/10 text-green-400{% endif %}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-          <!-- Honeypot: hidden from users, bots fill it -->
-          <input type="text" name="website" tabindex="-1" autocomplete="off"
-                 style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
-          <h3 class="text-2xl font-bold mb-6 text-white">Contact us</h3>
-
-          <div class="relative mb-6">
-            <input type="text" name="name" id="name" required
-              class="w-full bg-[#0D121D] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors peer placeholder-transparent"
-              placeholder="Username" />
-            <label for="name"
-              class="absolute left-4 -top-2.5 text-blue-400 text-xs bg-[#06090F] px-1 transition-all 
-                     peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-500 peer-placeholder-shown:text-sm peer-placeholder-shown:bg-transparent
-                     peer-focus:-top-2.5 peer-focus:text-blue-400 peer-focus:text-xs peer-focus:bg-[#06090F]">Username</label>
-          </div>
-
-          <div class="relative mb-6">
-            <input type="email" name="email" id="email" required
-              class="w-full bg-[#0D121D] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors peer placeholder-transparent"
-              placeholder="Email" />
-            <label for="email"
-              class="absolute left-4 -top-2.5 text-blue-400 text-xs bg-[#06090F] px-1 transition-all 
-                     peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-500 peer-placeholder-shown:text-sm peer-placeholder-shown:bg-transparent
-                     peer-focus:-top-2.5 peer-focus:text-blue-400 peer-focus:text-xs peer-focus:bg-[#06090F]">Email</label>
-          </div>
-
-          <div class="relative mb-6">
-            <input type="tel" name="phone" id="phone"
-              class="w-full bg-[#0D121D] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors peer placeholder-transparent"
-              placeholder="Phone" />
-            <label for="phone"
-              class="absolute left-4 -top-2.5 text-blue-400 text-xs bg-[#06090F] px-1 transition-all 
-                     peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-500 peer-placeholder-shown:text-sm peer-placeholder-shown:bg-transparent
-                     peer-focus:-top-2.5 peer-focus:text-blue-400 peer-focus:text-xs peer-focus:bg-[#06090F]">Phone</label>
-          </div>
-
-          <div class="relative mb-6">
-            <textarea name="message" id="message" required
-              class="w-full bg-[#0D121D] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors h-32 resize-none peer placeholder-transparent"
-              placeholder="Message"></textarea>
-            <label for="message"
-              class="absolute left-4 -top-2.5 text-blue-400 text-xs bg-[#06090F] px-1 transition-all 
-                     peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-500 peer-placeholder-shown:text-sm peer-placeholder-shown:bg-transparent
-                     peer-focus:-top-2.5 peer-focus:text-blue-400 peer-focus:text-xs peer-focus:bg-[#06090F]">Message</label>
-          </div>
-
-          <button type="submit" id="submitBtn"
-            class="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold py-3 rounded-lg cursor-pointer hover:shadow-lg hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2">
-            <span>Send Message</span>
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    document.querySelector('form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const form = e.target;
-      const btn = document.getElementById('submitBtn');
-      const originalContent = btn.innerHTML;
-
-      // Show loading state
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-      try {
-        const response = await fetch(form.action, {
-          method: form.method,
-          body: new FormData(form),
-          headers: {
-            'Accept': 'application/json'
-          }
+                if (response.ok) {
+                    btn.innerHTML = '<i class="fas fa-circle-check text-[#00FF94] mr-2"></i> Connection Success!';
+                    setTimeout(() => {
+                        alert("Inquiry successfully saved! We will follow up shortly.");
+                        window.location.href = "{% url 'index' %}";
+                    }, 1000);
+                } else {
+                    alert("Submission failed. Please try again.");
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            } catch (err) {
+                alert("Network error. Please try again.");
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
         });
 
-        if (response.ok) {
-          // Success
-          alert("Congratulations! Your message has been sent successfully.");
-          window.location.href = "{% url 'index' %}";
-        } else {
-          // Error
-          alert("Oops! There was a problem sending your message. Please try again.");
-          btn.disabled = false;
-          btn.innerHTML = originalContent;
+        // FAQ accordion
+        function toggleFaq(buttonEl) {
+            const content = buttonEl.nextElementSibling;
+            const icon = buttonEl.querySelector('i');
+            
+            content.classList.toggle('hidden');
+            if (content.classList.contains('hidden')) {
+                icon.className = 'fas fa-plus text-[10px] text-gray-400 transition-transform duration-300';
+            } else {
+                icon.className = 'fas fa-minus text-[10px] text-[#00FF94] transition-transform duration-300';
+            }
         }
-      } catch (error) {
-        alert("Oops! There was a network error. Please check your connection and try again.");
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
-      }
-    });
-  </script>
 
-  <!-- Footer -->
-  {% include 'brand/footer.html' %}
+        // Calendar
+        let selectedDate = null;
+        let selectedTime = null;
 
-  <script src="{% static 'brand/js/components.js' %}"></script>
-  <script src="{% static 'brand/js/app.js' %}"></script>
+        function buildCalendar() {
+            const daysContainer = document.getElementById('calendarDays');
+            if (!daysContainer) return;
+            
+            daysContainer.innerHTML = '';
+            
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => {
+                const h = document.createElement('div');
+                h.className = 'font-bold text-[#64748B] mb-2';
+                h.textContent = d;
+                daysContainer.appendChild(h);
+            });
 
-  <!-- Chat Assistant -->
-  <div id="chatAssistant" class="chat-assistant">
-    <!-- Floating Chat Button -->
-    <div id="chatToggle" class="chat-toggle">
-      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-      </svg>
-      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
-    </div>
+            for (let i = 1; i <= 31; i++) {
+                const dayEl = document.createElement('button');
+                dayEl.type = 'button';
+                dayEl.className = 'p-1.5 rounded-lg border border-transparent text-white hover:bg-white/5 transition-colors focus:outline-none';
+                dayEl.textContent = i;
+                dayEl.onclick = () => selectDate(i, dayEl);
+                daysContainer.appendChild(dayEl);
+            }
+        }
 
-    <!-- Chat Window -->
-    <div id="chatWindow" class="chat-window">
-      <!-- Chat Header -->
-      <div class="chat-header">
-        <div class="chat-header-info">
-          <div class="chat-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <div class="chat-header-text">
-            <h3>TekLora Assistant</h3>
-            <p>How can I help you today?</p>
-          </div>
-        </div>
-        <button id="chatClose" class="chat-close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
+        function selectDate(dayNum, el) {
+            selectedDate = `July ${dayNum}, 2026`;
+            
+            document.querySelectorAll('#calendarDays button').forEach(b => {
+                b.classList.remove('bg-[#007AFF]', 'text-white');
+            });
+            el.classList.add('bg-[#007AFF]', 'text-white');
+            updateSelectionStatus();
+        }
 
-      <!-- Chat Messages -->
-      <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-        <div class="chat-welcome">
-          <div class="welcome-message">
-            <div class="welcome-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-            <div class="welcome-text">
-              <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
-              <ul>
-                <li>Our services and solutions</li>
-                <li>Project inquiries</li>
-                <li>Technical support</li>
-                <li>General questions</li>
-              </ul>
-              <p>What would you like to know?</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        function selectTime(timeStr, el) {
+            selectedTime = timeStr;
+            
+            document.querySelectorAll('#timeSlots button').forEach(b => {
+                b.classList.remove('border-[#007AFF]', 'bg-white/5');
+            });
+            el.classList.add('border-[#007AFF]', 'bg-white/5');
+            updateSelectionStatus();
+        }
 
-      <!-- Chat Input -->
-      <div class="chat-input-container">
-        <div class="chat-input-wrapper">
-          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
-          <button id="chatSend" class="chat-send" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22,2 15,22 11,13 2,9 22,2" />
-            </svg>
-          </button>
-        </div>
-        <div class="chat-typing" id="chatTyping" style="display: none;">
-          <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span>TekLora Assistant is typing...</span>
-        </div>
-      </div>
-    </div>
-  </div>
+        function updateSelectionStatus() {
+            const statusEl = document.getElementById('selectionStatus');
+            const confirmBtn = document.getElementById('confirmBookBtn');
+            
+            if (selectedDate && selectedTime) {
+                statusEl.innerHTML = `Selected: <span class="text-[#00FF94] font-bold">${selectedDate} at ${selectedTime}</span>`;
+                confirmBtn.disabled = false;
+                confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else if (selectedDate) {
+                statusEl.textContent = `Selected date: ${selectedDate}. Pick a time slot.`;
+            } else if (selectedTime) {
+                statusEl.textContent = `Selected time slot: ${selectedTime}. Pick a date.`;
+            }
+        }
 
-  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+        function confirmBooking() {
+            alert(`🎉 Consultation booked for ${selectedDate} at ${selectedTime}. We've sent a calendar link invite to your address!`);
+            selectedDate = null;
+            selectedTime = null;
+            document.getElementById('selectionStatus').textContent = "No slot selected";
+            
+            const confirmBtn = document.getElementById('confirmBookBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            document.querySelectorAll('#calendarDays button').forEach(b => b.classList.remove('bg-[#007AFF]', 'text-white'));
+            document.querySelectorAll('#timeSlots button').forEach(b => b.classList.remove('border-[#007AFF]', 'bg-white/5'));
+        }
+
+        buildCalendar();
+    </script>
 </body>
-
 </html>

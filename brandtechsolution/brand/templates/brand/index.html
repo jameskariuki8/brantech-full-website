@@ -1,481 +1,691 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teklora - Future Tech Systems</title>
-    <meta name="description" content="Techlora - World-class web development, mobile apps, and agentic AI solutions.">
+    <title>Teklora - Intelligent Systems & AI Infrastructure</title>
+    <meta name="description" content="AI-powered platforms, cloud ecosystems, and digital infrastructure for Africa and beyond.">
 
-    <!-- Favicon -->
     <!-- Favicon -->
     <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
     <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
     <!-- Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}" />
-    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <meta name="google-site-verification" content="SuiLUiwCG2O7t0mYaacGJDuimseEttcu8vF7r-VYt8Y" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
+    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 </head>
+<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased">
 
-<body class="bg-[#06090F] text-white font-inter">
-
-    <!-- Header Inheritance -->
+    <!-- Global Navigation Header -->
     {% include 'brand/header.html' %}
 
-    <!-- HERO SECTION -->
-    <section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
-        <div class="container max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10 px-6">
-            <!-- Text Content -->
-            <div>
-                <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight text-white">
-                    We Build The <br>
-                    <span class="text-blue">Digital Future.</span>
+    <!-- SECTION 1: HERO SECTION -->
+    <section class="relative min-h-screen flex items-center justify-center pt-24 overflow-hidden bg-[#050811]">
+        <!-- Floating Blobs (Background) -->
+        <div class="blob-bg blob-1"></div>
+        <div class="blob-bg blob-2"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10 w-full">
+            <div class="space-y-6">
+                <!-- Headline -->
+                <h1 class="text-4xl sm:text-6xl xl:text-7xl font-extrabold text-white tracking-tight leading-none" style="font-family: var(--font-heading);">
+                    Engineering Next-Gen <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#007AFF] to-[#00FF94]">Intelligent Systems</span>
                 </h1>
-                <p class="text-xl text-gray-400 mb-10 max-w-lg leading-relaxed">
-                    Techlora delivers world-class web development, mobile apps, and agentic AI solutions. We turn
-                    complex problems into elegant, scalable systems.
+                <!-- Subtitle -->
+                <p class="text-base sm:text-lg text-[#94A3B8] max-w-lg leading-relaxed">
+                    We build autonomous AI networks, robust cloud engines, and digital infrastructure scaled for high-density enterprise operations.
                 </p>
-                <div class="flex gap-4">
-                    <a href="#services" class="btn btn-secondary">
-                        Explore Services
-                    </a>
-                    <a href="{% url 'contacts' %}" class="btn btn-primary">
-                        Get Started <i class="fas fa-arrow-right ml-2"></i>
-                    </a>
+                <!-- Actions -->
+                <div class="flex flex-wrap gap-4 pt-2">
+                    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary">Book Consultation</a>
+                    <a href="#featured-products" class="btn-premium btn-premium-secondary">Explore Products</a>
                 </div>
             </div>
 
-            <!-- Hero Image (Generated) -->
-            <div class="relative">
-                <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-white/5 group">
-                    <div
-                        class="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-green-500/20 mix-blend-overlay z-10">
-                    </div>
-                    <!-- Using the generated image path here, assuming it's moved to static or accessible -->
-                    <img src="{% static 'brand/images/hero.png' %}" alt="Teklora Tech"
-                        class="w-full h-auto object-cover grayscale hover:grayscale-0 transition duration-700">
-                </div>
-                <!-- Decorative Elements -->
-                <div class="absolute -z-10 top-10 -right-10 w-64 h-64 bg-blue-500/20 rounded-full blur-[100px]"></div>
-                <div class="absolute -z-10 -bottom-10 -left-10 w-64 h-64 bg-green-500/20 rounded-full blur-[100px]">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- INTERACTIVE SECTION -->
-    <section class="py-20 bg-[#0D121D] border-y border-white/5">
-        <div class="container max-w-4xl mx-auto">
-            <div class="interactive-console cursor-pointer" id="consoleTrigger">
-                <div class="console-header">
-                    <div class="dot dot-red"></div>
-                    <div class="dot dot-yellow"></div>
-                    <div class="dot dot-green"></div>
-                </div>
-                <div class="font-mono text-lg md:text-xl leading-relaxed min-h-[3.5rem] md:min-h-auto">
-                    <span class="text-green-400">root@teklora:~$</span> <span id="typewriter"
-                        class="text-blue-400 typing-cursor"></span>
-                </div>
-                <div id="revealMessage" class="opacity-0 mt-6 pt-6 border-t border-white/10 text-center">
-                    <h3 class="text-2xl font-bold text-white mb-2">Welcome to Teklora</h3>
-                    <p class="text-gray-400">We are here for you. Let's build something extraordinary.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SERVICES SECTION (Zig-Zag Layout) -->
-    <section id="services" class="py-16 md:py-32 bg-[#06090F]">
-        <div class="container">
-            <div class="text-center mb-12 md:mb-24">
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Services We Offer</h2>
-                <div class="h-1 w-24 bg-blue-500 mx-auto rounded-full"></div>
-            </div>
-
-            <div class="space-y-16 md:space-y-32">
-                <!-- Service 1: Web & Mobile Development -->
-                <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <!-- Text Left -->
-                    <div class="order-2 md:order-1 tech-card">
-                        <h3 class="text-3xl font-bold mb-6 text-white">Web & Mobile Development</h3>
-                        <p class="text-gray-400 text-lg leading-relaxed mb-8">
-                            Transform your ideas into powerful digital experiences. We engineer robust platforms that
-                            scale with your ambitions, ensuring every interaction creates a lasting impact.
+            <!-- Floating UI Cards -->
+            <div class="relative lg:h-[500px] flex items-center justify-center">
+                <div class="relative w-full max-w-[420px] space-y-6">
+                    <!-- UI Card 1: AI Agent console -->
+                    <div class="glass-card rounded-2xl p-5 border border-white/5 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform duration-500 relative z-20">
+                        <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                            <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest">Autonomous Core</span>
+                            <div class="w-2.5 h-2.5 rounded-full bg-[#00FF94] animate-pulse"></div>
+                        </div>
+                        <p class="font-mono text-xs text-white leading-relaxed mb-3">
+                            <span class="text-[#00FF94]">&gt;&gt;&gt; RUNNING WORKFLOWS...</span><br>
+                            - Trend Monitor: ACTIVE<br>
+                            - Fact Checking: COMPLETED<br>
+                            - Synthesis: SUCCESS
                         </p>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div class="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">99.9%</span>
-                                <span class="text-xs text-blue-400">Uptime Guarantee</span>
-                            </div>
-                            <div class="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">&lt;1s</span>
-                                <span class="text-xs text-blue-400">Load Speeds</span>
-                            </div>
+                        <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-gradient-to-r from-[#007AFF] to-[#00FF94] h-full w-[85%] animate-pulse"></div>
                         </div>
-                        <div class="bg-white/5 rounded-lg p-4 border border-white/5">
-                            <div class="flex justify-between text-xs text-gray-400 mb-2">
-                                <span>Performance Score</span>
-                                <span class="text-green-400">98/100</span>
-                            </div>
-                            <div class="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-blue-500 to-green-400 w-[98%]"></div>
-                            </div>
-                        </div>
+                    </div>
 
-                    </div>
-                    <!-- Image Right -->
-                    <div class="order-1 md:order-2">
-                        <img src="{% static 'brand/images/web&mobile.png' %}" alt="Web Development"
-                            class="w-full h-auto object-contain">
-                    </div>
-                </div>
-
-                <!-- Service: Cloud Services -->
-                <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <!-- Image Left -->
-                    <div class="order-1">
-                        <img src="{% static 'brand/images/cloud.png' %}" alt="Cloud Services"
-                            class="w-full h-auto object-contain">
-                    </div>
-                    <!-- Text Right -->
-                    <div class="order-2 tech-card">
-                        <h3 class="text-3xl font-bold mb-6 text-white">Cloud Services</h3>
-                        <p class="text-gray-400 text-lg leading-relaxed mb-8">
-                            Reliable and scalable cloud infrastructure designed to enhance performance, strengthen
-                            security, and reduce operational costs.
-                        </p>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div class="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">99.99%</span>
-                                <span class="text-xs text-blue-400">Availability</span>
-                            </div>
-                            <div class="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">Secure</span>
-                                <span class="text-xs text-blue-400">Data Protection</span>
-                            </div>
-                        </div>
-                        <div class="bg-white/5 rounded-lg p-4 border border-white/5">
-                            <div class="flex justify-between text-xs text-gray-400 mb-2">
-                                <span>Scalability Score</span>
-                                <span class="text-green-400">Top Tier</span>
-                            </div>
-                            <div class="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 w-[100%]"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Service 2: Agentic AI Solutions -->
-                <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <!-- Image Left -->
-                    <div class="order-1">
-                        <img src="{% static 'brand/images/agentic.png' %}" alt="AI Solutions"
-                            class="w-full h-auto object-contain">
-                    </div>
-                    <!-- Text Right -->
-                    <div class="order-2 tech-card">
-                        <h3 class="text-3xl font-bold mb-6 text-white">Agentic AI Solutions</h3>
-                        <p class="text-gray-400 text-lg leading-relaxed mb-8">
-                            Unlock the future of work with intelligent autonomy. Our AI systems don't just analyze
-                            data they take action, optimizing your operations and decision-making in real-time.
-                        </p>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div class="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">24/7</span>
-                                <span class="text-xs text-green-400">Autonomous Ops</span>
-                            </div>
-                            <div class="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">-40%</span>
-                                <span class="text-xs text-green-400">Operational Costs</span>
-                            </div>
-                        </div>
-                        <div class="bg-white/5 rounded-lg p-4 border border-white/5">
-                            <div class="flex justify-between text-xs text-gray-400 mb-2">
-                                <span>Workflow Efficiency</span>
-                                <span class="text-green-400">+10x Boost</span>
-                            </div>
-                            <div class="flex gap-1 h-8 items-end">
-                                <div class="w-1/3 bg-gray-700 rounded-sm h-[30%] relative group">
-                                    <div
-                                        class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Manual</div>
-                                </div>
-                                <div class="w-1/3 bg-gray-600 rounded-sm h-[50%] relative group">
-                                    <div
-                                        class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Basic Tools</div>
-                                </div>
-                                <div
-                                    class="w-1/3 bg-gradient-to-t from-green-600 to-green-400 rounded-sm h-[100%] relative group shadow-[0_0_10px_rgba(74,222,128,0.3)]">
-                                    <div
-                                        class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-green-400 font-bold">
-                                        AI Agents</div>
-                                </div>
-                            </div>
-                        </div>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Service 3: Digital Strategy & Growth -->
-                <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <!-- Text Left -->
-                    <div class="order-2 md:order-1 tech-card">
-                        <h3 class="text-3xl font-bold mb-6 text-white">Digital Strategy & Growth</h3>
-                        <p class="text-gray-400 text-lg leading-relaxed mb-8">
-                            Turn technology into your competitive advantage. We craft data-backed strategies that
-                            position
-                            your brand as a market leader and drive measurable, sustainable growth.
-                        </p>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div class="bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">300%</span>
-                                <span class="text-xs text-purple-400">Traffic Growth</span>
-                            </div>
-                            <div class="bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
-                                <span class="block text-2xl font-bold text-white mb-1">Top 3</span>
-                                <span class="text-xs text-purple-400">Search Ranking</span>
-                            </div>
-                        </div>
-                        <div class="bg-white/5 rounded-lg p-4 border border-white/5 flex items-center gap-4">
-                            <div
-                                class="w-12 h-12 rounded-full border-4 border-purple-500 flex items-center justify-center text-xs font-bold text-white">
-                                +85%
-                            </div>
+                    <!-- UI Card 2: Cloud node -->
+                    <div class="glass-card rounded-2xl p-5 border border-white/5 shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-500 translate-x-4 relative z-10">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-[#00FF94]/10 flex items-center justify-center text-[#00FF94]"><i class="fas fa-network-wired"></i></div>
                             <div>
-                                <div class="text-sm font-bold text-white">Conversion Rate</div>
-                                <div class="text-xs text-gray-400">Consistent MoM Growth</div>
-                            </div>
-                            <div class="ml-auto text-purple-400">
-                                <i class="fas fa-chart-line text-2xl"></i>
+                                <h4 class="text-sm font-bold text-white">Cloud Node</h4>
+                                <p class="text-[10px] text-gray-400">Kubernetes • Cape Town</p>
                             </div>
                         </div>
-                        </ul>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-white/5 border border-white/5 p-2 rounded-lg text-center">
+                                <span class="block text-xs font-bold text-white">99.98%</span>
+                                <span class="text-[9px] text-[#94A3B8]">Uptime</span>
+                            </div>
+                            <div class="bg-white/5 border border-white/5 p-2 rounded-lg text-center">
+                                <span class="block text-xs font-bold text-white">18ms</span>
+                                <span class="text-[9px] text-[#94A3B8]">Latency</span>
+                            </div>
+                            <div class="bg-white/5 border border-white/5 p-2 rounded-lg text-center">
+                                <span class="block text-xs font-bold text-white">1.2k/s</span>
+                                <span class="text-[9px] text-[#94A3B8]">Req</span>
+                            </div>
+                        </div>
                     </div>
-                    <!-- Image Right -->
-                    <div class="order-1 md:order-2">
-                        <img src="{% static 'brand/images/digital.png' %}" alt="Digital Strategy"
-                            class="w-full h-auto object-contain">
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 text-gray-500 text-center space-y-1">
+            <i class="fas fa-chevron-down animate-bounce text-sm text-[#00FF94]"></i>
+        </div>
+    </section>
+
+    <!-- SECTION 2: TRUSTED BY SECTION -->
+    <section class="py-12 bg-[#050811] border-y border-white/5 overflow-hidden">
+        <div class="trusted-track-container">
+            <div class="trusted-track">
+                <!-- Cards -->
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-university text-[#007AFF] text-lg"></i> <span class="text-sm font-semibold text-white">Strathmore University</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-handshake text-[#00FF94] text-lg"></i> <span class="text-sm font-semibold text-white">USAID Partners</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-briefcase text-purple-400 text-lg"></i> <span class="text-sm font-semibold text-white">Apex Tech Ventures</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-building-ngo text-[#00FF94] text-lg"></i> <span class="text-sm font-semibold text-white">AgriSync Africa</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-shield-halved text-orange-400 text-lg"></i> <span class="text-sm font-semibold text-white">Ministry of Education</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-rocket text-[#007AFF] text-lg"></i> <span class="text-sm font-semibold text-white">ScaleUp Hubs</span></div>
+                <!-- Duplicates -->
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-university text-[#007AFF] text-lg"></i> <span class="text-sm font-semibold text-white">Strathmore University</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-handshake text-[#00FF94] text-lg"></i> <span class="text-sm font-semibold text-white">USAID Partners</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-briefcase text-purple-400 text-lg"></i> <span class="text-sm font-semibold text-white">Apex Tech Ventures</span></div>
+                <div class="trusted-card" style="background: #0A0F1D; border-color: rgba(255,255,255,0.06);"><i class="fas fa-building-ngo text-[#00FF94] text-lg"></i> <span class="text-sm font-semibold text-white">AgriSync Africa</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: WHO WE ARE (Timeline) -->
+    <section class="py-20 bg-[#050811]">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-start">
+            <div class="space-y-4">
+                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Our Edge</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Redefining Platform Execution</h2>
+                <p class="text-[#94A3B8] leading-relaxed text-sm">
+                    We develop core custom architectures, cloud engines, and AI agents engineered to perform and scale smoothly in challenging production settings.
+                </p>
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div class="p-4 border border-white/5 bg-[#0A0F1D] rounded-xl">
+                        <h4 class="font-bold text-white mb-1 text-sm">The Mission</h4>
+                        <p class="text-xs text-[#94A3B8]">Deploy intelligent digital twins and systems that optimize assets.</p>
+                    </div>
+                    <div class="p-4 border border-white/5 bg-[#0A0F1D] rounded-xl">
+                        <h4 class="font-bold text-white mb-1 text-sm">Core Focus</h4>
+                        <p class="text-xs text-[#94A3B8]">Absolute data performance, security, and runtime optimizations.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <span class="text-xs font-bold text-[#007AFF] block mb-0.5">2023 - System Foundation</span>
+                    <h4 class="text-base font-bold text-white mb-1">Distributed Frameworks</h4>
+                    <p class="text-xs text-[#94A3B8]">Deployed distributed cloud structures running legacy educational programs with minimal bandwidth overheads.</p>
+                </div>
+                <div class="timeline-item">
+                    <span class="text-xs font-bold text-[#007AFF] block mb-0.5">2025 - Agentic AI Integration</span>
+                    <h4 class="text-base font-bold text-white mb-1">Autonomous Pipelines</h4>
+                    <p class="text-xs text-[#94A3B8]">Shipped autonomous trend-intelligence pipelines that verify and synthesize digital insights in real-time.</p>
+                </div>
+                <div class="timeline-item">
+                    <span class="text-xs font-bold text-[#007AFF] block mb-0.5">2026 - African Digital Twins</span>
+                    <h4 class="text-base font-bold text-white mb-1">Spatial Sensing Loops</h4>
+                    <p class="text-xs text-[#94A3B8]">Constructing localized digital twins for farming yield optimization and healthcare transit routing.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: FEATURED PRODUCTS -->
+    <section id="featured-products" class="py-20 bg-[#0A0F1D] border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-12 space-y-2">
+                <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest">Deployments</span>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Active Software Products</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Product Card 1 -->
+                <div class="glass-card rounded-2xl p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 bg-[#00FF94]/10 text-[#00FF94] text-[10px] font-bold rounded-full">LIVE</span>
+                            <span class="text-[10px] text-[#64748B]">99.98% Latency Node</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">EduShare Africa</h3>
+                        <p class="text-[#94A3B8] text-xs leading-relaxed">
+                            Decentralized educational portal serving static offline-first syllabus guides to students.
+                        </p>
+                        <div class="flex flex-wrap gap-1.5 pt-1">
+                            <span class="px-2 py-0.5 bg-white/5 rounded text-[10px] text-white">React</span>
+                            <span class="px-2 py-0.5 bg-white/5 rounded text-[10px] text-white">Django</span>
+                            <span class="px-2 py-0.5 bg-white/5 rounded text-[10px] text-white">CDN Cache</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-white/5 mt-6 pt-4 flex items-center justify-between">
+                        <span class="text-xs font-bold text-white"><i class="fas fa-users mr-1 text-[#007AFF]"></i>50k+ Learners</span>
+                        <a href="{% url 'projects' %}" class="text-[#007AFF] text-xs font-bold hover:underline">Inspect Node <i class="fas fa-arrow-right ml-0.5"></i></a>
+                    </div>
+                </div>
+
+                <!-- Product Card 2 -->
+                <div class="glass-card rounded-2xl p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 bg-[#007AFF]/10 text-[#007AFF] text-[10px] font-bold rounded-full">ACTIVE BETA</span>
+                            <span class="text-[10px] text-[#64748B]">Autonomous Model</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">AI Agent Control Center</h3>
+                        <p class="text-[#94A3B8] text-xs leading-relaxed">
+                            Multi-agent network tracking dynamic tech trends, drafting, and auto-publishing verified reports.
+                        </p>
+                        <div class="flex flex-wrap gap-1.5 pt-1">
+                            <span class="px-2 py-0.5 bg-white/5 rounded text-[10px] text-white">Gemini</span>
+                            <span class="px-2 py-0.5 bg-white/5 rounded text-[10px] text-white">pgvector</span>
+                            <span class="px-2 py-0.5 bg-white/5 rounded text-[10px] text-white">LangGraph</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-white/5 mt-6 pt-4 flex items-center justify-between">
+                        <span class="text-xs font-bold text-white"><i class="fas fa-bolt mr-1 text-[#00FF94]"></i>10x Flow Boost</span>
+                        <a href="/editorial/dashboard/" class="text-[#00FF94] text-xs font-bold hover:underline">Launch Console <i class="fas fa-arrow-right ml-0.5"></i></a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- TECH STACK CAROUSEL -->
-    <section class="py-20 bg-[#0D121D] border-y border-white/5 overflow-hidden">
-        <div class="container mb-12 text-center">
-            <h2 class="text-2xl font-bold text-gray-400">Powered By Modern Tech</h2>
-        </div>
-        <div class="relative w-full">
-            <div class="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#0D121D] to-transparent z-10"></div>
-            <div class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#0D121D] to-transparent z-10"></div>
-
-            <div class="tech-carousel-track">
-                <!-- Logos (FontAwesome for demo, replace with SVGs) -->
-                <i class="fab fa-aws tech-logo" title="AWS"></i>
-                <i class="fab fa-python tech-logo" title="Python"></i>
-                <i class="fab fa-react tech-logo" title="React"></i>
-                <i class="fab fa-node tech-logo" title="Node.js"></i>
-                <i class="fab fa-docker tech-logo" title="Docker"></i>
-                <i class="fab fa-laravel tech-logo" title="Laravel"></i>
-                <i class="fab fa-js tech-logo" title="JavaScript"></i>
-                <i class="fas fa-database tech-logo" title="SQL"></i>
-                <i class="fab fa-git-alt tech-logo" title="Git"></i>
-                <i class="fab fa-linux tech-logo" title="Linux"></i>
-                <!-- Duplicate for infinite scroll -->
-                <i class="fab fa-aws tech-logo" title="AWS"></i>
-                <i class="fab fa-python tech-logo" title="Python"></i>
-                <i class="fab fa-react tech-logo" title="React"></i>
-                <i class="fab fa-node tech-logo" title="Node.js"></i>
-                <i class="fab fa-docker tech-logo" title="Docker"></i>
-                <i class="fab fa-laravel tech-logo" title="Laravel"></i>
-                <i class="fab fa-js tech-logo" title="JavaScript"></i>
-                <i class="fas fa-database tech-logo" title="SQL"></i>
-                <i class="fab fa-git-alt tech-logo" title="Git"></i>
-                <i class="fab fa-linux tech-logo" title="Linux"></i>
+    <!-- SECTION 5: INNOVATION LAB -->
+    <section id="research" class="py-20 bg-[#050811]">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-12 space-y-2">
+                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Applied Labs</span>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Active Research Core</h2>
             </div>
-        </div>
-    </section>
 
-    <!-- WHY TECHLORA -->
-    <section class="py-16 md:py-32 bg-[#06090F]">
-        <div class="container">
-            <div class="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
-                <div>
-                    <div class="text-center">
-                        <h2 class="text-4xl font-bold mb-6">Why Choose Teklora?</h2>
-                        <p class="text-gray-400 mb-8 text-lg mx-auto">We don't just write code; we engineer
-                            success. Our approach
-                            combines technical excellence with strategic foresight.</p>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Lab 1 -->
+                <div class="p-5 border border-white/5 rounded-2xl hover:border-[#007AFF]/30 transition-all duration-300 group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#007AFF] mb-4 group-hover:bg-[#007AFF] group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-brain text-lg"></i>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Card 1 -->
-                        <div
-                            class="bg-[#0D121D] p-6 rounded-xl border border-white/5 hover:border-blue-500/50 transition-colors group">
-                            <div
-                                class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4 text-blue-500 group-hover:bg-blue-500/20 transition-colors">
-                                <i class="fas fa-lightbulb text-xl"></i>
-                            </div>
-                            <h4 class="text-xl font-bold mb-2 text-white">Innovation First</h4>
-                            <p class="text-gray-400 text-sm leading-relaxed">Pioneering the future with cutting-edge
-                                standards and emerging technologies.</p>
-                        </div>
-
-                        <!-- Card 2 -->
-                        <div
-                            class="bg-[#0D121D] p-6 rounded-xl border border-white/5 hover:border-green-500/50 transition-colors group">
-                            <div
-                                class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center mb-4 text-green-500 group-hover:bg-green-500/20 transition-colors">
-                                <i class="fas fa-certificate text-xl"></i>
-                            </div>
-                            <h4 class="text-xl font-bold mb-2 text-white">Deep Expertise</h4>
-                            <p class="text-gray-400 text-sm leading-relaxed">Decades of combined experience delivering
-                                robust, scalable solutions.</p>
-                        </div>
-
-                        <!-- Card 3 -->
-                        <div
-                            class="bg-[#0D121D] p-6 rounded-xl border border-white/5 hover:border-purple-500/50 transition-colors group">
-                            <div
-                                class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center mb-4 text-purple-500 group-hover:bg-purple-500/20 transition-colors">
-                                <i class="fas fa-robot text-xl"></i>
-                            </div>
-                            <h4 class="text-xl font-bold mb-2 text-white">AI-Driven Development</h4>
-                            <p class="text-gray-400 text-sm leading-relaxed">Accelerating delivery and optimizing
-                                performance with autonomous agents.</p>
-                        </div>
-
-                        <!-- Card 4 -->
-                        <div
-                            class="bg-[#0D121D] p-6 rounded-xl border border-white/5 hover:border-red-500/50 transition-colors group">
-                            <div
-                                class="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center mb-4 text-red-500 group-hover:bg-red-500/20 transition-colors">
-                                <i class="fas fa-shield-alt text-xl"></i>
-                            </div>
-                            <h4 class="text-xl font-bold mb-2 text-white">Enterprise Security</h4>
-                            <p class="text-gray-400 text-sm leading-relaxed">Data protection and system integrity built
-                                into every layer by design.</p>
-                        </div>
-                    </div>
+                    <h4 class="text-base font-bold text-white mb-1">Artificial Intelligence</h4>
+                    <p class="text-xs text-[#94A3B8] leading-relaxed">Developing autonomous retrieval-augmented reasoning models for dynamic data sets.</p>
                 </div>
-
-                <div class="relative h-64 md:h-full md:min-h-[500px] flex items-center justify-center mt-8 md:mt-0">
-                    <img src="{% static 'brand/images/choose.png' %}" alt="Why Teklora"
-                        class="relative w-full h-full object-contain p-4">
+                <!-- Lab 2 -->
+                <div class="p-5 border border-white/5 rounded-2xl hover:border-[#00FF94]/30 transition-all duration-300 group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#00FF94] mb-4 group-hover:bg-[#00FF94] group-hover:text-[#050811] transition-colors duration-300">
+                        <i class="fas fa-vector-square text-lg"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-white mb-1">Spatial Computing</h4>
+                    <p class="text-xs text-[#94A3B8] leading-relaxed">Mapping geospatial coordinate layers to dynamic transit grids for vehicle flow dispatching.</p>
+                </div>
+                <!-- Lab 3 -->
+                <div class="p-5 border border-white/5 rounded-2xl hover:border-[#007AFF]/30 transition-all duration-300 group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#007AFF] mb-4 group-hover:bg-[#007AFF] group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-clone text-lg"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-white mb-1">Digital Twins</h4>
+                    <p class="text-xs text-[#94A3B8] leading-relaxed">Building telemetry twins that map farming outputs and coordinate remote clinic routes.</p>
+                </div>
+                <!-- Lab 4 -->
+                <div class="p-5 border border-white/5 rounded-2xl hover:border-[#00FF94]/30 transition-all duration-300 group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#00FF94] mb-4 group-hover:bg-[#00FF94] group-hover:text-[#050811] transition-colors duration-300">
+                        <i class="fas fa-server text-lg"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-white mb-1">Cloud OS Kernel</h4>
+                    <p class="text-xs text-[#94A3B8] leading-relaxed">Pioneering lightweight container kernels to support high-density processing pipelines.</p>
+                </div>
+                <!-- Lab 5 -->
+                <div class="p-5 border border-white/5 rounded-2xl hover:border-[#007AFF]/30 transition-all duration-300 group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#007AFF] mb-4 group-hover:bg-[#007AFF] group-hover:text-white transition-colors duration-300">
+                        <i class="fas fa-robot text-lg"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-white mb-1">System Automation</h4>
+                    <p class="text-xs text-[#94A3B8] leading-relaxed">Optimizing asynchronous database operations to reduce worker overheads.</p>
+                </div>
+                <!-- Lab 6 -->
+                <div class="p-5 border border-white/5 rounded-2xl hover:border-[#00FF94]/30 transition-all duration-300 group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#00FF94] mb-4 group-hover:bg-[#00FF94] group-hover:text-[#050811] transition-colors duration-300">
+                        <i class="fas fa-car-side text-lg"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-white mb-1">Future Mobility</h4>
+                    <p class="text-xs text-[#94A3B8] leading-relaxed">Designing clean network coordinates and routing optimization algorithms for regional setups.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer Inheritance -->
+    <!-- SECTION 6: IMPACT METRICS (Counters) -->
+    <section class="py-16 bg-[#0A0F1D] text-white border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center" id="metricsSection">
+            <div class="space-y-1">
+                <span class="block text-3xl sm:text-4xl font-extrabold text-[#00FF94]" id="metricProjects">0</span>
+                <span class="text-[10px] text-gray-400 uppercase tracking-widest">Active Deployments</span>
+            </div>
+            <div class="space-y-1">
+                <span class="block text-3xl sm:text-4xl font-extrabold text-[#00FF94]" id="metricCountries">0</span>
+                <span class="text-[10px] text-gray-400 uppercase tracking-widest">Countries Reached</span>
+            </div>
+            <div class="space-y-1">
+                <span class="block text-3xl sm:text-4xl font-extrabold text-[#00FF94]" id="metricHours">0</span>
+                <span class="text-[10px] text-gray-400 uppercase tracking-widest">Hours Saved / Year</span>
+            </div>
+            <div class="space-y-1">
+                <span class="block text-3xl sm:text-4xl font-extrabold text-[#00FF94]" id="metricUsers">0</span>
+                <span class="text-[10px] text-gray-400 uppercase tracking-widest">End Users Served</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7: CASE STUDIES -->
+    <section class="py-20 bg-[#050811]">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-12 space-y-2">
+                <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest">Impact Logs</span>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Enterprise Case Studies</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Case Card 1 -->
+                <div class="bg-[#0A0F1D] border border-white/5 rounded-2xl p-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">Educational Portals</span>
+                        <span class="text-[10px] text-[#64748B]">Strathmore Integration</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Scalable Learning Portal</h3>
+                    <div class="space-y-2 text-xs text-[#94A3B8] leading-relaxed">
+                        <p><strong>The Problem:</strong> Bandwidth limits blocked students from remote study syllabus catalogs.</p>
+                        <p><strong>The Solution:</strong> Constructed custom localized edge CDN nodes with zero-rated file compression.</p>
+                        <p><strong>The Impact:</strong> <span class="text-[#00FF94] font-semibold">Dropped query latency by 74%</span>; supporting 35k daily study sessions.</p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                        <div class="flex gap-1">
+                            <span class="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white">Django</span>
+                            <span class="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white">Cloudflare</span>
+                        </div>
+                        <a href="{% url 'projects' %}" class="text-xs font-bold text-[#007AFF] hover:underline">Read Story <i class="fas fa-chevron-right ml-0.5"></i></a>
+                    </div>
+                </div>
+
+                <!-- Case Card 2 -->
+                <div class="bg-[#0A0F1D] border border-white/5 rounded-2xl p-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">Agentic Automation</span>
+                        <span class="text-[10px] text-[#64748B]">AI Control Deployment</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Editorial Room Synthesis</h3>
+                    <div class="space-y-2 text-xs text-[#94A3B8] leading-relaxed">
+                        <p><strong>The Problem:</strong> Manual research and compilation caused a 48-hour pipeline bottleneck.</p>
+                        <p><strong>The Solution:</strong> Implemented autonomous vector search filters and Gemini Pro orchestration.</p>
+                        <p><strong>The Impact:</strong> <span class="text-[#00FF94] font-semibold">Reduced creation times to 10 minutes</span>, saving 2,000+ staff hours.</p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                        <div class="flex gap-1">
+                            <span class="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white">LangGraph</span>
+                            <span class="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white">pgvector</span>
+                        </div>
+                        <a href="{% url 'projects' %}" class="text-xs font-bold text-[#007AFF] hover:underline">Read Story <i class="fas fa-chevron-right ml-0.5"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 8: ARCHITECTURE WORKFLOW -->
+    <section class="py-20 bg-[#050811] border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-12 space-y-2">
+                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Methodology</span>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Architectural Excellence Workflow</h2>
+            </div>
+
+            <!-- Architecture Nodes -->
+            <div class="architecture-grid mb-8">
+                <div class="arch-node active border-white/10" onclick="showArchDetails('discovery', this)">
+                    <div class="text-[10px] text-[#007AFF] font-bold">STAGE 01</div>
+                    <h4 class="text-xs font-bold text-white">Discovery</h4>
+                </div>
+                <div class="arch-node border-white/10" onclick="showArchDetails('design', this)">
+                    <div class="text-[10px] text-[#007AFF] font-bold">STAGE 02</div>
+                    <h4 class="text-xs font-bold text-white">Design</h4>
+                </div>
+                <div class="arch-node border-white/10" onclick="showArchDetails('development', this)">
+                    <div class="text-[10px] text-[#007AFF] font-bold">STAGE 03</div>
+                    <h4 class="text-xs font-bold text-white">Development</h4>
+                </div>
+                <div class="arch-node border-white/10" onclick="showArchDetails('deployment', this)">
+                    <div class="text-[10px] text-[#007AFF] font-bold">STAGE 04</div>
+                    <h4 class="text-xs font-bold text-white">Deployment</h4>
+                </div>
+                <div class="arch-node border-white/10" onclick="showArchDetails('scaling', this)">
+                    <div class="text-[10px] text-[#007AFF] font-bold">STAGE 05</div>
+                    <h4 class="text-xs font-bold text-white">Scaling</h4>
+                </div>
+            </div>
+
+            <!-- Details Container -->
+            <div class="bg-[#0A0F1D] border border-white/5 rounded-2xl p-6 max-w-2xl mx-auto text-center" id="archDetailBox">
+                <h3 class="text-lg font-bold text-white mb-2" id="archTitle">Stage 01: Discovery & Strategy</h3>
+                <p class="text-xs text-[#94A3B8] leading-relaxed" id="archDesc">We analyze system telemetry, interview institutional stakeholders, and map out constraints to outline technical design parameters precisely.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 9: TECHNOLOGY STACK -->
+    <section class="py-20 bg-[#0A0F1D] border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6 space-y-10">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest">Stack Inventory</span>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Our Core Tech Stack</h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Frontend -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-xs text-white uppercase tracking-wider"><i class="fas fa-window-maximize mr-1 text-[#007AFF]"></i>Frontend & UI</h4>
+                    <div class="badge-group">
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-react text-blue-400"></i> React</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-js text-yellow-500"></i> JavaScript</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-css3-alt text-blue-500"></i> Tailwind</div>
+                    </div>
+                </div>
+
+                <!-- Backend -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-xs text-white uppercase tracking-wider"><i class="fas fa-server mr-1 text-[#00FF94]"></i>Backend & DB</h4>
+                    <div class="badge-group">
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-python text-blue-500"></i> Django / Python</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-node-js text-green-500"></i> Node.js</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fas fa-database text-blue-300"></i> PostgreSQL</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fas fa-brain text-[#00FF94]"></i> pgvector</div>
+                    </div>
+                </div>
+
+                <!-- Infrastructure -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-xs text-white uppercase tracking-wider"><i class="fas fa-cloud mr-1 text-purple-400"></i>Cloud & AI Core</h4>
+                    <div class="badge-group">
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-aws text-orange-400"></i> AWS</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fab fa-docker text-blue-400"></i> Docker</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fas fa-shield-halved text-orange-500"></i> Cloudflare</div>
+                        <div class="tech-badge" style="background:#050811; border-color:rgba(255,255,255,0.06);"><i class="fas fa-network-wired text-cyan-400"></i> Gemini API</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 10: TESTIMONIALS -->
+    <section class="py-20 bg-[#050811]">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-12 space-y-2">
+                <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest">Feedback</span>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Partner Testimonials</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                <!-- Testimonial 1 -->
+                <div class="glass-card rounded-2xl p-6 space-y-4 relative">
+                    <i class="fas fa-quote-left text-[#007AFF]/10 text-5xl absolute top-4 left-4 z-0"></i>
+                    <div class="relative z-10 space-y-3">
+                        <p class="text-xs italic text-[#94A3B8] leading-relaxed">
+                            "Teklora redesigned our student access portal. Latency dropped by 74% and scale performance improved. Highly recommended."
+                        </p>
+                        <div class="flex items-center gap-3 pt-1">
+                            <div class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center font-bold text-white text-xs">EN</div>
+                            <div>
+                                <h4 class="text-xs font-bold text-white">Emmanuel N.</h4>
+                                <p class="text-[9px] text-gray-500">Head of Systems • Strathmore Partners</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="glass-card rounded-2xl p-6 space-y-4 relative">
+                    <i class="fas fa-quote-left text-[#007AFF]/10 text-5xl absolute top-4 left-4 z-0"></i>
+                    <div class="relative z-10 space-y-3">
+                        <p class="text-xs italic text-[#94A3B8] leading-relaxed">
+                            "Integrating their AI agent pipelines reduced our compilation cycles from 48 hours to 10 minutes."
+                        </p>
+                        <div class="flex items-center gap-3 pt-1">
+                            <div class="w-8 h-8 rounded-full bg-emerald-900 flex items-center justify-center font-bold text-white text-xs">SM</div>
+                            <div>
+                                <h4 class="text-xs font-bold text-white">Sophia M.</h4>
+                                <p class="text-[9px] text-gray-500">Communications Director • AgriSync Initiative</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 11: INSIGHTS -->
+    <section class="py-20 bg-[#0A0F1D] border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Research Journal</span>
+                    <h2 class="text-3xl font-extrabold text-white tracking-tight">Teklora Engineering Blog</h2>
+                </div>
+                <a href="{% url 'blog' %}" class="text-[#00FF94] font-bold text-xs hover:underline">View All <i class="fas fa-arrow-right ml-0.5"></i></a>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Blog 1 -->
+                <div class="bg-[#050811] border border-white/5 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-white/10 transition-colors">
+                    <div class="p-5 space-y-3">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-[#007AFF] font-bold">CLOUD OS</span>
+                            <span class="text-gray-500">5 min read</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white hover:text-[#007AFF] transition-colors"><a href="{% url 'blog' %}">Containerized Nodes for Low Bandwidth Regions</a></h4>
+                        <p class="text-[11px] text-[#94A3B8] leading-relaxed">How caching frameworks and localized distributions minimize latency in regional setups.</p>
+                    </div>
+                    <div class="px-5 py-3 bg-[#0A0F1D] border-t border-white/5 text-[9px] text-gray-500">Published July 2026</div>
+                </div>
+
+                <!-- Blog 2 -->
+                <div class="bg-[#050811] border border-white/5 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-white/10 transition-colors">
+                    <div class="p-5 space-y-3">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-[#007AFF] font-bold">INTELLIGENCE</span>
+                            <span class="text-gray-500">8 min read</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white hover:text-[#007AFF] transition-colors"><a href="{% url 'blog' %}">Agentic AI Pipelines with Vector Database Filters</a></h4>
+                        <p class="text-[11px] text-[#94A3B8] leading-relaxed">pgvector query mapping, similarity thresholds, and LangChain integration patterns.</p>
+                    </div>
+                    <div class="px-5 py-3 bg-[#0A0F1D] border-t border-white/5 text-[9px] text-gray-500">Published July 2026</div>
+                </div>
+
+                <!-- Blog 3 -->
+                <div class="bg-[#050811] border border-white/5 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-white/10 transition-colors">
+                    <div class="p-5 space-y-3">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-[#007AFF] font-bold">DIGITAL TWINS</span>
+                            <span class="text-gray-500">12 min read</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white hover:text-[#007AFF] transition-colors"><a href="{% url 'blog' %}">Applying Digital Twins to Smart City Logistics Networks</a></h4>
+                        <p class="text-[11px] text-[#94A3B8] leading-relaxed">How telemetry mapping helps dispatch units and optimize transport routes dynamically.</p>
+                    </div>
+                    <div class="px-5 py-3 bg-[#0A0F1D] border-t border-white/5 text-[9px] text-gray-500">Published July 2026</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 12: CALL TO ACTION -->
+    <section class="py-20 bg-[#0A0F1D] text-center relative overflow-hidden border-t border-white/5">
+        <div class="absolute inset-0 bg-gradient-to-tr from-blue-900/10 to-green-900/10 mix-blend-overlay"></div>
+        <div class="max-w-2xl mx-auto px-6 relative z-10 space-y-6">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight" style="font-family: var(--font-heading);">Ready to Build the Future?</h2>
+            <p class="text-sm text-[#94A3B8] max-w-lg mx-auto">
+                Engage our engineering team to design, deploy, and scale intelligent systems tailored to your company's operational parameters.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary">Book Consultation</a>
+                <a href="{% url 'contacts' %}" class="btn-premium btn-premium-secondary">Start a Project</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Footer -->
     {% include 'brand/footer.html' %}
 
-    <!-- Magic Script -->
-    <script src="{% static 'brand/js/magic.js' %}"></script>
-    <script src="{% static 'brand/js/components.js' %}"></script>
+    <!-- Magic Scripts: Scroll Animations, Counter Trigger, Architecture Toggler -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Scroll Animations (Fade Up)
+            const fadeElements = document.querySelectorAll('.animate-fade-up');
+            const scrollObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                        scrollObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            fadeElements.forEach(el => scrollObserver.observe(el));
 
-    <!-- Chat Assistant -->
-    <div id="chatAssistant" class="chat-assistant">
-        <!-- Floating Chat Button -->
-        <div id="chatToggle" class="chat-toggle">
-            <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-            </svg>
-            <div class="chat-notification" id="chatNotification" style="display: none;"></div>
-        </div>
+            // 2. Animated Metrics Counters
+            const metrics = {
+                metricProjects: 120,
+                metricCountries: 14,
+                metricHours: 25000,
+                metricUsers: 75000
+            };
 
-        <!-- Chat Window -->
-        <div id="chatWindow" class="chat-window">
-            <!-- Chat Header -->
-            <div class="chat-header">
-                <div class="chat-header-info">
-                    <div class="chat-avatar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                    </div>
-                    <div class="chat-header-text">
-                        <h3>TekLora Assistant</h3>
-                        <p>How can I help you today?</p>
-                    </div>
-                </div>
-                <button id="chatClose" class="chat-close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-            </div>
+            const countUp = (elementId, targetValue) => {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                
+                let start = 0;
+                const duration = 1500; // 1.5 seconds duration
+                const startTime = performance.now();
+                
+                const updateCounter = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Ease out quadratic
+                    const easeProgress = progress * (2 - progress);
+                    const currentValue = Math.floor(easeProgress * targetValue);
+                    
+                    if (targetValue >= 1000) {
+                        el.textContent = currentValue.toLocaleString() + '+';
+                    } else {
+                        el.textContent = currentValue.toString();
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(updateCounter);
+                    }
+                };
+                
+                requestAnimationFrame(updateCounter);
+            };
 
-            <!-- Chat Messages -->
-            <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-                <div class="chat-welcome">
-                    <div class="welcome-message">
-                        <div class="welcome-avatar">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                        </div>
-                        <div class="welcome-text">
-                            <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
-                            <ul>
-                                <li>Our services and solutions</li>
-                                <li>Project inquiries</li>
-                                <li>Technical support</li>
-                                <li>General questions</li>
-                            </ul>
-                            <p>What would you like to know?</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            const metricsSection = document.getElementById('metricsSection');
+            const metricsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        Object.keys(metrics).forEach(key => {
+                            countUp(key, metrics[key]);
+                        });
+                        metricsObserver.unobserve(metricsSection);
+                    }
+                });
+            }, { threshold: 0.2 });
 
-            <!-- Chat Input -->
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..."
-                        maxlength="500">
-                    <button id="chatSend" class="chat-send" disabled>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="22" y1="2" x2="11" y2="13" />
-                            <polygon points="22,2 15,22 11,13 2,9 22,2" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="chat-typing" id="chatTyping" style="display: none;">
-                    <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <span>TekLora Assistant is typing...</span>
-                </div>
-            </div>
-        </div>
-    </div>
+            if (metricsSection) metricsObserver.observe(metricsSection);
+        });
 
-    <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
+        // 3. Interactive Architecture Nodes details switcher
+        const stages = {
+            discovery: {
+                title: "Stage 01: Discovery & Strategy",
+                desc: "We analyze system telemetry, interview institutional stakeholders, and map out constraints to outline technical design parameters precisely."
+            },
+            design: {
+                title: "Stage 02: Architectural Design",
+                desc: "We build precise microservices flowcharts, map pgvector indexing paradigms, and outline high-availability network routers for failover prevention."
+            },
+            development: {
+                title: "Stage 03: Core Engineering",
+                desc: "We develop modular codebases following high-performance structures, write robust test coverage, and verify schema migrations safely."
+            },
+            deployment: {
+                title: "Stage 04: Production Orchestration",
+                desc: "We build Docker containers, deploy behind Cloudflare tunnels, and route regional caches to ensure minimal latency for end-users."
+            },
+            scaling: {
+                title: "Stage 05: Resource Scaling",
+                desc: "We monitor execution logs, scale Kubernetes pods under pressure, database indexes optimization, and fine-tune model parameters for efficiency."
+            }
+        };
+
+        function showArchDetails(stageKey, nodeEl) {
+            const detailBox = document.getElementById('archDetailBox');
+            const titleEl = document.getElementById('archTitle');
+            const descEl = document.getElementById('archDesc');
+            
+            if (!detailBox || !titleEl || !descEl) return;
+
+            // Update details
+            titleEl.textContent = stages[stageKey].title;
+            descEl.textContent = stages[stageKey].desc;
+
+            // Update active node styling
+            document.querySelectorAll('.arch-node').forEach(node => {
+                node.classList.remove('border-blue-600', 'shadow-md');
+            });
+            nodeEl.classList.add('border-blue-600', 'shadow-md');
+        }
+    </script>
 </body>
-
 </html>

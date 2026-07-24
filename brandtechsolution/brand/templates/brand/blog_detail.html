@@ -15,72 +15,63 @@
   {% if post.image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}">{% endif %}
 
   <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}">
   <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}">
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
   <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
     :root {
-      --neon-blue: #60a5fa;
-      --text-blue-dim: #60a5fa;
+      --bg-dark: #050811;
+      --panel-dark: #0A0F1D;
+      --accent-blue: #007AFF;
+      --accent-green: #00FF94;
     }
 
     body {
-      background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%);
-      color: rgba(255, 255, 255, 0.9);
+      background: var(--bg-dark) !important;
+      color: #94A3B8 !important;
       min-height: 100vh;
     }
 
-    .blog-modal-content {
-      background: linear-gradient(180deg, rgba(12, 22, 34, .96), rgba(8, 16, 26, .96));
-      border: 2px solid rgba(96, 165, 250, .25);
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 0 40px rgba(96, 165, 250, .08), 0 0 40px rgba(22, 255, 122, .05);
+    .reading-prose {
+      font-family: 'Inter', sans-serif;
+      line-height: 1.8;
+      font-size: 1.05rem;
+      color: #E2E8F0;
     }
 
-    .blog-modal-title {
-      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 14px rgba(96, 165, 250, .35), 0 0 14px rgba(22, 255, 122, .25);
-      font-size: 1.8rem;
-      margin: 0.5rem 0 0.75rem;
+    .reading-prose h1, .reading-prose h2, .reading-prose h3 {
+      font-family: var(--font-heading);
+      color: #FFFFFF;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
     }
 
-    .blog-modal-meta {
-      color: var(--text-blue-dim);
-      margin-bottom: 1.5rem;
-      font-size: 0.9rem;
-    }
+    .reading-prose h1 { font-size: 1.75rem; }
+    .reading-prose h2 { font-size: 1.5rem; }
+    .reading-prose p { margin-bottom: 1.25rem; }
 
-    .blog-modal-content-text {
-      color: rgba(255, 255, 255, 0.9);
-      line-height: 1.7;
-      font-size: 1rem;
-    }
-
-    .blog-card-category {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      background: linear-gradient(90deg, rgba(40, 96, 144, .12) 0%, rgba(22, 255, 122, .12) 100%);
-      border: 1px solid rgba(96, 165, 250, .35);
-      border-radius: 6px;
-      color: var(--neon-blue);
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-    }
-
-    .blog-tag {
-      display: inline-block;
-      margin-left: 0.5rem;
-      padding: 0.15rem 0.5rem;
-      background: rgba(96, 165, 250, .1);
-      border: 1px solid rgba(96, 165, 250, .25);
-      border-radius: 4px;
-      color: var(--neon-blue);
-      font-size: 0.8rem;
+    .comment-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
     }
   </style>
 
@@ -99,23 +90,203 @@
   }
   </script>
 </head>
-<body>
+<body class="bg-[#050811] text-[#94A3B8]">
+  
   {% include 'brand/header.html' %}
 
-  <article class="blog-modal-content" style="max-width:820px; margin:6rem auto 3rem; padding:0 1.5rem;">
-    {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}" style="width:100%; border-radius:12px; margin-bottom:1.5rem;">{% endif %}
-    <span class="blog-card-category">{{ post.category }}</span>
-    <h1 class="blog-modal-title">{{ post.title }}</h1>
-    <div class="blog-modal-meta">
-      <span>{{ post.created_at|date:"F j, Y" }}</span>
-      {% for tag in post.get_tags_list %}<span class="blog-tag">#{{ tag }}</span>{% endfor %}
+  <!-- Reading container -->
+  <article class="max-w-3xl mx-auto px-6 py-32 space-y-8">
+    
+    <!-- Article Header -->
+    <div class="space-y-4 text-center">
+      <span class="px-2.5 py-0.5 bg-[#007AFF]/10 text-[#007AFF] text-xs font-bold rounded-full uppercase tracking-wider">{{ post.category }}</span>
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight" style="font-family: var(--font-heading);">{{ post.title }}</h1>
+      <p class="text-xs text-gray-500">{{ post.created_at|date:"F j, Y" }}</p>
     </div>
-    <div class="blog-modal-content-text">
+
+    <!-- Article Hero Image (Omitted if none exists) -->
+    {% if post.image %}
+    <div class="w-full overflow-hidden rounded-2xl border border-white/5 aspect-video">
+      <img class="w-full h-full object-cover" src="{{ post.image.url }}" alt="{{ post.title }}">
+    </div>
+    {% endif %}
+
+    <!-- Main Prose Reading Body -->
+    <div class="reading-prose border-b border-white/5 pb-10">
       {{ content_html|safe }}
     </div>
-    <p style="margin-top:2rem;"><a href="{% url 'blog' %}">&larr; Back to all posts</a></p>
+
+    <!-- Interactive Section -->
+    <div class="space-y-8 pt-4">
+      
+      <!-- Likes Action Block -->
+      <div class="flex items-center justify-between bg-[#0A0F1D] p-5 rounded-2xl border border-white/5">
+        <div class="space-y-1">
+          <h4 class="font-bold text-sm text-white">Support this publication</h4>
+          <p class="text-xs text-gray-500">Likes help surface articles on the popular filter tab.</p>
+        </div>
+        <button id="modalLikeBtn" onclick="toggleLikePost()" class="btn-premium px-5 py-2.5 flex items-center gap-2 rounded-xl transition-all font-bold text-xs" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255,255,255,0.06); color: white;">
+          <i class="fas fa-thumbs-up"></i>
+          <span>Like (<span id="modalLikesCount">{{ likes_count }}</span>)</span>
+        </button>
+      </div>
+
+      <!-- Comments Threads -->
+      <div class="space-y-6">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2" style="font-family: var(--font-heading);">
+          <i class="fas fa-comments text-[#00FF94]"></i> Comments (<span id="modalCommentsCount">{{ comments.count }}</span>)
+        </h3>
+
+        <div id="modalCommentsList" class="space-y-3">
+          {% for c in comments %}
+          <div class="comment-card">
+            <div class="flex justify-between items-center mb-1 text-[10px]">
+              <span class="font-bold text-white">{{ c.user_name }}</span>
+              <span class="text-gray-500">{{ c.created_at|date:"M d, Y \a\t H:i" }}</span>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">{{ c.content }}</p>
+          </div>
+          {% empty %}
+          <p class="text-xs text-gray-500 italic">No comments posted yet. Be the first to share your thoughts!</p>
+          {% endfor %}
+        </div>
+
+        <!-- Add Comment Form -->
+        <form id="commentSubmitForm" onsubmit="submitCommentForm(event)" class="bg-[#0A0F1D] border border-white/5 p-6 rounded-2xl space-y-4">
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider">Leave a Comment</h4>
+          
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label for="commentAuthor" class="block text-[10px] text-gray-500 font-bold uppercase mb-1">Your Name</label>
+              <input type="text" id="commentAuthor" required class="w-full bg-[#050811] border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#007AFF] outline-none" placeholder="e.g. John Doe">
+            </div>
+          </div>
+
+          <div>
+            <label for="commentContent" class="block text-[10px] text-gray-500 font-bold uppercase mb-1">Message</label>
+            <textarea id="commentContent" required rows="3" class="w-full bg-[#050811] border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#007AFF] outline-none resize-none" placeholder="Join the discussion..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-premium btn-premium-primary text-xs py-2 px-4 rounded-lg flex items-center gap-2">
+            <span>Post Comment</span>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <p style="margin-top:4rem;"><a href="{% url 'blog' %}" class="text-xs font-bold text-[#007AFF] hover:underline">&larr; Back to all posts</a></p>
   </article>
 
   {% include 'brand/footer.html' %}
+
+  <!-- Scripts -->
+  <script>
+    const browserId = localStorage.getItem('teklora_browser_id') || ('usr_' + Math.random().toString(36).substr(2, 9));
+    if (!localStorage.getItem('teklora_browser_id')) {
+      localStorage.setItem('teklora_browser_id', browserId);
+    }
+
+    const postId = {{ post.id }};
+    let postUserLiked = false;
+
+    // Check if user liked post
+    async function checkUserLike() {
+      try {
+        const res = await fetch(`/blog/post/${postId}/json/?browser_id=${browserId}`);
+        if (res.ok) {
+          const data = await res.json();
+          postUserLiked = data.user_liked;
+          updateLikeBtnStyle();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function toggleLikePost() {
+      try {
+        const res = await fetch(`/api/blogs/${postId}/like/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ browser_id: browserId })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('modalLikesCount').textContent = data.likes_count;
+          postUserLiked = data.liked;
+          updateLikeBtnStyle();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function updateLikeBtnStyle() {
+      const btn = document.getElementById('modalLikeBtn');
+      if (!btn) return;
+      if (postUserLiked) {
+        btn.style.background = '#007AFF';
+        btn.style.color = '#FFFFFF';
+        btn.style.borderColor = 'transparent';
+      } else {
+        btn.style.background = 'rgba(255, 255, 255, 0.04)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'rgba(255,255,255,0.06)';
+      }
+    }
+
+    async function submitCommentForm(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('commentAuthor');
+      const contentInput = document.getElementById('commentContent');
+
+      const name = nameInput.value.trim() || 'Anonymous';
+      const content = contentInput.value.trim();
+
+      if (!content) return;
+
+      try {
+        const res = await fetch(`/api/blogs/${postId}/comment/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ browser_id: browserId, user_name: name, content: content })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          contentInput.value = '';
+
+          const commentsList = document.getElementById('modalCommentsList');
+          if (commentsList.querySelector('.italic')) {
+            commentsList.innerHTML = '';
+          }
+
+          const newComment = document.createElement('div');
+          newComment.className = 'comment-card';
+          newComment.innerHTML = `
+            <div class="flex justify-between items-center mb-1 text-[10px]">
+              <span class="font-bold text-white">${escapeHtml(data.comment.user_name)}</span>
+              <span class="text-gray-500">Just now</span>
+            </div>
+            <p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(data.comment.content)}</p>
+          `;
+          commentsList.prepend(newComment);
+
+          const currentCount = parseInt(document.getElementById('modalCommentsCount').textContent) + 1;
+          document.getElementById('modalCommentsCount').textContent = currentCount;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    checkUserLike();
+  </script>
 </body>
 </html>

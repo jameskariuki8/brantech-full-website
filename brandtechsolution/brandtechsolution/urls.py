@@ -13,8 +13,12 @@ urlpatterns = [
     path('api/', include('brand.api_urls')),
     path('api/ai/', include('ai_workflows.urls')),
     path('api/messaging/', include('messaging.api_urls')),
+
     path('api/staff/', include('staff.api_urls')),
     path('staff/', include('staff.urls')),
+
+    path('editorial/', include('editorial.urls')),
+
     path('accounts/login/', views.login_view),
     path('accounts/logout/', views.logout_view),
     path('accounts/', include('django.contrib.auth.urls')),

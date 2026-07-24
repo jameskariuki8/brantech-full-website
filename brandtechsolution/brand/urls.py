@@ -18,6 +18,10 @@ urlpatterns = [
 
     path('blog/', views.blog, name='blog'),
     path('blog/<slug:slug>/', views.blog_detail, name='blog_detail'),
+    path('api/blogs/<int:post_id>/like/', views.like_blog_post, name='like_blog_post'),
+    path('api/blogs/<int:post_id>/comment/', views.comment_blog_post, name='comment_blog_post'),
+    path('api/blogs/<int:post_id>/comments/', views.get_blog_comments, name='get_blog_comments'),
+    path('blog/post/<int:post_id>/json/', views.blog_json, name='blog_json'),
 
     path('projects/', views.projects, name='projects'),
     path('projects/<int:pk>/', views.project_page, name='project_page'),

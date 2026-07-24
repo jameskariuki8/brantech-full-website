@@ -1,0 +1,1 @@
+# Media Generation app package

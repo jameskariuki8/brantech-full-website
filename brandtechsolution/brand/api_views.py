@@ -1,6 +1,7 @@
 import json
 from django.http import JsonResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage
 from .models import BlogPost, Project

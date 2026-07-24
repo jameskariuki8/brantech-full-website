@@ -1,667 +1,289 @@
+{% extends 'brand/admin_base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TekLora Admin Dashboard</title>
+{% block extra_head %}
+<!-- Quill (email body editor) -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet"
+    integrity="sha384-ecIckRi4QlKYya/FQUbBUjS4qp65jF/J87Guw5uzTbO1C1Jfa/6kYmd6dXUF6D7i" crossorigin="anonymous"
+    referrerpolicy="no-referrer">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"
+    integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<style>
+    .ql-toolbar.ql-snow,
+    .ql-container.ql-snow {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
 
-    <!-- Favicon -->
-    <!-- Favicon -->
-    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    .ql-toolbar.ql-snow .ql-stroke {
+        stroke: #9ca3af;
+    }
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    .ql-toolbar.ql-snow .ql-fill {
+        fill: #9ca3af;
+    }
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    .ql-toolbar.ql-snow .ql-picker-label {
+        color: #9ca3af;
+    }
 
-    <!-- Quill (email body editor) -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet"
-        integrity="sha384-ecIckRi4QlKYya/FQUbBUjS4qp65jF/J87Guw5uzTbO1C1Jfa/6kYmd6dXUF6D7i" crossorigin="anonymous"
-        referrerpolicy="no-referrer">
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"
-        integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
-    <style>
-        .ql-toolbar.ql-snow,
-        .ql-container.ql-snow {
-            border-color: rgba(255, 255, 255, 0.08);
-        }
+    .ql-editor {
+        background: #06090F;
+        color: #e5e7eb;
+        min-height: 220px;
+    }
 
-        .ql-toolbar.ql-snow .ql-stroke {
-            stroke: #9ca3af;
-        }
+    .ql-editor.ql-blank::before {
+        color: #6b7280;
+    }
+</style>
+{% endblock %}
 
-        .ql-toolbar.ql-snow .ql-fill {
-            fill: #9ca3af;
-        }
+{% block content %}
+<div class="p-6 lg:p-10 max-w-7xl mx-auto">
 
-        .ql-toolbar.ql-snow .ql-picker-label {
-            color: #9ca3af;
-        }
+    <!-- Dashboard Section -->
+    <div id="dashboard" class="section animate-fade-in">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
+            <p class="text-gray-500">Welcome back, here's what's happening across your platform.</p>
+        </header>
 
-        .ql-editor {
-            background: #06090F;
-            color: #e5e7eb;
-            min-height: 220px;
-        }
-
-        .ql-editor.ql-blank::before {
-            color: #6b7280;
-        }
-    </style>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        dark: {
-                            bg: '#06090F',
-                            card: '#0D121D',
-                            border: 'rgba(255, 255, 255, 0.05)',
-                        },
-                        brand: {
-                            blue: '#007AFF',
-                            green: '#00FF94',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .glass-panel {
-            background: rgba(13, 18, 29, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-item.active {
-            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
-            border-left: 3px solid #007AFF;
-            color: #fff;
-        }
-
-        .nav-item:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #06090F;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #1F2937;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #374151;
-        }
-    </style>
-</head>
-
-<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
-
-    <!-- Mobile Menu Button -->
-    <button id="mobileMenuBtn"
-        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Sidebar -->
-    <aside id="sidebar"
-        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
-        <!-- Logo -->
-        <div class="h-20 flex items-center px-6 border-b border-dark-border">
-            <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
-            <span class="text-xl font-bold text-white tracking-tight">Teklora<span
-                    class="text-brand-blue">Admin</span></span>
-        </div>
-
-        <!-- Nav -->
-        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            <a href="#" onclick="showSection('dashboard', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
-                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
-            </a>
-            {% if can.manage_blog or can.manage_projects or can.manage_appointments %}
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
-            {% endif %}
-            {% if can.manage_blog %}
-            <a href="#" onclick="showSection('blogs', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
-            </a>
-            {% endif %}
-            {% if can.manage_projects %}
-            <a href="#" onclick="showSection('projects', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
-            </a>
-
-            <a href="#" onclick="showSection('githubSync', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fab fa-github w-6 text-center mr-3"></i>GitHub Manager
-            </a>
-
-            {% endif %}
-            {% if can.manage_appointments %}
-            feat/staff-roles-permissions
-            <a href="/appointments"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
-                <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
-            </a>
-
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Communications
-            </div>
-            <a href="#" onclick="showSection('inbox', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-inbox w-6 text-center mr-3"></i>Inbox
-            </a>
-            <a href="#" onclick="showSection('templates', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-file-lines w-6 text-center mr-3"></i>Templates
-            </a>
-            <a href="#" onclick="showSection('campaigns', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-
-                {% endif %}
-                {% if can.view_inbox or can.manage_templates or can.manage_campaigns %}
-                <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Communications
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Stat Card 1: Total Blogs -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-blue rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-blog text-6xl text-brand-blue"></i>
                 </div>
-                {% endif %}
-                {% if can.view_inbox %}
-                <a href="#" onclick="showSection('inbox', this)"
-                    class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                    <i class="fas fa-inbox w-6 text-center mr-3"></i>Inbox
-                </a>
-                {% endif %}
-                {% if can.manage_templates %}
-                <a href="#" onclick="showSection('templates', this)"
-                    class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                    <i class="fas fa-file-lines w-6 text-center mr-3"></i>Templates
-                </a>
-                {% endif %}
-                {% if can.manage_campaigns %}
-                <a href="#" onclick="showSection('campaigns', this)"
-                    class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                    feat/staff-roles-permissions
-                    <i class="fas fa-paper-plane w-6 text-center mr-3"></i>Campaigns
-                </a>
-                {% endif %}
-                {% if can.manage_staff %}
-                <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Administration
-                </div>
-                <a href="#" onclick="showSection('staff', this)"
-                    class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                    <i class="fas fa-users-gear w-6 text-center mr-3"></i>Staff &amp; Roles
-                </a>
-                {% endif %}
-
-        </nav>
-
-        <!-- User Profile -->
-        <div class="p-4 border-t border-dark-border">
-            <a href="{% url 'logout' %}"
-                class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
-                <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>Logout
-            </a>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
-        <!-- Top Bar (Mobile Overlay) -->
-        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
-
-        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
-
-            <!-- Dashboard Section -->
-            <div id="dashboard" class="section animate-fade-in">
-                <header class="mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
-                    <p class="text-gray-500">Welcome back, here's what's happening correctly.</p>
-                </header>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- Stat Card 1 -->
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <i class="fas fa-blog text-6xl text-brand-blue"></i>
-                        </div>
-                        <div class="relative z-10">
-                            <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
-                            <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
-                        </div>
-                    </div>
-
-                    <!-- Stat Card 2 -->
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <i class="fas fa-rocket text-6xl text-brand-green"></i>
-                        </div>
-                        <div class="relative z-10">
-                            <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
-                            <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
-                        </div>
-                    </div>
-
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
+                    <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
                 </div>
             </div>
 
-            <!-- Blog Section -->
-            {% if can.manage_blog %}{% include 'brand/admin/_blogs.html' %}{% endif %}
-
-            <!-- Project Section -->
-            {% if can.manage_projects %}{% include 'brand/admin/_projects.html' %}{% endif %}
-
-            <!-- Inbox Section -->
-            {% if can.view_inbox %}{% include 'brand/admin/_inbox.html' %}{% endif %}
-
-
-            <!-- Templates Section -->
-            {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
-
-            <!-- GitHub Sync Section -->
-            <div id="githubSync" class="section hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">GitHub Manager</h2>
-                        <p class="text-gray-500 text-sm">Sync your repositories as projects</p>
-                    </div>
-                    <button onclick="syncSelectedRepos()" id="syncBtn"
-                        class="bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
-                        <i class="fas fa-sync-alt mr-2"></i>Sync Selected
-                    </button>
+            <!-- Stat Card 2: Total Blog Views -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-green rounded-xl p-6 relative overflow-hidden group hover:border-brand-green/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-eye text-6xl text-brand-green"></i>
                 </div>
-
-                <!-- Loading indicator -->
-                <div id="githubLoading" class="text-center py-10 text-gray-500 hidden">
-                    <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
-                    <p>Loading repositories from GitHub...</p>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Blog Views</p>
+                    <h3 class="text-3xl font-bold text-white" id="blogViewsCount">0</h3>
                 </div>
-
-                <div id="githubList" class="space-y-4"></div>
             </div>
 
-            feat/projects-and-blogging
+            <!-- Stat Card 3: Active Projects -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-yellow-500 rounded-xl p-6 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-rocket text-6xl text-yellow-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
+                    <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Campaigns Section -->
-            {% if can.manage_campaigns %}{% include 'brand/admin/_campaigns.html' %}{% endif %}
+            <!-- Stat Card 4: Total Events -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-purple-500 rounded-xl p-6 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-calendar-days text-6xl text-purple-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Events</p>
+                    <h3 class="text-3xl font-bold text-white" id="eventCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Staff & Roles Section -->
-            {% if can.manage_staff %}{% include 'brand/admin/_staff.html' %}{% endif %}
+            <!-- Stat Card 5: Email Templates -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-pink-500 rounded-xl p-6 relative overflow-hidden group hover:border-pink-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-file-lines text-6xl text-pink-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Email Templates</p>
+                    <h3 class="text-3xl font-bold text-white" id="templateCount">0</h3>
+                </div>
+            </div>
 
+            <!-- Stat Card 6: Campaigns -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-cyan-500 rounded-xl p-6 relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-paper-plane text-6xl text-cyan-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Campaigns</p>
+                    <h3 class="text-3xl font-bold text-white" id="campaignCount">0</h3>
+                </div>
+            </div>
+
+            <!-- Stat Card 7: Inquiries -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-orange-500 rounded-xl p-6 relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-envelope-open-text text-6xl text-orange-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Inquiries</p>
+                    <h3 class="text-3xl font-bold text-white" id="inquiryCount">0</h3>
+                </div>
+            </div>
+
+            <!-- Stat Card 8: Appointments -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-teal-500 rounded-xl p-6 relative overflow-hidden group hover:border-teal-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-calendar-check text-6xl text-teal-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Appointments</p>
+                    <h3 class="text-3xl font-bold text-white" id="appointmentCount">0</h3>
+                </div>
+            </div>
+
+            <!-- Stat Card 9: Total Likes -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-blue rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-thumbs-up text-6xl text-brand-blue"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Likes</p>
+                    <h3 class="text-3xl font-bold text-white" id="likesCount">0</h3>
+                </div>
+            </div>
+
+            <!-- Stat Card 10: Total Comments -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-green rounded-xl p-6 relative overflow-hidden group hover:border-brand-green/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-comments text-6xl text-brand-green"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Comments</p>
+                    <h3 class="text-3xl font-bold text-white" id="commentsCount">0</h3>
+                </div>
+            </div>
         </div>
-    </main>
 
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Chart 1: Top Blogs by View Count -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-blue/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-chart-bar text-brand-blue mr-2"></i>Top Performing Blog Posts</h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="topBlogsChart"></canvas>
+                </div>
+            </div>
 
-    <script src="{% static 'brand/js/admin/core.js' %}" defer>
-    </script>
+            <!-- Chart 2: Appointments by Status -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-green/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-chart-pie text-brand-green mr-2"></i>Appointments Breakdown</h3>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="appointmentsChart"></canvas>
+                </div>
+            </div>
 
-    {{ capabilities|json_script:"capabilityData" }}
-    <script>
-        // json_script escapes the payload safely; never hand-interpolate this
-        // list into JavaScript. Gating in JS is cosmetic - the APIs enforce.
-        window.CAPABILITIES = JSON.parse(document.getElementById('capabilityData').textContent);
-        window.can = (codename) => window.CAPABILITIES.includes(codename);
-    </script>
-    <script src="{% static 'brand/js/admin/core.js' %}" defer></script>
-    feat/staff-roles-permissions
-    <script src="{% static 'brand/js/admin/editor.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/inbox.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>
+            <!-- Chart 3: Inquiries by Status -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-orange-500/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-chart-line text-orange-500 mr-2"></i>Inquiries by Status</h3>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="inquiriesChart"></canvas>
+                </div>
+            </div>
 
+            <!-- Chart 4: Campaigns Overview -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-purple-500/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-envelope text-purple-500 mr-2"></i>Campaigns Overview</h3>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="campaignsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        const API_BASE = '/api';
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-        const CSRF_TOKEN = getCookie('csrftoken');
+    <!-- Blog Section -->
+    {% if can.manage_blog %}{% include 'brand/admin/_blogs.html' %}{% endif %}
 
-        // Toggle Sidebar
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobileOverlay');
+    <!-- Project Section -->
+    {% if can.manage_projects %}{% include 'brand/admin/_projects.html' %}{% endif %}
 
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        });
+    <!-- Inbox Section -->
+    {% if can.view_inbox %}{% include 'brand/admin/_inbox.html' %}{% endif %}
 
-        overlay.addEventListener('click', () => {
-            sidebar.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
-        });
+    <!-- Templates Section -->
+    {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
 
-        function showSection(sectionName, clickedElement) {
-            // Main content sections
-            document.querySelectorAll('.section').forEach(section => { section.classList.add('hidden'); });
-            const targetSection = document.getElementById(sectionName);
-            if (targetSection) targetSection.classList.remove('hidden');
+    <!-- GitHub Sync Section -->
+    <div id="githubSync" class="section hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-white">GitHub Manager</h2>
+                <p class="text-gray-500 text-sm">Sync your repositories as projects</p>
+            </div>
+            <button onclick="syncSelectedRepos()" id="syncBtn"
+                class="bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>Sync Selected
+            </button>
+        </div>
 
-            // Sidebar highlighting
-            document.querySelectorAll('.nav-item').forEach(link => { link.classList.remove('active'); });
-            if (clickedElement) clickedElement.classList.add('active');
+        <!-- Loading indicator -->
+        <div id="githubLoading" class="text-center py-10 text-gray-500 hidden">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p>Loading repositories from GitHub...</p>
+        </div>
 
-            // Close mobile menu on navigate
-            if (window.innerWidth < 1024) {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
+        <div id="githubList" class="space-y-4"></div>
+    </div>
 
-            // Load data
-            if (sectionName === 'blogs') loadBlogs();
-            if (sectionName === 'projects') loadProjects();
-            if (sectionName === 'githubSync') loadGithubRepos();
-            // Events removed
-            if (sectionName === 'dashboard') loadDashboard();
-        }
+    <!-- Campaigns Section -->
+    {% if can.manage_campaigns %}{% include 'brand/admin/_campaigns.html' %}{% endif %}
 
-        function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
-        function hideAddForm(type) {
-            document.getElementById(`${type}Form`).classList.add('hidden');
-            const form = document.getElementById(`add${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
-            form.reset();
-            // Reset header back to 'Add' state visually if needed, simplified here
-        }
+    <!-- Staff & Roles Section -->
+    {% if can.manage_staff %}{% include 'brand/admin/_staff.html' %}{% endif %}
 
-        async function loadDashboard() {
-            try {
-                const common = { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } };
-                const [blogs, projects] = await Promise.all([
-                    fetch(`${API_BASE}/posts/`, common).then(r => r.json()),
-                    fetch(`${API_BASE}/projects/`, common).then(r => r.json())
-                ]);
+</div>
+{% endblock %}
 
-                document.getElementById('blogCount').textContent = blogs.length || 0;
-                document.getElementById('projectCount').textContent = projects.length || 0;
+{% block extra_scripts %}
+<script src="{% static 'brand/js/admin/core.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/editor.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/inbox.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/staff.js' %}" defer></script>
 
-
-
-            } catch (error) { console.error('Error loading dashboard:', error); }
-        }
-
-        async function loadBlogs() {
-            try {
-                const response = await fetch(`${API_BASE}/posts/`, { credentials: 'same-origin' });
-                const blogs = await response.json();
-                const container = document.getElementById('blogsList');
-                if (!blogs.length) {
-                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No posts found. Create your first one!</div>`;
-                    return;
-                }
-                container.innerHTML = blogs.map(blog => `
-                    <div class="bg-dark-card border border-dark-border p-5 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4 hover:border-brand-blue/30 transition-colors group">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded uppercase">${blog.category}</span>
-                                ${blog.featured ? '<span class="text-xs font-bold text-purple-400 px-2 py-1 bg-purple-900/20 rounded">FEATURED</span>' : ''}
-                                <span class="text-gray-500 text-xs">${new Date(blog.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-brand-blue transition-colors">${blog.title}</h3>
-                            <p class="text-gray-400 text-sm line-clamp-2 mb-3">${blog.excerpt || ''}</p>
-                            <div class="flex items-center text-xs text-gray-500 gap-4">
-                                <span><i class="fas fa-eye mr-1"></i>${blog.view_count || 0}</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="editBlog(${blog.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteItem('posts', ${blog.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-
-        async function loadProjects() {
-            try {
-                const response = await fetch(`${API_BASE}/projects/`, { credentials: 'same-origin' });
-                const projects = await response.json();
-                const container = document.getElementById('projectsList');
-                if (!projects.length) {
-                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No projects found. Add one!</div>`;
-                    return;
-                }
-                container.innerHTML = projects.map(project => `
-                    <div class="bg-dark-card border border-dark-border p-5 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4 hover:border-brand-green/30 transition-colors group">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-xs font-bold text-brand-blue px-2 py-1 bg-blue-900/20 rounded">PROJECT</span>
-                                ${project.featured ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded">FEATURED</span>' : ''}
-                                ${project.is_github_synced ? `<span class="text-xs font-bold text-gray-300 px-2 py-1 bg-gray-800 rounded"><i class="fab fa-github mr-1"></i>${project.github_role || 'synced'}</span>` : ''}
-                            </div>
-                            <h3 class="text-xl font-bold text-white mb-1">${project.title}</h3>
-                            <p class="text-sm text-gray-400 mb-2">${project.short_description || ''}</p>
-                            <a href="${project.project_url || '#'}" target="_blank" class="text-xs text-brand-blue hover:underline">${project.project_url || 'No Live Link'}</a>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="editProject(${project.id})" class="p-2 text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteItem('projects', ${project.id})" class="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) { console.error(e); }
-        }
-
-        async function loadGithubRepos() {
-            document.getElementById('githubList').innerHTML = '';
-            document.getElementById('githubLoading').classList.remove('hidden');
-            try {
-                const response = await fetch(`${API_BASE}/github/repos/`, { credentials: 'same-origin' });
-                const data = await response.json();
-                document.getElementById('githubLoading').classList.add('hidden');
-
-                const repos = data.results || [];
-                const container = document.getElementById('githubList');
-                if (!repos.length) {
-                    container.innerHTML = `<div class="text-center py-10 text-gray-600">No repositories found or PAT is invalid.</div>`;
-                    return;
-                }
-
-                container.innerHTML = repos.map(repo => `
-                    <div class="bg-dark-card border ${repo.is_synced ? 'border-brand-green/50' : 'border-dark-border'} p-5 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4 hover:border-brand-blue/30 transition-colors">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <h3 class="text-lg font-bold ${repo.is_synced ? 'text-brand-green' : 'text-white'} mb-1">${repo.name}</h3>
-                                ${repo.is_private ? '<span class="text-xs font-bold text-yellow-500 px-2 py-1 bg-yellow-900/20 rounded"><i class="fas fa-lock mr-1"></i>Private</span>' : ''}
-                                <span class="text-xs font-bold text-gray-400 px-2 py-1 bg-gray-800 rounded uppercase">${repo.role}</span>
-                                ${repo.is_synced ? '<span class="text-xs font-bold text-brand-green px-2 py-1 bg-green-900/20 rounded"><i class="fas fa-check mr-1"></i>Synced</span>' : ''}
-                            </div>
-                            <p class="text-sm text-gray-400 mb-2 line-clamp-1">${repo.description}</p>
-                        </div>
-                        <div class="flex items-center justify-end w-24">
-                            <input type="checkbox" value="${repo.id}" class="github-repo-check w-6 h-6 bg-[#06090F] border-dark-border rounded text-brand-blue focus:ring-offset-gray-900 cursor-pointer">
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {
-                console.error(e);
-                document.getElementById('githubLoading').classList.add('hidden');
-            }
-        }
-
-        async function syncSelectedRepos() {
-            const checkboxes = document.querySelectorAll('.github-repo-check:checked');
-            const repo_ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
-
-            if (repo_ids.length === 0) {
-                alert("Please select at least one repository to sync.");
-                return;
-            }
-
-            const btn = document.getElementById('syncBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...`;
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(`${API_BASE}/github/sync/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': CSRF_TOKEN
-                    },
-                    body: JSON.stringify({ repo_ids: repo_ids }),
-                    credentials: 'same-origin'
-                });
-
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    alert(`Successfully synced ${data.synced_count} repositories!`);
-                    loadGithubRepos(); // Reload the list
-                    loadProjects(); // Reload projects in background
-                } else {
-                    alert('Error syncing: ' + (data.error || 'Unknown error'));
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Connection error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // CRUD helpers
-        async function addItem(endpoint, form) {
-            const formData = new FormData(form);
-            if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
-            try {
-                const response = await fetch(`${API_BASE}/${endpoint}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                if (response.ok) {
-                    alert('Saved successfully!');
-                    form.reset();
-                    // hideAddForm call moved to specific blocks below to ensure correct ID is used
-                    if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); }
-                    if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); }
-                } else {
-                    alert('Error saving item');
-                }
-            } catch (e) { console.error(e); alert('Error'); }
-        }
-
-        async function updateItem(endpoint, id, form) {
-            const formData = new FormData(form);
-            if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
-
-            try {
-                // Use POST for updates to support file uploads (Django doesn't handle multipart PUT well)
-                const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                if (response.ok) {
-                    alert('Updated!');
-                    form.reset();
-                    form.onsubmit = null; // Remove override
-
-                    // Reset UI text
-                    const type = endpoint === 'posts' ? 'blog' : 'project';
-                    document.querySelector(`#${type}Form h3`).textContent = type === 'blog' ? 'New Blog Post' : 'New Project Details';
-                    document.querySelector(`#${type}Form button[type="submit"]`).textContent = type === 'blog' ? 'Save Post' : 'Save Project';
-
-                    if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); }; }
-                    if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); }; }
-                } else { alert('Update failed'); }
-            } catch (e) { console.error(e); alert('Error'); }
-        }
-
-        async function deleteItem(endpoint, id) {
-            if (!confirm('Delete this item permanently?')) return;
-            try {
-                const res = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-                if (res.ok) {
-                    if (endpoint === 'posts') loadBlogs();
-                    if (endpoint === 'projects') loadProjects();
-                } else { alert('Delete failed'); }
-            } catch (e) { console.error(e); }
-        }
-
-        // Edit Pre-fill
-        async function editBlog(id) {
-            try {
-                const blog = await fetch(`${API_BASE}/posts/${id}/`).then(r => r.json());
-                const form = document.getElementById('addBlogForm');
-                form.title.value = blog.title;
-                form.category.value = blog.category;
-                form.excerpt.value = blog.excerpt;
-                form.content.value = blog.content;
-                form.tags.value = blog.tags;
-                form.featured.checked = blog.featured;
-
-                document.querySelector('#blogForm h3').textContent = 'Edit Blog Post';
-                const btn = document.querySelector('#blogForm button[type="submit"]');
-                btn.textContent = 'Update Post';
-
-                form.onsubmit = async (e) => { e.preventDefault(); await updateItem('posts', id, e.target); };
-                showAddForm('blog');
-            } catch (e) { console.error(e); }
-        }
-
-        async function editProject(id) {
-            try {
-                const p = await fetch(`${API_BASE}/projects/${id}/`).then(r => r.json());
-                const form = document.getElementById('addProjectForm');
-                form.title.value = p.title || '';
-                if (form.short_description && p.short_description) form.short_description.value = p.short_description;
-                form.description.value = p.description || '';
-                form.project_url.value = p.project_url || '';
-                form.github_url.value = p.github_url || '';
-                form.featured.checked = p.featured;
-
-                document.querySelector('#projectForm h3').textContent = 'Edit Project';
-                const btn = document.querySelector('#projectForm button[type="submit"]');
-                btn.textContent = 'Update Project';
-
-                form.onsubmit = async (e) => { e.preventDefault(); await updateItem('projects', id, e.target); };
-                showAddForm('project');
-            } catch (e) { console.error(e); }
-        }
-
-        // Bind initial submits
-        document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); };
-        document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); };
-
-
-
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDashboard();
-            // Highlight dashboard initially
-            document.querySelector('a[onclick*="dashboard"]').classList.add('active');
-        });
-
-    </script>
-
-
-    <script src="{% static 'brand/js/admin/staff.js' %}" defer></script>
-
-</body>
-
-</html>
+{{ capabilities|json_script:"capabilityData" }}
+<script>
+    // json_script escapes the payload safely; never hand-interpolate this
+    // list into JavaScript. Gating in JS is cosmetic - the APIs enforce.
+    window.CAPABILITIES = JSON.parse(document.getElementById('capabilityData').textContent || '[]');
+    window.can = (codename) => window.CAPABILITIES.includes(codename);
+</script>
+{% endblock %}

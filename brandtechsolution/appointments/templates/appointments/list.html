@@ -1,87 +1,11 @@
+{% extends 'brand/admin_base.html' %}
 {% load static %}
 {% load i18n %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% trans "Appointments" %} • TekLora</title>
-    <meta name="description" content="View your scheduled appointments with TekLora.">
-    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-    
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        dark: {
-                            bg: '#06090F',
-                            card: '#0D121D',
-                            border: 'rgba(255, 255, 255, 0.05)',
-                        },
-                        brand: {
-                            blue: '#007AFF',
-                            green: '#00FF94',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    {# Admin-only page: intentionally does not include public-site chat assistant assets #}
+
+{% block title %}{% trans "Appointments" %} • TekLora{% endblock %}
+
+{% block extra_head %}
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .glass-panel {
-            background: rgba(13, 18, 29, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-item.active {
-            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
-            border-left: 3px solid #007AFF;
-            color: #fff;
-        }
-
-        .nav-item:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #06090F;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #1F2937;
-            border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #374151;
-        }
-        
         .appointments-table-container {
             background: var(--bg-secondary, #0D121D);
             border-radius: 12px;
@@ -94,8 +18,6 @@
             width: 100%;
             border-collapse: collapse;
         }
-        
-        /* Table header styles (legacy): removed since list now uses card layout */
         
         .appointments-table td {
             padding: 1rem 1.5rem;
@@ -213,58 +135,9 @@
             color: #00FF94;
         }
     </style>
-</head>
-<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
-    <!-- Mobile Menu Button -->
-    <button id="mobileMenuBtn"
-        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
-        <i class="fas fa-bars"></i>
-    </button>
+{% endblock %}
 
-    <!-- Sidebar -->
-    <aside id="sidebar"
-        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
-        <!-- Logo -->
-        <div class="h-20 flex items-center px-6 border-b border-dark-border">
-            <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
-            <span class="text-xl font-bold text-white tracking-tight">Teklora<span class="text-brand-blue">Admin</span></span>
-        </div>
-
-        <!-- Nav -->
-        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            <a href="/admin-panel/"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
-                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
-            </a>
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
-            <a href="/admin-panel/"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
-                <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
-            </a>
-            <a href="/admin-panel/"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
-                <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
-            </a>
-            <a href="/appointments/"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
-                <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
-            </a>
-        </nav>
-
-        <!-- User Profile -->
-        <div class="p-4 border-t border-dark-border">
-            <a href="{% url 'logout' %}"
-                class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
-                <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>Logout
-            </a>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
-        <!-- Top Bar (Mobile Overlay) -->
-        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
-
+{% block content %}
         <div class="p-6 lg:p-10 max-w-7xl mx-auto">
             <header class="mb-8">
                 <h1 class="text-3xl font-bold text-white mb-2">{% trans "Appointments" %}</h1>
@@ -426,24 +299,4 @@
             </nav>
             {% endif %}
         </div>
-    </main>
-
-    <script>
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobileOverlay');
-
-        if (mobileMenuBtn && sidebar && overlay) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('-translate-x-full');
-                overlay.classList.toggle('hidden');
-            });
-
-            overlay.addEventListener('click', () => {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            });
-        }
-    </script>
-</body>
-</html>
+{% endblock %}

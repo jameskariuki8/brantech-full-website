@@ -1,337 +1,277 @@
 {% load static %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-  :root {
-    --brantech-blue: #007AFF;
-    --brantech-green: #00FF94;
-    --brantech-gradient: linear-gradient(90deg, var(--brantech-blue), var(--brantech-green));
-    --text-dark: #FFFFFF;
-    --text-light: #94A3B8;
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    --transition: all 0.3s ease;
-  }
+<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
 
-  * {
-    box-sizing: border-box;
-  }
+<header class="premium-nav-container" id="premiumHeaderContainer">
+  <nav class="premium-nav">
+    <!-- Logo -->
+    <a href="{% url 'index' %}" class="logo-container" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
+      <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" class="logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+      <span class="brand" style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: var(--text-primary); tracking: -0.03em;">Teklora</span>
+    </a>
 
-  /* Modern Header (fragment-scoped) */
-  .modern-header {
-    width: 100%;
-    margin: 0 0 24px 0;
-    border-radius: 16px;
-    background: rgba(6, 9, 15, 0.95);
-    /* Dark Background */
-    backdrop-filter: blur(10px);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 1rem 1.5rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-  }
+    <!-- Navigation Centered Links with Mega Menus (Hidden on mobile, flex on desktop) -->
+    <div class="nav-menu hidden lg:flex items-center gap-1">
+      <a href="{% url 'index' %}" class="nav-link-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">Home</a>
+      
+      <!-- Products Mega Menu -->
+      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+        Products <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
+        <div class="mega-menu-dropdown">
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Platforms</div>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-graduation-cap mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">EduShare Africa</div>
+                <div class="mega-menu-item-desc">Digital learning infrastructure.</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-laptop-code mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Cloud Workspace</div>
+                <div class="mega-menu-item-desc">Distributed team operations.</div>
+              </div>
+            </a>
+          </div>
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">AI & Systems</div>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-brain mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">AI Solutions</div>
+                <div class="mega-menu-item-desc">Autonomous orchestration.</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-cubes mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Future Products</div>
+                <div class="mega-menu-item-desc">Active product pipelines.</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
 
-  .modern-header.scrolled {
-    padding: 0.8rem 1.25rem;
-    box-shadow: var(--shadow-md);
-  }
+      <!-- Solutions Mega Menu -->
+      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+        Solutions <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
+        <div class="mega-menu-dropdown">
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Development Sectors</div>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-book-open mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Education</div>
+                <div class="mega-menu-item-desc">EdTech knowledge deployment.</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-heartbeat mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Healthcare</div>
+                <div class="mega-menu-item-desc">Medical databases systems.</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-seedling mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Agriculture</div>
+                <div class="mega-menu-item-desc">Smart agricultural sensing.</div>
+              </div>
+            </a>
+          </div>
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Enterprise</div>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-briefcase mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Business & Corporate</div>
+                <div class="mega-menu-item-desc">Corporate system capability.</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#services" class="mega-menu-item">
+              <i class="fas fa-building mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Government</div>
+                <div class="mega-menu-item-desc">State utility software.</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
 
-  /* Logo */
-  .logo-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 12px;
-    transition: var(--transition);
-  }
+      <!-- Research Mega Menu -->
+      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+        Research <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
+        <div class="mega-menu-dropdown" style="width: 540px; grid-template-columns: repeat(3, 1fr);">
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">AI & Computing</div>
+            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Artificial Intelligence</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Digital Twins</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Spatial Computing</div>
+              </div>
+            </a>
+          </div>
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Infrastructure</div>
+            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Cloud Infrastructure</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Automation</div>
+              </div>
+            </a>
+          </div>
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Publications</div>
+            <a href="{% url 'blog' %}" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Engineering Blog</div>
+              </div>
+            </a>
+            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+              <div>
+                <div class="mega-menu-item-title">Whitepapers</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
 
-  .logo-container:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
+      <!-- Company Mega Menu -->
+      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+        Company <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
+        <div class="mega-menu-dropdown">
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Organization</div>
+            <a href="{% url 'about' %}" class="mega-menu-item">
+              <i class="fas fa-compass mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">About Teklora</div>
+                <div class="mega-menu-item-desc">Our heritage & vision.</div>
+              </div>
+            </a>
+            <a href="{% url 'about' %}#mission" class="mega-menu-item">
+              <i class="fas fa-bullseye mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Mission</div>
+                <div class="mega-menu-item-desc">Intelligent utilities.</div>
+              </div>
+            </a>
+            <a href="{% url 'about' %}#leadership" class="mega-menu-item">
+              <i class="fas fa-users-cog mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Leadership</div>
+                <div class="mega-menu-item-desc">Systemic transformation.</div>
+              </div>
+            </a>
+          </div>
+          <div class="mega-menu-section">
+            <div class="mega-menu-section-title">Partners & Growth</div>
+            <a href="{% url 'about' %}#careers" class="mega-menu-item">
+              <i class="fas fa-briefcase mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Careers</div>
+                <div class="mega-menu-item-desc">Join our team.</div>
+              </div>
+            </a>
+            <a href="{% url 'about' %}#partners" class="mega-menu-item">
+              <i class="fas fa-handshake mega-menu-icon"></i>
+              <div>
+                <div class="mega-menu-item-title">Partners</div>
+                <div class="mega-menu-item-desc">Collaborating on operations.</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
 
-  .logo {
-    height: 42px;
-    width: 42px;
-    object-fit: contain;
-    border-radius: 10px;
-  }
-
-  .brand {
-    font-weight: 700;
-    font-size: 1.5rem;
-    background: var(--brantech-gradient);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    letter-spacing: -0.5px;
-  }
-
-  /* Ticker between logo and nav (desktop only) */
-  .header-ticker {
-    display: none;
-    flex: 1 1 auto;
-    overflow: hidden;
-    padding: 0 12px;
-    margin-left: 24px;
-  }
-
-  .ticker-track {
-    display: inline-block;
-    white-space: nowrap;
-    color: var(--text-light);
-    font-weight: 600;
-    animation: ticker-scroll 18s linear infinite;
-  }
-
-  .ticker-track span {
-    margin-right: 32px;
-  }
-
-  @keyframes ticker-scroll {
-    from {
-      transform: translateX(0);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
-
-  /* Desktop Nav */
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-  }
-
-  .nav-links a {
-    font-size: 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    color: var(--text-light);
-    padding: 10px 20px;
-    border-radius: 12px;
-    transition: var(--transition);
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .nav-links a:first-child {
-    margin-left: 8px;
-  }
-
-  .nav-links a:hover {
-    color: var(--brantech-blue);
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .nav-links a.active {
-    color: #fff;
-    background: var(--brantech-gradient);
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-  }
-
-  /* Mobile Menu Button */
-  .menu-toggle {
-    display: none;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--brantech-blue);
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 10px;
-  }
-
-  /* Mobile Menu */
-  .mobile-menu {
-    display: none;
-    position: fixed;
-    top: 80px;
-    left: 16px;
-    right: 16px;
-    background: rgba(6, 9, 15, 0.98);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 16px;
-    z-index: 999;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transform: translateY(-10px);
-    transition: var(--transition);
-  }
-
-  .mobile-menu.open {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateY(0);
-  }
-
-  .mobile-menu a {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 500;
-    color: var(--text-light);
-    font-size: 1rem;
-    gap: 12px;
-  }
-
-  .mobile-menu a:hover,
-  .mobile-menu a.active {
-    background: var(--brantech-gradient);
-    color: #fff;
-  }
-
-  /* Responsive */
-  @media (min-width: 1024px) {
-    .header-ticker {
-      display: block;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .modern-header {
-      padding: 0.7rem 1rem;
-      border-radius: 0;
-      width: 100%;
-      margin: 0;
-    }
-
-    .nav-links {
-      display: none;
-    }
-
-    .menu-toggle {
-      display: block;
-      margin-left: auto;
-    }
-
-    .mobile-menu {
-      display: block;
-    }
-
-    .brand {
-      font-size: 1.3rem;
-    }
-
-    .logo {
-      height: 36px;
-      width: 36px;
-    }
-  }
-</style>
-
-
-<nav class="modern-header" id="modernHeader">
-  <a href="{% url 'index' %}" class="logo-container" style="text-decoration: none; color: inherit;">
-    <img src="{% static 'brand/images/logo.png' %}" alt="BranTech Logo" class="logo">
-    <span class="brand">Teklora</span>
-  </a>
-
-  <div class="header-ticker" aria-hidden="true">
-    <div class="ticker-track">
-      <span>Web Design & Development</span>
-      <span>Brand Strategy</span>
-      <span>Mobile Applications</span>
-      <span>Digital Strategy</span>
-      <span>SEO & Performance</span>
-      <span>UX/UI Excellence</span>
-      <span>Cloud & Integrations</span>
-      <span>24/7 Support</span>
-      <span>Web Design & Development</span>
-      <span>Brand Strategy</span>
-      <span>Mobile Applications</span>
-      <span>Digital Strategy</span>
+      <a href="{% url 'blog' %}" class="nav-link-item {% if request.resolver_match.url_name == 'blog' %}active{% endif %}">Blog</a>
+      <a href="{% url 'contacts' %}" class="nav-link-item {% if request.resolver_match.url_name == 'contacts' %}active{% endif %}">Contact</a>
     </div>
-  </div>
 
-  <div class="nav-links">
-    <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i
-        class="fas fa-home"></i><span>Home</span></a>
-    <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"><i
-        class="fas fa-info-circle"></i><span>About</span></a>
-    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}"><i
-        class="fas fa-blog"></i><span>Blog</span></a>
-    <a href="{% url 'projects' %}" class="{% if request.resolver_match.url_name == 'projects' %}active{% endif %}"><i
-        class="fas fa-project-diagram"></i><span>Projects</span></a>
-    <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}"><i
-        class="fas fa-question-circle"></i><span>FAQ</span></a>
-    <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
-        class="fas fa-envelope"></i><span>Contact</span></a>
-    <a href="{% url 'donate' %}" class="{% if request.resolver_match.url_name == 'donate' %}active{% endif %}"><i
-        class="fas fa-heart"></i><span>Donate</span></a>
-  </div>
+    <!-- CTA & Mobile Toggle (Toggle hidden on large screens) -->
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="display: none; sm:inline-flex;">Book Consultation</a>
+      <button id="premiumMenuToggle" class="block lg:hidden menu-toggle" style="background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: none; cursor: pointer; padding: 10px; border-radius: 8px;" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+</header>
 
-  <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
-
-  <div class="mobile-menu" id="mobileMenu">
-    <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i
-        class="fas fa-home"></i>Home</a>
-    <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"><i
-        class="fas fa-info-circle"></i>About</a>
-    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}"><i
-        class="fas fa-blog"></i>Blog</a>
-    <a href="{% url 'projects' %}" class="{% if request.resolver_match.url_name == 'projects' %}active{% endif %}"><i
-        class="fas fa-project-diagram"></i>Projects</a>
-    <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}"><i
-        class="fas fa-question-circle"></i>FAQ</a>
-    <a href="{% url 'contacts' %}" class="{% if request.resolver_match.url_name == 'contacts' %}active{% endif %}"><i
-        class="fas fa-envelope"></i>Contact</a>
-    <a href="{% url 'donate' %}" class="{% if request.resolver_match.url_name == 'donate' %}active{% endif %}"><i
-        class="fas fa-heart"></i>Donate</a>
+<!-- Mobile Navigation Panel -->
+<div class="mobile-nav-panel" id="premiumMobileNav">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+      <span style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">Teklora</span>
+    </div>
+    <button id="premiumMobileClose" style="background: rgba(255, 255, 255, 0.05); border: none; cursor: pointer; padding: 10px; border-radius: 8px; font-size: 1.2rem; color: var(--text-primary);" aria-label="Close menu">
+      <i class="fas fa-times"></i>
+    </button>
   </div>
-</nav>
+  
+  <div style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex-grow: 1;">
+    <a href="{% url 'index' %}" class="mobile-nav-item" style="text-decoration: none;">Home</a>
+    <a href="{% url 'about' %}" class="mobile-nav-item" style="text-decoration: none;">About Company</a>
+    <a href="{% url 'index' %}#services" class="mobile-nav-item" style="text-decoration: none;">Products & Solutions</a>
+    <a href="{% url 'blog' %}" class="mobile-nav-item" style="text-decoration: none;">Research & Blog</a>
+    <a href="{% url 'projects' %}" class="mobile-nav-item" style="text-decoration: none;">Featured Projects</a>
+    <a href="{% url 'contacts' %}" class="mobile-nav-item" style="text-decoration: none;">Contact Page</a>
+  </div>
+  
+  <div style="margin-top: 2rem;">
+    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="width: 100%; text-decoration: none;">Book Consultation</a>
+  </div>
+</div>
 
 <script>
-  (function initHeader() {
-    const modernHeader = document.getElementById('modernHeader');
-    const menuToggle = document.getElementById('menuToggle');
-    const mobileMenu = document.getElementById('mobileMenu');
+  (function initPremiumHeader() {
+    const container = document.getElementById('premiumHeaderContainer');
+    const toggle = document.getElementById('premiumMenuToggle');
+    const close = document.getElementById('premiumMobileClose');
+    const panel = document.getElementById('premiumMobileNav');
 
-    // Scroll shrink effect
+    // Scroll styling effect
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) modernHeader.classList.add('scrolled');
-      else modernHeader.classList.remove('scrolled');
+      if (window.scrollY > 30) {
+        container.classList.add('scrolled');
+      } else {
+        container.classList.remove('scrolled');
+      }
     });
 
-    // Mobile menu toggle
-    if (menuToggle && mobileMenu && !menuToggle._btBound) {
-      menuToggle._btBound = true;
-      menuToggle.addEventListener('click', function (e) {
-        e.stopPropagation();
-        mobileMenu.classList.toggle('open');
-        menuToggle.innerHTML = mobileMenu.classList.contains('open') ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
-      });
-      document.addEventListener('click', function (e) {
-        if (!mobileMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-          mobileMenu.classList.remove('open');
-          menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
-        }
-      });
-      mobileMenu.querySelectorAll('a').forEach(function (link) {
-        link.addEventListener('click', function () {
-          mobileMenu.classList.remove('open');
-          menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
-        });
-      });
-    }
+    // Mobile panel toggling
+    toggle?.addEventListener('click', () => {
+      panel.classList.add('open');
+    });
 
+    close?.addEventListener('click', () => {
+      panel.classList.remove('open');
+    });
 
+    // Close panel on link click
+    panel?.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        panel.classList.remove('open');
+      });
+    });
   })();
 </script>

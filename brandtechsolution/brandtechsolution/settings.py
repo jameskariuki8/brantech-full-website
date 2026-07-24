@@ -65,7 +65,19 @@ INSTALLED_APPS = [
     'appointments',
     'ai_workflows',
     'messaging',
+
     'staff',
+
+    'trends',
+    'research',
+    'editorial',
+    'seo',
+    'media_generation',
+    'knowledge_base',
+    'approval',
+    'publishing',
+    'analytics',
+
 ]
 
 MIDDLEWARE = [
@@ -266,3 +278,9 @@ LOGGING = {
 # ============================================================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Force correct MIME types on Windows to avoid nosniff blocks
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
+mimetypes.add_type("application/javascript", ".js", True)
+
