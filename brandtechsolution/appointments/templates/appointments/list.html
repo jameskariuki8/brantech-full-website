@@ -197,67 +197,55 @@
                 </div>
             </div>
 
-            <!-- Appointments list (card layout, no table header) -->
+            <!-- Appointments list -->
             <div class="space-y-4">
                 {% for appointment in appointments %}
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-4 lg:p-5 hover:border-brand-blue/30 transition-colors group">
-                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-start justify-between gap-3 lg:justify-start">
-                                    <div class="min-w-0">
-                                        <div class="text-white font-semibold text-lg leading-tight truncate">{{ appointment.title }}</div>
-                                        <div class="text-sm text-gray-500 mt-1 truncate">
-                                            {{ appointment.full_name|default:"" }}
-                                        </div>
-                                    </div>
-                                    <div class="lg:hidden">
-                                        <span class="status-pill status-{{ appointment.status|lower }}">{{ appointment.status|capfirst }}</span>
-                                    </div>
+                    <div class="bg-dark-card border border-dark-border hover:border-brand-blue/30 rounded-xl p-6 transition-all duration-300 shadow-lg">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-white/5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-400 font-bold text-lg flex items-center justify-center shrink-0">
+                                    <i class="fas fa-calendar-check text-base"></i>
                                 </div>
-
-                                <div class="mt-4 grid grid-cols-2 lg:grid-cols-6 gap-3 text-sm">
-                                    <div class="col-span-2 lg:col-span-2">
-                                        <div class="text-gray-500">{% trans "Email" %}</div>
-                                        <div class="text-gray-300 break-all">{{ appointment.email }}</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-gray-500">{% trans "Phone" %}</div>
-                                        <div class="text-gray-300">{{ appointment.phone }}</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-gray-500">{% trans "Date" %}</div>
-                                        <div class="text-gray-300">{{ appointment.date }}</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-gray-500">{% trans "Time" %}</div>
-                                        <div class="text-gray-300">{{ appointment.time|time:"H:i" }}</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-gray-500">{% trans "Duration" %}</div>
-                                        <div class="text-gray-300">{{ appointment.estimated_duration }} {% trans "min" %}</div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                        {{ appointment.full_name }}
+                                        {% if appointment.title and appointment.title != "Test Strategy Session" and appointment.title != "Test" %}
+                                            <span class="text-xs font-normal text-gray-400">({{ appointment.title }})</span>
+                                        {% endif %}
+                                    </h3>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 mt-0.5">
+                                        <a href="mailto:{{ appointment.email }}" class="hover:text-brand-blue transition-colors flex items-center gap-1.5">
+                                            <i class="fas fa-envelope text-brand-blue"></i> {{ appointment.email }}
+                                        </a>
+                                        <a href="tel:{{ appointment.phone }}" class="hover:text-brand-green transition-colors flex items-center gap-1.5">
+                                            <i class="fas fa-phone text-brand-green"></i> {{ appointment.phone }}
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="hidden lg:flex items-center gap-3">
-                                <span class="status-pill status-{{ appointment.status|lower }}">{{ appointment.status|capfirst }}</span>
-                                {% if user.is_staff %}
-                                    <a href="{% url 'appointments:admin_manage' appointment.id %}"
-                                       class="inline-flex items-center px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-dark-border text-brand-blue hover:text-brand-green transition-colors font-medium whitespace-nowrap">
-                                        <i class="fas fa-edit mr-2"></i>{% trans "Manage" %}
-                                    </a>
-                                {% endif %}
-                            </div>
-
-                            {% if user.is_staff %}
-                                <div class="lg:hidden">
-                                    <a href="{% url 'appointments:admin_manage' appointment.id %}"
-                                       class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-dark-border text-brand-blue hover:text-brand-green transition-colors font-medium">
-                                        <i class="fas fa-edit mr-2"></i>{% trans "Manage" %}
-                                    </a>
-                                </div>
-                            {% endif %}
                         </div>
+
+                        <!-- Schedule details bar -->
+                        <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3 p-3.5 rounded-lg bg-[#06090F]/90 border border-white/5 text-sm">
+                            <div>
+                                <div class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">{% trans "Date" %}</div>
+                                <div class="text-white font-semibold flex items-center gap-1.5"><i class="far fa-calendar text-brand-blue"></i> {{ appointment.date }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">{% trans "Time" %}</div>
+                                <div class="text-white font-semibold flex items-center gap-1.5"><i class="far fa-clock text-brand-green"></i> {{ appointment.time|time:"H:i" }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">{% trans "Created" %}</div>
+                                <div class="text-gray-400 font-normal">{{ appointment.created_at|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+
+                        {% if appointment.description and appointment.description != "Test message" and appointment.description != "test" and appointment.description != "Test Strategy Session" %}
+                            <div class="mt-3 text-xs text-gray-400 leading-relaxed pl-1">
+                                <span class="text-gray-500 font-medium">{% trans "Note:" %}</span> {{ appointment.description }}
+                            </div>
+                        {% endif %}
                     </div>
                 {% empty %}
                     <div class="bg-dark-card border border-dark-border rounded-xl p-8 text-center text-gray-400">

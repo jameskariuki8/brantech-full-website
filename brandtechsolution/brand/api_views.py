@@ -127,14 +127,14 @@ def post_list(request):
             featured = request.POST.get('featured') == 'true'
             image = request.FILES.get('image')
 
-            # Creating straight into 'published' is a publish, so it needs the
-            # same capability as the draft -> published transition below.
-            # Omitting the key keeps the model default ('draft'), which is what
-            # the panel sends when the status control is disabled.
-            status = request.POST.get('status', 'draft')
+            # Allow superusers and staff with manage_blog/publish_blog to set status
+            status = request.POST.get('status')
+            if not status or status.strip() == '':
+                status = 'published' if (request.user.is_superuser or request.user.has_perm('staff.publish_blog') or request.user.has_perm('staff.manage_blog')) else 'draft'
+
             if status not in ('draft', 'published'):
                 return JsonResponse({'error': 'Invalid status'}, status=400)
-            if status != 'draft':
+            if status == 'published' and not (request.user.is_superuser or request.user.has_perm('staff.publish_blog') or request.user.has_perm('staff.manage_blog')):
                 denied = capability_required_json(request, 'publish_blog')
                 if denied:
                     return denied
@@ -229,13 +229,16 @@ def post_detail(request, pk):
             # But we are sending FormData.
             # I'll update the JS to send POST. That's the most robust fix.
 
-            requested_status = request.POST.get('status', post.status)
+            requested_status = request.POST.get('status')
+            if not requested_status or requested_status.strip() == '':
+                requested_status = 'published' if (request.user.is_superuser or request.user.has_perm('staff.publish_blog') or request.user.has_perm('staff.manage_blog')) else post.status
             if requested_status not in ('draft', 'published'):
                 return JsonResponse({'error': 'Invalid status'}, status=400)
-            if requested_status != post.status:
-                denied = capability_required_json(request, 'publish_blog')
-                if denied:
-                    return denied
+            if requested_status != post.status and requested_status == 'published':
+                if not (request.user.is_superuser or request.user.has_perm('staff.publish_blog') or request.user.has_perm('staff.manage_blog')):
+                    denied = capability_required_json(request, 'publish_blog')
+                    if denied:
+                        return denied
             post.status = requested_status
 
             post.title = request.POST.get('title', post.title)

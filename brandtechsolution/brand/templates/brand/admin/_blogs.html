@@ -65,16 +65,12 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-400 mb-2">Status</label>
-                            {# A disabled control is omitted from FormData, so a user without    #}
-                            {# publish_blog never sends a status key and their ordinary edits    #}
-                            {# never trip the server's publish check. Gating here is cosmetic;   #}
-                            {# brand/api_views.py post_detail is the real gate.                 #}
-                            <select name="status" {% if not can.publish_blog %}disabled{% endif %}
+                            <select name="status" {% if not user.is_superuser and not can.publish_blog and not can.manage_blog %}disabled{% endif %}
                                 class="w-full md:w-1/2 bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <option value="published" selected>Published</option>
                                 <option value="draft">Draft</option>
-                                <option value="published">Published</option>
                             </select>
-                            {% if not can.publish_blog %}
+                            {% if not user.is_superuser and not can.publish_blog and not can.manage_blog %}
                             <p class="text-xs text-gray-500 mt-2">Publishing needs the "Publish blog posts" capability. Your edits are saved as-is.</p>
                             {% endif %}
                         </div>

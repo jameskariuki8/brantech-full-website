@@ -29,9 +29,24 @@ def about(request):
     return render(request, 'brand/about.html')
 
 
+def products(request):
+    """Products showcase view"""
+    return render(request, 'brand/products.html')
+
+
+def projects(request):
+    """Projects view (alias for products)"""
+    return render(request, 'brand/products.html')
+
+
 def donate(request):
     """Donate page view"""
     return render(request, 'brand/donate.html')
+
+
+def research(request):
+    """Research & Engineering Tech Innovation page view"""
+    return render(request, 'brand/research.html')
 
 
 def faq(request):
@@ -42,6 +57,22 @@ def faq(request):
 def contacts(request):
     """Contact page view"""
     return render(request, 'brand/contacts.html')
+
+
+def solutions(request):
+    """Solutions page view"""
+    return render(request, 'brand/solutions.html')
+
+
+def privacy_policy(request):
+    """Privacy Policy page view"""
+    return render(request, 'brand/privacy.html')
+
+
+def terms_conditions(request):
+    """Terms & Conditions page view"""
+    return render(request, 'brand/terms.html')
+
 
 
 def blog(request):

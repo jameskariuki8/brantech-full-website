@@ -15,40 +15,54 @@
       <a href="{% url 'index' %}" class="nav-link-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">Home</a>
       
       <!-- Products Mega Menu -->
-      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+      <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'products' or request.resolver_match.url_name == 'projects' %}active{% endif %}" style="position: relative;">
         Products <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
-        <div class="mega-menu-dropdown">
+        <div class="mega-menu-dropdown" style="min-width: 580px;">
           <div class="mega-menu-section">
-            <div class="mega-menu-section-title">Platforms</div>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
-              <i class="fas fa-graduation-cap mega-menu-icon"></i>
+            <div class="mega-menu-section-title">Completed Platforms</div>
+            <a href="{% url 'products' %}#edushare" class="mega-menu-item">
+              <i class="fas fa-graduation-cap mega-menu-icon" style="color: #00FF94;"></i>
               <div>
                 <div class="mega-menu-item-title">EduShare Africa</div>
-                <div class="mega-menu-item-desc">Digital learning infrastructure.</div>
+                <div class="mega-menu-item-desc">EdTech SaaS & Progress Tracker.</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
-              <i class="fas fa-laptop-code mega-menu-icon"></i>
+            <a href="{% url 'products' %}#dommaterdei" class="mega-menu-item">
+              <i class="fas fa-school mega-menu-icon" style="color: #007AFF;"></i>
               <div>
-                <div class="mega-menu-item-title">Cloud Workspace</div>
-                <div class="mega-menu-item-desc">Distributed team operations.</div>
+                <div class="mega-menu-item-title">DOMMaterdei SMS</div>
+                <div class="mega-menu-item-desc">School Management & Results.</div>
+              </div>
+            </a>
+            <a href="{% url 'products' %}#poise" class="mega-menu-item">
+              <i class="fas fa-gem mega-menu-icon" style="color: #A855F7;"></i>
+              <div>
+                <div class="mega-menu-item-title">Poise & Purpose</div>
+                <div class="mega-menu-item-desc">Corporate Service Showcase.</div>
               </div>
             </a>
           </div>
           <div class="mega-menu-section">
-            <div class="mega-menu-section-title">AI & Systems</div>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
-              <i class="fas fa-brain mega-menu-icon"></i>
+            <div class="mega-menu-section-title">Active & Future Pipeline</div>
+            <a href="{% url 'products' %}#kiamiko" class="mega-menu-item">
+              <i class="fab fa-whatsapp mega-menu-icon" style="color: #25D366;"></i>
               <div>
-                <div class="mega-menu-item-title">AI Solutions</div>
-                <div class="mega-menu-item-desc">Autonomous orchestration.</div>
+                <div class="mega-menu-item-title">Kiamiko WhatsApp Commerce</div>
+                <div class="mega-menu-item-desc">Meat Ordering & Inventory CRM.</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
-              <i class="fas fa-cubes mega-menu-icon"></i>
+            <a href="{% url 'products' %}#campus-food" class="mega-menu-item">
+              <i class="fas fa-utensils mega-menu-icon" style="color: #F59E0B;"></i>
               <div>
-                <div class="mega-menu-item-title">Future Products</div>
-                <div class="mega-menu-item-desc">Active product pipelines.</div>
+                <div class="mega-menu-item-title">Campus Fast-Food Delivery</div>
+                <div class="mega-menu-item-desc">Distributed University Logistics.</div>
+              </div>
+            </a>
+            <a href="{% url 'products' %}#holodesk" class="mega-menu-item">
+              <i class="fas fa-[#00FF94] fa-vr-cardboard mega-menu-icon" style="color: #38BDF8;"></i>
+              <div>
+                <div class="mega-menu-item-title">HoloDesk Workspace OS</div>
+                <div class="mega-menu-item-desc">AI Spatial Learning Platform.</div>
               </div>
             </a>
           </div>
@@ -56,26 +70,26 @@
       </div>
 
       <!-- Solutions Mega Menu -->
-      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+      <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'solutions' %}active{% endif %}" style="position: relative;">
         Solutions <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
         <div class="mega-menu-dropdown">
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Development Sectors</div>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
+            <a href="{% url 'solutions' %}#education" class="mega-menu-item">
               <i class="fas fa-book-open mega-menu-icon"></i>
               <div>
                 <div class="mega-menu-item-title">Education</div>
                 <div class="mega-menu-item-desc">EdTech knowledge deployment.</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
+            <a href="{% url 'solutions' %}#healthcare" class="mega-menu-item">
               <i class="fas fa-heartbeat mega-menu-icon"></i>
               <div>
                 <div class="mega-menu-item-title">Healthcare</div>
                 <div class="mega-menu-item-desc">Medical databases systems.</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
+            <a href="{% url 'solutions' %}#agriculture" class="mega-menu-item">
               <i class="fas fa-seedling mega-menu-icon"></i>
               <div>
                 <div class="mega-menu-item-title">Agriculture</div>
@@ -85,14 +99,14 @@
           </div>
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Enterprise</div>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
+            <a href="{% url 'solutions' %}#business" class="mega-menu-item">
               <i class="fas fa-briefcase mega-menu-icon"></i>
               <div>
                 <div class="mega-menu-item-title">Business & Corporate</div>
                 <div class="mega-menu-item-desc">Corporate system capability.</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#services" class="mega-menu-item">
+            <a href="{% url 'solutions' %}#government" class="mega-menu-item">
               <i class="fas fa-building mega-menu-icon"></i>
               <div>
                 <div class="mega-menu-item-title">Government</div>
@@ -104,50 +118,50 @@
       </div>
 
       <!-- Research Mega Menu -->
-      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+      <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'research' %}active{% endif %}" style="position: relative;">
         Research <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
-        <div class="mega-menu-dropdown" style="width: 540px; grid-template-columns: repeat(3, 1fr);">
+        <div class="mega-menu-dropdown" style="width: 580px; grid-template-columns: repeat(3, 1fr);">
           <div class="mega-menu-section">
-            <div class="mega-menu-section-title">AI & Computing</div>
-            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+            <div class="mega-menu-section-title">AI & Emerging Tech</div>
+            <a href="{% url 'research' %}#ai" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Artificial Intelligence</div>
+                <div class="mega-menu-item-title"><i class="fas fa-[#00FF94] fa-robot text-[#00FF94] mr-1.5"></i> Artificial Intelligence</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+            <a href="{% url 'research' %}#digital-twins" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Digital Twins</div>
+                <div class="mega-menu-item-title"><i class="fas fa-network-wired text-[#007AFF] mr-1.5"></i> Digital Twins</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+            <a href="{% url 'research' %}#spatial" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Spatial Computing</div>
+                <div class="mega-menu-item-title"><i class="fas fa-vr-cardboard text-purple-400 mr-1.5"></i> Spatial Computing</div>
               </div>
             </a>
           </div>
           <div class="mega-menu-section">
-            <div class="mega-menu-section-title">Infrastructure</div>
-            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+            <div class="mega-menu-section-title">Stack & Frontiers</div>
+            <a href="{% url 'research' %}#tech-stack" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Cloud Infrastructure</div>
+                <div class="mega-menu-item-title"><i class="fab fa-python text-amber-400 mr-1.5"></i> Python & React Stack</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+            <a href="{% url 'research' %}#quantum" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Automation</div>
+                <div class="mega-menu-item-title"><i class="fas fa-[#00FF94] fa-atom text-sky-400 mr-1.5"></i> Quantum Computing</div>
               </div>
             </a>
           </div>
           <div class="mega-menu-section">
-            <div class="mega-menu-section-title">Publications</div>
-            <a href="{% url 'blog' %}" class="mega-menu-item" style="padding: 0.25rem;">
+            <div class="mega-menu-section-title">Publications & Future</div>
+            <a href="{% url 'blog' %}" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Engineering Blog</div>
+                <div class="mega-menu-item-title"><i class="fas fa-newspaper text-emerald-400 mr-1.5"></i> Engineering Blog</div>
               </div>
             </a>
-            <a href="{% url 'index' %}#research" class="mega-menu-item" style="padding: 0.25rem;">
+            <a href="{% url 'research' %}#future-tech" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
               <div>
-                <div class="mega-menu-item-title">Whitepapers</div>
+                <div class="mega-menu-item-title"><i class="fas fa-rocket text-indigo-400 mr-1.5"></i> Future of Tech</div>
               </div>
             </a>
           </div>
@@ -155,47 +169,40 @@
       </div>
 
       <!-- Company Mega Menu -->
-      <div class="nav-link-item mega-menu-trigger" style="position: relative;">
+      <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'about' %}active{% endif %}" style="position: relative;">
         Company <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
         <div class="mega-menu-dropdown">
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Organization</div>
-            <a href="{% url 'about' %}" class="mega-menu-item">
-              <i class="fas fa-compass mega-menu-icon"></i>
+            <a href="{% url 'about' %}#story" class="mega-menu-item">
+              <i class="fas fa-compass mega-menu-icon" style="color: #00FF94;"></i>
               <div>
                 <div class="mega-menu-item-title">About Teklora</div>
                 <div class="mega-menu-item-desc">Our heritage & vision.</div>
               </div>
             </a>
             <a href="{% url 'about' %}#mission" class="mega-menu-item">
-              <i class="fas fa-bullseye mega-menu-icon"></i>
+              <i class="fas fa-bullseye mega-menu-icon" style="color: #007AFF;"></i>
               <div>
-                <div class="mega-menu-item-title">Mission</div>
+                <div class="mega-menu-item-title">Mission & Values</div>
                 <div class="mega-menu-item-desc">Intelligent utilities.</div>
-              </div>
-            </a>
-            <a href="{% url 'about' %}#leadership" class="mega-menu-item">
-              <i class="fas fa-users-cog mega-menu-icon"></i>
-              <div>
-                <div class="mega-menu-item-title">Leadership</div>
-                <div class="mega-menu-item-desc">Systemic transformation.</div>
               </div>
             </a>
           </div>
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Partners & Growth</div>
-            <a href="{% url 'about' %}#careers" class="mega-menu-item">
-              <i class="fas fa-briefcase mega-menu-icon"></i>
+            <a href="{% url 'about' %}#partnerships" class="mega-menu-item">
+              <i class="fas fa-handshake mega-menu-icon" style="color: #00FF94;"></i>
               <div>
-                <div class="mega-menu-item-title">Careers</div>
-                <div class="mega-menu-item-desc">Join our team.</div>
+                <div class="mega-menu-item-title">Partnerships</div>
+                <div class="mega-menu-item-desc">We are open to partner!</div>
               </div>
             </a>
-            <a href="{% url 'about' %}#partners" class="mega-menu-item">
-              <i class="fas fa-handshake mega-menu-icon"></i>
+            <a href="{% url 'about' %}#careers" class="mega-menu-item">
+              <i class="fas fa-hands-helping mega-menu-icon" style="color: #38BDF8;"></i>
               <div>
-                <div class="mega-menu-item-title">Partners</div>
-                <div class="mega-menu-item-desc">Collaborating on operations.</div>
+                <div class="mega-menu-item-title">Volunteer & Learn</div>
+                <div class="mega-menu-item-desc">Hands-on learning pool.</div>
               </div>
             </a>
           </div>
@@ -207,9 +214,9 @@
     </div>
 
     <!-- CTA & Mobile Toggle (Toggle hidden on large screens) -->
-    <div style="display: flex; align-items: center; gap: 1rem;">
-      <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="display: none; sm:inline-flex;">Book Consultation</a>
-      <button id="premiumMenuToggle" class="block lg:hidden menu-toggle" style="background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: none; cursor: pointer; padding: 10px; border-radius: 8px;" aria-label="Toggle menu">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary hidden sm:inline-flex" style="font-size: 0.85rem; padding: 0.5rem 1rem;">Book Consultation</a>
+      <button id="premiumMenuToggle" class="menu-toggle" aria-label="Toggle menu">
         <i class="fas fa-bars"></i>
       </button>
     </div>
@@ -218,27 +225,94 @@
 
 <!-- Mobile Navigation Panel -->
 <div class="mobile-nav-panel" id="premiumMobileNav">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
-      <span style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: var(--text-primary);">Teklora</span>
+      <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" style="height: 32px; width: 32px; object-fit: contain; border-radius: 8px;">
+      <span style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">Teklora</span>
     </div>
-    <button id="premiumMobileClose" style="background: rgba(255, 255, 255, 0.05); border: none; cursor: pointer; padding: 10px; border-radius: 8px; font-size: 1.2rem; color: var(--text-primary);" aria-label="Close menu">
+    <button id="premiumMobileClose" style="background: rgba(255, 255, 255, 0.05); border: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 1.1rem; color: var(--text-primary);" aria-label="Close menu">
       <i class="fas fa-times"></i>
     </button>
   </div>
   
-  <div style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; flex-grow: 1;">
-    <a href="{% url 'index' %}" class="mobile-nav-item" style="text-decoration: none;">Home</a>
-    <a href="{% url 'about' %}" class="mobile-nav-item" style="text-decoration: none;">About Company</a>
-    <a href="{% url 'index' %}#services" class="mobile-nav-item" style="text-decoration: none;">Products & Solutions</a>
-    <a href="{% url 'blog' %}" class="mobile-nav-item" style="text-decoration: none;">Research & Blog</a>
-    <a href="{% url 'projects' %}" class="mobile-nav-item" style="text-decoration: none;">Featured Projects</a>
-    <a href="{% url 'contacts' %}" class="mobile-nav-item" style="text-decoration: none;">Contact Page</a>
+  <div style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; flex-grow: 1; padding-right: 0.25rem;">
+    
+    <!-- Home -->
+    <a href="{% url 'index' %}" class="mobile-nav-item" style="text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0;">Home</a>
+
+    <!-- Products Accordion -->
+    <div class="mobile-accordion">
+      <button type="button" onclick="toggleMobileSubmenu('mob-products')" class="mobile-nav-item" style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: none; text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0; cursor: pointer;">
+        <span>Products</span>
+        <i class="fas fa-chevron-down" id="mob-products-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
+      </button>
+      <div id="mob-products" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(0, 255, 148, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase; margin-top: 0.5rem;">Completed Platforms</div>
+        <a href="{% url 'products' %}#edushare" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-graduation-cap text-[#00FF94] mr-2"></i> EduShare Africa</a>
+        <a href="{% url 'products' %}#dommaterdei" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-school text-[#007AFF] mr-2"></i> DOMMaterdei SMS</a>
+        <a href="{% url 'products' %}#poise" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-gem text-purple-400 mr-2"></i> Poise & Purpose</a>
+
+        <div style="font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase; margin-top: 0.75rem;">Active & Future Pipeline</div>
+        <a href="{% url 'products' %}#kiamiko" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fab fa-whatsapp text-[#25D366] mr-2"></i> Kiamiko WhatsApp Commerce</a>
+        <a href="{% url 'products' %}#campus-food" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-utensils text-amber-400 mr-2"></i> Campus Fast-Food Delivery</a>
+        <a href="{% url 'products' %}#holodesk" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-vr-cardboard text-sky-400 mr-2"></i> HoloDesk Workspace OS</a>
+      </div>
+    </div>
+
+    <!-- Solutions Accordion -->
+    <div class="mobile-accordion">
+      <button type="button" onclick="toggleMobileSubmenu('mob-solutions')" class="mobile-nav-item" style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: none; text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0; cursor: pointer;">
+        <span>Solutions</span>
+        <i class="fas fa-chevron-down" id="mob-solutions-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
+      </button>
+      <div id="mob-solutions" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(0, 122, 255, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'solutions' %}#education" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-book-open text-[#00FF94] mr-2"></i> Education Sector</a>
+        <a href="{% url 'solutions' %}#healthcare" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-heart-pulse text-red-400 mr-2"></i> Healthcare Sector</a>
+        <a href="{% url 'solutions' %}#agriculture" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-seedling text-emerald-400 mr-2"></i> Agriculture & IoT</a>
+        <a href="{% url 'solutions' %}#business" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-briefcase text-purple-400 mr-2"></i> Business & Corporate</a>
+        <a href="{% url 'solutions' %}#government" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-building text-amber-400 mr-2"></i> Government Tech</a>
+      </div>
+    </div>
+
+    <!-- Research Accordion -->
+    <div class="mobile-accordion">
+      <button type="button" onclick="toggleMobileSubmenu('mob-research')" class="mobile-nav-item" style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: none; text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0; cursor: pointer;">
+        <span>Research</span>
+        <i class="fas fa-chevron-down" id="mob-research-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
+      </button>
+      <div id="mob-research" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(168, 85, 247, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'research' %}#ai" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-robot text-[#00FF94] mr-2"></i> Artificial Intelligence</a>
+        <a href="{% url 'research' %}#digital-twins" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-network-wired text-[#007AFF] mr-2"></i> Digital Twins</a>
+        <a href="{% url 'research' %}#spatial" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-vr-cardboard text-purple-400 mr-2"></i> Spatial Computing</a>
+        <a href="{% url 'research' %}#tech-stack" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fab fa-python text-amber-400 mr-2"></i> Python & React Stack</a>
+        <a href="{% url 'research' %}#quantum" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-atom text-sky-400 mr-2"></i> Quantum Computing</a>
+        <a href="{% url 'blog' %}" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-newspaper text-emerald-400 mr-2"></i> Engineering Blog</a>
+        <a href="{% url 'research' %}#future-tech" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-rocket text-indigo-400 mr-2"></i> Future of Tech</a>
+      </div>
+    </div>
+
+    <!-- Company Accordion -->
+    <div class="mobile-accordion">
+      <button type="button" onclick="toggleMobileSubmenu('mob-company')" class="mobile-nav-item" style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: none; border: none; text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0; cursor: pointer;">
+        <span>Company</span>
+        <i class="fas fa-chevron-down" id="mob-company-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
+      </button>
+      <div id="mob-company" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(0, 255, 148, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'about' %}#story" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-compass text-[#00FF94] mr-2"></i> About Teklora</a>
+        <a href="{% url 'about' %}#mission" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-bullseye text-[#007AFF] mr-2"></i> Mission & Values</a>
+        <a href="{% url 'about' %}#partnerships" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-handshake text-[#00FF94] mr-2"></i> Partnerships</a>
+        <a href="{% url 'about' %}#careers" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-hands-helping text-sky-400 mr-2"></i> Volunteer & Learn</a>
+      </div>
+    </div>
+
+    <!-- Direct Links -->
+    <a href="{% url 'blog' %}" class="mobile-nav-item" style="text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0;">Engineering Blog</a>
+    <a href="{% url 'contacts' %}" class="mobile-nav-item" style="text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0;">Contact Us</a>
+
   </div>
   
-  <div style="margin-top: 2rem;">
-    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="width: 100%; text-decoration: none;">Book Consultation</a>
+  <div style="margin-top: 1.5rem; pt-1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="width: 100%; text-decoration: none; text-align: center; justify-content: center;">Book Strategy Consultation</a>
   </div>
 </div>
 
@@ -267,11 +341,23 @@
       panel.classList.remove('open');
     });
 
-    // Close panel on link click
+    // Close panel on link click (only for leaf links, not accordion triggers)
     panel?.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => {
         panel.classList.remove('open');
       });
     });
   })();
+
+  function toggleMobileSubmenu(id) {
+    const sub = document.getElementById(id);
+    const icon = document.getElementById(`${id}-icon`);
+    if (sub.style.display === 'none' || !sub.style.display) {
+      sub.style.display = 'block';
+      if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+      sub.style.display = 'none';
+      if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+  }
 </script>

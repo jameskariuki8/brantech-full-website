@@ -1,0 +1,795 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products & Platform Ecosystem - Teklora</title>
+    <meta name="description" content="Explore completed SaaS platforms, active engineering products, and futuristic spatial operating environments built by Teklora.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Chart.js for Data Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
+    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+
+    <style>
+        html { scroll-behavior: smooth; }
+        .product-hero-title {
+            color: #FFFFFF !important;
+            font-family: var(--font-heading) !important;
+        }
+
+        .ambient-glow-products {
+            position: absolute;
+            top: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            max-width: 100vw;
+            height: 550px;
+            background: radial-gradient(circle, rgba(0, 255, 148, 0.12) 0%, rgba(0, 122, 255, 0.08) 50%, transparent 75%);
+            filter: blur(110px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .product-card {
+            scroll-margin-top: 110px;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .product-card:hover {
+            border-color: rgba(0, 255, 148, 0.35) !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        .phase-tab {
+            transition: all 0.2s ease;
+        }
+        .phase-tab:hover, .phase-tab.active {
+            color: #FFFFFF !important;
+            border-color: #00FF94 !important;
+            background: rgba(0, 255, 148, 0.15);
+        }
+
+        .mockup-img {
+            transition: transform 0.4s ease;
+            cursor: pointer;
+        }
+        .mockup-img:hover {
+            transform: scale(1.03);
+        }
+
+        /* Lightbox modal */
+        #imgLightbox {
+            display: none;
+        }
+        #imgLightbox.open {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased selection:bg-[#00FF94]/30 selection:text-white relative overflow-x-hidden">
+
+    <!-- Header Inheritance -->
+    {% include 'brand/header.html' %}
+
+    <div class="ambient-glow-products"></div>
+
+    <main class="relative z-10 pt-28 sm:pt-36 pb-24 space-y-14">
+
+        <!-- Hero Section -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md max-w-[90vw]">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#00FF94] animate-pulse shrink-0"></span>
+                <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00FF94] truncate">Teklora Product Ecosystem & Roadmap</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight product-hero-title max-w-4xl mx-auto">
+                Engineering Impact: <br class="hidden sm:inline" />
+                <span class="text-[#00FF94]">Deployed Platforms & Spatial Vision.</span>
+            </h1>
+
+            <p class="text-base sm:text-lg text-[#94A3B8] leading-relaxed max-w-3xl mx-auto font-medium">
+                Explore our live SaaS solutions, active conversational commerce engines, and futuristic 3D spatial operating systems.
+            </p>
+
+            <!-- Quick Filter Bar -->
+            <div class="flex flex-wrap justify-center gap-2 pt-2">
+                <button type="button" onclick="filterPhase('all')" id="btn-all" class="phase-tab active px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white">
+                    ✦ All Products (6)
+                </button>
+                <button type="button" onclick="filterPhase('completed')" id="btn-completed" class="phase-tab px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    ✅ Completed & Live (3)
+                </button>
+                <button type="button" onclick="filterPhase('active')" id="btn-active" class="phase-tab px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    ⚡ Active Development (2)
+                </button>
+                <button type="button" onclick="filterPhase('future')" id="btn-future" class="phase-tab px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    🚀 Future Vision: HoloDesk OS (1)
+                </button>
+            </div>
+        </section>
+
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+
+            <!-- ============================================================ -->
+            <!-- SECTION 1: COMPLETED PRODUCTS WE HAVE DONE -->
+            <!-- ============================================================ -->
+            <div class="space-y-12 phase-group" data-phase="completed">
+                <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+                    <span class="w-3 h-3 rounded-full bg-[#00FF94]"></span>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white font-heading uppercase tracking-wider">
+                        Phase 1: Completed & Live Deployed Products
+                    </h2>
+                </div>
+
+                <!-- 1. EDUSHARE AFRICA -->
+                <article id="edushare" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                        <div class="space-y-2">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20 text-xs font-bold uppercase tracking-wider">
+                                <i class="fas fa-check-circle"></i> Deployed SaaS Platform
+                            </div>
+                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                                EduShare Africa — EdTech Marketplace & Progress Infrastructure
+                            </h3>
+                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                                An all-in-one digital learning platform enabling teachers to monetize notes and revision materials directly to students, parents to track academic performance in real time, and schools to deploy AI-assisted learning.
+                            </p>
+                        </div>
+
+                        <a href="https://edushareafrica.com/" target="_blank" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 flex items-center gap-2 self-start lg:self-auto">
+                            <span>Visit Platform</span>
+                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Dual Image Preview Lightbox Row -->
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-images text-[#00FF94]"></i> Interface Gallery (Click image to expand)
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/edushare.png' %}', 'EduShare Africa - Educator Resource Marketplace')">
+                                <img src="{% static 'brand/images/edushare.png' %}" alt="EduShare Marketplace" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 1: Educator Marketplace
+                                </div>
+                            </div>
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/edushare2.png' %}', 'EduShare Africa - AI Learning & Parent Progress Analytics')">
+                                <img src="{% static 'brand/images/edushare2.png' %}" alt="EduShare AI Learning" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 2: AI Learning & Parent Portal
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities Grid + Data Story Chart -->
+                    <div class="grid lg:grid-cols-12 gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Core Capabilities & Modules</h4>
+                            <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-book-reader text-[#00FF94] mt-0.5"></i>
+                                    <span><strong>Teacher Resource Sales:</strong> Educators upload and monetize revision notes, past papers, and video guides directly.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-chart-line text-[#00FF94] mt-0.5"></i>
+                                    <span><strong>Parent Progress Monitoring:</strong> Real-time academic scores, assignment completion, and attendance dashboards.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-[#00FF94] fa-robot text-[#00FF94] mt-0.5"></i>
+                                    <span><strong>AI Learning Assistant & Ranking:</strong> Onboarded schools gain personalized AI tutoring and automated top-performing teacher leaderboards.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-chart-pie text-[#00FF94]"></i> Data Story: Material Distribution & Sales Volume
+                            </h4>
+                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                                <canvas id="chartEduShare" class="max-h-[200px]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+
+                <!-- 2. DOMMATERDEI SCHOOL MANAGEMENT SYSTEM -->
+                <article id="dommaterdei" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                        <div class="space-y-2">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/20 text-xs font-bold uppercase tracking-wider">
+                                <i class="fas fa-school"></i> Deployed School SMS
+                            </div>
+                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                                DOMMaterdei School Management System (SMS)
+                            </h3>
+                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                                Built for DOMMaterdei School in Tharaka Nithi County. A robust operating system featuring automated report card generation, inventory tracking, fee payments, and dedicated director/teacher/student portals.
+                            </p>
+                        </div>
+
+                        <a href="https://dommaterdeischool.academy/" target="_blank" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 flex items-center gap-2 self-start lg:self-auto">
+                            <span>Visit School Academy</span>
+                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Dual Image Preview Lightbox Row -->
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-images text-[#007AFF]"></i> Interface Gallery (Click image to expand)
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/mater dei.png' %}', 'DOMMaterdei SMS - Directors Portal & Inventory Management')">
+                                <img src="{% static 'brand/images/mater dei.png' %}" alt="DOMMaterdei Portal" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 1: Director & Inventory Portal
+                                </div>
+                            </div>
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/materdei2.png' %}', 'DOMMaterdei SMS - Result Generator & Student Portal')">
+                                <img src="{% static 'brand/images/materdei2.png' %}" alt="DOMMaterdei Results" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 2: Automated Result Generator
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities Grid + Data Story Chart -->
+                    <div class="grid lg:grid-cols-12 gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">System Modules & Features</h4>
+                            <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-boxes-stacked text-[#007AFF] mt-0.5"></i>
+                                    <span><strong>Inventory & Asset Management:</strong> Real-time tracking of textbooks, laboratory equipment, and school supplies.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-[#00FF94] fa-bolt text-[#007AFF] mt-0.5"></i>
+                                    <span><strong>Automated Result Generation:</strong> Instant calculation of grades, class position rankings, and printable PDF report cards.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-money-check-dollar text-[#007AFF] mt-0.5"></i>
+                                    <span><strong>Fee Payment & Portals:</strong> M-Pesa fee reconciliation, Director metrics dashboard, and parent portal access.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-chart-bar text-[#007AFF]"></i> Data Story: Result Generation Speed (Manual vs SMS)
+                            </h4>
+                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                                <canvas id="chartDom" class="max-h-[200px]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+
+                <!-- 3. POISE & PURPOSE KENYA -->
+                <article id="poise" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                        <div class="space-y-2">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-bold uppercase tracking-wider">
+                                <i class="fas fa-gem"></i> Deployed Brand Showcase
+                            </div>
+                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                                Poise and Purpose Kenya — Corporate Showcase Platform
+                            </h3>
+                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                                An executive, well-structured, and visually appealing web platform designed for Poise & Purpose Kenya to showcase corporate services, consulting portfolios, and event management capabilities.
+                            </p>
+                        </div>
+
+                        <a href="https://poiseandpurposekenya.org/" target="_blank" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 flex items-center gap-2 self-start lg:self-auto">
+                            <span>Visit Platform</span>
+                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </div>
+
+                    <!-- Dual Image Preview Lightbox Row -->
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-images text-purple-400"></i> Interface Gallery (Click image to expand)
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/poise.png' %}', 'Poise & Purpose - Corporate Landing Page')">
+                                <img src="{% static 'brand/images/poise.png' %}" alt="Poise Landing Page" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 1: Brand Hero & Executive Services
+                                </div>
+                            </div>
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/poise2.png' %}', 'Poise & Purpose - Consultation Booking & Portfolio')">
+                                <img src="{% static 'brand/images/poise2.png' %}" alt="Poise Portfolio" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 2: Portfolio & Consultation Intake
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities Grid + Data Story Chart -->
+                    <div class="grid lg:grid-cols-12 gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Design Highlights</h4>
+                            <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-paint-brush text-purple-400 mt-0.5"></i>
+                                    <span><strong>Glassmorphic Aesthetic:</strong> Tailored color schemes and fluid micro-animations creating a luxury executive feel.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-mobile-screen-button text-purple-400 mt-0.5"></i>
+                                    <span><strong>Responsive Performance:</strong> Optimized asset loading delivering 99+ Google Lighthouse scores across all mobile devices.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-chart-line text-purple-400"></i> Data Story: Inbound Lead Growth Post-Redesign
+                            </h4>
+                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                                <canvas id="chartPoise" class="max-h-[200px]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 2: ACTIVE IN-DEVELOPMENT PRODUCTS -->
+            <!-- ============================================================ -->
+            <div class="space-y-12 phase-group" data-phase="active">
+                <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+                    <span class="w-3 h-3 rounded-full bg-[#25D366] animate-ping"></span>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white font-heading uppercase tracking-wider">
+                        Phase 2: Active In-Development Products
+                    </h2>
+                </div>
+
+                <!-- 4. KIAMIKO MEAT AUTOMATION & CRM -->
+                <article id="kiamiko" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                        <div class="space-y-2">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 text-xs font-bold uppercase tracking-wider">
+                                <i class="fab fa-whatsapp"></i> In Active Build • Conversational Commerce
+                            </div>
+                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                                Kiamiko Meat Selling WhatsApp Automation & Inventory CRM
+                            </h3>
+                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                                WhatsApp-native order automation enabling customers to select meat cuts, pay via M-Pesa STK push, and receive doorstep delivery, paired with a real-time CRM tracking slaughterhouse inventory and daily operations.
+                            </p>
+                        </div>
+
+                        <a href="https://wa.me/254715097128" target="_blank" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 flex items-center gap-2 self-start lg:self-auto bg-[#25D366] hover:bg-emerald-500 text-black">
+                            <i class="fab fa-whatsapp text-sm"></i>
+                            <span>Test Bot (+254715097128)</span>
+                        </a>
+                    </div>
+
+                    <!-- Dual Image Preview Lightbox Row -->
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-images text-[#25D366]"></i> Interface Gallery (Click image to expand)
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/wozapauto.png' %}', 'Kiamiko - WhatsApp Automated Meat Ordering Bot')">
+                                <img src="{% static 'brand/images/wozapauto.png' %}" alt="Kiamiko WhatsApp Bot" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 1: WhatsApp Ordering Bot (+254715097128)
+                                </div>
+                            </div>
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('{% static 'brand/images/wozapauto2.png' %}', 'Kiamiko CRM - Slaughterhouse Inventory & Dispatch Dashboard')">
+                                <img src="{% static 'brand/images/wozapauto2.png' %}" alt="Kiamiko Inventory CRM" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 2: Kiamiko Inventory CRM
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities Grid + Data Story Chart -->
+                    <div class="grid lg:grid-cols-12 gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">System Architecture</h4>
+                            <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fab fa-whatsapp text-[#25D366] mt-0.5"></i>
+                                    <span><strong>Conversational Bot:</strong> Instant meat cut selection, weight calculations, and order confirmation over WhatsApp.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-credit-card text-[#25D366] mt-0.5"></i>
+                                    <span><strong>M-Pesa STK Integration:</strong> Auto-triggers payment prompts directly on customer mobile devices upon checkout.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-warehouse text-[#25D366] mt-0.5"></i>
+                                    <span><strong>Kiamiko Inventory CRM:</strong> Real-time tracking of cold-storage stock levels, butchery sales, and delivery rider dispatch.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-[#25D366] uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-chart-bar"></i> Data Story: Order Volume vs Delivery Speed (Minutes)
+                            </h4>
+                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                                <canvas id="chartKiamiko" class="max-h-[200px]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+
+                <!-- 5. CAMPUS FAST-FOOD DELIVERY SYSTEM -->
+                <article id="campus-food" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                        <div class="space-y-2">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold uppercase tracking-wider">
+                                <i class="fas fa-utensils"></i> In Active Build • Campus Logistics
+                            </div>
+                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                                Campus Fast-Food Delivery & Student Rider Network
+                            </h3>
+                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                                A high-throughput food distribution system engineered for university campuses, connecting canteens to student hostels during peak hours while providing flexible earning opportunities for student riders.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Dual Image Preview Lightbox Row -->
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-images text-amber-400"></i> Interface Gallery (Click image to expand)
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('https://images.unsplash.com/photo-1526367790999-0150786686a2?w=1200&auto=format&fit=crop&q=80', 'Campus Delivery - Student Food Ordering App')">
+                                <img src="https://images.unsplash.com/photo-1526367790999-0150786686a2?w=800&auto=format&fit=crop&q=80" alt="Campus Ordering" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 1: Student Food Ordering Interface
+                                </div>
+                            </div>
+                            <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-[#0A0F1D] h-56 sm:h-64" onclick="openLightbox('https://images.unsplash.com/photo-1586880244406-556ebe35f282?auto=format&fit=crop&w=1200&q=80', 'Campus Delivery - Student Rider Dispatch & Earnings')">
+                                <img src="https://images.unsplash.com/photo-1586880244406-556ebe35f282?auto=format&fit=crop&w=800&q=80" alt="Campus Rider App" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 2: Student Rider Dispatch Telemetry
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities Grid + Data Story Chart -->
+                    <div class="grid lg:grid-cols-12 gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Logistics Features</h4>
+                            <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-stopwatch text-amber-400 mt-0.5"></i>
+                                    <span><strong>Sub-15 Min Campus Delivery:</strong> Grouped hostel batching algorithms optimized for peak study hours.</span>
+                                </li>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <i class="fas fa-bicycle text-amber-400 mt-0.5"></i>
+                                    <span><strong>Peer Student Rider Program:</strong> Flexible gig opportunities for university students to earn income between lectures.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-chart-line"></i> Data Story: Peak Hour Delivery Speed (Mins)
+                            </h4>
+                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                                <canvas id="chartCampus" class="max-h-[200px]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+
+            <!-- ============================================================ -->
+            <!-- SECTION 3: FUTURE ROADMAP & SPECS: HOLODESK WORKSPACE OS -->
+            <!-- ============================================================ -->
+            <div class="space-y-12 phase-group" data-phase="future">
+                <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+                    <span class="w-3 h-3 rounded-full bg-sky-400 animate-pulse"></span>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white font-heading uppercase tracking-wider">
+                        Phase 3: Future Vision & Architecture Specs
+                    </h2>
+                </div>
+
+                <!-- 6. HOLODESK WORKSPACE OS -->
+                <article id="holodesk" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-sky-500/30 bg-gradient-to-br from-[#050811] via-[#0A1224] to-[#050811] space-y-8 shadow-[0_0_50px_rgba(56,189,248,0.1)]">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
+                        <div class="space-y-2">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-bold uppercase tracking-wider">
+                                <i class="fas fa-[#00FF94] fa-vr-cardboard"></i> Flagship Future Product Specification
+                            </div>
+                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                                HoloDesk Workspace OS — Spatial Learning & Collaboration Platform
+                            </h3>
+                            <p class="text-xs sm:text-sm text-sky-200/80 max-w-3xl">
+                                An AI-native spatial workspace platform engineered for universities (especially ODEL institutions) and enterprise teams. Users enter persistent virtual campuses, classrooms, and research labs through any browser while the workspace runs in the cloud.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Vision & Problem/Solution Specs Grid -->
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+                            <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-triangle-exclamation"></i> The Problem
+                            </h4>
+                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                                Current online education relies on disconnected tools (LMS, Zoom, email). Students feel isolated, collaboration is fragmented, and practical laboratory learning is non-existent. Enterprises face identical issues with distributed remote teams.
+                            </p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+                            <h4 class="text-xs font-bold text-[#00FF94] uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-circle-check"></i> The HoloDesk Solution
+                            </h4>
+                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                                HoloDesk replaces fragmented tools with a persistent 3D spatial campus. Lecturers teach in virtual halls, researchers collaborate in dedicated spatial labs, and learning artifacts remain permanently accessible after meetings.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Dual Image Preview Lightbox Row -->
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-images text-sky-400"></i> Spatial Concept Architecture (Click image to expand)
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="relative group rounded-2xl overflow-hidden border border-sky-500/30 bg-[#0A0F1D] h-60 sm:h-72" onclick="openLightbox('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80', 'HoloDesk OS - 3D Persistent Virtual Campus & Classrooms')">
+                                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80" alt="HoloDesk Campus" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 1: 3D Persistent Virtual Campus
+                                </div>
+                            </div>
+                            <div class="relative group rounded-2xl overflow-hidden border border-sky-500/30 bg-[#0A0F1D] h-60 sm:h-72" onclick="openLightbox('https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80', 'HoloDesk OS - AI Multi-Agent Assistants & Virtual Science Lab')">
+                                <img src="https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=800&auto=format&fit=crop&q=80" alt="HoloDesk Lab" class="w-full h-full object-cover mockup-img" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                    <i class="fas fa-search-plus"></i> Expand Mockup 2: AI Multi-Agent & 3D Lab
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tech Stack & Features + Data Story Radar Chart -->
+                    <div class="grid lg:grid-cols-12 gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-4">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Features & Technology Stack</h4>
+                            
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">Next.js & React</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">Three.js 3D Engine</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">FastAPI & Python</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">PostgreSQL & Neo4j</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">WebRTC & WebSockets</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold">Kubernetes & Vector DB</span>
+                            </div>
+
+                            <ul class="space-y-2 text-xs text-[#94A3B8]">
+                                <li class="flex items-center gap-2"><i class="fas fa-check text-sky-400"></i> Persistent Virtual Campuses & Offices</li>
+                                <li class="flex items-center gap-2"><i class="fas fa-check text-sky-400"></i> AI Multi-Agent Teaching Assistants & Auto-Summaries</li>
+                                <li class="flex items-center gap-2"><i class="fas fa-check text-sky-400"></i> Virtual 3D Science Laboratories & Whiteboards</li>
+                                <li class="flex items-center gap-2"><i class="fas fa-check text-sky-400"></i> Low-Bandwidth Mobile-First Spatial Streaming for Africa</li>
+                            </ul>
+                        </div>
+
+                        <div class="lg:col-span-6 space-y-3">
+                            <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-chart-radar"></i> HoloDesk Target Spatial Benchmarks
+                            </h4>
+                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                                <canvas id="chartHolo" class="max-h-[200px]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Bottom CTA Banner -->
+            <section class="glass-card p-8 sm:p-12 rounded-3xl border border-white/10 text-center space-y-6">
+                <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading max-w-2xl mx-auto">
+                    Partner With Teklora on Custom Engineering Projects
+                </h2>
+                <p class="text-xs sm:text-sm text-[#94A3B8] max-w-xl mx-auto">
+                    Whether you need a full-scale SaaS platform, custom WhatsApp automation, or spatial software, our team delivers.
+                </p>
+                <div class="flex flex-wrap justify-center gap-4 pt-2">
+                    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary py-3 px-6 text-xs font-bold">
+                        Book Strategy Consultation
+                    </a>
+                    <a href="{% url 'solutions' %}" class="btn-premium btn-premium-secondary py-3 px-6 text-xs font-bold">
+                        Explore Sector Solutions
+                    </a>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Lightbox Modal Viewer -->
+    <div id="imgLightbox" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md items-center justify-center p-4">
+        <div class="relative max-w-5xl w-full bg-[#0A0F1D] border border-white/10 rounded-3xl overflow-hidden p-4 space-y-4">
+            <div class="flex justify-between items-center px-2">
+                <h4 id="lightboxTitle" class="text-sm font-bold text-white font-heading">Product Mockup Viewer</h4>
+                <button type="button" onclick="closeLightbox()" class="text-gray-400 hover:text-white p-2 text-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="max-h-[75vh] flex items-center justify-center overflow-hidden rounded-2xl bg-black">
+                <img id="lightboxImg" src="" alt="Full Mockup" class="max-h-[70vh] w-auto object-contain" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Inheritance -->
+    {% include 'brand/footer.html' %}
+
+    <script>
+        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.font.family = 'Inter';
+
+        // 1. EduShare Doughnut
+        new Chart(document.getElementById('chartEduShare').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Notes & Revision Kits', 'Practice Exams', 'AI Micro-Lessons', 'School Portals'],
+                datasets: [{
+                    data: [45, 30, 15, 10],
+                    backgroundColor: ['#00FF94', '#007AFF', '#A855F7', '#38BDF8'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 9 } } } } }
+        });
+
+        // 2. DOMMaterdei Bar Chart
+        new Chart(document.getElementById('chartDom').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Result Generation', 'Fee Reconciliation', 'Inventory Audit'],
+                datasets: [
+                    { label: 'Legacy Manual (Days)', data: [14, 7, 5], backgroundColor: 'rgba(239, 68, 68, 0.4)' },
+                    { label: 'DOMMaterdei SMS (Secs)', data: [12, 5, 3], backgroundColor: '#007AFF' }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { font: { size: 9 } } } } }
+        });
+
+        // 3. Poise Line Chart
+        new Chart(document.getElementById('chartPoise').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'],
+                datasets: [{
+                    label: 'Inbound Corporate Inquiries',
+                    data: [12, 19, 34, 52, 78, 105],
+                    borderColor: '#A855F7',
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        // 4. Kiamiko Bar Chart
+        new Chart(document.getElementById('chartKiamiko').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['9 AM', '12 PM', '3 PM', '6 PM', '8 PM'],
+                datasets: [
+                    { label: 'WhatsApp Orders', data: [45, 120, 85, 160, 90], backgroundColor: '#25D366' },
+                    { label: 'Delivery Time (Mins)', data: [18, 22, 20, 25, 19], backgroundColor: '#007AFF' }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { font: { size: 9 } } } } }
+        });
+
+        // 5. Campus Food Delivery Line Chart
+        new Chart(document.getElementById('chartCampus').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['11 AM', '1 PM', '4 PM', '7 PM', '10 PM'],
+                datasets: [{
+                    label: 'Peak Hour Hostel Deliveries',
+                    data: [28, 142, 65, 198, 110],
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        // 6. HoloDesk Radar Chart
+        new Chart(document.getElementById('chartHolo').getContext('2d'), {
+            type: 'radar',
+            data: {
+                labels: ['Concurrent Classrooms', 'WebRTC Latency', 'AI Agent Accuracy', 'Mobile Optimization', 'Persistence'],
+                datasets: [{
+                    label: 'HoloDesk OS Spec Target (%)',
+                    data: [99, 95, 98, 95, 100],
+                    borderColor: '#38BDF8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { r: { grid: { color: 'rgba(255, 255, 255, 0.08)' }, pointLabels: { font: { size: 9 } }, ticks: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // --- FILTERING & LIGHTBOX ---
+        function filterPhase(phase) {
+            document.querySelectorAll('.phase-tab').forEach(b => {
+                b.classList.remove('active', 'text-white');
+                b.classList.add('text-[#94A3B8]');
+            });
+            const activeBtn = document.getElementById(`btn-${phase}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'text-white');
+                activeBtn.classList.remove('text-[#94A3B8]');
+            }
+
+            document.querySelectorAll('.phase-group').forEach(el => {
+                if (phase === 'all' || el.getAttribute('data-phase') === phase) {
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        }
+
+        function openLightbox(imgUrl, title) {
+            document.getElementById('lightboxImg').src = imgUrl;
+            document.getElementById('lightboxTitle').textContent = title;
+            document.getElementById('imgLightbox').classList.add('open');
+        }
+
+        function closeLightbox() {
+            document.getElementById('imgLightbox').classList.remove('open');
+        }
+    </script>
+</body>
+</html>

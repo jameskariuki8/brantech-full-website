@@ -19,6 +19,7 @@ urlpatterns = [
 
     path('editorial/', include('editorial.urls')),
 
+    path('research/', views.research, name='research'),
     path('accounts/login/', views.login_view),
     path('accounts/logout/', views.logout_view),
     path('accounts/', include('django.contrib.auth.urls')),
