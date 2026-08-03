@@ -70,6 +70,7 @@ function showSection(sectionName, clickedElement) {
     if (sectionName === 'templates') loadTemplates();
     if (sectionName === 'campaigns') loadCampaigns();
     if (sectionName === 'staff') loadStaff();
+    if (sectionName === 'tasks') loadTasks();
 }
 
 function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }

@@ -63,10 +63,18 @@ class PresetRoleTest(TestCase):
         )
         preset_roles.create_presets(apps, None)
 
-        for name, codenames in EXPECTED.items():
+        # Compared against the migration's OWN preset table, not EXPECTED.
+        # 0002 is history and does not change; capabilities added later are
+        # granted by their own migrations (manage_tasks by 0007), so a
+        # from-scratch run of 0002 alone legitimately produces the roles as
+        # they stood then. Asserting the live registry here would fail on
+        # every future capability while telling us nothing about the trap
+        # this test exists to catch - which is roles coming out EMPTY.
+        for name, codenames in preset_roles.PRESETS.items():
             with self.subTest(role=name):
                 group = Group.objects.get(name=name)
                 actual = set(
                     group.permissions.values_list("codename", flat=True)
                 )
-                self.assertEqual(actual, codenames)
+                self.assertEqual(actual, set(codenames))
+                self.assertTrue(actual, f"{name} came out empty")

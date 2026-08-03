@@ -29,6 +29,11 @@ CAPABILITY_GROUPS = [
     (
         "Administration",
         [
+            # Assigning and reviewing work. Note there is no "view tasks"
+            # capability: the board is readable by every staff account, so
+            # people can see what the team is carrying. This one gates
+            # creating, assigning, approving and sending back.
+            ("manage_tasks", "Assign and review tasks"),
             ("manage_staff", "Manage staff and roles"),
         ],
     ),

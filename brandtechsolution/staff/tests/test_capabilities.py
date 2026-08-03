@@ -5,8 +5,12 @@ from staff.capabilities import ALL_CAPABILITIES, CODENAMES
 
 
 class CapabilityRegistryTest(TestCase):
-    def test_registry_has_eleven_capabilities(self):
-        self.assertEqual(len(ALL_CAPABILITIES), 11)
+    def test_registry_has_twelve_capabilities(self):
+        # Bumped from 11 when manage_tasks was added. The count is pinned so
+        # that adding a capability is a deliberate act: a new codename has to
+        # be given a migration and a place in a preset role, and this test is
+        # what stops that being forgotten.
+        self.assertEqual(len(ALL_CAPABILITIES), 12)
 
     def test_codenames_are_unique(self):
         self.assertEqual(len(CODENAMES), len(set(CODENAMES)))

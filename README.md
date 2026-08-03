@@ -412,7 +412,7 @@ classes Quill uses to implement them.
 
 ## Staff roles and permissions
 
-Access to the admin panel is controlled by eleven **capabilities**. A
+Access to the admin panel is controlled by twelve **capabilities**. A
 capability is an ordinary Django permission, defined once in
 `brandtechsolution/staff/capabilities.py` — that module is the single source
 of truth, feeding the permission rows, the `/api/staff/capabilities/` endpoint
@@ -435,6 +435,7 @@ Capabilities are never granted to a person directly. They are ticked into a
 | `manage_campaigns` | Create and edit campaigns | Creating and editing campaigns; the default gate for every campaign action not listed below |
 | `manage_recipients` | Manage campaign recipients | Building a campaign's audience and adding or removing individual recipients |
 | `send_campaigns` | Send campaigns | Queueing, pausing and resuming a campaign — i.e. actually sending |
+| `manage_tasks` | Assign and review tasks | Creating, assigning, editing and deleting tasks, and approving or sending back work that has been submitted for review. **Not** needed to see the task board or to do assigned work — see [Tasks](#tasks) |
 | `manage_staff` | Manage staff and roles | Everything under **Staff & Roles**: roles, people, invitations and the activity log |
 
 Note that `manage_campaigns` and `send_campaigns` are deliberately separate.
@@ -451,7 +452,7 @@ them, re-tick their capabilities, delete them, or add your own.
 | **Editor** | `manage_blog`, `publish_blog`, `manage_projects` |
 | **Marketing** | `manage_templates`, `manage_campaigns`, `manage_recipients` |
 | **Support** | `view_inbox`, `handle_inquiries`, `manage_appointments` |
-| **Administrator** | All eleven |
+| **Administrator** | All twelve |
 
 **Marketing deliberately does not include `send_campaigns`.** Sending is the
 irreversible, externally visible action, so it starts reserved to
@@ -563,6 +564,109 @@ Blog posts are now created as **drafts** and need `publish_blog` to go live.
 The public blog list and post pages show published posts only; a draft 404s
 for the public. Someone with `manage_blog` but not `publish_blog` can write
 and edit freely but cannot change a post's status in either direction.
+
+## Tasks
+
+**Tasks** is where work is handed out and signed off. It is the one panel
+section every staff account can open, capability or not.
+
+### Who sees what
+
+| | No capability | `manage_tasks` |
+|---|---|---|
+| See the whole board and who is on what | ✅ | ✅ |
+| Comment on any task | ✅ | ✅ |
+| Mark **your own** part done | ✅ | ✅ |
+| Create, assign, edit, delete | ❌ | ✅ |
+| Approve or send back | ❌ | ✅ |
+
+Reading is deliberately open. The board's value is that everyone can see what
+the team is carrying, so hiding it behind a capability would mean granting
+that capability to everybody — and with it the right to assign work.
+
+### The status ladder
+
+```
+        assignees tick off their own part
+OPEN ──────────────────────────────────────► IN REVIEW ──────────► DONE
+  ▲            (all of them, not just one)                approve
+  │
+  └──────────────────────────────────────────────────────────┘
+                    send back, with a reason
+```
+
+**Staff cannot reach DONE.** They mark their own share complete; the task
+moves itself to *In review* once every assignee has done so, and only a
+`manage_tasks` holder approves it. If people could close their own work there
+would be nothing left to review.
+
+Some consequences worth knowing:
+
+- **Completion is per person.** With three people on a task, one finishing
+  says nothing about whether the task is finished. The board shows
+  "2 of 3 done".
+- **Un-ticking pulls a task back out of review.** If someone decides they
+  are not done after all, the task returns to *Open*.
+- **Sending back clears every completion**, not just the submission. The work
+  is going back to the whole group, so leaving people ticked off would bounce
+  it straight into review again on the next save.
+- **A reason is required to send back.** The people redoing the work need to
+  be told what was wrong with it. It lands in the task's timeline.
+- **An unassigned task never submits itself.** "Every assignee is finished" is
+  vacuously true of nobody.
+- **Status is not writable through the API.** `PATCH {"status": "done"}` is
+  ignored — the ladder is only walked by the `complete`, `approve` and
+  `reopen` actions, each of which enforces its own rule. Otherwise a task
+  could read *Done* while its assignments were still outstanding.
+
+### Being told about it
+
+Two channels, both pointing at the same underlying state:
+
+- **In panel** — a badge on the Tasks nav item. Reviewers see the count of
+  tasks waiting on their approval; everyone else sees their own outstanding
+  work.
+- **Email** — everyone holding `manage_tasks` is mailed when a task enters
+  review. Delivery failure is logged and swallowed: the review queue is the
+  real signal, and a mail server problem must not roll back a submission a
+  staff member legitimately made.
+
+### API
+
+Mounted at `/api/work/`. Every endpoint needs a staff account.
+
+| Endpoint | Method | Gate |
+|---|---|---|
+| `/api/work/tasks/` | GET | any staff |
+| `/api/work/tasks/` | POST | `manage_tasks` |
+| `/api/work/tasks/{id}/` | PATCH, DELETE | `manage_tasks` |
+| `/api/work/tasks/{id}/complete/` | POST | own assignment, or `manage_tasks` for anyone's |
+| `/api/work/tasks/{id}/uncomplete/` | POST | own assignment, or `manage_tasks` |
+| `/api/work/tasks/{id}/approve/` | POST | `manage_tasks` |
+| `/api/work/tasks/{id}/reopen/` | POST | `manage_tasks`, `reason` required |
+| `/api/work/tasks/{id}/activity/` | GET, POST | any staff |
+| `/api/work/summary/` | GET | any staff (`needs_review` reads 0 without `manage_tasks`) |
+| `/api/work/assignable/` | GET | any staff |
+
+List filters: `?mine=1`, `?active=1` (everything not yet approved),
+`?status=open|in_review|done`, `?assignee=<id>`, `?q=<search>`.
+
+Only `is_staff`, active accounts can be assigned work — `/signup/` is public,
+so `User` at large includes customers, and assigning one a task would put it
+in a dashboard they cannot open.
+
+### Upgrading an existing deployment
+
+```bash
+python manage.py migrate
+```
+
+`staff.0007` grants `manage_tasks` to the **Administrator** preset, so
+existing administrators can use the section immediately. Editor, Marketing
+and Support are left alone — assigning work is not part of any of them, so
+tick it in from **Staff & Roles → Roles** if you want it there. Reversing the
+migration removes that one grant and leaves the group and every hand-made
+grant intact.
 
 ## 📝 License
 

@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'ai_workflows',
     'messaging',
     'staff',
+    'tasks',
 ]
 
 MIDDLEWARE = [

@@ -3,6 +3,7 @@ import json
 from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 
+from staff.capabilities import CODENAMES
 from staff.models import AuditEntry
 
 
@@ -30,7 +31,12 @@ class CapabilityListTest(TestCase):
         self.assertEqual([g["label"] for g in data],
                          ["Content", "Communications", "Administration"])
         flat = [c["codename"] for g in data for c in g["capabilities"]]
-        self.assertEqual(len(flat), 11)
+        # Derived from the registry rather than a second hardcoded count.
+        # What this endpoint owes its caller is the WHOLE registry, grouped -
+        # test_capabilities.CapabilityRegistryTest is where the count itself
+        # is pinned, and duplicating the number here only meant two tests to
+        # edit for one change.
+        self.assertEqual(sorted(flat), sorted(CODENAMES))
         self.assertIn("send_campaigns", flat)
 
 
