@@ -1,54 +1,84 @@
-            {% comment %}
-            No {% if can.x %} wrapper, unlike every other section here. The
-            board is readable by every staff account by design, so the section
-            is always rendered and tasks.js hides the manage-only controls.
-            The APIs enforce; this is presentation.
-            {% endcomment %}
-            <div id="tasks" class="section hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Tasks</h2>
-                        <p class="text-gray-500 text-sm">What the team is working on, and who has it</p>
-                    </div>
-                    <button type="button" id="newTaskBtn"
-                        class="hidden bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-plus mr-2"></i>New task
-                    </button>
-                </div>
+{% comment %}
+No {% if can.x %} wrapper, unlike every other section here. The board is
+readable by every staff account by design, so the section always renders and
+tasks.js hides the manage-only controls. The APIs enforce; this is
+presentation.
 
-                <div class="flex flex-wrap gap-2 mb-6 border-b border-dark-border">
-                    <button type="button" data-tab="mine"
-                        class="task-tab px-4 py-2 text-sm font-medium text-white border-b-2 border-brand-blue">My work</button>
-                    <button type="button" data-tab="all"
-                        class="task-tab px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent">All tasks</button>
-                    <button type="button" data-tab="review" id="taskReviewTab"
-                        class="task-tab hidden px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent">
-                        Needs review <span id="taskReviewCount" class="ml-1 text-xs px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 hidden">0</span>
-                    </button>
-                    <button type="button" data-tab="done"
-                        class="task-tab px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent">Completed</button>
-                </div>
+Styling follows the version 2 grammar rather than inventing its own: cards are
+rounded-xl / p-6 / shadow-lg on bg-dark-card, identity is an initial in a
+tinted circle, status is an uppercase rounded-full pill with a matching
+border, and long text sits in an inset bg-[#06090F]/90 block. The stat row
+reuses the dashboard's border-l-4 accent card. The one addition is the
+priority accent on each task card's left edge - the same device carrying real
+information, how urgent this is, rather than decoration.
+{% endcomment %}
+<div id="tasks" class="section hidden">
 
-                <div class="mb-4">
-                    <input type="search" id="taskSearch" placeholder="Search tasks&hellip;"
-                        class="w-full md:w-80 bg-dark-card border border-dark-border rounded-lg px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-brand-blue">
-                </div>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Tasks</h2>
+            <p class="text-gray-500 text-sm">What the team is working on, and who has it</p>
+        </div>
+        <button type="button" id="newTaskBtn"
+            class="hidden bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg items-center transition-colors">
+            <i class="fas fa-plus mr-2"></i>New task
+        </button>
+    </div>
 
-                <div id="taskList" class="space-y-3"></div>
-                <button type="button" id="taskListMore"
-                    class="hidden mt-3 w-full px-4 py-2 text-sm rounded-lg border border-dark-border text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50">
-                    Load more
-                </button>
-            </div>
+    <div id="taskStats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
 
-            <div id="taskModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
-                <div class="bg-dark-card border border-dark-border rounded-xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6">
-                    <div class="flex justify-between items-start mb-6 gap-4">
-                        <h3 id="taskModalTitle" class="text-lg font-bold text-white">Task</h3>
-                        <button type="button" id="taskModalClose" class="text-gray-400 hover:text-white shrink-0">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div id="taskModalBody"></div>
-                </div>
-            </div>
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        {% comment %}
+        A segmented control rather than the underlined tabs used in the Staff
+        section: these are filters over one list, not separate destinations,
+        and a filled state says "you are looking at a subset" more plainly
+        than a bottom border does.
+        {% endcomment %}
+        <div class="inline-flex flex-wrap p-1 gap-1 bg-dark-card border border-dark-border rounded-xl">
+            <button type="button" data-tab="mine"
+                class="task-tab px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-brand-blue/15 text-white">
+                Mine
+            </button>
+            <button type="button" data-tab="all"
+                class="task-tab px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
+                Everything open
+            </button>
+            <button type="button" data-tab="review" id="taskReviewTab"
+                class="task-tab hidden px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
+                Needs review
+                <span id="taskReviewCount"
+                    class="hidden ml-1.5 text-xs font-semibold px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">0</span>
+            </button>
+            <button type="button" data-tab="done"
+                class="task-tab px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-400 hover:text-white">
+                Done
+            </button>
+        </div>
+
+        <div class="relative w-full lg:w-72">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+            <input type="search" id="taskSearch" placeholder="Search tasks"
+                class="w-full bg-dark-card border border-dark-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-brand-blue transition-colors">
+        </div>
+    </div>
+
+    <div id="taskList" class="space-y-4"></div>
+
+    <button type="button" id="taskListMore"
+        class="hidden mt-4 w-full px-4 py-3 text-sm rounded-xl border border-dark-border text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50">
+        Load more
+    </button>
+</div>
+
+<div id="taskModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-card border border-dark-border rounded-xl w-full max-w-2xl max-h-[88vh] overflow-y-auto shadow-2xl">
+        <div class="sticky top-0 z-10 flex justify-between items-start gap-4 px-6 py-5 bg-dark-card border-b border-white/5">
+            <h3 id="taskModalTitle" class="text-lg font-bold text-white leading-snug">Task</h3>
+            <button type="button" id="taskModalClose"
+                class="text-gray-500 hover:text-white transition-colors shrink-0 mt-0.5">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="taskModalBody" class="p-6"></div>
+    </div>
+</div>

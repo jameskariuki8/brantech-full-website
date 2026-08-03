@@ -291,6 +291,15 @@ def summary(request):
             if _can_manage(request.user)
             else 0
         ),
+        # Counted across the whole board, not just this viewer's work: the
+        # board is readable by everyone, and an overdue task nobody has
+        # noticed is the thing worth surfacing.
+        "overdue": (
+            Task.objects.exclude(status=Task.DONE)
+            .filter(due_date__lt=timezone.localdate())
+            .count()
+        ),
+        "done": Task.objects.filter(status=Task.DONE).count(),
         "can_manage": _can_manage(request.user),
     })
 

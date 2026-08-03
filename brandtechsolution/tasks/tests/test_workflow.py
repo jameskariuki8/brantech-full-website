@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import Group, Permission, User
 from django.core import mail
 from django.test import TestCase
@@ -431,3 +433,39 @@ class SummaryTest(TestCase):
         payload = self.client.get("/api/work/summary/").json()
 
         self.assertEqual(payload["my_open"], 1)
+
+    def test_overdue_counts_the_whole_board_and_excludes_approved_work(self):
+        """The stat card reports the team's overdue work, not the viewer's.
+
+        An overdue task nobody has noticed is the one worth surfacing, and it
+        is visible to everyone anyway - the board is not filtered per person.
+        """
+        yesterday = timezone.localdate() - timedelta(days=1)
+        Task.objects.create(
+            title="Late", created_by=self.admin, due_date=yesterday
+        )
+        Task.objects.create(
+            title="Late but approved", created_by=self.admin,
+            due_date=yesterday, status=Task.DONE,
+        )
+        Task.objects.create(
+            title="Due later", created_by=self.admin,
+            due_date=timezone.localdate() + timedelta(days=5),
+        )
+        Task.objects.create(title="No due date", created_by=self.admin)
+
+        self.client.force_login(self.alice)
+        payload = self.client.get("/api/work/summary/").json()
+
+        self.assertEqual(payload["overdue"], 1)
+
+    def test_done_counts_approved_tasks(self):
+        Task.objects.create(
+            title="Approved", created_by=self.admin, status=Task.DONE
+        )
+        Task.objects.create(title="Still going", created_by=self.admin)
+
+        self.client.force_login(self.alice)
+        payload = self.client.get("/api/work/summary/").json()
+
+        self.assertEqual(payload["done"], 1)

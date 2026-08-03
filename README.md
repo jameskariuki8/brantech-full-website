@@ -199,6 +199,225 @@ python manage.py test appointments
 
 ---
 
+## 🚀 Deployment
+
+### Production Checklist
+
+1. Set `DEBUG=False` in `.env`
+2. Set a strong `SECRET_KEY`
+3. Configure `ALLOWED_HOSTS` with your domain
+4. Set up PostgreSQL database
+5. Configure email settings for production
+6. Collect static files: `python manage.py collectstatic`
+7. Set up proper media file serving
+8. Configure environment variables on your server
+
+### Upgrading an existing deployment: staff roles
+
+This release adds migrations for the new `staff` app and a `status` field on
+`BlogPost`. Run `python manage.py migrate` on deploy. The blog migration
+backfills every existing post to `published`, so nothing disappears from the
+public site. No new Python dependencies are added, so a plain container
+restart is sufficient once migrations have run. (Under Docker Compose the
+`web` entrypoint already runs `migrate` for you.)
+
+The staff migration also creates the four preset roles. See
+[Staff roles and permissions](#staff-roles-and-permissions) for what they
+grant and how to invite people.
+
+### Environment Variables for Production
+
+```bash
+DEBUG=False
+SECRET_KEY=your-production-secret-key
+ALLOWED_HOSTS=["yourdomain.com","www.yourdomain.com"]
+DATABASE_ENGINE=postgresql
+DATABASE_NAME=brantech
+DATABASE_USER=your-db-user
+DATABASE_PASSWORD=your-db-password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+GOOGLE_API_KEY=your-google-api-key
+```
+
+## 📚 Documentation
+
+- [AI Workflows README](brandtechsolution/ai_workflows/README.md) - Detailed documentation for the AI chatbot integration
+- [LangChain Integration Docs](docs/langchain-quick-start-guide.md) - Quick start guide for LangChain
+
+## 🐳 Running with Docker (behind Cloudflare Tunnel)
+
+The stack runs three containers — `db` (Postgres + pgvector), `web`
+(gunicorn + WhiteNoise), and `cloudflared` (Cloudflare Tunnel) — with **no host
+ports published**. Inbound traffic arrives only through the tunnel; `cloudflared`
+dials the Cloudflare edge outbound and proxies to `web` over the internal network.
+
+Persistent data lives in the in-project `./data/` directory (`./data/postgres`,
+`./data/media`), which is gitignored.
+
+### 1. Configure environment
+
+Two gitignored files at the **repo root** (next to `docker-compose.yml`):
+
+- **`.env`** — app + database config, based on `brandtechsolution/env.example`.
+  For Docker, set `DATABASE_HOST=db` and `DEBUG=False`, and set `ALLOWED_HOSTS`
+  and `CSRF_TRUSTED_ORIGINS` to your real domain — `CSRF_TRUSTED_ORIGINS` (with
+  the `https://` scheme) is **required** behind the tunnel or form/admin POSTs
+  return HTTP 403. Compose injects these as real environment variables
+  (pydantic-settings reads them directly — no in-container `.env` file is
+  required or baked into the image).
+- **`cloudflared.env`** — contains only the tunnel token, kept separate so it
+  never enters the web container's environment or the process command line:
+
+  ```
+  TUNNEL_TOKEN=your-cloudflare-tunnel-token-here
+  ```
+
+### 2. Create the Cloudflare Tunnel
+
+In the Cloudflare Zero Trust dashboard → Networks → Tunnels, create a tunnel,
+add a **public hostname** routing your domain to `http://web:8000`, and copy the
+tunnel **token** into `cloudflared.env`.
+
+### 3. Build and run
+
+```bash
+docker compose up -d --build
+```
+
+The `web` entrypoint runs `migrate` and `collectstatic` automatically, then
+starts gunicorn.
+
+> **First run / changing DB credentials:** Postgres initializes its data
+> directory only once. If `./data/postgres` already exists, it ignores new
+> credentials in `.env`. To start fresh, stop the stack and remove the directory
+> (`docker run --rm -v "$(pwd)/data:/data" alpine rm -rf /data/postgres`).
+
+### 4. One-off management commands
+
+```bash
+# Create an admin user
+docker compose exec web python manage.py createsuperuser
+
+# Build vector embeddings for blog posts/projects (uses the Gemini API)
+docker compose exec web python manage.py init_vector_stores
+```
+
+### Notes
+
+- Static files are served by WhiteNoise; user-uploaded media is served by Django
+  (`CompressedStaticFilesStorage` is used rather than the strict manifest variant
+  because some bundled CSS references a missing asset).
+- The `web` container runs as root to keep the bind-mounted `./data/media`
+  writable regardless of host UID.
+
+## Bulk email outbox
+
+Queued campaigns are sent by the `process_email_outbox` management command.
+
+**Docker Compose deployments:** the `outbox` service in `docker-compose.yml`
+runs this command automatically in a loop (every 60 seconds) alongside `web`
+and `db`. There is nothing extra to configure or run — `docker compose up`
+starts it for you.
+
+**Non-Docker deployments:** run the command every minute via cron, using the
+`python` interpreter that this project's dependencies are actually installed
+into (e.g. the output of `which python` inside your project's virtualenv —
+do NOT hard-code a path from a different environment's virtualenv layout;
+there is no virtualenv inside the Docker image, so any such path is wrong
+there):
+
+    * * * * * cd /path/to/brandtechsolution && /path/to/your/python manage.py process_email_outbox --verbosity 0 >/dev/null 2>>/var/log/outbox-errors.log
+
+Application DEBUG logging can include credential values, so avoid redirecting full stdout into a persistent log.
+
+Tune `OUTBOX_BATCH_SIZE` (default 50) and cron frequency to stay under your
+Gmail limits (~500/day free, ~2000/day Workspace). Example: batch 20 + a
+per-5-minute cron ≈ safe for a free Gmail account.
+
+`OUTBOX_STALE_CLAIM_MINUTES` controls how long a claimed-but-unfinished batch
+is held before the reaper releases it back to the queue. A single run's
+worst-case duration is bounded by `OUTBOX_BATCH_SIZE × EMAIL_TIMEOUT`
+seconds, and this must stay below `OUTBOX_STALE_CLAIM_MINUTES × 60` — this
+invariant is enforced by an automated test, so raising the batch size or
+timeout requires raising `OUTBOX_STALE_CLAIM_MINUTES` to match.
+
+### Managing campaign recipients
+
+Every campaign card has a **View recipients (N)** button that opens the
+recipient list. From there you can search by email or name, add an address
+by hand, and remove individual addresses.
+
+What removal does depends on how far the campaign has got:
+
+| Campaign status | Removing a recipient |
+|---|---|
+| `draft` | Deletes the row and gives the slot back (`total` decreases) |
+| `queued` / `sending` / `paused` | Marks the row `skipped`; it is never emailed, and `total` is left alone so the send record stays coherent |
+| `sent` / `failed` | Refused — the campaign is finished and its history is immutable |
+
+An address that has already been sent, failed, or is in flight is never
+withdrawn, whatever the campaign's status.
+
+**A removal persists across a rebuild.** Removing a recipient records a
+durable, per-campaign exclusion for that address, independent of the
+recipient row itself (which may be deleted, in the `draft` case). Pressing
+**Build recipients** again — for example to add one more manual address, or
+after picking up new source records — re-resolves the audience but drops
+any address with an active exclusion, so a removed address does not
+silently reappear. Manually re-adding that exact address is the one way to
+undo this: an explicit add clears the exclusion, so it wins over the
+earlier removal and a later rebuild keeps the address.
+
+Adding is allowed for `draft`, `queued`, `sending` and `paused` campaigns —
+a new row is simply picked up by the next outbox run. Suppressed
+(unsubscribed or bounced) addresses are refused.
+
+### Email validation
+
+Addresses carry a validation status: `unknown`, `valid`, `invalid_syntax` or
+`invalid_domain`.
+
+- **Syntax** is checked automatically whenever recipients are built or added.
+  It costs nothing and never touches the network.
+- **Domains** are checked only when you press **Check domains**, which looks
+  up MX records for every recipient. DNS is slow, so this is deliberately a
+  button rather than something that happens during Build. Results are cached
+  per domain for an hour, so a list of 500 addresses on a handful of domains
+  costs a handful of lookups.
+
+**Flagged addresses are still sent to.** The outbox does not skip them —
+validation only tells you what looks undeliverable, and **Remove all
+invalid** acts on it in one click. Nothing is dropped from a send without
+you asking for it.
+
+### Email placeholders
+
+Templates and campaigns support these merge fields in both the subject and body:
+
+| Placeholder | Renders as |
+|---|---|
+| `{{ name }}` | Recipient's full name (may be blank) |
+| `{{ first_name }}` | First word of the recipient's name |
+| `{{ email }}` | Recipient's email address |
+| `{{ date }}` | Send date, e.g. July 19, 2026 |
+| `{{ year }}` | Send year |
+| `{{ unsubscribe_url }}` | Per-recipient unsubscribe link (appended automatically if omitted) |
+
+Spacing is flexible — `{{name}}`, `{{ name }}` and `{{  name  }}` all work.
+Unknown placeholders render as empty text rather than leaking a literal
+`{{ typo }}` into a recipient's inbox; the editor warns about them when you
+hit **Preview**, so check that before sending.
+
+The editor stores what you author as `body_source` and derives the
+CSS-inlined `body_html` that is actually sent, so editing is lossless and
+re-saving never compounds inline styles. The **Source** button exposes the
+raw HTML for pasted designs; switching back to the visual editor may
+simplify markup Quill does not model. Alignment and indentation are
+deliberately absent from the toolbar because email clients discard the CSS
+classes Quill uses to implement them.
+
+
 ## Staff roles and permissions
 
 Access to the admin panel is controlled by twelve **capabilities**. A
