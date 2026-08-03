@@ -49,7 +49,10 @@ def notify_review_ready(task, request=None):
     if not recipients:
         return 0
 
-    path = "/admin-panel/"
+    # Deep-links to the section rather than the panel's default Overview.
+    # The version 2 shell reads ?section= on load, so this lands the reviewer
+    # on the board instead of making them hunt for it from the dashboard.
+    path = "/admin-panel/?section=tasks"
     url = request.build_absolute_uri(path) if request else path
     who = ", ".join(sorted(a.user.username for a in task.assignments.all()))
 
