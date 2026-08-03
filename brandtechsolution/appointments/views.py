@@ -9,7 +9,10 @@ from datetime import datetime, timedelta
 from django.db import IntegrityError
 from django.db.models import Q
 import json
+import logging
 from appointments.models import Appointment
+
+logger = logging.getLogger(__name__)
 from staff.decorators import capability_required
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -67,43 +70,38 @@ def create_appointment(request: HttpRequest):
         date = data.get("date")
         time = data.get("time")
         estimated_duration = data.get("estimated_duration") or 30
-        status = data.get("status") or "pending"
         email = (data.get("email") or "").strip()
-        phone = (data.get("phone") or "").strip() or f"+2547{int(datetime.now().timestamp()) % 100000000}"
+        # Left empty when not supplied. This used to synthesise a plausible
+        # +2547XXXXXXXX number to satisfy the unique phone constraint, which
+        # put fabricated contact details in front of staff as though the
+        # client had given them. The constraint is gone; an empty field is
+        # honest about what we know.
+        phone = (data.get("phone") or "").strip()
         full_name = (data.get("full_name") or data.get("name") or "Anonymous Client").strip()
 
         if not email or not date or not time:
             return JsonResponse({"error": "Missing required fields: email, date, and time"}, status=400)
 
-        # Check if an appointment already exists for this email
-        existing = Appointment.objects.filter(email=email).first()
-        if existing:
-            existing.full_name = full_name
-            existing.phone = phone
-            existing.title = title
-            existing.description = description
-            existing.date = date
-            existing.time = time
-            existing.estimated_duration = estimated_duration
-            existing.status = status
-            existing.save()
-            appointment = existing
-        else:
-            # Prevent unique phone constraint collision
-            if Appointment.objects.filter(phone=phone).exists():
-                phone = f"+2547{int(datetime.now().timestamp()) % 100000000}"
-
-            appointment = Appointment.objects.create(
-                title=title,
-                description=description,
-                date=date,
-                time=time,
-                estimated_duration=estimated_duration,
-                status=status,
-                email=email,
-                phone=phone,
-                full_name=full_name
-            )
+        # Always a new row. This endpoint is public and unauthenticated, so a
+        # submitted email address proves nothing about who is submitting it -
+        # matching one against an existing booking and updating that booking
+        # let anybody rewrite a stranger's appointment by knowing their
+        # address. Repeat bookings are a real thing; staff dedupe them from
+        # the appointments list.
+        appointment = Appointment.objects.create(
+            title=title,
+            description=description,
+            date=date,
+            time=time,
+            estimated_duration=estimated_duration,
+            # Not `status` from the request body. A public caller could send
+            # "confirmed" and have their booking show up to staff as already
+            # agreed. Confirming is a staff decision, made in the panel.
+            status="pending",
+            email=email,
+            phone=phone,
+            full_name=full_name
+        )
 
         # Send email notification to admin (juniorkariuuki735@gmail.com)
         try:
@@ -136,10 +134,14 @@ def create_appointment(request: HttpRequest):
             pass
 
         return JsonResponse({"success": "Appointment created successfully", "id": appointment.id}, status=201)
-    except IntegrityError as e:
-        return JsonResponse({"error": "Database constraint error", "message": str(e)}, status=400)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+    except IntegrityError:
+        # This endpoint is public, so its error bodies are public. Raw
+        # exception text names tables, columns and constraints.
+        logger.exception("create_appointment integrity error")
+        return JsonResponse({"error": "Could not save the booking."}, status=400)
+    except Exception:
+        logger.exception("create_appointment failed")
+        return JsonResponse({"error": "Could not save the booking."}, status=400)
 
 @csrf_exempt
 @require_http_methods(["POST"])

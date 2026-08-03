@@ -12,8 +12,14 @@ class Appointment(models.Model):
         ("rescheduled", _("Rescheduled"))
     ]
 
-    email = models.EmailField(_("Email"), unique=True, max_length=255)
-    phone = models.CharField(_("Phone"), unique=True, max_length=20)
+    # Neither is unique. One person booking a second consultation is the
+    # ordinary case, and the unique constraints made that impossible - so
+    # create_appointment worked around them by UPDATING whichever row shared
+    # the address, which let anyone overwrite a stranger's booking by typing
+    # their email. The constraint was the cause; removing it is the fix.
+    # Duplicates are now real rows for staff to merge or cancel.
+    email = models.EmailField(_("Email"), max_length=255, db_index=True)
+    phone = models.CharField(_("Phone"), max_length=20, blank=True, default="")
     full_name = models.CharField(_("Full name"), max_length=255)
 
     title = models.CharField(_("Subject"), max_length=200)

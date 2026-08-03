@@ -40,33 +40,47 @@ class AppointmentModelTest(TestCase):
                    timedelta(minutes=60)).time()
         self.assertEqual(end_time, expected)
     
-    def test_email_unique_constraint(self):
-        """Test that email must be unique"""
-        with self.assertRaises(Exception):
-            Appointment.objects.create(
-                email="test@example.com",
-                phone="9876543210",
-                full_name="Another User",
-                title="Another Appointment",
-                description="Description",
-                date=date.today() + timedelta(days=2),
-                time=time(11, 0),
-                estimated_duration=30
-            )
-    
-    def test_phone_unique_constraint(self):
-        """Test that phone must be unique"""
-        with self.assertRaises(Exception):
-            Appointment.objects.create(
-                email="different@example.com",
-                phone="1234567890",
-                full_name="Another User",
-                title="Another Appointment",
-                description="Description",
-                date=date.today() + timedelta(days=2),
-                time=time(11, 0),
-                estimated_duration=30
-            )
+    def test_one_person_may_hold_several_appointments(self):
+        """Email is no longer unique (migration 0007).
+
+        It used to be, and that is what forced the public booking endpoint to
+        UPDATE a matching row instead of inserting - which let anyone rewrite
+        a stranger's appointment by submitting their address. A returning
+        client booking a second session is the ordinary case.
+        """
+        Appointment.objects.create(
+            email="test@example.com",
+            phone="9876543210",
+            full_name="Test User",
+            title="Second Appointment",
+            description="Description",
+            date=date.today() + timedelta(days=2),
+            time=time(11, 0),
+            estimated_duration=30
+        )
+
+        self.assertEqual(
+            Appointment.objects.filter(email="test@example.com").count(), 2
+        )
+
+    def test_two_people_may_share_a_phone_number(self):
+        """Also dropped in 0007. A shared office or family line is normal,
+        and the constraint made the endpoint invent fake numbers to dodge it.
+        """
+        Appointment.objects.create(
+            email="different@example.com",
+            phone="1234567890",
+            full_name="Another User",
+            title="Another Appointment",
+            description="Description",
+            date=date.today() + timedelta(days=2),
+            time=time(11, 0),
+            estimated_duration=30
+        )
+
+        self.assertEqual(
+            Appointment.objects.filter(phone="1234567890").count(), 2
+        )
 
 
 class AppointmentViewsTest(TestCase):
@@ -144,8 +158,16 @@ class AppointmentViewsTest(TestCase):
         self.assertIn('success', data)
         self.assertTrue(Appointment.objects.filter(email="new@example.com").exists())
     
-    def test_create_appointment_duplicate_email(self):
-        """Test appointment creation with duplicate email"""
+    def test_create_appointment_repeat_email(self):
+        """A returning client books again: a second row, and the first is
+        left alone.
+
+        This test previously asserted a 400 - a repeat booking was simply
+        refused, which was the customer-facing symptom of the unique email
+        constraint. Removing that constraint (migration 0007) is what closed
+        the broken-access-control hole, because the endpoint no longer has to
+        reach for an existing row to avoid an IntegrityError.
+        """
         appointment_date = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
         response = self.client.post(
             reverse('appointments:create'),
@@ -153,18 +175,24 @@ class AppointmentViewsTest(TestCase):
                 "email": "appointment@example.com",
                 "phone": "1111111111",
                 "full_name": "Duplicate User",
-                "title": "Duplicate Appointment",
+                "title": "Second Appointment",
                 "description": "Description",
                 "date": appointment_date,
                 "time": "15:00",
                 "estimated_duration": 30,
-                "status": "pending"
             }),
             content_type='application/json'
         )
-        self.assertEqual(response.status_code, 400)
-        data = json.loads(response.content)
-        self.assertIn('error', data)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            Appointment.objects.filter(email="appointment@example.com").count(), 2
+        )
+
+        # The booking that already existed is untouched.
+        self.appointment.refresh_from_db()
+        self.assertEqual(self.appointment.title, "Test Appointment")
+        self.assertEqual(self.appointment.phone, "1234567890")
     
     def test_create_appointment_missing_fields(self):
         """Test appointment creation with missing required fields"""
