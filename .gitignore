@@ -151,3 +151,7 @@ Thumbs.db
 # Docker persistent data (bind mounts)
 /data/
 .superpowers/
+
+# collectstatic output. The /staticfiles rule above is root-anchored and
+# never matched this one, which is why it was tracked for a while.
+brandtechsolution/staticfiles/

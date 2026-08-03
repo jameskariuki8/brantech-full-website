@@ -1,278 +1,293 @@
+{% extends 'brand/admin_base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TekLora Admin Dashboard</title>
+{% block extra_head %}
+<!-- Quill (email body editor) -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet"
+    integrity="sha384-ecIckRi4QlKYya/FQUbBUjS4qp65jF/J87Guw5uzTbO1C1Jfa/6kYmd6dXUF6D7i" crossorigin="anonymous"
+    referrerpolicy="no-referrer">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"
+    integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+<style>
+    .ql-toolbar.ql-snow,
+    .ql-container.ql-snow {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
 
-    <!-- Favicon -->
-    <!-- Favicon -->
-    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    .ql-toolbar.ql-snow .ql-stroke {
+        stroke: #9ca3af;
+    }
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    .ql-toolbar.ql-snow .ql-fill {
+        fill: #9ca3af;
+    }
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    .ql-toolbar.ql-snow .ql-picker-label {
+        color: #9ca3af;
+    }
 
-    <!-- Quill (email body editor) -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet"
-        integrity="sha384-ecIckRi4QlKYya/FQUbBUjS4qp65jF/J87Guw5uzTbO1C1Jfa/6kYmd6dXUF6D7i" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"
-        integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <style>
-        .ql-toolbar.ql-snow, .ql-container.ql-snow { border-color: rgba(255,255,255,0.08); }
-        .ql-toolbar.ql-snow .ql-stroke { stroke: #9ca3af; }
-        .ql-toolbar.ql-snow .ql-fill { fill: #9ca3af; }
-        .ql-toolbar.ql-snow .ql-picker-label { color: #9ca3af; }
-        .ql-editor { background: #06090F; color: #e5e7eb; min-height: 220px; }
-        .ql-editor.ql-blank::before { color: #6b7280; }
-    </style>
+    .ql-editor {
+        background: #06090F;
+        color: #e5e7eb;
+        min-height: 220px;
+    }
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        dark: {
-                            bg: '#06090F',
-                            card: '#0D121D',
-                            border: 'rgba(255, 255, 255, 0.05)',
-                        },
-                        brand: {
-                            blue: '#007AFF',
-                            green: '#00FF94',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    .ql-editor.ql-blank::before {
+        color: #6b7280;
+    }
+</style>
+{% endblock %}
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+{% block content %}
+<div class="p-6 lg:p-10 max-w-7xl mx-auto">
 
-        .glass-panel {
-            background: rgba(13, 18, 29, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+    <!-- Dashboard Section -->
+    <div id="dashboard" class="section animate-fade-in">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
+            <p class="text-gray-500">Welcome back, here's what's happening across your platform.</p>
+        </header>
 
-        .nav-item.active {
-            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
-            border-left: 3px solid #007AFF;
-            color: #fff;
-        }
-
-        .nav-item:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #06090F;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #1F2937;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #374151;
-        }
-    </style>
-</head>
-
-<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
-
-    <!-- Mobile Menu Button -->
-    <button id="mobileMenuBtn"
-        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <!-- Sidebar -->
-    <aside id="sidebar"
-        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
-        <!-- Logo -->
-        <div class="h-20 flex items-center px-6 border-b border-dark-border">
-            <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
-            <span class="text-xl font-bold text-white tracking-tight">Teklora<span
-                    class="text-brand-blue">Admin</span></span>
-        </div>
-
-        <!-- Nav -->
-        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            <a href="#" onclick="showSection('dashboard', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 active transition-colors">
-                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>Dashboard
-            </a>
-            {% comment %}
-            Ungated on purpose. Every staff account can see the board and its
-            own work; manage_tasks only gates creating, assigning and
-            reviewing, which tasks.js hides and the API enforces.
-            {% endcomment %}
-            <a href="#" onclick="showSection('tasks', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-list-check w-6 text-center mr-3"></i>Tasks
-                <span id="taskNavBadge"
-                    class="hidden ml-auto text-xs px-2 py-0.5 rounded-full bg-brand-blue/20 text-brand-blue">0</span>
-            </a>
-            {% if can.manage_blog or can.manage_projects or can.manage_appointments %}
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Content</div>
-            {% endif %}
-            {% if can.manage_blog %}
-            <a href="#" onclick="showSection('blogs', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-pen-nib w-6 text-center mr-3"></i>Blog Posts
-            </a>
-            {% endif %}
-            {% if can.manage_projects %}
-            <a href="#" onclick="showSection('projects', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-rocket w-6 text-center mr-3"></i>Projects
-            </a>
-            {% endif %}
-            {% if can.manage_appointments %}
-            <a href="/appointments"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
-                <i class="fas fa-calendar-check w-6 text-center mr-3"></i>Appointments
-            </a>
-            {% endif %}
-            {% if can.view_inbox or can.manage_templates or can.manage_campaigns %}
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Communications</div>
-            {% endif %}
-            {% if can.view_inbox %}
-            <a href="#" onclick="showSection('inbox', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-inbox w-6 text-center mr-3"></i>Inbox
-            </a>
-            {% endif %}
-            {% if can.manage_templates %}
-            <a href="#" onclick="showSection('templates', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-file-lines w-6 text-center mr-3"></i>Templates
-            </a>
-            {% endif %}
-            {% if can.manage_campaigns %}
-            <a href="#" onclick="showSection('campaigns', this)" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-paper-plane w-6 text-center mr-3"></i>Campaigns
-            </a>
-            {% endif %}
-            {% if can.manage_staff %}
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Administration</div>
-            <a href="#" onclick="showSection('staff', this)"
-                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
-                <i class="fas fa-users-gear w-6 text-center mr-3"></i>Staff &amp; Roles
-            </a>
-            {% endif %}
-
-        </nav>
-
-        <!-- User Profile -->
-        <div class="p-4 border-t border-dark-border">
-            <a href="{% url 'logout' %}"
-                class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
-                <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>Logout
-            </a>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
-        <!-- Top Bar (Mobile Overlay) -->
-        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
-
-        <div class="p-6 lg:p-10 max-w-7xl mx-auto">
-
-            <!-- Dashboard Section -->
-            <div id="dashboard" class="section animate-fade-in">
-                <header class="mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
-                    <p class="text-gray-500">Welcome back, here's what's happening correctly.</p>
-                </header>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- Stat Card 1 -->
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <i class="fas fa-blog text-6xl text-brand-blue"></i>
-                        </div>
-                        <div class="relative z-10">
-                            <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
-                            <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
-                        </div>
-                    </div>
-
-                    <!-- Stat Card 2 -->
-                    <div class="bg-dark-card border border-dark-border rounded-xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <i class="fas fa-rocket text-6xl text-brand-green"></i>
-                        </div>
-                        <div class="relative z-10">
-                            <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
-                            <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
-                        </div>
-                    </div>
-
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Stat Card 1: Total Blogs -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-blue rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-blog text-6xl text-brand-blue"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
+                    <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
                 </div>
             </div>
 
-            <!-- Tasks Section (visible to every staff account) -->
-            {% include 'brand/admin/_tasks.html' %}
+            <!-- Stat Card 2: Total Blog Views -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-green rounded-xl p-6 relative overflow-hidden group hover:border-brand-green/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-eye text-6xl text-brand-green"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Blog Views</p>
+                    <h3 class="text-3xl font-bold text-white" id="blogViewsCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Blog Section -->
-            {% if can.manage_blog %}{% include 'brand/admin/_blogs.html' %}{% endif %}
+            <!-- Stat Card 3: Active Projects -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-yellow-500 rounded-xl p-6 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-rocket text-6xl text-yellow-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
+                    <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Project Section -->
-            {% if can.manage_projects %}{% include 'brand/admin/_projects.html' %}{% endif %}
+            <!-- Stat Card 4: Total Events -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-purple-500 rounded-xl p-6 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-calendar-days text-6xl text-purple-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Events</p>
+                    <h3 class="text-3xl font-bold text-white" id="eventCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Inbox Section -->
-            {% if can.view_inbox %}{% include 'brand/admin/_inbox.html' %}{% endif %}
+            <!-- Stat Card 5: Email Templates -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-pink-500 rounded-xl p-6 relative overflow-hidden group hover:border-pink-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-file-lines text-6xl text-pink-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Email Templates</p>
+                    <h3 class="text-3xl font-bold text-white" id="templateCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Templates Section -->
-            {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
+            <!-- Stat Card 6: Campaigns -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-cyan-500 rounded-xl p-6 relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-paper-plane text-6xl text-cyan-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Campaigns</p>
+                    <h3 class="text-3xl font-bold text-white" id="campaignCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Campaigns Section -->
-            {% if can.manage_campaigns %}{% include 'brand/admin/_campaigns.html' %}{% endif %}
+            <!-- Stat Card 7: Inquiries -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-orange-500 rounded-xl p-6 relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-envelope-open-text text-6xl text-orange-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Inquiries</p>
+                    <h3 class="text-3xl font-bold text-white" id="inquiryCount">0</h3>
+                </div>
+            </div>
 
-            <!-- Staff & Roles Section -->
-            {% if can.manage_staff %}{% include 'brand/admin/_staff.html' %}{% endif %}
+            <!-- Stat Card 8: Appointments -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-teal-500 rounded-xl p-6 relative overflow-hidden group hover:border-teal-500/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-calendar-check text-6xl text-teal-500"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Appointments</p>
+                    <h3 class="text-3xl font-bold text-white" id="appointmentCount">0</h3>
+                </div>
+            </div>
 
+            <!-- Stat Card 9: Total Likes -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-blue rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-thumbs-up text-6xl text-brand-blue"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Likes</p>
+                    <h3 class="text-3xl font-bold text-white" id="likesCount">0</h3>
+                </div>
+            </div>
+
+            <!-- Stat Card 10: Total Comments -->
+            <div
+                class="bg-dark-card border border-dark-border border-l-4 border-brand-green rounded-xl p-6 relative overflow-hidden group hover:border-brand-green/30 transition-all duration-300">
+                <div
+                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-comments text-6xl text-brand-green"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm font-medium text-gray-400 mb-1">Total Comments</p>
+                    <h3 class="text-3xl font-bold text-white" id="commentsCount">0</h3>
+                </div>
+            </div>
         </div>
-    </main>
 
-    {{ capabilities|json_script:"capabilityData" }}
-    <script>
-        // json_script escapes the payload safely; never hand-interpolate this
-        // list into JavaScript. Gating in JS is cosmetic - the APIs enforce.
-        window.CAPABILITIES = JSON.parse(document.getElementById('capabilityData').textContent);
-        window.can = (codename) => window.CAPABILITIES.includes(codename);
-    </script>
-    <script src="{% static 'brand/js/admin/core.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/editor.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/inbox.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/staff.js' %}" defer></script>
-    <script src="{% static 'brand/js/admin/tasks.js' %}" defer></script>
-</body>
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Chart 1: Top Blogs by View Count -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-blue/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-chart-bar text-brand-blue mr-2"></i>Top Performing Blog Posts</h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="topBlogsChart"></canvas>
+                </div>
+            </div>
 
-</html>
+            <!-- Chart 2: Appointments by Status -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-green/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-chart-pie text-brand-green mr-2"></i>Appointments Breakdown</h3>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="appointmentsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 3: Inquiries by Status -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-orange-500/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-chart-line text-orange-500 mr-2"></i>Inquiries by Status</h3>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="inquiriesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 4: Campaigns Overview -->
+            <div
+                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-purple-500/30 transition-all duration-300">
+                <h3 class="text-lg font-bold text-white mb-4"><i
+                        class="fas fa-envelope text-purple-500 mr-2"></i>Campaigns Overview</h3>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="campaignsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Section (visible to every staff account) -->
+    {% include 'brand/admin/_tasks.html' %}
+
+    <!-- Blog Section -->
+    {% if can.manage_blog %}{% include 'brand/admin/_blogs.html' %}{% endif %}
+
+    <!-- Project Section -->
+    {% if can.manage_projects %}{% include 'brand/admin/_projects.html' %}{% endif %}
+
+    <!-- Inbox Section -->
+    {% if can.view_inbox %}{% include 'brand/admin/_inbox.html' %}{% endif %}
+
+    <!-- Templates Section -->
+    {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
+
+    <!-- GitHub Sync Section -->
+    <div id="githubSync" class="section hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-white">GitHub Manager</h2>
+                <p class="text-gray-500 text-sm">Sync your repositories as projects</p>
+            </div>
+            <button onclick="syncSelectedRepos()" id="syncBtn"
+                class="bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>Sync Selected
+            </button>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="githubLoading" class="text-center py-10 text-gray-500 hidden">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p>Loading repositories from GitHub...</p>
+        </div>
+
+        <div id="githubList" class="space-y-4"></div>
+    </div>
+
+    <!-- Campaigns Section -->
+    {% if can.manage_campaigns %}{% include 'brand/admin/_campaigns.html' %}{% endif %}
+
+    <!-- Staff & Roles Section -->
+    {% if can.manage_staff %}{% include 'brand/admin/_staff.html' %}{% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'brand/js/admin/core.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/editor.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/inbox.js' %}?v=1.0.3" defer></script>
+<script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/staff.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/tasks.js' %}" defer></script>
+
+{{ capabilities|json_script:"capabilityData" }}
+<script>
+    // json_script escapes the payload safely; never hand-interpolate this
+    // list into JavaScript. Gating in JS is cosmetic - the APIs enforce.
+    window.CAPABILITIES = JSON.parse(document.getElementById('capabilityData').textContent || '[]');
+    window.can = (codename) => window.CAPABILITIES.includes(codename);
+</script>
+{% endblock %}

@@ -17,7 +17,7 @@ class TaskSectionVisibilityTest(TestCase):
         response = self.client.get("/admin-panel/")
 
         self.assertContains(response, 'id="taskList"')
-        self.assertContains(response, "showSection('tasks'")
+        self.assertContains(response, 'id="nav-tasks"')
 
     def test_manage_tasks_is_not_leaked_to_someone_without_it(self):
         user = User.objects.create_user("nobody", password="pw", is_staff=True)
@@ -43,6 +43,69 @@ class TaskSectionVisibilityTest(TestCase):
         response = self.client.get("/admin-panel/")
 
         self.assertContains(response, "manage_tasks")
+
+
+class NavGatingTest(TestCase):
+    """The sidebar and the sections it points at must agree.
+
+    The version 2 redesign moved the nav into admin_base.html and dropped
+    every {% if can.x %} gate on the way. admin_panel.html still gates each
+    SECTION, so the result was links pointing at markup that is not in the
+    DOM for the people who cannot use them - clicking one blanks the content
+    area with no explanation. Restored during that merge; pinned here.
+    """
+
+    def _staff(self, *capabilities):
+        user = User.objects.create_user("u", password="pw", is_staff=True)
+        if capabilities:
+            group = Group.objects.create(name="role")
+            group.permissions.set([
+                Permission.objects.get(
+                    codename=c, content_type__app_label="staff"
+                )
+                for c in capabilities
+            ])
+            user.groups.add(group)
+        return user
+
+    def test_links_are_hidden_for_sections_the_user_cannot_open(self):
+        self.client.force_login(self._staff())
+
+        response = self.client.get("/admin-panel/")
+
+        self.assertNotContains(response, 'id="nav-blogs"')
+        self.assertNotContains(response, 'id="nav-inbox"')
+        self.assertNotContains(response, 'id="nav-campaigns"')
+        self.assertNotContains(response, 'id="nav-staff"')
+
+    def test_links_appear_for_what_the_user_holds(self):
+        self.client.force_login(self._staff("manage_blog", "manage_staff"))
+
+        response = self.client.get("/admin-panel/")
+
+        self.assertContains(response, 'id="nav-blogs"')
+        self.assertContains(response, 'id="nav-staff"')
+        self.assertNotContains(response, 'id="nav-campaigns"')
+
+    def test_tasks_link_is_ungated(self):
+        """The one deliberate exception - everyone can open the board."""
+        self.client.force_login(self._staff())
+
+        response = self.client.get("/admin-panel/")
+
+        self.assertContains(response, 'id="nav-tasks"')
+
+    def test_shell_gets_capabilities_on_pages_that_only_extend_it(self):
+        """appointments and editorial extend admin_base.html but their views
+        never build the capability set. Without the context processor every
+        gate reads false there and the whole sidebar renders empty."""
+        self.client.force_login(self._staff("manage_appointments"))
+
+        response = self.client.get("/appointments/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="nav-tasks"')
+        self.assertContains(response, 'id="nav-appointments"')
 
 
 class PresetRoleTest(TestCase):

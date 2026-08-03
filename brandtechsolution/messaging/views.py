@@ -84,10 +84,22 @@ def contact_submit(request):
 
     try:
         send_mail(
-            subject=f"New contact inquiry from {name}",
-            message=f"From: {name} <{email}>\nPhone: {phone or 'n/a'}\n\n{message}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.DEFAULT_FROM_EMAIL],
+            subject=f"New Contact Inquiry from {name}",
+            message=(
+                f"New Contact Form Submission on Teklora:\n\n"
+                f"Full Name: {name}\n"
+                f"Email Address: {email}\n"
+                f"Phone / WhatsApp: {phone or 'N/A'}\n\n"
+                f"Inquiry Message:\n{message}\n"
+            ),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "juniorkariuki735@gmail.com") or "juniorkariuki735@gmail.com",
+            recipient_list=[
+                "juniorkariuki735@gmail.com",
+                "mugishalionel02@gmail.com",
+                "teklorasolutionsltd@gamil.com",
+                "leonmusungu138@gmail.com",
+                "davidnjihia536@gmail.com",
+            ],
             fail_silently=True,
         )
     except Exception:

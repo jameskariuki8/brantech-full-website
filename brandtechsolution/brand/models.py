@@ -91,6 +91,15 @@ class Project(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     # Vector embedding for semantic search (3072 dimensions for Gemini embedding-001)
     embedding = VectorField(dimensions=3072, null=True, blank=True)
+    
+    # GitHub Integration Fields
+    github_repo_id = models.IntegerField(blank=True, null=True, help_text="Unique ID from GitHub")
+    commit_count = models.IntegerField(blank=True, null=True, default=0, help_text="Total number of commits")
+    last_synced_at = models.DateTimeField(blank=True, null=True, help_text="When the repository was last synced")
+    is_github_synced = models.BooleanField(default=False, help_text="True if this project was auto-populated from GitHub")
+    github_role = models.CharField(max_length=50, blank=True, null=True, help_text="User's role (e.g., owner, collaborator)")
+    readme_content = models.TextField(blank=True, null=True, help_text="Raw Markdown README from GitHub")
+    cached_commits = models.JSONField(blank=True, null=True, help_text="Last 10 commits cached during sync")
 
     class Meta:
         ordering = ['-created_at']
@@ -134,3 +143,28 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.date.strftime('%Y-%m-%d')}"
+
+
+class BlogLike(models.Model):
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='likes')
+    browser_id = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'browser_id')
+
+
+class BlogComment(models.Model):
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')
+    browser_id = models.CharField(max_length=255)
+    user_name = models.CharField(max_length=100, default='Anonymous')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user_name} on {self.post.title}"
+

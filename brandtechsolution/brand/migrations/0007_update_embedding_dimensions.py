@@ -1,6 +1,18 @@
 from django.db import migrations
 from pgvector.django import VectorField
 
+def update_postgres_dimensions(apps, schema_editor):
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute('ALTER TABLE brand_blogpost ALTER COLUMN embedding TYPE vector(3072);')
+            cursor.execute('ALTER TABLE brand_project ALTER COLUMN embedding TYPE vector(3072);')
+
+def reverse_postgres_dimensions(apps, schema_editor):
+    if schema_editor.connection.vendor == 'postgresql':
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute('ALTER TABLE brand_blogpost ALTER COLUMN embedding TYPE vector(768);')
+            cursor.execute('ALTER TABLE brand_project ALTER COLUMN embedding TYPE vector(768);')
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -17,14 +29,7 @@ class Migration(migrations.Migration):
             sql='UPDATE brand_project SET embedding = NULL;',
             reverse_sql=migrations.RunSQL.noop
         ),
-        migrations.RunSQL(
-            sql='ALTER TABLE brand_blogpost ALTER COLUMN embedding TYPE vector(3072);',
-            reverse_sql='ALTER TABLE brand_blogpost ALTER COLUMN embedding TYPE vector(768);'
-        ),
-        migrations.RunSQL(
-            sql='ALTER TABLE brand_project ALTER COLUMN embedding TYPE vector(3072);',
-            reverse_sql='ALTER TABLE brand_project ALTER COLUMN embedding TYPE vector(768);'
-        ),
+        migrations.RunPython(update_postgres_dimensions, reverse_postgres_dimensions),
         migrations.AlterField(
             model_name='blogpost',
             name='embedding',

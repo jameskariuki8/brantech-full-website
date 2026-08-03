@@ -14,26 +14,35 @@ def staff_with(*codenames, username="cap"):
 
 
 class NavGatingTest(TestCase):
+    """Matched on id="nav-x" since the version 2 redesign.
+
+    The nav moved to admin_base.html and its links became
+    href="/admin-panel/?section=x" with an id, replacing the
+    onclick="showSection('x')" these tests used to search for. Two of them
+    were assertNotContains and so kept passing against the new markup while
+    checking nothing at all - the old string was absent for everybody.
+    """
+
     def test_staff_nav_hidden_without_manage_staff(self):
         self.client.force_login(staff_with("manage_blog"))
         resp = self.client.get("/admin-panel/")
-        self.assertNotContains(resp, "showSection('staff'")
+        self.assertNotContains(resp, 'id="nav-staff"')
 
     def test_staff_nav_shown_with_manage_staff(self):
         self.client.force_login(staff_with("manage_staff"))
         resp = self.client.get("/admin-panel/")
-        self.assertContains(resp, "showSection('staff'")
+        self.assertContains(resp, 'id="nav-staff"')
 
     def test_campaigns_nav_hidden_without_capability(self):
         self.client.force_login(staff_with("manage_blog"))
         resp = self.client.get("/admin-panel/")
-        self.assertNotContains(resp, "showSection('campaigns'")
+        self.assertNotContains(resp, 'id="nav-campaigns"')
 
     def test_superuser_sees_everything(self):
         self.client.force_login(User.objects.create_superuser("root", password="p"))
         resp = self.client.get("/admin-panel/")
-        self.assertContains(resp, "showSection('staff'")
-        self.assertContains(resp, "showSection('campaigns'")
+        self.assertContains(resp, 'id="nav-staff"')
+        self.assertContains(resp, 'id="nav-campaigns"')
 
 
 class CapabilityExposureTest(TestCase):

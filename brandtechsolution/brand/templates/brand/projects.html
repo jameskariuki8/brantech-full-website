@@ -15,10 +15,11 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}" />
   <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}" />
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
   <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
   <style>
     :root {
@@ -310,6 +311,71 @@
       border-radius: 8px;
       margin-bottom: 1.5rem;
     }
+
+    /* Markdown README styles */
+    .readme-body h1, .readme-body h2, .readme-body h3,
+    .readme-body h4, .readme-body h5, .readme-body h6 {
+      color: var(--text-blue);
+      margin: 1.25rem 0 0.5rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .readme-body h1 { font-size: 1.5rem; border-bottom: 1px solid rgba(96,165,250,0.2); padding-bottom: .4rem; }
+    .readme-body h2 { font-size: 1.2rem; border-bottom: 1px solid rgba(96,165,250,0.1); padding-bottom: .3rem; }
+    .readme-body h3 { font-size: 1.05rem; }
+    .readme-body p  { margin: .75rem 0; }
+    .readme-body a  { color: var(--neon-blue); text-decoration: underline; }
+    .readme-body a:hover { color: #16ff7a; }
+    .readme-body code {
+      background: rgba(96,165,250,0.1);
+      border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+      font-size: .875em;
+      color: #93c5fd;
+    }
+    .readme-body pre {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(96,165,250,0.15);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .readme-body pre code { background: none; border: none; padding: 0; font-size: .85em; }
+    .readme-body ul, .readme-body ol { padding-left: 1.5rem; margin: .75rem 0; }
+    .readme-body ul { list-style: disc; }
+    .readme-body ol { list-style: decimal; }
+    .readme-body li { margin: .3rem 0; }
+    .readme-body blockquote {
+      border-left: 3px solid rgba(96,165,250,0.4);
+      padding-left: 1rem;
+      color: rgba(255,255,255,0.5);
+      margin: .75rem 0;
+    }
+    .readme-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .9em; }
+    .readme-body th, .readme-body td { border: 1px solid rgba(96,165,250,0.2); padding: .5rem .75rem; text-align: left; }
+    .readme-body th { background: rgba(96,165,250,0.08); color: var(--text-blue); }
+    .readme-body img { max-width: 100%; border-radius: 6px; margin: .5rem 0; }
+    .readme-body hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 1.5rem 0; }
+
+    .modal-tab-btn {
+      padding: .35rem 1rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      border: 1px solid transparent;
+      color: rgba(255,255,255,0.4);
+      background: none;
+    }
+    .modal-tab-btn.active {
+      background: rgba(96,165,250,0.12);
+      border-color: rgba(96,165,250,0.3);
+      color: var(--neon-blue);
+    }
+    .modal-tab-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
   </style>
 </head>
 
@@ -332,12 +398,29 @@
   <div id="projectModal" class="project-modal">
     <div class="project-modal-content">
       <div class="project-modal-header">
-        <h1 class="project-modal-title" id="modalTitle"></h1>
+        <div class="flex-1 pr-6">
+          <h1 class="project-modal-title" id="modalTitle"></h1>
+          <div id="modalMeta" class="flex items-center gap-2 mt-2 flex-wrap"></div>
+        </div>
         <button class="project-modal-close" onclick="closeProjectModal()"><i class="fas fa-times"></i></button>
       </div>
+      <!-- Tab Bar (hidden unless there's a README) -->
+      <div id="modalTabBar" class="hidden flex items-center gap-2 px-6 py-3 border-b border-white/5 bg-black/20">
+        <button id="tabReadme" class="modal-tab-btn active" onclick="switchModalTab('readme')"><i class="fab fa-github mr-1"></i>README</button>
+        <button id="tabDesc"   class="modal-tab-btn"        onclick="switchModalTab('desc')"><i class="fas fa-align-left mr-1"></i>Description</button>
+      </div>
       <div class="project-modal-body">
-        <img id="modalImage" class="project-modal-image" src="" alt="">
-        <div class="project-modal-content-text" id="modalContent"></div>
+        <!-- Loading state -->
+        <div id="modalLoading" class="flex flex-col items-center justify-center py-16 text-gray-500">
+          <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+          <span class="text-sm">Loading project...</span>
+        </div>
+        <!-- Hero image -->
+        <img id="modalImage" class="project-modal-image hidden" src="" alt="">
+        <!-- README panel -->
+        <div id="panelReadme" class="readme-body hidden"></div>
+        <!-- Description panel -->
+        <div id="panelDesc" class="hidden" style="color: rgba(255,255,255,0.8); line-height: 1.7;"></div>
       </div>
     </div>
   </div>
@@ -345,88 +428,7 @@
   {% include 'brand/footer.html' %}
   <script src="{% static 'brand/js/components.js' %}"></script>
 
-  <!-- Chat Assistant -->
-  <div id="chatAssistant" class="chat-assistant">
-    <!-- Floating Chat Button -->
-    <div id="chatToggle" class="chat-toggle">
-      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-      </svg>
-      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
-    </div>
 
-    <!-- Chat Window -->
-    <div id="chatWindow" class="chat-window">
-      <!-- Chat Header -->
-      <div class="chat-header">
-        <div class="chat-header-info">
-          <div class="chat-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <div class="chat-header-text">
-            <h3>TekLora Assistant</h3>
-            <p>How can I help you today?</p>
-          </div>
-        </div>
-        <button id="chatClose" class="chat-close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Chat Messages -->
-      <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-        <div class="chat-welcome">
-          <div class="welcome-message">
-            <div class="welcome-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-            <div class="welcome-text">
-              <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
-              <ul>
-                <li>Our services and solutions</li>
-                <li>Project inquiries</li>
-                <li>Technical support</li>
-                <li>General questions</li>
-              </ul>
-              <p>What would you like to know?</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chat Input -->
-      <div class="chat-input-container">
-        <div class="chat-input-wrapper">
-          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
-          <button id="chatSend" class="chat-send" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22,2 15,22 11,13 2,9 22,2" />
-            </svg>
-          </button>
-        </div>
-        <div class="chat-typing" id="chatTyping" style="display: none;">
-          <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span>TekLora Assistant is typing...</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
   <script>
     const API_BASE = '/api';
     let allProjects = [];
@@ -460,15 +462,17 @@
           }
         }
         return `
-          <div class="project-card">
+          <div class="project-card relative">
+            ${project.is_github_synced ? `<div class="absolute top-3 right-3 bg-[#02060c]/80 backdrop-blur text-xs px-2.5 py-1 rounded-full border border-[rgba(22,255,122,0.3)] text-[#16ff7a] flex items-center gap-1 z-10 shadow-[0_0_10px_rgba(22,255,122,0.15)]"><i class="fab fa-github"></i> <span class="uppercase font-semibold text-[10px] tracking-wider">${project.github_role || 'synced'}</span></div>` : ''}
             <div class="project-image">
               <img src="${imageUrl}" alt="${project.title}">
             </div>
             <div class="project-content">
               <h3 class="project-title">${project.title}</h3>
               <p class="project-description">${project.short_description || project.description?.substring(0, 100) + '...' || 'No description available.'}</p>
+              ${project.is_github_synced && project.commit_count !== null ? `<div class="flex items-center text-xs text-gray-400 mb-4 bg-white/5 w-fit px-3 py-1.5 rounded-lg border border-white/5"><i class="fas fa-code-commit text-brand-blue mr-2"></i> <span class="font-bold text-gray-300 mr-1">${project.commit_count}</span> commits</div>` : ''}
               <div class="project-actions">
-                <button class="project-btn" onclick="openProjectModal(${project.id})" title="Read More"><i class="fas fa-book-open"></i></button>
+                <a href="/projects/${project.id}/" class="project-btn" title="Read More"><i class="fas fa-book-open"></i></a>
                 ${project.github_url ? `<a href="${project.github_url}" target="_blank" class="project-btn github" title="View on GitHub"><i class="fab fa-github"></i></a>` : ''}
                 ${project.project_url ? `<a href="${project.project_url}" target="_blank" class="project-btn external" title="View Live Project"><i class="fas fa-external-link-alt"></i></a>` : ''}
               </div>
@@ -477,22 +481,71 @@
         `;
       }).join('');
     }
+
     function openProjectModal(projectId) {
-      const project = allProjects.find(p => p.id === projectId);
-      if (!project) return;
-      document.getElementById('modalTitle').textContent = project.title;
+      const modal = document.getElementById('projectModal');
 
-      let imageUrl = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400';
-      if (project.image) {
-        if (project.image.startsWith('http')) imageUrl = project.image;
-        else if (project.image.startsWith('/media/')) imageUrl = project.image;
-        else imageUrl = '/media/' + project.image;
-      }
-      document.getElementById('modalImage').src = imageUrl;
-      document.getElementById('modalContent').textContent = project.description || 'No description available.';
-
-      document.getElementById('projectModal').classList.add('show');
+      // Reset
+      document.getElementById('modalTitle').textContent = '';
+      document.getElementById('modalMeta').innerHTML = '';
+      document.getElementById('modalTabBar').classList.add('hidden');
+      document.getElementById('modalImage').classList.add('hidden');
+      document.getElementById('panelReadme').classList.add('hidden');
+      document.getElementById('panelDesc').classList.add('hidden');
+      document.getElementById('modalLoading').classList.remove('hidden');
+      modal.classList.add('show');
       document.body.style.overflow = 'hidden';
+
+      fetch(`${API_BASE}/projects/${projectId}/`)
+        .then(r => r.json())
+        .then(p => {
+          document.getElementById('modalLoading').classList.add('hidden');
+
+          // Title
+          document.getElementById('modalTitle').textContent = p.title;
+
+          // Meta badges
+          let metaHtml = '';
+          if (p.is_github_synced) {
+            metaHtml += `<span style="font-size:.75rem;font-weight:600;padding:.25rem .7rem;background:rgba(22,255,122,.08);border:1px solid rgba(22,255,122,.25);color:#16ff7a;border-radius:999px"><i class="fab fa-github" style="margin-right:.3rem"></i>${p.github_role || 'synced'}</span>`;
+          }
+          if (p.is_github_synced && p.commit_count !== null) {
+            metaHtml += `<span style="font-size:.75rem;color:rgba(255,255,255,.45)"><i class="fas fa-code-commit" style="margin-right:.3rem;color:#60a5fa"></i>${p.commit_count} commits</span>`;
+          }
+          document.getElementById('modalMeta').innerHTML = metaHtml;
+
+          // Image
+          if (p.image) {
+            const imgEl = document.getElementById('modalImage');
+            imgEl.src = p.image.startsWith('http') ? p.image : p.image.startsWith('/media/') ? p.image : '/media/' + p.image;
+            imgEl.alt = p.title;
+            imgEl.classList.remove('hidden');
+          }
+
+          // README vs Description
+          const descPanel = document.getElementById('panelDesc');
+          descPanel.textContent = p.description || 'No description available.';
+
+          if (p.readme_content && p.readme_content.trim()) {
+            document.getElementById('panelReadme').innerHTML = marked.parse(p.readme_content);
+            document.getElementById('panelReadme').classList.remove('hidden');
+            document.getElementById('modalTabBar').classList.remove('hidden');
+            switchModalTab('readme');
+          } else {
+            descPanel.classList.remove('hidden');
+          }
+        })
+        .catch(() => {
+          document.getElementById('modalLoading').innerHTML = '<span style="color:#f87171">Failed to load project details.</span>';
+        });
+    }
+
+    function switchModalTab(tab) {
+      const isReadme = tab === 'readme';
+      document.getElementById('panelReadme').classList.toggle('hidden', !isReadme);
+      document.getElementById('panelDesc').classList.toggle('hidden', isReadme);
+      document.getElementById('tabReadme').classList.toggle('active', isReadme);
+      document.getElementById('tabDesc').classList.toggle('active', !isReadme);
     }
 
     function closeProjectModal() {

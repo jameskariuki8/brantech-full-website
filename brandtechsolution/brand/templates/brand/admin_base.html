@@ -1,0 +1,350 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TekLora Admin Dashboard{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            bg: '#06090F',
+                            card: '#0D121D',
+                            border: 'rgba(255, 255, 255, 0.05)',
+                        },
+                        brand: {
+                            blue: '#007AFF',
+                            green: '#00FF94',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(13, 18, 29, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
+            border-left: 3px solid #007AFF;
+            color: #fff;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #06090F;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1F2937;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+
+        /* Collapsible Sidebar Styles */
+        #sidebar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        main {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-collapsed #sidebar {
+            width: 5rem; /* w-20 */
+        }
+        .sidebar-collapsed main {
+            margin-left: 5rem; /* lg:ml-20 */
+        }
+        .sidebar-collapsed .logo-text,
+        .sidebar-collapsed .nav-label,
+        .sidebar-collapsed .sidebar-header {
+            display: none !important;
+        }
+        .sidebar-collapsed .logo-container {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .sidebar-collapsed .logo-container img {
+            margin-right: 0 !important;
+        }
+        .sidebar-collapsed .nav-item {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .sidebar-collapsed .nav-item i {
+            margin-right: 0 !important;
+            font-size: 1.25rem;
+        }
+    </style>
+    <!-- Chart.js and CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
+
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn"
+        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
+        <!-- Logo -->
+        <div class="h-20 flex items-center px-6 border-b border-dark-border logo-container">
+            <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
+            <span class="text-xl font-bold text-white tracking-tight logo-text">Teklora<span
+                    class="text-brand-blue">Admin</span></span>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+            <a href="/admin-panel/?section=dashboard" id="nav-dashboard"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i><span class="nav-label">Dashboard</span>
+            </a>
+            {% comment %}
+            The {% if can.x %} gates below were restored when the tasks branch
+            merged. admin_panel.html gates each SECTION on its capability, so
+            an ungated nav link points at a section that is not in the DOM for
+            the people who cannot use it - clicking it blanks the content area
+            with no explanation. The links and the sections have to agree.
+
+            Tasks is the one deliberate exception: every staff account can
+            open the board, so it carries no gate. See _tasks.html.
+            {% endcomment %}
+            <a href="/admin-panel/?section=tasks" id="nav-tasks"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-list-check w-6 text-center mr-3"></i><span class="nav-label">Tasks</span>
+                {% comment %}
+                nav-label so the badge collapses with the other text. The
+                collapsed rail is 5rem of centred icons, and an ml-auto pill
+                in it lands hard against the edge. The count is still on the
+                section itself.
+                {% endcomment %}
+                <span id="taskNavBadge"
+                    class="nav-label hidden ml-auto text-xs px-2 py-0.5 rounded-full bg-brand-blue/20 text-brand-blue">0</span>
+            </a>
+            {% if can.manage_blog or can.manage_appointments %}
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider sidebar-header">Content</div>
+            {% endif %}
+            {% if can.manage_blog %}
+            <a href="/admin-panel/?section=blogs" id="nav-blogs"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-pen-nib w-6 text-center mr-3"></i><span class="nav-label">Blog Posts</span>
+            </a>
+            {% endif %}
+            {% if can.manage_appointments %}
+            <a href="/appointments/" id="nav-appointments"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-calendar-check w-6 text-center mr-3"></i><span class="nav-label">Appointments</span>
+            </a>
+            {% endif %}
+            {% if can.manage_blog %}
+            <a href="/editorial/dashboard/" id="nav-editorial"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors hover:text-white hover:bg-white/5">
+                <i class="fas fa-robot w-6 text-center mr-3"></i><span class="nav-label">AI Editorial</span>
+            </a>
+            {% endif %}
+            {% if can.view_inbox or can.manage_templates or can.manage_campaigns %}
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider sidebar-header">Communications</div>
+            {% endif %}
+            {% if can.view_inbox %}
+            <a href="/admin-panel/?section=inbox" id="nav-inbox"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-inbox w-6 text-center mr-3"></i><span class="nav-label">Inbox</span>
+            </a>
+            {% endif %}
+            {% if can.manage_templates %}
+            <a href="/admin-panel/?section=templates" id="nav-templates"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-file-lines w-6 text-center mr-3"></i><span class="nav-label">Templates</span>
+            </a>
+            {% endif %}
+            {% if can.manage_campaigns %}
+            <a href="/admin-panel/?section=campaigns" id="nav-campaigns"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-paper-plane w-6 text-center mr-3"></i><span class="nav-label">Campaigns</span>
+            </a>
+            {% endif %}
+            {% if can.manage_staff %}
+            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider sidebar-header">Administration</div>
+            <a href="/admin-panel/?section=staff" id="nav-staff"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-users-gear w-6 text-center mr-3"></i><span class="nav-label">Staff &amp; Roles</span>
+            </a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
+        <!-- Top Bar (Mobile Overlay) -->
+        <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+        <!-- Sticky Top Navbar -->
+        <header class="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-[#0D121D]/80 backdrop-blur border-b border-dark-border">
+            <div class="flex items-center gap-4">
+                <!-- Collapse Toggle Button (lg only) -->
+                <button id="sidebarCollapseBtn" class="hidden lg:flex items-center justify-center p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" title="Toggle Sidebar">
+                    <i id="collapseIcon" class="fas fa-angles-left"></i>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-4 relative">
+                <!-- User Profile Dropdown -->
+                <button id="userDropdownBtn" class="flex items-center gap-3 p-1.5 rounded-lg hover:bg-white/5 transition-colors focus:outline-none">
+                    <div class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-sm">
+                        {{ request.user.username|slice:":1"|upper }}
+                    </div>
+                    <span class="hidden md:inline text-sm font-medium text-gray-300">{{ request.user.get_full_name|default:request.user.username }}</span>
+                    <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <div id="userDropdownMenu" class="hidden absolute right-0 top-12 w-56 bg-dark-card border border-dark-border rounded-xl shadow-2xl py-2 z-50 animate-fade-in">
+                    <div class="px-4 py-2.5 border-b border-dark-border">
+                        <p class="text-xs text-gray-500">Signed in as</p>
+                        <p class="text-sm font-bold text-white truncate">{{ request.user.username }}</p>
+                        {% if request.user.email %}
+                        <p class="text-xs text-gray-400 truncate">{{ request.user.email }}</p>
+                        {% endif %}
+                    </div>
+                    <a href="/admin/" target="_blank" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                        <i class="fas fa-shield-halved w-4 text-center text-gray-500"></i>Django Admin
+                    </a>
+                    <div class="border-t border-dark-border my-1"></div>
+                    <a href="{% url 'logout' %}" class="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                        <i class="fas fa-sign-out-alt w-4 text-center"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Sidebar Collapse and Dropdown Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Retrieve and apply sidebar collapsed state from localStorage
+            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (isCollapsed) {
+                document.body.classList.add('sidebar-collapsed');
+                const icon = document.getElementById('collapseIcon');
+                if (icon) {
+                    icon.classList.remove('fa-angles-left');
+                    icon.classList.add('fa-angles-right');
+                }
+            }
+
+            // Collapse button event listener
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+            collapseBtn?.addEventListener('click', () => {
+                const body = document.body;
+                body.classList.toggle('sidebar-collapsed');
+                const collapsed = body.classList.contains('sidebar-collapsed');
+                localStorage.setItem('sidebar-collapsed', collapsed);
+
+                const icon = document.getElementById('collapseIcon');
+                if (icon) {
+                    if (collapsed) {
+                        icon.classList.remove('fa-angles-left');
+                        icon.classList.add('fa-angles-right');
+                    } else {
+                        icon.classList.remove('fa-angles-right');
+                        icon.classList.add('fa-angles-left');
+                    }
+                }
+            });
+
+            // Mobile menu toggle
+            const mMenuBtn = document.getElementById('mobileMenuBtn');
+            const sbar = document.getElementById('sidebar');
+            const ovr = document.getElementById('mobileOverlay');
+
+            if (mMenuBtn && sbar && ovr) {
+                mMenuBtn.addEventListener('click', () => {
+                    sbar.classList.toggle('-translate-x-full');
+                    ovr.classList.toggle('hidden');
+                });
+
+                ovr.addEventListener('click', () => {
+                    sbar.classList.add('-translate-x-full');
+                    ovr.classList.add('hidden');
+                });
+            }
+
+            // User Dropdown toggle logic
+            const dropdownBtn = document.getElementById('userDropdownBtn');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+
+            dropdownBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Click outside dropdown to close
+            document.addEventListener('click', (e) => {
+                if (dropdownMenu && !dropdownMenu.classList.contains('hidden') && !dropdownBtn.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+
+            // Path-based sidebar link highlighting for other pages
+            const path = window.location.pathname;
+            if (path.startsWith('/appointments/')) {
+                const link = document.getElementById('nav-appointments');
+                if (link) link.classList.add('active');
+            } else if (path.startsWith('/editorial/dashboard/')) {
+                const link = document.getElementById('nav-editorial');
+                if (link) link.classList.add('active');
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

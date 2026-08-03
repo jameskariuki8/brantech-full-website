@@ -69,8 +69,18 @@
                             {# publish_blog never sends a status key and their ordinary edits    #}
                             {# never trip the server's publish check. Gating here is cosmetic;   #}
                             {# brand/api_views.py post_detail is the real gate.                 #}
+                            {#                                                                  #}
+                            {# `and not can.manage_blog` was added by the version 2 redesign and #}
+                            {# is removed again here: it handed an enabled publish control to    #}
+                            {# every writer, which is the exact separation publish_blog exists   #}
+                            {# to draw. The API refused them anyway, so it only ever offered an  #}
+                            {# action that was going to fail. The superuser arm was redundant -  #}
+                            {# has_perm() already returns True for them.                        #}
                             <select name="status" {% if not can.publish_blog %}disabled{% endif %}
                                 class="w-full md:w-1/2 bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {# Draft first and nothing preselected: posts are created as    #}
+                                {# drafts (brand.0010_blogpost_status). v2 marked Published as   #}
+                                {# selected, which published every new post by default.         #}
                                 <option value="draft">Draft</option>
                                 <option value="published">Published</option>
                             </select>

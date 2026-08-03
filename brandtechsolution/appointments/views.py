@@ -60,24 +60,84 @@ class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 @csrf_exempt
 @require_http_methods(["POST"])
 def create_appointment(request: HttpRequest):
-    # if not request.get_host().endswith("bigaddict.shop"):
-    #     return JsonResponse({"error": "Unauthorized"}, status=401)
-    
     try:
         data = json.loads(request.body)
-        title = data.get("title")
-        description = data.get("description")
+        title = data.get("title") or "Strategy Consultation"
+        description = data.get("description") or "Booked via TekLora web consultation calendar."
         date = data.get("date")
         time = data.get("time")
-        estimated_duration = data.get("estimated_duration")
-        status = data.get("status")
-        email = data.get("email")
-        phone = data.get("phone")
-        full_name = data.get("full_name")
-        appointment = Appointment.objects.create(title=title, description=description, date=date, time=time, estimated_duration=estimated_duration, status=status, email=email, phone=phone, full_name=full_name)
-        return JsonResponse({"success": "Appointment created successfully"}, status=201)
+        estimated_duration = data.get("estimated_duration") or 30
+        status = data.get("status") or "pending"
+        email = (data.get("email") or "").strip()
+        phone = (data.get("phone") or "").strip() or f"+2547{int(datetime.now().timestamp()) % 100000000}"
+        full_name = (data.get("full_name") or data.get("name") or "Anonymous Client").strip()
+
+        if not email or not date or not time:
+            return JsonResponse({"error": "Missing required fields: email, date, and time"}, status=400)
+
+        # Check if an appointment already exists for this email
+        existing = Appointment.objects.filter(email=email).first()
+        if existing:
+            existing.full_name = full_name
+            existing.phone = phone
+            existing.title = title
+            existing.description = description
+            existing.date = date
+            existing.time = time
+            existing.estimated_duration = estimated_duration
+            existing.status = status
+            existing.save()
+            appointment = existing
+        else:
+            # Prevent unique phone constraint collision
+            if Appointment.objects.filter(phone=phone).exists():
+                phone = f"+2547{int(datetime.now().timestamp()) % 100000000}"
+
+            appointment = Appointment.objects.create(
+                title=title,
+                description=description,
+                date=date,
+                time=time,
+                estimated_duration=estimated_duration,
+                status=status,
+                email=email,
+                phone=phone,
+                full_name=full_name
+            )
+
+        # Send email notification to admin (juniorkariuuki735@gmail.com)
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            send_mail(
+                subject=f"New Strategy Session Booking: {title} ({full_name})",
+                message=(
+                    f"New Strategy Session Booking on Teklora:\n\n"
+                    f"Client Name: {full_name}\n"
+                    f"Client Email: {email}\n"
+                    f"Client Phone: {phone or 'N/A'}\n"
+                    f"Subject / Topic: {title}\n"
+                    f"Date: {date}\n"
+                    f"Time: {time}\n"
+                    f"Estimated Duration: {estimated_duration} minutes\n\n"
+                    f"Description / Notes:\n{description}\n"
+                ),
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'juniorkariuki735@gmail.com') or 'juniorkariuki735@gmail.com',
+                recipient_list=[
+                    "juniorkariuki735@gmail.com",
+                    "mugishalionel02@gmail.com",
+                    "teklorasolutionsltd@gamil.com",
+                    "leonmusungu138@gmail.com",
+                    "davidnjihia536@gmail.com",
+                ],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+        return JsonResponse({"success": "Appointment created successfully", "id": appointment.id}, status=201)
     except IntegrityError as e:
-        return JsonResponse({"error": "Email or phone already exists", "message": str(e)}, status=400)
+        return JsonResponse({"error": "Database constraint error", "message": str(e)}, status=400)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
