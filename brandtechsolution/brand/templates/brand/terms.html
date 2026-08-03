@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms & Conditions - Teklora Solutions</title>
+  <meta name="description" content="Terms and Conditions of Service for Teklora Solutions Ltd. Comprehensive legal agreement governing platform use, IP ownership, liability caps, and governance.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --font-body: 'Inter', sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+    }
+    body {
+      background-color: #06090F;
+      color: #94A3B8;
+      font-family: var(--font-body);
+      line-height: 1.7;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      color: #FFFFFF;
+    }
+    .legal-card {
+      background: rgba(13, 18, 29, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+    }
+    .legal-section-title {
+      border-left: 4px solid #00FF94;
+      padding-left: 1rem;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between">
+  {% include 'brand/header.html' %}
+
+  <main class="max-w-5xl mx-auto px-6 pt-32 pb-20 w-full">
+    <!-- Header Banner -->
+    <div class="text-center mb-16">
+      <span class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-green-500/10 text-[#00FF94] border border-green-500/20 inline-block mb-4">
+        Master Service Agreement
+      </span>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-white">
+        Terms & Conditions of Service
+      </h1>
+      <p class="text-gray-400 text-sm max-w-2xl mx-auto">
+        Effective Date: January 1, 2026 &nbsp;|&nbsp; Last Updated: July 27, 2026
+      </p>
+    </div>
+
+    <!-- Executive Summary Callout -->
+    <div class="legal-card p-6 md:p-8 mb-12 border-l-4 border-l-[#007AFF]">
+      <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+        <i class="fas fa-gavel text-[#007AFF]"></i> Legally Binding Agreement Notice
+      </h3>
+      <p class="text-sm text-gray-300">
+        These Terms & Conditions ("Terms") constitute a legally binding agreement between you (whether individually or on behalf of an enterprise entity, "Client", "User", or "you") and <strong>Teklora Solutions Ltd</strong> ("Teklora", "Company", "we", "us", or "our"). By accessing our websites, software platforms, client portals, APIs, or engaging our engineering services, you unconditionally accept and agree to be bound by these Terms.
+      </p>
+    </div>
+
+    <!-- Detailed Terms Sections -->
+    <div class="space-y-12 text-sm md:text-base">
+
+      <!-- Section 1 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">1. Scope of Services & Statements of Work</h2>
+        <p class="mb-4">
+          Teklora provides custom software architecture, web application engineering, mobile solution development, cloud infrastructure design, digital strategy consulting, and AI systems deployment ("Services").
+        </p>
+        <p class="text-gray-300">
+          Specific project deliverables, milestones, timelines, acceptance criteria, and fee structures will be executed through formal Statements of Work (SOW), Service Level Agreements (SLA), or project proposals signed by authorized representatives of both parties. In the event of a conflict between these general Terms and an executed SOW, the terms of the specific SOW shall prevail.
+        </p>
+      </section>
+
+      <!-- Section 2 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">2. Intellectual Property Rights & Ownership</h2>
+        <p class="mb-4">
+          Intellectual property ownership rights under all engineering engagements are strictly demarcated as follows:
+        </p>
+        <ul class="list-disc pl-6 space-y-3 text-gray-300">
+          <li><strong>Client Final Deliverables:</strong> Upon full and final settlement of all invoice payments due under the applicable SOW, Teklora assigns to Client all right, title, and interest in custom bespoke source code and final UI designs produced specifically for Client.</li>
+          <li><strong>Teklora Background IP:</strong> Teklora retains sole and exclusive ownership of all pre-existing software, background architecture, proprietary libraries, reusable components, development tools, frameworks, and trade secrets ("Background IP"). Client is granted a perpetual, non-exclusive, non-transferable royalty-free license to use Teklora Background IP solely as integrated within the custom deliverables.</li>
+          <li><strong>Feedback & Trademarks:</strong> Teklora logos, branding, trademarks, and service marks are the exclusive property of Teklora Solutions Ltd.</li>
+        </ul>
+      </section>
+
+      <!-- Section 3 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">3. User Obligations & Acceptable Use Policy</h2>
+        <p class="mb-4">
+          When accessing Teklora platforms, client portals, or deployed software environments, you warrant and agree that you shall not:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm text-gray-300">
+          <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+            <h4 class="font-bold text-white mb-1"><i class="fas fa-ban text-red-400 mr-2"></i>No Reverse Engineering</h4>
+            <p class="text-gray-400">Decompile, reverse engineer, disassemble, or attempt to derive source code from Teklora proprietary software platforms.</p>
+          </div>
+          <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+            <h4 class="font-bold text-white mb-1"><i class="fas fa-bug text-yellow-400 mr-2"></i>No Malicious Attacks</h4>
+            <p class="text-gray-400">Introduce malware, ransomware, viruses, or execute denial-of-service (DoS/DDoS) attacks against our digital infrastructure.</p>
+          </div>
+          <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+            <h4 class="font-bold text-white mb-1"><i class="fas fa-key text-[#007AFF] mr-2"></i>Credential Security</h4>
+            <p class="text-gray-400">Fail to maintain absolute confidentiality of account credentials or access tokens assigned to your organization.</p>
+          </div>
+          <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+            <h4 class="font-bold text-white mb-1"><i class="fas fa-balance-scale text-[#00FF94] mr-2"></i>Legal Compliance</h4>
+            <p class="text-gray-400">Utilize Teklora systems for illegal communications, copyright infringement, or unauthorized automated data scraping.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">4. Payment Terms, Fees & Invoicing</h2>
+        <p class="mb-4">
+          Clients agree to remit payments according to the schedule specified in their respective agreement or SOW:
+        </p>
+        <ul class="list-disc pl-6 space-y-2 text-gray-300">
+          <li><strong>Payment Timelines:</strong> Standard invoices are due net thirty (30) days from invoice date unless specified otherwise in writing.</li>
+          <li><strong>Taxes:</strong> All fees quoted are exclusive of applicable statutory taxes (such as Value Added Tax / VAT in Kenya or local withholding taxes), which shall be paid by Client where required by statutory tax law.</li>
+          <li><strong>Late Interest:</strong> Past-due balances accrue interest at the rate of 1.5% per month or the maximum statutory rate permitted by law, whichever is lower.</li>
+        </ul>
+      </section>
+
+      <!-- Section 5 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">5. Warranties & Disclaimer of Guarantees</h2>
+        <p class="mb-4">
+          Except as expressly set forth in a signed Statement of Work or Service Level Agreement:
+        </p>
+        <p class="text-gray-300 mb-4 bg-black/30 p-4 rounded-xl border border-white/5 text-xs md:text-sm">
+          TEKLORA SERVICES AND WEBSITE PLATFORMS ARE PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR UNINTERRUPTED OPERATION.
+        </p>
+      </section>
+
+      <!-- Section 6 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">6. Limitation of Liability</h2>
+        <p class="mb-4">
+          To the maximum extent permitted under applicable law:
+        </p>
+        <ul class="list-disc pl-6 space-y-3 text-gray-300">
+          <li><strong>Consequential Damages Excluded:</strong> Teklora Solutions Ltd, its directors, employees, or agents shall not be liable for indirect, incidental, special, consequential, or punitive damages, including loss of profits, revenue, data, goodwill, or system downtime.</li>
+          <li><strong>Liability Cap:</strong> Teklora's total cumulative financial liability arising out of or related to any service agreement shall be strictly capped at the total amount actually paid by Client to Teklora under the specific SOW in the six (6) months preceding the claim.</li>
+        </ul>
+      </section>
+
+      <!-- Section 7 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">7. Governing Law & Dispute Resolution</h2>
+        <p class="mb-4">
+          These Terms and any dispute or claim arising out of or in connection with them shall be governed by and construed strictly in accordance with the <strong>laws of the Republic of Kenya</strong>.
+        </p>
+        <p class="text-gray-300">
+          Any dispute arising out of or relating to these Terms shall first be submitted to good-faith executive negotiations. If unresolved within thirty (30) days, the dispute shall be finally settled under the Rules of Arbitration of the Nairobi Centre for International Arbitration (NCIA) by a sole arbitrator appointed in accordance with said Rules. The seat of arbitration shall be Nairobi, Kenya, and proceedings conducted in the English language.
+        </p>
+      </section>
+
+      <!-- Section 8 -->
+      <section class="legal-card p-6 md:p-10">
+        <h2 class="text-xl md:text-2xl font-bold legal-section-title">8. Severability & Contact Information</h2>
+        <p class="mb-4">
+          If any provision of these Terms is found to be illegal, invalid, or unenforceable by a court of competent jurisdiction, the remaining provisions shall remain in full force and effect.
+        </p>
+        <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-sm text-gray-300">
+          <p class="font-bold text-white mb-1">Legal Department & Contract Inquiries</p>
+          <p>Teklora Solutions Ltd Legal Team</p>
+          <p>Email: <a href="mailto:teklorasolutionsltd@gamil.com" class="text-[#007AFF]">teklorasolutionsltd@gamil.com</a></p>
+          <p>Phone: +254 704 894220</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  {% include 'brand/footer.html' %}
+</body>
+</html>

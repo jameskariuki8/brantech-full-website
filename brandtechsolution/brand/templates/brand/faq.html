@@ -276,40 +276,6 @@
     <!-- Footer -->
     {% include 'brand/footer.html' %}
 
-    <!-- Chat Assistant integration -->
-    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
-    <div id="chatAssistant" class="chat-assistant">
-        <!-- Floating Chat Button icon -->
-        <div id="chatToggle" class="chat-toggle">
-            <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-            </svg>
-        </div>
-        <!-- Standard Chat Window content -->
-        <div id="chatWindow" class="chat-window">
-            <!-- Header -->
-            <div class="chat-header">
-                <div class="chat-header-info">
-                    <div class="chat-header-text">
-                        <h3>TekLora Assistant</h3>
-                        <p>Ask anything about our FAQ!</p>
-                    </div>
-                </div>
-                <button id="chatClose" class="chat-close"><i class="fas fa-times"></i></button>
-            </div>
-            <!-- Messages container -->
-            <div id="chatMessages" class="chat-messages"
-                style="background: #f3f4f6; color: #1f2937; height: 300px; overflow-y: auto; padding: 1rem;">
-                <p>Hi! How can I help you today?</p>
-            </div>
-            <!-- Input -->
-            <div class="p-4 border-t">
-                <input type="text" id="chatInput" class="w-full p-2 rounded border" placeholder="Type here...">
-            </div>
-        </div>
-    </div>
-
-    <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

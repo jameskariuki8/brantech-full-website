@@ -1,0 +1,710 @@
+{% extends 'brand/admin_base.html' %}
+{% load static %}
+
+{% block title %}Teklora AI Autonomous Newsroom Control Center{% endblock %}
+
+{% block extra_head %}
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-card: rgba(18, 25, 41, 0.75);
+            --bg-card-hover: rgba(26, 36, 59, 0.9);
+            --border-glow: rgba(59, 130, 246, 0.25);
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-amber: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Top Header Navigation */
+        .top-nav {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 1.25rem 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Container Layout */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* KPI Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--border-glow);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .stat-label {
+            font-size: 0.825rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .stat-badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-cyan);
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        /* Tabs Navigation */
+        .tab-bar {
+            display: flex;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Articles Grid */
+        .article-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .article-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+            transition: all 0.25 ease;
+        }
+
+        .article-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .article-meta {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .article-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .article-summary {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-preview {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        /* Trend List Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        .data-table th, .data-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .data-table th {
+            background: rgba(15, 23, 42, 0.9);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Progress Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-body {
+            background: #0f172a;
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            border-radius: 20px;
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .pipeline-status-box {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Navigation -->
+    <header class="top-nav">
+        <div class="nav-actions">
+            <button class="btn-primary" onclick="runAutonomousPipeline()">
+                <span id="run-spinner" class="spinner" style="display:none;"></span>
+                🤖 Run Autonomous Cycle
+            </button>
+            <a href="/admin/" class="btn-secondary" target="_blank">Django Admin</a>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- Live Status Bar -->
+        <div id="pipeline-status-box" class="pipeline-status-box">
+            <h3 style="color: var(--accent-cyan); margin-bottom: 0.5rem;">🤖 Autonomous Newsroom Pipeline Executing...</h3>
+            <p id="pipeline-status-msg" style="color: var(--text-secondary); font-size: 0.9rem;">
+                Monitoring global tech trends -> Evaluating Priority Scores -> Synthesizing Deep Research Dossier -> Fact Verification -> AI Writing -> SEO Optimization...
+            </p>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Discovered Trends</div>
+                <div class="stat-value">{{ total_trends }}</div>
+                <div class="stat-badge">24/7 Global Monitor</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Prioritized Signals</div>
+                <div class="stat-value" style="color: var(--accent-cyan);">{{ prioritized_trends }}</div>
+                <div class="stat-badge">Score &ge; 6.5</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Pending Editor Approval</div>
+                <div class="stat-value" style="color: var(--accent-amber);">{{ pending_reviews.count }}</div>
+                <div class="stat-badge">Review Required</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Published Articles</div>
+                <div class="stat-value" style="color: #10b981;">{{ published_articles.count }}</div>
+                <div class="stat-badge">Live on Blog</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Vector Knowledge Base</div>
+                <div class="stat-value" style="color: var(--accent-purple);">{{ kb_count }}</div>
+                <div class="stat-badge">pgvector Index</div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('reviews')">📰 Pending Reviews ({{ pending_reviews.count }})</button>
+            <button class="tab-btn" onclick="switchTab('trends')">⚡ Discovered Trends ({{ total_trends }})</button>
+            <button class="tab-btn" onclick="switchTab('predictions')">🎯 Competitor Gaps &amp; Forecasts</button>
+            <button class="tab-btn" onclick="switchTab('knowledge')">📚 Semantic Knowledge Store</button>
+        </div>
+
+        <!-- Tab 1: Pending Reviews -->
+        <div id="tab-reviews" class="tab-content active">
+            {% if pending_reviews %}
+            <div class="article-grid">
+                {% for article in pending_reviews %}
+                <div class="article-card" id="article-card-{{ article.id }}">
+                    <div>
+                        <div class="article-meta">
+                            <span class="badge badge-warning">Pending Review</span>
+                            <span class="badge badge-purple">{{ article.get_target_audience_display }}</span>
+                            <span class="badge" style="background: rgba(255,255,255,0.08);">⏱️ {{ article.reading_time_minutes }} mins</span>
+                        </div>
+                        <h3 class="article-title">{{ article.title }}</h3>
+                        <p class="article-summary">{{ article.executive_summary }}</p>
+                    </div>
+                    <div class="article-actions">
+                        <button class="btn-preview" onclick="openPreviewModal({{ article.id }})">👁️ Preview</button>
+                        <a href="/editorial/api/articles/{{ article.id }}/export-docx/" class="btn-preview" style="text-align:center; text-decoration:none;">📄 DOCX</a>
+                        <button class="btn-approve" onclick="approveArticle({{ article.id }})">✅ Approve &amp; Publish</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 4rem; background: var(--bg-card); border-radius: 16px;">
+                <h3>🎉 No Pending Reviews!</h3>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;">Click 'Run Autonomous Cycle' to discover global trends and generate new article drafts.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab 2: Discovered Trends -->
+        <div id="tab-trends" class="tab-content">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Title &amp; Category</th>
+                        <th>Source</th>
+                        <th>Popularity</th>
+                        <th>Priority Score</th>
+                        <th>Status</th>
+                        <th>Discovered At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in recent_trends %}
+                    <tr>
+                        <td>
+                            <strong>{{ t.title }}</strong><br>
+                            <span style="font-size: 0.75rem; color: var(--accent-cyan);">{{ t.category }}</span>
+                        </td>
+                        <td>{{ t.source }}</td>
+                        <td>{{ t.popularity_score|floatformat:1 }} / 10</td>
+                        <td><strong style="color: var(--accent-amber);">{{ t.priority_score|floatformat:1 }}</strong></td>
+                        <td><span class="badge badge-purple">{{ t.get_status_display }}</span></td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);">{{ t.created_at|date:"M d, H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 3: Competitor Gaps & Forecasts -->
+        <div id="tab-predictions" class="tab-content">
+            <h3 style="margin-bottom: 1rem;">Content Gap Opportunities (Module 14)</h3>
+            <div class="article-grid" style="margin-bottom: 2rem;">
+                {% for gap in competitor_gaps %}
+                <div class="article-card">
+                    <div class="article-meta">
+                        <span class="badge badge-purple">{{ gap.competitor.name }}</span>
+                        <span class="badge badge-success">Gap Score: {{ gap.content_gap_score }}</span>
+                    </div>
+                    <h4 style="margin-bottom: 0.5rem;">{{ gap.title }}</h4>
+                    <p class="article-summary">{{ gap.summary }}</p>
+                </div>
+                {% empty %}
+                <p style="color: var(--text-muted);">Run competitor discovery to identify content gaps.</p>
+                {% endfor %}
+            </div>
+
+            <h3 style="margin-bottom: 1rem;">Future Trend Forecasts (Module 15)</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Forecasted Topic</th>
+                        <th>Timeframe</th>
+                        <th>Confidence</th>
+                        <th>Report Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in predictions %}
+                    <tr>
+                        <td><strong>{{ p.topic_name }}</strong></td>
+                        <td><span class="badge badge-warning">{{ p.get_timeframe_display }}</span></td>
+                        <td>{{ p.confidence_score|floatformat:2 }}</td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ p.prediction_report|truncatewords:20 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;">No forecasts generated yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 4: Knowledge Base Search -->
+        <div id="tab-knowledge" class="tab-content">
+            <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem;">
+                <h3 style="margin-bottom: 0.75rem;">Semantic Vector Search (pgvector)</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="kb-search-input" placeholder="Search past articles, research dossiers, and sources..." style="flex:1; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(15,23,42,0.9); border: 1px solid var(--glass-border); color: white;">
+                    <button class="btn-primary" onclick="searchKnowledgeBase()">Search Vector Store</button>
+                </div>
+            </div>
+            <div id="kb-results-list" class="article-grid"></div>
+        </div>
+
+    </div>
+
+    <!-- Article Review Modal -->
+    <div id="preview-modal" class="modal-overlay">
+        <div class="modal-body">
+            <button class="close-modal" onclick="closePreviewModal()">&times;</button>
+            <h2 id="modal-title" style="margin-bottom: 0.5rem; color: var(--accent-cyan);">Article Title</h2>
+            <p id="modal-subtitle" style="color: var(--text-secondary); margin-bottom: 1.5rem;">Subtitle</p>
+
+            <div class="tab-bar" style="margin-bottom: 1rem;">
+                <button class="tab-btn active" onclick="switchModalTab('article')">📄 Article Preview</button>
+                <button class="tab-btn" onclick="switchModalTab('social')">🚀 Social Ecosystem</button>
+            </div>
+
+            <div id="modal-tab-article">
+                <div id="modal-article-html" style="background: rgba(15,23,42,0.8); padding: 1.5rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.7;"></div>
+            </div>
+
+            <div id="modal-tab-social" style="display:none;">
+                <div style="background: rgba(15,23,42,0.8); padding: 1.5rem; border-radius: 12px;">
+                    <h4 style="color: var(--accent-blue); margin-bottom: 0.5rem;">LinkedIn Post</h4>
+                    <pre id="social-linkedin" style="white-space: pre-wrap; font-family: inherit; color: var(--text-secondary); margin-bottom: 1.5rem;"></pre>
+
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.5rem;">Twitter Thread</h4>
+                    <ul id="social-twitter" style="margin-left: 1.25rem; color: var(--text-secondary);"></ul>
+                </div>
+            </div>
+
+            <div style="display:flex; gap: 1rem; margin-top: 1.5rem;">
+                <button id="modal-approve-btn" class="btn-approve" style="padding: 0.75rem;">✅ Approve &amp; Publish</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        function switchModalTab(tabName) {
+            document.getElementById('modal-tab-article').style.display = tabName === 'article' ? 'block' : 'none';
+            document.getElementById('modal-tab-social').style.display = tabName === 'social' ? 'block' : 'none';
+        }
+
+        async function runAutonomousPipeline() {
+            document.getElementById('run-spinner').style.display = 'inline-block';
+            document.getElementById('pipeline-status-box').style.display = 'block';
+
+            try {
+                const res = await fetch('/editorial/api/run-pipeline/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({limit: 1, auto_publish: false})
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert(`✅ Autonomous cycle completed! Processed ${data.articles_processed} articles.`);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + JSON.stringify(data));
+                }
+            } catch (err) {
+                alert('Pipeline execution failed: ' + err);
+            } finally {
+                document.getElementById('run-spinner').style.display = 'none';
+                document.getElementById('pipeline-status-box').style.display = 'none';
+            }
+        }
+
+        async function openPreviewModal(articleId) {
+            try {
+                const res = await fetch(`/editorial/api/articles/${articleId}/`);
+                const data = await res.json();
+
+                document.getElementById('modal-title').innerText = data.title;
+                document.getElementById('modal-subtitle').innerText = data.subtitle;
+                document.getElementById('modal-article-html').innerHTML = data.html_preview;
+
+                if (data.social_package) {
+                    document.getElementById('social-linkedin').innerText = data.social_package.linkedin_post;
+                    const twList = document.getElementById('social-twitter');
+                    twList.innerHTML = '';
+                    (data.social_package.twitter_thread || []).forEach(tweet => {
+                        const li = document.createElement('li');
+                        li.innerText = tweet;
+                        li.style.marginBottom = '0.5rem';
+                        twList.appendChild(li);
+                    });
+                }
+
+                document.getElementById('modal-approve-btn').onclick = () => approveArticle(articleId);
+                document.getElementById('preview-modal').style.display = 'flex';
+            } catch (err) {
+                alert('Error loading preview: ' + err);
+            }
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').style.display = 'none';
+        }
+
+        async function approveArticle(articleId) {
+            if (!confirm('Approve and publish this article to the Teklora blog?')) return;
+            try {
+                const res = await fetch(`/editorial/api/articles/${articleId}/approve/`, {method: 'POST'});
+                const data = await res.json();
+                if (data.status === 'published') {
+                    alert('🎉 Article Published Successfully!');
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert('Publishing failed: ' + err);
+            }
+        }
+
+        async function searchKnowledgeBase() {
+            const q = document.getElementById('kb-search-input').value;
+            if (!q) return;
+
+            try {
+                const res = await fetch(`/editorial/api/knowledge-search/?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                const container = document.getElementById('kb-results-list');
+                container.innerHTML = '';
+
+                (data.results || []).forEach(doc => {
+                    const card = document.createElement('div');
+                    card.className = 'article-card';
+                    card.innerHTML = `
+                        <span class="badge badge-purple">${doc.doc_type}</span>
+                        <h4 style="margin-top:0.5rem;">${doc.title}</h4>
+                        <p class="article-summary">${doc.content_snippet}</p>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                alert('Search failed: ' + err);
+            }
+        }
+    </script>
+{% endblock %}

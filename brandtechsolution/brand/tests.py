@@ -618,3 +618,61 @@ class BrandAPITest(TestCase):
         # DRF returns 204 No Content for successful DELETE
         self.assertEqual(response.status_code, 204)
         self.assertFalse(Project.objects.filter(id=project_id).exists())
+
+
+class DashboardStatsAPITest(TestCase):
+    """Test suite for dashboard stats API view"""
+    
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='regularuser',
+            email='regular@example.com',
+            password='userpass123'
+        )
+        self.admin_user = User.objects.create_user(
+            username='adminuser',
+            email='admin@example.com',
+            password='adminpass123',
+            is_staff=True,
+            is_superuser=True
+        )
+
+    def test_anonymous_access_denied(self):
+        """Verify anonymous users cannot access the stats API"""
+        response = self.client.get('/api/admin/stats/')
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_access_denied(self):
+        """Verify non-staff users cannot access the stats API"""
+        self.client.login(username='regularuser', password='userpass123')
+        response = self.client.get('/api/admin/stats/')
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_user_access_allowed(self):
+        """Verify staff/admin users can fetch stats"""
+        self.client.login(username='adminuser', password='adminpass123')
+        response = self.client.get('/api/admin/stats/')
+        self.assertEqual(response.status_code, 200)
+        
+        data = json.loads(response.content)
+        self.assertIn('metrics', data)
+        self.assertIn('charts', data)
+        
+        # Verify basic expected keys inside metrics and charts
+        metrics = data['metrics']
+        self.assertIn('total_blogs', metrics)
+        self.assertIn('total_projects', metrics)
+        self.assertIn('total_events', metrics)
+        self.assertIn('total_templates', metrics)
+        self.assertIn('total_campaigns', metrics)
+        self.assertIn('total_inquiries', metrics)
+        self.assertIn('total_appointments', metrics)
+        self.assertIn('total_blog_views', metrics)
+        
+        charts = data['charts']
+        self.assertIn('top_blogs', charts)
+        self.assertIn('appointments', charts)
+        self.assertIn('inquiries', charts)
+        self.assertIn('campaigns', charts)
+

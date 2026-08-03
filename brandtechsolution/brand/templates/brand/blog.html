@@ -1,404 +1,1119 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blog - TekLora</title>
-  <meta name="description"
-    content="Latest insights, tutorials, and industry trends from TekLora - your guide to cutting-edge technology.">
-  <meta name="keywords" content="tech blog, web development, digital innovation, technology trends, tutorials">
-
+  <title>Teklora Insights — Engineering & AI Journal</title>
+  <meta name="description" content="Deep dives into AI infrastructure, automated orchestration, and spatial systems logic.">
   <!-- Favicon -->
-  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/jpeg">
-  <link rel="shortcut icon" href="{% static 'brand/images/logo.jpg' %}" type="image/jpeg">
+  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Fonts (same as homepage) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tailwind CSS (same config as homepage) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}" />
-  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}" />
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Styles (same order as homepage) -->
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
+  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
+
   <style>
     :root {
-      --bg-dark: #050911;
-      --panel-dark: rgba(10, 18, 28, .85);
-      --neon-blue: #60a5fa;
-      --neon-blue-soft: rgba(96, 165, 250, .25);
-      --neon-blue-glow: 0 0 10px rgba(96, 165, 250, .45), 0 0 24px rgba(96, 165, 250, .25);
-      --text-blue: #93c5fd;
-      --text-blue-dim: #60a5fa;
-      --accent-red: #ef4444;
+      --bg:     #050811;
+      --panel:  #0A0F1D;
+      --blue:   #007AFF;
+      --green:  #00FF94;
+      --border: rgba(255,255,255,0.07);
     }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg) !important; color: #94A3B8 !important; overflow-x: hidden; }
 
-    body {
-      background: radial-gradient(1200px 800px at 10% -10%, #0b141f 0%, #050911 40%, #02060c 100%);
-      color: var(--text-blue);
-      min-height: 100vh;
-    }
-
-    .blog-hero {
+    /* ─── HERO ─────────────────────────────────── */
+    #blogHero {
       position: relative;
-      height: 50vh;
+      padding-top: 6rem;
+      padding-bottom: 0.5rem;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      margin-top: 80px;
+      background: var(--bg);
     }
-
-    .blog-hero:before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      z-index: 0;
-      background: radial-gradient(600px 300px at 20% 10%, rgba(96, 165, 250, .18), transparent 60%), radial-gradient(500px 280px at 80% 20%, rgba(22, 255, 122, .12), transparent 60%);
+    #heroCanvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
       pointer-events: none;
     }
 
-    .badge-green {
-      background: linear-gradient(90deg, rgba(40, 96, 144, .12) 0%, rgba(22, 255, 122, .12) 100%);
-      border: 1px solid rgba(96, 165, 250, .35);
-      color: var(--neon-blue);
-      box-shadow: 0 0 10px rgba(96, 165, 250, .25), 0 0 24px rgba(22, 255, 122, .15);
-    }
-
-    .title-green {
-      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 0 0 18px rgba(96, 165, 250, .4), 0 0 18px rgba(22, 255, 122, .3);
-      letter-spacing: .5px;
-    }
-
-    .subtitle-green {
-      color: var(--text-blue);
-      opacity: .9;
-    }
-
-    .blog-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 4rem 2rem;
-    }
-
-    .blog-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-      margin-top: 3rem;
-    }
-
-    .blog-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .blog-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(96, 165, 250, 0.2), 0 0 20px rgba(22, 255, 122, 0.15);
-      border-color: rgba(96, 165, 250, 0.3);
-    }
-
-    .blog-card-image {
-      width: 100%;
-      height: 240px;
-      background: #0c1520;
-      overflow: hidden;
+    /* Badge + Title */
+    .hero-title-wrap {
       position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 0 1.5rem;
+      pointer-events: none;
     }
-
-    .blog-card-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 900;
+      font-size: clamp(4.5rem, 13vw, 11rem);
+      line-height: 0.88;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+      color: #fff;
+      position: relative;
+      display: inline-block;
     }
-
-    .blog-card:hover .blog-card-image img {
-      transform: scale(1.05);
-    }
-
-    .blog-card-content {
-      padding: 1.5rem;
-    }
-
-    .blog-card-title {
-      color: var(--accent-red);
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-      line-height: 1.3;
-    }
-
-    .blog-card-excerpt {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.9rem;
-      line-height: 1.6;
-      margin-bottom: 1.25rem;
-      min-height: 3.2rem;
-    }
-
-    .blog-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-
-    .blog-btn {
-      width: 44px;
-      height: 44px;
+    /* Overlapping badge — updated icon, no emoji */
+    .hero-float-badge {
+      position: absolute;
+      right: -0.12em;
+      bottom: 0.08em;
+      width: clamp(50px, 7vw, 90px);
+      height: clamp(50px, 7vw, 90px);
       border-radius: 50%;
-      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 20;
+      transition: transform 0.08s ease;
+    }
+    .badge-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 2px dashed var(--blue);
+      animation: spin-ring 10s linear infinite;
+    }
+    .badge-ring-2 {
+      position: absolute; inset: 6px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(0,255,148,0.4);
+      animation: spin-ring 7s linear infinite reverse;
+    }
+    @keyframes spin-ring { to { transform: rotate(360deg); } }
+    .badge-icon-svg {
+      position: relative; z-index: 2;
+      width: clamp(22px, 3.5vw, 42px);
+      height: clamp(22px, 3.5vw, 42px);
+      color: var(--green);
+      filter: drop-shadow(0 0 8px rgba(0,255,148,0.7));
+    }
+
+    /* Hero sub label */
+    .hero-label {
+      margin-top: 1rem;
+      font-size: clamp(0.6rem, 1.2vw, 0.78rem);
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Scroll cue */
+    .hero-scroll-cue {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      z-index: 10;
+      opacity: 0.3;
+      animation: bounce-cue 2s ease-in-out infinite;
+    }
+    @keyframes bounce-cue {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%      { transform: translateX(-50%) translateY(5px); }
+    }
+    .hero-scroll-cue span {
+      display: block;
+      width: 1px;
+      height: 24px;
+      background: linear-gradient(to bottom, rgba(0,255,148,0.5), transparent);
+    }
+
+    /* ─── SECTION LABEL ────────────────────────── */
+    .section-eyebrow {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 0.4rem;
+    }
+    .section-heading {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.04em;
+    }
+
+    /* ─── SORT PILLS ───────────────────────────── */
+    .sort-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.45rem 1.1rem;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .sort-pill-active {
+      background: var(--blue);
+      color: #fff;
+    }
+    .sort-pill-inactive {
+      border-color: var(--border);
+      color: #64748B;
+    }
+    .sort-pill-inactive:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+
+    /* ─── BENTO GRID ───────────────────────────── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: auto;
+      gap: 1.25rem;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .bento-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .bento-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Slot widths */
+    .col-8  { grid-column: span 8; }
+    .col-4  { grid-column: span 4; }
+    .col-6  { grid-column: span 6; }
+    .col-12 { grid-column: span 12; }
+
+    @media (max-width: 1024px) {
+      .col-8,.col-4 { grid-column: span 6; }
+      .col-6        { grid-column: span 3; }
+      .col-12       { grid-column: span 6; }
+    }
+    @media (max-width: 640px) {
+      .col-8,.col-4,.col-6,.col-12 { grid-column: span 1; }
+    }
+
+    /* ─── CARD BASE ────────────────────────────── */
+    .bc {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.45s cubic-bezier(0.16,1,0.3,1),
+                  box-shadow 0.45s ease,
+                  border-color 0.25s ease;
+    }
+    /* Subtle tilt per card — removed on hover */
+    .tilt-l { transform: rotate(-1.2deg) translateY(3px); }
+    .tilt-r { transform: rotate(1.1deg)  translateY(-3px); }
+    .tilt-s { transform: rotate(-0.6deg) translateX(2px); }
+
+    .bc:hover {
+      transform: rotate(0deg) translateY(-8px) scale(1.02) !important;
+      border-color: rgba(0,122,255,0.5);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.65),
+                  0 0 40px rgba(0,122,255,0.12);
+      z-index: 20;
+    }
+
+    /* Card variants */
+    .bc-accent {
+      background: linear-gradient(145deg,#00173d 0%,#010c1e 100%);
+      border-color: rgba(0,122,255,0.18);
+    }
+    .bc-green {
+      background: linear-gradient(145deg,#001c12 0%,#030e07 100%);
+      border-color: rgba(0,255,148,0.12);
+    }
+
+    /* ─── CARD INTERNALS ───────────────────────── */
+    .ci { /* card image wrapper */
+      width: 100%;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ci img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.55s ease;
+    }
+    .bc:hover .ci img { transform: scale(1.05); }
+
+    .ci-h260 { height: 260px; }
+    .ci-h200 { height: 200px; }
+    .ci-h160 { height: 160px; }
+
+    .cb { /* card body */
+      padding: 1.4rem 1.6rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .cc { /* card category tag */
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 0.45rem;
+    }
+    .cc-g { color: var(--green); }
+
+    .ct { /* card title */
+      font-family: 'Space Grotesk', sans-serif;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.2;
+      margin-bottom: 0.7rem;
+    }
+    .ct-xl { font-size: 1.7rem; }
+    .ct-lg { font-size: 1.3rem; }
+    .ct-md { font-size: 1.1rem; }
+    .ct-sm { font-size: 0.95rem; }
+
+    .ce { /* card excerpt */
+      font-size: 0.82rem;
+      color: #64748B;
+      line-height: 1.65;
+      flex-grow: 1;
+      margin-bottom: 1rem;
+    }
+
+    .cm { /* card meta bar */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 0.7rem;
+      margin-top: auto;
+      font-size: 10px;
+      color: #475569;
+      gap: 0.5rem;
+    }
+    .cm-stats { display: flex; gap: 10px; align-items: center; }
+    .cm-stat-l { color: var(--blue); }
+    .cm-stat-c { color: var(--green); }
+    .cm-cta {
+      color: var(--blue);
+      font-weight: 800;
+      font-size: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Number hero inside a card */
+    .card-big-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.8rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--green);
+      letter-spacing: -0.06em;
+      margin: 0.4rem 0 0.15rem;
+    }
+    .card-big-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+
+    /* Horizontal card (image left, text right) */
+    .bc-horizontal {
+      flex-direction: row;
+      align-items: stretch;
+    }
+    .bc-horizontal .ci {
+      width: 40%;
+      min-width: 180px;
+      height: auto;
+      flex-shrink: 0;
+    }
+    .bc-horizontal .ci img { height: 100%; min-height: 190px; }
+    .bc-horizontal .cb { width: 60%; }
+    @media (max-width: 640px) {
+      .bc-horizontal { flex-direction: column; }
+      .bc-horizontal .ci { width: 100%; height: 180px; }
+      .bc-horizontal .cb { width: 100%; }
+    }
+
+    /* ─── READING MODAL (Comic Panel Style) ─── */
+    .reading-modal {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 1000;
+      overflow-y: auto;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .reading-modal.show { display: block; opacity: 1; }
+
+    /* Comic panel header strip */
+    .rp-navbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(5,8,17,0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.5rem;
+    }
+    .rp-back-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.3s ease;
-      background: var(--accent-red);
-      color: white;
-      font-size: 1.1rem;
-      text-decoration: none;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      transition: all .2s;
+    }
+    .rp-back-btn:hover { border-color: var(--blue); background: rgba(0,122,255,0.1); }
+    .rp-nav-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: #fff;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rp-nav-actions { margin-left: auto; display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+    /* Comic panel: article wrapper */
+    .rp-body {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 5rem;
     }
 
-    .blog-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    /* Panel header — dark bordered block like a comic caption */
+    .rp-header-panel {
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .rp-header-band {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .rp-category-tag {
+      background: rgba(0,122,255,0.1);
+      border: 1px solid rgba(0,122,255,0.2);
+      color: var(--blue);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 100px;
+    }
+    .rp-date {
+      font-size: 10px;
+      color: #475569;
+      font-family: 'Inter', sans-serif;
+    }
+    .rp-title-block {
+      padding: 1.5rem 1.5rem 1.75rem;
+      background: rgba(255,255,255,0.012);
+    }
+    .rp-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      color: #fff;
+      letter-spacing: -0.045em;
+      line-height: 1.1;
+      margin: 0;
     }
 
-    .blog-filter {
+    /* Hero image panel */
+    .rp-image-panel {
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .rp-image-panel img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+    .rp-image-panel.hidden { display: none; }
+
+    /* Comic reading panel: prose */
+    .rp-prose-panel {
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .rp-prose-label {
+      background: rgba(0,122,255,0.06);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.25rem;
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #334155;
+    }
+    .rp-prose-inner {
+      padding: 1.75rem 1.5rem;
+    }
+
+    /* Comic interaction panel */
+    .rp-interact-panel {
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .rp-panel-header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0.65rem 1.25rem;
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rp-panel-body { padding: 1.25rem 1.5rem; background: rgba(5,8,17,0.4); }
+
+    .reading-prose {
+      font-family: 'Inter', sans-serif;
+      line-height: 1.85;
+      font-size: 1.02rem;
+      color: #CBD5E1;
+    }
+    .reading-prose h1,.reading-prose h2,.reading-prose h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      color: #fff;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+    }
+    .reading-prose h1 { font-size: 1.85rem; }
+    .reading-prose h2 { font-size: 1.4rem; }
+    .reading-prose h3 { font-size: 1.15rem; }
+    .reading-prose p  { margin-bottom: 1.2rem; }
+    .reading-prose code {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 0.85em;
+      color: var(--green);
+    }
+    .reading-prose blockquote {
+      border-left: 3px solid var(--blue);
+      padding-left: 1.25rem;
+      color: #64748B;
+      font-style: italic;
+      margin: 1.5rem 0;
+    }
+
+    .comment-card {
+      background: rgba(255,255,255,0.018);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.65rem;
+    }
+
+    /* Pagination */
+    .pgn {
       display: flex;
       justify-content: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 3.5rem;
+      font-size: 0.75rem;
     }
-
-    .filter-btn {
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(90deg, rgba(40, 96, 144, .08) 0%, rgba(22, 255, 122, .08) 100%);
-      border: 1px solid rgba(96, 165, 250, .25);
+    .pgn a {
+      padding: 0.4rem 1rem;
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
-      color: var(--neon-blue);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      transition: border-color 0.2s;
     }
+    .pgn a:hover { border-color: var(--blue); }
+    .pgn span { color: #374151; }
 
-    .filter-btn.active {
-      background: linear-gradient(90deg, #60a5fa 0%, #16ff7a 100%);
-      color: #0a1520;
-      box-shadow: 0 0 10px rgba(96, 165, 250, .45), 0 0 24px rgba(22, 255, 122, .25);
+    /* Reveal animation */
+    .reveal-line { overflow: hidden; display: block; }
+    .reveal-inner {
+      display: block;
+      transform: translateY(110%);
+      transition: transform 0.9s cubic-bezier(0.16,1,0.3,1);
     }
-
-    .filter-btn:hover {
-      background: linear-gradient(90deg, rgba(40, 96, 144, .15) 0%, rgba(22, 255, 122, .15) 100%);
-    }
-
-    @media (max-width:1024px) {
-      .blog-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width:768px) {
-      .blog-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .blog-hero {
-        height: 40vh;
-      }
-    }
+    .in-view .reveal-inner { transform: translateY(0); }
   </style>
 </head>
-
 <body>
-  {% include 'brand/header.html' %}
 
-  <section class="blog-hero">
-    <canvas id="blog-canvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
-    <div style="position:relative; z-index:10; text-align:center; max-width:900px; padding:0 2rem;">
+{% include 'brand/header.html' %}
 
-      <h1 class="title-green mb-6 leading-tight"
-        style="font-family: 'Outfit', sans-serif; font-weight:800; font-size:clamp(3.5rem, 7vw, 5.5rem); text-transform: uppercase;">
-        TekLora <br />
-      </h1>
-      <p class="subtitle-green max-w-2xl mx-auto leading-relaxed" style="font-size:1.25rem; font-weight:300;">
-        Deep dives into artificial intelligence, web development, and the digital frontier. Stay ahead of the curve.
-      </p>
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="blogHero">
+  <canvas id="heroCanvas"></canvas>
+
+  <div class="hero-title-wrap">
+    <div class="hero-title" id="heroTitleEl">
+      INSIGHTS
+      <div class="hero-float-badge" id="heroBadge">
+        <div class="badge-ring"></div>
+        <div class="badge-ring-2"></div>
+        <!-- SVG icon instead of emoji -->
+        <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
     </div>
-  </section>
+    <p class="hero-label">Teklora · Engineering Journal · AI & Infrastructure</p>
+  </div>
 
-  <div class="blog-container">
-    <div class="blog-filter">
-      <button class="filter-btn active" onclick="filterByCategory('all', this)">All Posts</button>
-      <button class="filter-btn" onclick="filterByCategory('Web Development', this)">Web Development</button>
-      <button class="filter-btn" onclick="filterByCategory('AI & Machine Learning', this)">AI & ML</button>
-      <button class="filter-btn" onclick="filterByCategory('Digital Marketing', this)">Marketing</button>
-      <button class="filter-btn" onclick="filterByCategory('Tech Trends', this)">Tech Trends</button>
+  <!-- Scroll cue arrow -->
+  <div class="hero-scroll-cue">
+    <i class="fas fa-chevron-down" style="font-size:10px; color:rgba(255,255,255,0.4);"></i>
+    <span></span>
+  </div>
+</section>
+
+<!-- ═══════════════ ARTICLES ═══════════════ -->
+<main style="max-width:1300px; margin:0 auto; padding:1.25rem 1.5rem 4rem;">
+
+  <!-- Header row -->
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:2.75rem;">
+    <div>
+      <p class="section-eyebrow">Published Articles</p>
+      <h2 class="section-heading reveal-line"><span class="reveal-inner">{% if sort_by == 'popular' %}Most Loved{% else %}Latest Articles{% endif %}</span></h2>
     </div>
-  <div id="blogGrid" class="blog-grid">
+    <div style="display:flex; gap:0.6rem;">
+      <a href="?sort=latest" class="sort-pill {% if sort_by != 'popular' %}sort-pill-active{% else %}sort-pill-inactive{% endif %}">
+        <i class="fas fa-clock"></i> Latest
+      </a>
+      <a href="?sort=popular" class="sort-pill {% if sort_by == 'popular' %}sort-pill-active{% else %}sort-pill-inactive{% endif %}">
+        <i class="fas fa-fire-flame-curved"></i> Popular
+      </a>
+    </div>
+  </div>
+
+  <!-- ─── BENTO GRID ─── -->
+  <div class="bento-grid" id="blogGrid">
     {% for post in posts %}
-    <a href="{{ post.get_absolute_url }}" class="blog-card" data-category="{{ post.category }}">
-      <div class="blog-card-image">
-        {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
+
+    {% if forloop.counter == 1 %}
+    <!-- ① FEATURED WIDE — dominates the first row -->
+    <article class="bc bc-accent col-8 tilt-l" onclick="openPost({{ post.id }})">
+      {% if post.image %}
+      <div class="ci ci-h260"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
+      {% endif %}
+      <div class="cb">
+        <span class="cc">{{ post.category|default:"General" }}</span>
+        <h2 class="ct ct-xl">{{ post.title }}</h2>
+        <p class="ce">{{ post.excerpt|truncatechars:210 }}</p>
+        <div class="cm">
+          <div class="cm-stats">
+            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
+            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+            <span>{{ post.created_at|date:"M d, Y" }}</span>
+          </div>
+          <span class="cm-cta">Read Article →</span>
+        </div>
       </div>
-      <div class="blog-card-content">
-        <span class="blog-card-category">{{ post.category }}</span>
-        <h2 class="blog-card-title">{{ post.title }}</h2>
-        <p class="blog-card-excerpt">{{ post.excerpt }}</p>
-        <span class="blog-card-date">{{ post.created_at|date:"M j, Y" }}</span>
+    </article>
+
+    {% elif forloop.counter == 2 %}
+    <!-- ② TALL SIDEBAR — right column of first row -->
+    <article class="bc col-4 tilt-r" onclick="openPost({{ post.id }})">
+      {% if post.image %}
+      <div class="ci ci-h200"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
+      {% endif %}
+      <div class="cb">
+        <span class="cc cc-g">{{ post.category|default:"General" }}</span>
+        <h2 class="ct ct-lg">{{ post.title }}</h2>
+        <p class="ce">{{ post.excerpt|truncatechars:120 }}</p>
+        <div class="cm">
+          <div class="cm-stats">
+            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
+            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+          </div>
+          <span class="cm-cta">Read →</span>
+        </div>
       </div>
-    </a>
+    </article>
+
+    {% elif forloop.counter == 3 %}
+    <!-- ③ HORIZONTAL BAND — full width -->
+    <article class="bc bc-horizontal col-12 tilt-s" onclick="openPost({{ post.id }})">
+      {% if post.image %}
+      <div class="ci"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
+      {% endif %}
+      <div class="cb" {% if not post.image %}style="width:100%"{% endif %}>
+        <span class="cc">{{ post.category|default:"General" }}</span>
+        <h2 class="ct ct-lg">{{ post.title }}</h2>
+        <p class="ce">{{ post.excerpt|truncatechars:220 }}</p>
+        <div class="cm">
+          <div class="cm-stats">
+            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
+            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+            <span>{{ post.created_at|date:"M d, Y" }}</span>
+          </div>
+          <span class="cm-cta">Read Full Article →</span>
+        </div>
+      </div>
+    </article>
+
+    {% elif forloop.counter == 4 %}
+    <!-- ④ METRIC CARD — green accent with big like number -->
+    <article class="bc bc-green col-4 tilt-r" onclick="openPost({{ post.id }})">
+      <div class="cb">
+        <span class="cc cc-g">{{ post.category|default:"General" }}</span>
+        <div class="card-big-num">{{ post.likes_count|default:"0" }}</div>
+        <div class="card-big-label">Reader Endorsements</div>
+        <h2 class="ct ct-md" style="margin-bottom:0;">{{ post.title }}</h2>
+        <div class="cm">
+          <span>{{ post.created_at|date:"M d, Y" }}</span>
+          <span class="cm-cta">Read →</span>
+        </div>
+      </div>
+    </article>
+
+    {% elif forloop.counter == 5 %}
+    <!-- ⑤ STANDARD — medium card -->
+    <article class="bc col-4 tilt-l" onclick="openPost({{ post.id }})">
+      {% if post.image %}
+      <div class="ci ci-h160"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
+      {% endif %}
+      <div class="cb">
+        <span class="cc">{{ post.category|default:"General" }}</span>
+        <h2 class="ct ct-md">{{ post.title }}</h2>
+        <p class="ce">{{ post.excerpt|truncatechars:95 }}</p>
+        <div class="cm">
+          <div class="cm-stats">
+            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
+            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+          </div>
+          <span class="cm-cta">Read →</span>
+        </div>
+      </div>
+    </article>
+
+    {% elif forloop.counter == 6 %}
+    <!-- ⑥ COMPACT TALL — skinny right column -->
+    <article class="bc col-4 tilt-s" onclick="openPost({{ post.id }})">
+      {% if post.image %}
+      <div class="ci ci-h160"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
+      {% endif %}
+      <div class="cb">
+        <span class="cc cc-g">{{ post.category|default:"General" }}</span>
+        <h2 class="ct ct-md">{{ post.title }}</h2>
+        <div class="cm">
+          <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+          <span class="cm-cta">Read →</span>
+        </div>
+      </div>
+    </article>
+
+    {% else %}
+    <!-- ⑦+ REMAINING — alternating halves, alternate tilt -->
+    <article class="bc col-6 {% cycle 'tilt-l' 'tilt-r' 'tilt-s' %}" onclick="openPost({{ post.id }})">
+      {% if post.image %}
+      <div class="ci ci-h200"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
+      {% endif %}
+      <div class="cb">
+        <span class="cc">{{ post.category|default:"General" }}</span>
+        <h2 class="ct ct-md">{{ post.title }}</h2>
+        <p class="ce">{{ post.excerpt|truncatechars:110 }}</p>
+        <div class="cm">
+          <div class="cm-stats">
+            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
+            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+            <span>{{ post.created_at|date:"M d, Y" }}</span>
+          </div>
+          <span class="cm-cta">Read →</span>
+        </div>
+      </div>
+    </article>
+    {% endif %}
+
     {% empty %}
-    <p class="blog-empty">No posts published yet.</p>
+    <div style="grid-column:span 12; text-align:center; padding:5rem 0;">
+      <i class="fas fa-newspaper" style="font-size:2.5rem; color:#1E293B; display:block; margin-bottom:1rem;"></i>
+      <p style="color:#374151; font-size:0.875rem;">No articles published yet.</p>
+    </div>
     {% endfor %}
   </div>
 
+  <!-- Pagination -->
   {% if posts.has_other_pages %}
-  <div class="blog-pagination" style="display:flex; gap:1rem; justify-content:center; margin:2rem 0;">
-    {% if posts.has_previous %}<a href="?page={{ posts.previous_page_number }}">&larr; Newer</a>{% endif %}
+  <div class="pgn">
+    {% if posts.has_previous %}
+    <a href="?page={{ posts.previous_page_number }}&sort={{ sort_by }}">&larr; Newer</a>
+    {% endif %}
     <span>Page {{ posts.number }} of {{ posts.paginator.num_pages }}</span>
-    {% if posts.has_next %}<a href="?page={{ posts.next_page_number }}">Older &rarr;</a>{% endif %}
+    {% if posts.has_next %}
+    <a href="?page={{ posts.next_page_number }}&sort={{ sort_by }}">Older &rarr;</a>
+    {% endif %}
   </div>
   {% endif %}
+
+</main>
+
+<!-- ═══════════════ READING MODAL (Comic Panel) ═══════════════ -->
+<div id="readingModal" class="reading-modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+
+  <!-- Sticky Navbar for modal -->
+  <div class="rp-navbar">
+    <button class="rp-back-btn" onclick="closePost()" aria-label="Back to articles">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <span class="rp-nav-title" id="mNavTitle">Article</span>
+    <div class="rp-nav-actions">
+      <button id="likeBtn" onclick="toggleLike()"
+        style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;padding:0.45rem 0.9rem;font-size:11px;font-weight:700;cursor:pointer;transition:all .25s;white-space:nowrap;">
+        <i class="fas fa-thumbs-up" style="font-size:0.8rem;"></i>
+        <span>Like</span> (<span id="mLikes">0</span>)
+      </button>
+    </div>
   </div>
 
-  {% include 'brand/footer.html' %}
-  <script src="{% static 'brand/js/components.js' %}"></script>
+  <!-- Article body -->
+  <div class="rp-body">
 
-  <!-- Chat Assistant -->
-  <div id="chatAssistant" class="chat-assistant">
-    <!-- Floating Chat Button -->
-    <div id="chatToggle" class="chat-toggle">
-      <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
-      </svg>
-      <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+    <!-- Panel 1: Article header (comic caption box) -->
+    <div class="rp-header-panel">
+      <div class="rp-header-band">
+        <span id="mCat" class="rp-category-tag">Category</span>
+        <span id="mDate" class="rp-date">Date</span>
+      </div>
+      <div class="rp-title-block">
+        <h1 id="mTitle" class="rp-title"></h1>
+      </div>
     </div>
 
-    <!-- Chat Window -->
-    <div id="chatWindow" class="chat-window">
-      <!-- Chat Header -->
-      <div class="chat-header">
-        <div class="chat-header-info">
-          <div class="chat-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <div class="chat-header-text">
-            <h3>TekLora Assistant</h3>
-            <p>How can I help you today?</p>
-          </div>
-        </div>
-        <button id="chatClose" class="chat-close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
+    <!-- Panel 2: Hero image (hidden if none) -->
+    <div id="mImgWrap" class="rp-image-panel hidden">
+      <img id="mImg" src="" alt="Article banner">
+    </div>
 
-      <!-- Chat Messages -->
-      <div id="chatMessages" class="chat-messages" style="background-color: #f3f4f6; color: #1f2937;">
-        <div class="chat-welcome">
-          <div class="welcome-message">
-            <div class="welcome-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-            <div class="welcome-text">
-              <p>Hello! I'm your TekLora Solutions assistant. I can help you with:</p>
-              <ul>
-                <li>Our services and solutions</li>
-                <li>Project inquiries</li>
-                <li>Technical support</li>
-                <li>General questions</li>
-              </ul>
-              <p>What would you like to know?</p>
-            </div>
-          </div>
-        </div>
+    <!-- Panel 3: Article prose -->
+    <div class="rp-prose-panel">
+      <div class="rp-prose-label">Article Content</div>
+      <div class="rp-prose-inner">
+        <div id="mBody" class="reading-prose"></div>
       </div>
+    </div>
 
-      <!-- Chat Input -->
-      <div class="chat-input-container">
-        <div class="chat-input-wrapper">
-          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." maxlength="500">
-          <button id="chatSend" class="chat-send" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22,2 15,22 11,13 2,9 22,2" />
-            </svg>
+    <!-- Panel 4: Comments -->
+    <div class="rp-interact-panel">
+      <div class="rp-panel-header">
+        <span style="display:flex;align-items:center;gap:6px;">
+          <i class="fas fa-comments" style="color:var(--green);"></i>
+          Discussion (<span id="mCommentCount">0</span>)
+        </span>
+      </div>
+      <div class="rp-panel-body">
+        <div id="mComments" style="margin-bottom:1.25rem;"></div>
+
+        <form id="commentForm" onsubmit="submitComment(event)"
+          style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <p style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#334155;margin-bottom:0.85rem;">Add a Comment</p>
+          <input type="text" id="cName" required placeholder="Your name"
+            style="width:100%;background:var(--bg);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.55rem 0.8rem;font-size:0.78rem;color:#fff;margin-bottom:0.6rem;outline:none;display:block;">
+          <textarea id="cText" required rows="3" placeholder="Share your thoughts..."
+            style="width:100%;background:var(--bg);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.55rem 0.8rem;font-size:0.78rem;color:#fff;resize:none;outline:none;display:block;margin-bottom:0.65rem;"></textarea>
+          <button type="submit"
+            style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:0.5rem 1.1rem;font-size:0.72rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-paper-plane"></i> Post
           </button>
-        </div>
-        <div class="chat-typing" id="chatTyping" style="display: none;">
-          <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span>TekLora Assistant is typing...</span>
-        </div>
+        </form>
       </div>
     </div>
+
   </div>
+</div>
 
-  <script src="{% static 'brand/js/chat-assistant.js' %}"></script>
-  <script>
-    function filterByCategory(category, btn) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      document.querySelectorAll('#blogGrid .blog-card').forEach(card => {
-        const show = category === 'all' || card.dataset.category === category;
-        card.style.display = show ? '' : 'none';
-      });
+{% include 'brand/footer.html' %}
+<script src="{% static 'brand/js/components.js' %}"></script>
+
+<script>
+/* ─── Browser fingerprint ─── */
+let bId = localStorage.getItem('teklora_browser_id');
+if (!bId) { bId = 'usr_' + Math.random().toString(36).substr(2,14); localStorage.setItem('teklora_browser_id', bId); }
+
+let curPostId = null, userLiked = false;
+
+/* ─── Hero particle canvas ─── */
+(function() {
+  const canvas = document.getElementById('heroCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, pts = [];
+  const hero = document.getElementById('blogHero');
+  let mx = 0, my = 0;
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+    mx = W / 2; my = H / 2;
+  }
+
+  function mkPts() {
+    pts = [];
+    const n = Math.min(Math.floor((W * H) / 8000), 120);
+    for (let i = 0; i < n; i++) {
+      pts.push({ x: Math.random()*W, y: Math.random()*H,
+                 vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4,
+                 r: Math.random()*1.4+.4, a: Math.random()*.7+.2 });
     }
-    function initBlogHero() {
-      const canvas = document.getElementById('blog-canvas');
-      if (!canvas) return;
-      const scene = new THREE.Scene;
-      const camera = new THREE.PerspectiveCamera(75, canvas.offsetWidth / canvas.offsetHeight, .1, 1e3);
-      const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
-      renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
-      const geometry = new THREE.BufferGeometry;
-      const vertices = [];
-      for (let i = 0; i < 600; i++) {
-        vertices.push(2e3 * (Math.random() - .5), 2e3 * (Math.random() - .5), 2e3 * (Math.random() - .5));
+  }
+
+  hero.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mx = e.clientX - r.left; my = e.clientY - r.top;
+  });
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // Connecting lines
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i+1; j < pts.length; j++) {
+        const dx = pts[i].x-pts[j].x, dy = pts[i].y-pts[j].y;
+        const d = Math.sqrt(dx*dx+dy*dy);
+        if (d < 130) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(0,122,255,${.06*(1-d/130)})`;
+          ctx.lineWidth = .6;
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.stroke();
+        }
       }
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      const material = new THREE.PointsMaterial({ color: 0x60a5fa, size: 2, transparent: true, opacity: .4 });
-      const points = new THREE.Points(geometry, material);
-      scene.add(points);
-      camera.position.z = 1e3;
-      function animate() {
-        requestAnimationFrame(animate);
-        points.rotation.x += 5e-4;
-        points.rotation.y += .001;
-        renderer.render(scene, camera);
-      }
-      animate();
-      window.addEventListener('resize', () => {
-        camera.aspect = canvas.offsetWidth / canvas.offsetHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
-      });
     }
-    document.addEventListener('DOMContentLoaded', () => {
-      initBlogHero();
+    pts.forEach(p => {
+      // Gentle mouse repulsion
+      const dx = p.x-mx, dy = p.y-my;
+      const d = Math.sqrt(dx*dx+dy*dy);
+      if (d < 150) { p.vx += dx/d*.035; p.vy += dy/d*.035; }
+      p.vx *= .985; p.vy *= .985;
+      p.x += p.vx; p.y += p.vy;
+      if (p.x<0||p.x>W) p.vx*=-1;
+      if (p.y<0||p.y>H) p.vy*=-1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(0,122,255,${p.a*.55})`;
+      ctx.fill();
     });
-  </script>
-</body>
+    requestAnimationFrame(draw);
+  }
 
+  window.addEventListener('resize', () => { resize(); mkPts(); });
+  resize(); mkPts(); draw();
+})();
+
+/* ─── Badge parallax (no cursor change) ─── */
+const badge = document.getElementById('heroBadge');
+const heroEl = document.getElementById('blogHero');
+heroEl.addEventListener('mousemove', e => {
+  const r = heroEl.getBoundingClientRect();
+  const x = (e.clientX - r.left - r.width/2)  * 0.035;
+  const y = (e.clientY - r.top  - r.height/2) * 0.035;
+  badge.style.transform = `translate(${x}px, ${y}px) rotate(${x*.4}deg)`;
+});
+heroEl.addEventListener('mouseleave', () => {
+  badge.style.transform = 'translate(0,0) rotate(0deg)';
+});
+
+/* ─── Scroll reveal ─── */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in-view'); });
+}, { threshold: .1 });
+document.querySelectorAll('.reveal-line').forEach(el => io.observe(el));
+
+/* ─── Modal open ─── */
+async function openPost(id) {
+  curPostId = id;
+  try {
+    const res = await fetch(`/blog/post/${id}/json/?browser_id=${bId}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+
+    document.getElementById('mCat').textContent      = d.category || 'General';
+    document.getElementById('mTitle').textContent     = d.title;
+    document.getElementById('mNavTitle').textContent  = d.title;
+    document.getElementById('mDate').textContent      = d.created_at;
+    document.getElementById('mBody').innerHTML        = d.content_html;
+    document.getElementById('mLikes').textContent     = d.likes_count;
+    document.getElementById('mCommentCount').textContent = d.comments.length;
+
+    const wrap = document.getElementById('mImgWrap');
+    const img  = document.getElementById('mImg');
+    if (d.image) { img.src = d.image; wrap.classList.remove('hidden'); }
+    else          { wrap.classList.add('hidden'); }
+
+    userLiked = d.user_liked;
+    refreshLikeBtn();
+
+    const list = document.getElementById('mComments');
+    list.innerHTML = d.comments.length
+      ? d.comments.map(c => mkComment(c.user_name, c.content, c.created_at)).join('')
+      : '<p style="font-size:.78rem;color:#374151;font-style:italic;">No comments yet — be the first!</p>';
+
+    document.getElementById('commentForm').reset();
+
+    const modal = document.getElementById('readingModal');
+    modal.classList.add('show');
+    modal.scrollTo(0, 0);
+    document.body.style.overflow = 'hidden';
+  } catch { alert('Unable to load article. Please try again.'); }
+}
+
+function closePost() {
+  document.getElementById('readingModal').classList.remove('show');
+  document.body.style.overflow = 'auto';
+  curPostId = null;
+}
+
+/* ─── Like toggle ─── */
+async function toggleLike() {
+  if (!curPostId) return;
+  const res = await fetch(`/api/blogs/${curPostId}/like/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ browser_id: bId })
+  });
+  if (res.ok) {
+    const d = await res.json();
+    document.getElementById('mLikes').textContent = d.likes_count;
+    const cl = document.getElementById(`cl-${curPostId}`);
+    if (cl) cl.textContent = d.likes_count;
+    userLiked = d.liked;
+    refreshLikeBtn();
+  }
+}
+
+function refreshLikeBtn() {
+  const btn = document.getElementById('likeBtn');
+  if (!btn) return;
+  btn.style.background   = userLiked ? 'var(--blue)' : 'rgba(255,255,255,0.04)';
+  btn.style.borderColor  = userLiked ? 'transparent' : 'rgba(255,255,255,0.08)';
+}
+
+/* ─── Comment submit ─── */
+async function submitComment(e) {
+  e.preventDefault();
+  const name = document.getElementById('cName').value.trim() || 'Anonymous';
+  const text = document.getElementById('cText').value.trim();
+  if (!text || !curPostId) return;
+
+  const res = await fetch(`/api/blogs/${curPostId}/comment/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ browser_id: bId, user_name: name, content: text })
+  });
+  if (res.ok) {
+    const d = await res.json();
+    document.getElementById('cText').value = '';
+    const list = document.getElementById('mComments');
+    const placeholder = list.querySelector('p');
+    if (placeholder) list.innerHTML = '';
+    list.insertAdjacentHTML('afterbegin', mkComment(d.comment.user_name, d.comment.content, 'Just now'));
+    const cnt = parseInt(document.getElementById('mCommentCount').textContent) + 1;
+    document.getElementById('mCommentCount').textContent = cnt;
+    const cc = document.getElementById(`cc-${curPostId}`);
+    if (cc) cc.textContent = cnt;
+  }
+}
+
+function mkComment(name, text, date) {
+  return `<div class="comment-card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:.4rem;font-size:10px;">
+      <strong style="color:#fff;">${esc(name)}</strong>
+      <span style="color:#374151;">${date}</span>
+    </div>
+    <p style="font-size:.8rem;color:#94A3B8;line-height:1.6;margin:0;">${esc(text)}</p>
+  </div>`;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+/* Close modal on backdrop click */
+document.getElementById('readingModal').addEventListener('click', function(e) {
+  if (e.target === this) closePost();
+});
+/* Close modal on ESC */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePost(); });
+</script>
+</body>
 </html>

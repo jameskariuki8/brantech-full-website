@@ -1,0 +1,676 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ project.title }} — TekLora</title>
+  <meta name="description" content="{{ project.short_description|default:project.description|truncatechars:160 }}">
+
+  <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #03060d;
+      --surface:   #080f1a;
+      --card:      rgba(10, 18, 32, 0.85);
+      --border:    rgba(255,255,255,0.065);
+      --border-hi: rgba(96,165,250,0.3);
+      --blue:      #60a5fa;
+      --green:     #16ff7a;
+      --muted:     rgba(255,255,255,0.38);
+      --text:      rgba(255,255,255,0.88);
+      --text-dim:  rgba(255,255,255,0.55);
+      --mono:      'DM Mono', monospace;
+      --sans:      'DM Sans', sans-serif;
+      --display:   'Syne', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    /* Override Tailwind base reset - keep dark background */
+    body {
+      font-family: var(--sans) !important;
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Hero ──────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      padding: 110px 0 60px;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(96,165,250,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96,165,250,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 100%);
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: -180px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 600px;
+      background: radial-gradient(ellipse, rgba(22,255,122,0.07) 0%, rgba(96,165,250,0.05) 40%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: .05em;
+      margin-bottom: 2.5rem;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--blue); }
+    .back-link i { font-size: .7rem; }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-family: var(--mono);
+      font-size: .72rem;
+      font-weight: 500;
+      padding: .3rem .8rem;
+      border-radius: 999px;
+      letter-spacing: .04em;
+      border: 1px solid transparent;
+    }
+    .badge-github { background: rgba(22,255,122,.08); border-color: rgba(22,255,122,.25); color: var(--green); }
+    .badge-blue   { background: rgba(96,165,250,.08); border-color: rgba(96,165,250,.25); color: var(--blue); }
+    .badge-gray   { background: rgba(255,255,255,.05); border-color: var(--border); color: var(--text-dim); }
+
+    .hero-title {
+      font-family: var(--display);
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -.02em;
+      background: linear-gradient(135deg, #fff 0%, rgba(96,165,250,.85) 60%, rgba(22,255,122,.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      max-width: 620px;
+      margin-bottom: 2rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .6rem 1.4rem;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all .2s;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--blue);
+      color: #020810;
+    }
+    .btn-primary:hover { background: #93c5fd; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(96,165,250,.35); }
+    .btn-outline {
+      background: rgba(255,255,255,.04);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,.08); border-color: var(--border-hi); transform: translateY(-1px); }
+
+    /* ─── Stats bar ─────────────────────────────────────── */
+    .stats-bar {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem 3rem;
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+    }
+    .stat-value {
+      font-family: var(--display);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .stat-value .accent { color: var(--green); }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Layout ────────────────────────────────────────── */
+    .page-body {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    /* ─── Sections ──────────────────────────────────────── */
+    .section-label {
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── README ────────────────────────────────────────── */
+    #readmePanel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .readme-body { color: var(--text); line-height: 1.75; }
+    .readme-body h1, .readme-body h2, .readme-body h3,
+    .readme-body h4, .readme-body h5, .readme-body h6 {
+      font-family: var(--display);
+      color: #fff;
+      margin: 1.75rem 0 .6rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .readme-body h1 { font-size: 1.6rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-top: 0; }
+    .readme-body h2 { font-size: 1.25rem; }
+    .readme-body h3 { font-size: 1.05rem; color: rgba(255,255,255,.8); }
+    .readme-body p  { margin: .85rem 0; color: var(--text-dim); }
+    .readme-body a  { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+    .readme-body a:hover { color: var(--green); }
+    .readme-body strong { color: #fff; font-weight: 600; }
+    .readme-body em { color: var(--text-dim); font-style: italic; }
+    .readme-body code {
+      font-family: var(--mono);
+      font-size: .85em;
+      background: rgba(96,165,250,.08);
+      border: 1px solid rgba(96,165,250,.15);
+      border-radius: 5px;
+      padding: .1em .4em;
+      color: #93c5fd;
+    }
+    .readme-body pre {
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(96,165,250,.12);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.25rem 0;
+    }
+    .readme-body pre code { background: none; border: none; padding: 0; color: #c9d1d9; font-size: .88rem; }
+    .readme-body ul, .readme-body ol { padding-left: 1.5rem; margin: .85rem 0; }
+    .readme-body ul { list-style: disc; }
+    .readme-body ol { list-style: decimal; }
+    .readme-body li { margin: .35rem 0; color: var(--text-dim); }
+    .readme-body blockquote {
+      border-left: 3px solid var(--border-hi);
+      padding: .5rem 1rem;
+      margin: 1rem 0;
+      background: rgba(96,165,250,.04);
+      border-radius: 0 8px 8px 0;
+      color: var(--text-dim);
+    }
+    .readme-body table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: .9em; }
+    .readme-body th, .readme-body td { border: 1px solid var(--border); padding: .55rem .9rem; }
+    .readme-body th { background: rgba(96,165,250,.06); color: var(--blue); font-family: var(--mono); font-size: .82em; text-transform: uppercase; letter-spacing: .05em; }
+    .readme-body img { max-width: 100%; border-radius: 8px; margin: .75rem 0; display: block; }
+    .readme-body hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    /* ─── Commits ───────────────────────────────────────── */
+    #commitsSection { margin-bottom: 2.5rem; }
+
+    .commit-timeline { position: relative; }
+    .commit-timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 8px;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--border-hi), transparent);
+    }
+
+    .commit-item {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1rem 0;
+      position: relative;
+    }
+
+    .commit-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: .7rem;
+      color: var(--blue);
+      position: relative;
+      z-index: 1;
+    }
+
+    .commit-body {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .9rem 1.1rem;
+      transition: border-color .2s;
+    }
+    .commit-body:hover { border-color: rgba(96,165,250,.25); }
+
+    .commit-message {
+      font-size: .92rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: .5rem;
+      line-height: 1.4;
+    }
+
+    .commit-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .commit-sha {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--blue);
+      background: rgba(96,165,250,.08);
+      border: 1px solid rgba(96,165,250,.15);
+      border-radius: 4px;
+      padding: .1em .5em;
+    }
+
+    .commit-author { font-size: .78rem; color: var(--muted); }
+
+    .commit-date { font-size: .76rem; color: var(--muted); font-family: var(--mono); }
+
+    .commit-stats {
+      display: flex;
+      gap: .6rem;
+      margin-left: auto;
+    }
+    .stat-pill {
+      font-family: var(--mono);
+      font-size: .7rem;
+      font-weight: 600;
+      padding: .15em .55em;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: .28rem;
+    }
+    .stat-pill.files { background: rgba(255,255,255,.05); color: var(--text-dim); }
+
+    /* ─── Sidebar ───────────────────────────────────────── */
+    .sidebar { position: sticky; top: 100px; }
+
+    .sidebar-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .sidebar-card h3 {
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      padding: .7rem .9rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: .875rem;
+      color: var(--text);
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      transition: all .2s;
+      margin-bottom: .6rem;
+    }
+    .sidebar-link:last-child { margin-bottom: 0; }
+    .sidebar-link:hover { background: rgba(96,165,250,.07); border-color: var(--border-hi); color: var(--blue); transform: translateX(2px); }
+    .sidebar-link i { width: 18px; text-align: center; color: var(--blue); }
+
+    .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .45rem 0;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      font-size: .82rem;
+    }
+    .meta-row:last-child { border-bottom: none; }
+    .meta-row span:first-child { color: var(--muted); font-family: var(--mono); font-size: .74rem; }
+    .meta-row span:last-child { color: var(--text); font-weight: 500; }
+
+    /* ─── Extra states ──────────────────────────────────── */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      color: var(--muted);
+      gap: .75rem;
+    }
+    .loading-state i { font-size: 1.5rem; }
+    .loading-state p { font-size: .875rem; font-family: var(--mono); }
+
+    .no-content {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: .875rem;
+      font-family: var(--mono);
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+
+    /* ─── Responsive ────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .page-body { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .commit-meta { flex-wrap: wrap; }
+      .commit-stats { margin-left: 0; width: 100%; }
+      .stats-bar { gap: 1.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+  {% include 'brand/header.html' %}
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <a href="/projects/" class="back-link"><i class="fas fa-arrow-left"></i> All Projects</a>
+
+      <div class="hero-badges">
+        {% if project.is_github_synced %}
+          <span class="badge badge-github"><i class="fab fa-github"></i>{{ project.github_role|default:"GitHub" }}</span>
+        {% endif %}
+        {% if project.featured %}
+          <span class="badge badge-blue"><i class="fas fa-star"></i>Featured</span>
+        {% endif %}
+        {% if not project.is_github_synced %}
+          <span class="badge badge-gray"><i class="fas fa-folder"></i>Manual</span>
+        {% endif %}
+      </div>
+
+      <h1 class="hero-title">{{ project.title }}</h1>
+      <p class="hero-desc">{{ project.short_description|default:project.description|truncatechars:200 }}</p>
+
+      <div class="hero-actions">
+        {% if project.project_url %}
+          <a href="{{ project.project_url }}" target="_blank" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i>Live Demo
+          </a>
+        {% endif %}
+        {% if project.github_url %}
+          <a href="{{ project.github_url }}" target="_blank" class="btn btn-outline">
+            <i class="fab fa-github"></i>View on GitHub
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats bar (only for GitHub projects) -->
+  {% if project.is_github_synced %}
+  <div class="stats-bar">
+    {% if project.commit_count is not None %}
+    <div class="stat-item">
+      <span class="stat-value"><span class="accent">{{ project.commit_count }}</span></span>
+      <span class="stat-label">Total Commits</span>
+    </div>
+    {% endif %}
+    <div class="stat-item">
+      <span class="stat-value">10</span>
+      <span class="stat-label">Recent Shown</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Main layout -->
+  <div class="page-body">
+    <main>
+
+      <!-- README -->
+      {% if project.readme_content %}
+      <div id="readmePanel">
+        <p class="section-label"><i class="fab fa-readme"></i>README</p>
+        <textarea id="readmeRaw" style="display:none">{{ project.readme_content }}</textarea>
+        <div class="readme-body" id="readmeBody"></div>
+      </div>
+      {% else %}
+      <div class="no-content">
+        <i class="fas fa-file-alt" style="font-size:1.5rem;margin-bottom:.5rem;display:block;opacity:.4"></i>
+        No README found for this project.
+        {% if project.is_github_synced %}
+        <br><span style="opacity:.65;font-size:.82rem">Re-sync this repo from the <a href="/admin-panel/" style="color:var(--blue);text-decoration:underline">GitHub Manager</a> to pull the latest README.</span>
+        {% else %}
+        <br><span style="opacity:.65;font-size:.82rem">Add a description manually in the admin panel.</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Commits (GitHub only) -->
+      {% if project.is_github_synced %}
+      <div id="commitsSection">
+        <p class="section-label"><i class="fas fa-code-branch"></i>Recent Commits</p>
+        <div id="commitsList">
+          <div class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Fetching latest commits...</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </main>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-card">
+        <h3>Links</h3>
+        {% if project.github_url %}
+          <a href="{{ project.github_url }}" target="_blank" class="sidebar-link">
+            <i class="fab fa-github"></i>GitHub Repository
+          </a>
+        {% endif %}
+        {% if project.project_url %}
+          <a href="{{ project.project_url }}" target="_blank" class="sidebar-link">
+            <i class="fas fa-external-link-alt"></i>Live Project
+          </a>
+        {% endif %}
+        {% if not project.github_url and not project.project_url %}
+          <p style="font-size:.82rem;color:var(--muted)">No links available.</p>
+        {% endif %}
+      </div>
+
+      <div class="sidebar-card">
+        <h3>Project Info</h3>
+        <div class="meta-row">
+          <span>Status</span>
+          <span>{% if project.is_github_synced %}GitHub Synced{% else %}Manual{% endif %}</span>
+        </div>
+        {% if project.github_role %}
+        <div class="meta-row">
+          <span>Role</span>
+          <span>{{ project.github_role|capfirst }}</span>
+        </div>
+        {% endif %}
+        {% if project.commit_count is not None and project.is_github_synced %}
+        <div class="meta-row">
+          <span>Commits</span>
+          <span>{{ project.commit_count }}</span>
+        </div>
+        {% endif %}
+        {% if project.last_synced_at %}
+        <div class="meta-row">
+          <span>Last Sync</span>
+          <span>{{ project.last_synced_at|date:"M d, Y" }}</span>
+        </div>
+        {% endif %}
+        <div class="meta-row">
+          <span>Added</span>
+          <span>{{ project.created_at|date:"M d, Y" }}</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  {% include 'brand/footer.html' %}
+
+  <script>
+    // ─── Render README ─────────────────────────────────────
+    const readmeBody = document.getElementById('readmeBody');
+    if (readmeBody) {
+      const rawEl = document.getElementById('readmeRaw');
+      if (rawEl) readmeBody.innerHTML = marked.parse(rawEl.value);
+    }
+
+    // ─── Fetch & render commits ───────────────────────────
+    {% if project.is_github_synced %}
+    const commitsList = document.getElementById('commitsList');
+
+    function timeAgo(isoDate) {
+      if (!isoDate) return '—';
+      const diff = (Date.now() - new Date(isoDate)) / 1000;
+      if (diff < 60)       return 'just now';
+      if (diff < 3600)     return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400)    return Math.floor(diff / 3600) + 'h ago';
+      if (diff < 2592000)  return Math.floor(diff / 86400) + 'd ago';
+      return new Date(isoDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    fetch('/api/projects/{{ project.pk }}/commits/')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success || !data.commits.length) {
+          commitsList.innerHTML = '<div class="no-content">No commits found.</div>';
+          return;
+        }
+        commitsList.innerHTML = `<div class="commit-timeline">${
+          data.commits.map((c, i) => `
+            <div class="commit-item" style="animation-delay:${i * 50}ms">
+              <div class="commit-dot"><i class="fas fa-code-commit"></i></div>
+              <div class="commit-body">
+                <p class="commit-message">${c.message}</p>
+                <div class="commit-meta">
+                  <span class="commit-sha">${c.sha}</span>
+                  <span class="commit-author"><i class="fas fa-user" style="margin-right:.3rem;opacity:.5"></i>${c.author}</span>
+                  <span class="commit-date">${timeAgo(c.date)}</span>
+                  <div class="commit-stats">
+                    <span class="stat-pill files"><i class="fas fa-file-code"></i>${c.files_touched} files</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')
+        }</div>`;
+      })
+      .catch(() => {
+        commitsList.innerHTML = '<div class="no-content">Could not load commits at this time.</div>';
+      });
+    {% endif %}
+  </script>
+</body>
+</html>

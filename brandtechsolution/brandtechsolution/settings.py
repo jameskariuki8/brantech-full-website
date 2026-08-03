@@ -65,7 +65,19 @@ INSTALLED_APPS = [
     'appointments',
     'ai_workflows',
     'messaging',
+
     'staff',
+
+    'trends',
+    'research',
+    'editorial',
+    'seo',
+    'media_generation',
+    'knowledge_base',
+    'approval',
+    'publishing',
+    'analytics',
+
 ]
 
 MIDDLEWARE = [
@@ -178,20 +190,20 @@ STORAGES = {
 # EMAIL SETTINGS
 # ============================================================
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Use console backend during local development if Gmail credentials are not configured yet
+if not config.email_host_user or config.email_host_user == "your-email@gmail.com" or not config.email_host_password or config.email_host_password == "your-app-password":
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
 EMAIL_HOST = config.email_host
 EMAIL_PORT = config.email_port
 EMAIL_USE_TLS = config.email_use_tls
-EMAIL_HOST_USER = config.email_host_user
-EMAIL_HOST_PASSWORD = config.email_host_password
-# Bounds how long a single SMTP send can block. This matters for the outbox
-# reaper below: a batch's worst-case send time is roughly
-# OUTBOX_BATCH_SIZE * EMAIL_TIMEOUT seconds, which must stay under
-# OUTBOX_STALE_CLAIM_MINUTES * 60 or the reaper may release rows a live run
-# is still sending, risking duplicate delivery.
+EMAIL_HOST_USER = (config.email_host_user or "").strip()
+EMAIL_HOST_PASSWORD = (config.email_host_password or "").replace(" ", "").strip()
 EMAIL_TIMEOUT = config.email_timeout
 
-DEFAULT_FROM_EMAIL = config.email_host_user
+DEFAULT_FROM_EMAIL = config.email_host_user if config.email_host_user and config.email_host_user != "your-email@gmail.com" else "juniorkariuuki735@gmail.com"
 
 OUTBOX_BATCH_SIZE = config.outbox_batch_size
 OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
@@ -266,3 +278,9 @@ LOGGING = {
 # ============================================================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Force correct MIME types on Windows to avoid nosniff blocks
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
+mimetypes.add_type("application/javascript", ".js", True)
+

@@ -81,6 +81,12 @@ class AppSettings(BaseSettings):
     langsmith_endpoint: str = "https://api.smith.langchain.com"
 
     # ============================================================
+    # GitHub Integration Configuration
+    # ============================================================
+    github_access_token: Optional[str] = None
+    github_username: Optional[str] = None
+
+    # ============================================================
     # Database Configuration
     # ============================================================
     database_engine: str = "postgresql"
