@@ -58,6 +58,20 @@ class AppSettings(BaseSettings):
     site_base_url: str = "https://teklora.co.ke"
 
     # ============================================================
+    # Cloudflare Turnstile (bot protection on public forms)
+    # ============================================================
+    # Both come from the Cloudflare dashboard under Turnstile. The site key is
+    # public and rendered into the page; the secret key is not and is only
+    # ever sent server-to-server to siteverify.
+    #
+    # Leaving them empty disables the checks, which is what you want on a
+    # developer machine. A Django system check refuses to start with DEBUG
+    # off and no secret, so an unprotected deployment cannot happen quietly -
+    # see brandtechsolution/turnstile.py.
+    turnstile_site_key: str = ""
+    turnstile_secret_key: str = ""
+
+    # ============================================================
     # Public contact form rate limiting
     # ============================================================
     contact_rate_limit_count: int = 5

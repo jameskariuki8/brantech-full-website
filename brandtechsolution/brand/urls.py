@@ -31,6 +31,9 @@ urlpatterns = [
     path('solutions/', views.solutions, name='solutions'),
     path('research/', views.research, name='research'),
     path('admin-panel/', views.admin_panel_page, name='admin-panel'),
+    # No trailing slash: llmstxt.org specifies the file at /llms.txt exactly,
+    # and that is the path assistants look for.
+    path('llms.txt', views.llms_txt, name='llms_txt'),
     path('privacy/', views.privacy_policy, name='privacy'),
     path('terms/', views.terms_conditions, name='terms'),
     path('signup/', views.signup_view, name='signup'),

@@ -9,6 +9,9 @@ from django.db import models
 from django.db.models import F, Count
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+
+from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
 from .models import BlogPost, BlogLike, BlogComment, Project
 from .markdown_utils import render_markdown
@@ -71,6 +74,38 @@ def privacy_policy(request):
 def terms_conditions(request):
     """Terms & Conditions page view"""
     return render(request, 'brand/terms.html')
+
+
+def llms_txt(request):
+    """/llms.txt - a curated index of this site for language models.
+
+    The llmstxt.org convention: a short markdown file naming the pages worth
+    reading, so an assistant answering questions about Teklora works from the
+    pages we chose rather than whatever fragments a crawler happened to keep.
+
+    Rendered rather than served as a static file so every link comes from
+    {% url %} and the blog list is the real one. A hand-maintained copy would
+    start rotting the first time a route moved.
+
+    Served as text/plain: browsers display it instead of downloading it, which
+    matters because people do open this by hand to see what it says. The
+    convention names the file .txt and its body is markdown either way.
+
+    Note this is advisory. It is not an access control - the "not for
+    indexing" section asks politely, while staff.decorators and the API
+    permission classes are what actually refuse.
+    """
+    posts = (
+        BlogPost.objects.filter(status='published')
+        .only('title', 'slug', 'excerpt')
+        .order_by('-created_at')[:20]
+    )
+    return render(
+        request,
+        'brand/llms.txt',
+        {'base': settings.SITE_BASE_URL.rstrip('/'), 'posts': posts},
+        content_type='text/plain; charset=utf-8',
+    )
 
 
 
@@ -150,6 +185,12 @@ def project_page(request, pk):
 def signup_view(request):
     """User signup view"""
     if request.method == 'POST':
+        # Signup mints real User rows on a public URL, so it is the endpoint
+        # a script would use to fill the auth table.
+        if not turnstile.passed(request):
+            messages.error(request, turnstile.FAILED)
+            return render(request, 'brand/signup.html')
+
         first_name = request.POST.get('firstName')
         last_name = request.POST.get('lastName')
         email = request.POST.get('email')
@@ -273,7 +314,13 @@ def like_blog_post(request, post_id):
 def comment_blog_post(request, post_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST request required'}, status=400)
-        
+
+    # Comments are public, unauthenticated and rendered back to every reader,
+    # which is exactly the shape spam wants.
+    if not turnstile.passed(request):
+        return JsonResponse({'error': turnstile.FAILED}, status=400)
+
+
     try:
         data = json.loads(request.body)
         browser_id = data.get('browser_id')

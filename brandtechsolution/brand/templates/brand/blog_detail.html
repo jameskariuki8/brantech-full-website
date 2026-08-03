@@ -167,6 +167,8 @@
             <textarea id="commentContent" required rows="3" class="w-full bg-[#050811] border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#007AFF] outline-none resize-none" placeholder="Join the discussion..."></textarea>
           </div>
 
+          {% include 'brand/_turnstile.html' with widget_id="commentTurnstile" %}
+
           <button type="submit" class="btn-premium btn-premium-primary text-xs py-2 px-4 rounded-lg flex items-center gap-2">
             <span>Post Comment</span>
             <i class="fas fa-paper-plane"></i>
@@ -251,8 +253,18 @@
         const res = await fetch(`/api/blogs/${postId}/comment/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ browser_id: browserId, user_name: name, content: content })
+          body: JSON.stringify({
+            browser_id: browserId,
+            user_name: name,
+            content: content,
+            'cf-turnstile-response': turnstileToken('commentTurnstile')
+          })
         });
+
+        // Spent either way - Cloudflare rejects a replayed token, so leaving
+        // the solved widget in place would refuse every comment after the
+        // first.
+        resetTurnstile('commentTurnstile');
 
         if (res.ok) {
           const data = await res.json();
@@ -288,5 +300,12 @@
 
     checkUserLike();
   </script>
+
+  {% if turnstile_enabled %}
+  {# Cloudflare serves api.js from a versionless URL it updates in place, so #}
+  {# there is no stable hash to pin with integrity=.                          #}
+  <script src="{% static 'brand/js/turnstile.js' %}"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
 </body>
 </html>

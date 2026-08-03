@@ -388,6 +388,10 @@
                         </div>
                     </div>
 
+                    <div style="margin: 1rem 0;">
+                        {% include 'brand/_turnstile.html' with widget_id="signupTurnstile" %}
+                    </div>
+
                     <button type="submit" class="register-btn">Create Account</button>
                 </form>
 
@@ -413,6 +417,10 @@
             });
         }
     </script>
+
+    {% if turnstile_enabled %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
 </body>
 
 </html>

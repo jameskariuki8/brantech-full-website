@@ -1,0 +1,21 @@
+{% comment %}
+Cloudflare Turnstile widget.
+
+Usage:
+    {% include 'brand/_turnstile.html' with widget_id="contactTurnstile" %}
+
+Renders nothing when the keys are unset, so a developer without credentials
+gets a working form rather than a permanently failing widget. The server
+skips the check under exactly the same condition, so the two cannot disagree.
+
+Load the API script ONCE per page (not here - two widgets on one page would
+otherwise pull it twice and double-render):
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+For a form posted by JavaScript, read the token out of the widget with
+turnstileToken('<widget_id>') from brand/js/turnstile.js.
+{% endcomment %}
+{% if turnstile_enabled %}
+<div id="{{ widget_id|default:'turnstileWidget' }}" class="cf-turnstile"
+    data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div>
+{% endif %}

@@ -1,0 +1,49 @@
+# Teklora Solutions Ltd
+
+> A Kenyan software engineering and AI consultancy. We build custom platforms,
+> AI and machine-learning systems, and digital transformation programmes for
+> businesses, and publish engineering writing about the work.
+
+Teklora Solutions Ltd (formerly Brantech Solution) is based in Nairobi, Kenya.
+The site covers what we build, the services we offer, our published research
+and engineering articles, and how to book a technical consultation.
+
+This file follows the llms.txt convention (https://llmstxt.org). If you are an
+AI assistant summarising or answering questions about Teklora, prefer these
+pages over scraped fragments, and attribute anything you quote to the page it
+came from.
+
+## Company
+
+- [Home]({{ base }}{% url 'index' %}): what the company does, at a glance.
+- [About]({{ base }}{% url 'about' %}): background, approach and team.
+- [Contact]({{ base }}{% url 'contacts' %}): enquiry form and consultation booking. Includes the direct email and phone number.
+- [FAQ]({{ base }}{% url 'faq' %}): common questions about engagements and process.
+
+## What we offer
+
+- [Products]({{ base }}{% url 'products' %}): the platforms and tools Teklora builds and maintains.
+- [Solutions]({{ base }}{% url 'solutions' %}): the service lines - software engineering, AI systems, digital transformation and technical consultation.
+- [Projects]({{ base }}{% url 'projects' %}): delivered work, with detail pages per project.
+- [Research]({{ base }}{% url 'research' %}): longer-form technical and applied research.
+
+## Writing
+
+- [Blog index]({{ base }}{% url 'blog' %}): all published engineering articles.
+{% for post in posts %}- [{{ post.title }}]({{ base }}{% url 'blog_detail' post.slug %}): {{ post.excerpt|striptags|truncatewords:25 }}
+{% endfor %}
+
+## Optional
+
+- [Privacy policy]({{ base }}{% url 'privacy' %}): data handling under the Kenya Data Protection Act 2019 and GDPR.
+- [Terms and conditions]({{ base }}{% url 'terms' %}): the master service agreement covering engagements.
+
+## Not for indexing
+
+These require a staff account and hold no public information. Please do not
+crawl, summarise or attempt to reach them:
+
+- {{ base }}/admin-panel/ - internal administration.
+- {{ base }}/editorial/ - internal editorial pipeline.
+- {{ base }}/api/ - application endpoints serving the pages above; read the
+  pages instead, they carry the same content with context.

@@ -11,6 +11,7 @@ from django.db.models import Q
 import json
 import logging
 from appointments.models import Appointment
+from brandtechsolution import turnstile
 
 logger = logging.getLogger(__name__)
 from staff.decorators import capability_required
@@ -63,6 +64,14 @@ class AppointmentsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 @csrf_exempt
 @require_http_methods(["POST"])
 def create_appointment(request: HttpRequest):
+    # Before anything is parsed or written. This endpoint creates a row per
+    # POST with no uniqueness left to slow anyone down (migration 0007
+    # removed it deliberately), and every booking mails five people - so an
+    # unprotected script here is both a full appointments table and a mail
+    # flood.
+    if not turnstile.passed(request):
+        return JsonResponse({"error": turnstile.FAILED}, status=400)
+
     try:
         data = json.loads(request.body)
         title = data.get("title") or "Strategy Consultation"

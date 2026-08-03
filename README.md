@@ -418,6 +418,75 @@ deliberately absent from the toolbar because email clients discard the CSS
 classes Quill uses to implement them.
 
 
+## Bot protection
+
+Public forms are protected by **Cloudflare Turnstile**. Turnstile rather than
+reCAPTCHA because the site already runs behind a Cloudflare Tunnel, so it adds
+no new vendor, no new account and no tracking cookie for visitors.
+
+### What is protected
+
+| Endpoint | Why it needs it |
+|---|---|
+| `POST /appointments/create/` | Creates a booking per request and mails five people. Nothing else bounds it — the unique-email constraint that used to (accidentally) cap repeats was removed in `appointments.0007` |
+| `POST /signup/` | Mints real `User` rows on a public URL |
+| `POST /api/blogs/<id>/comment/` | Unauthenticated, and the result is shown to every reader |
+| `POST /contacts/submit/` | Already had a honeypot and a per-IP rate limit; Turnstile covers the middle ground that clears both |
+
+Blog *likes* are deliberately left alone. A challenge on a like button costs
+every real reader something to stop a bot inflating a number nobody makes
+decisions on — rate-limit it instead if it becomes a problem.
+
+### How it works
+
+The widget in the page only mints a token. **The check that matters is on the
+server**, in `brandtechsolution/turnstile.py`, because a bot never loads the
+page — it posts straight to the endpoint. Tokens are single-use and
+short-lived, so a harvested one cannot be replayed.
+
+Verification **fails closed**: if Cloudflare cannot be reached the submission
+is refused, because "the verifier is down" and "this is a bot" are
+indistinguishable from the server's side.
+
+### Setup
+
+Create a Turnstile widget in the Cloudflare dashboard, add the hostnames, then
+set both keys:
+
+```bash
+TURNSTILE_SITE_KEY=0x4AAA...      # public, rendered into the page
+TURNSTILE_SECRET_KEY=0x4AAA...    # secret, only ever sent to siteverify
+```
+
+Leaving them unset disables the checks, which is what you want locally — the
+widget stops rendering and the server stops verifying, so the two never
+disagree. **A Django system check refuses to start with `DEBUG` off and no
+secret key**, so a deployment cannot silently lose its bot protection. The
+test suite is exempt via `settings.TESTING`; Django's test runner forces
+`DEBUG=False`, and without the exemption the guard aborts every test run.
+
+Cloudflare's `api.js` is served from a versionless URL it updates in place, so
+there is no stable hash to pin it with `integrity=`.
+
+## llms.txt
+
+`/llms.txt` is a curated index of the site for language models, following the
+[llmstxt.org](https://llmstxt.org) convention: a short markdown file naming
+the pages worth reading, so an assistant answering questions about Teklora
+works from pages we chose rather than whatever fragments a crawler kept.
+
+It is rendered from a template (`brand/templates/brand/llms.txt`) rather than
+served as a static file, so every link comes from `{% url %}` and the blog
+list is the real one — a hand-maintained copy would rot the first time a route
+moved. Only **published** posts are listed; drafts 404 for the public, so
+naming one here would be a disclosure by another door.
+
+It is served as `text/plain` so browsers display it rather than downloading
+it. The convention names the file `.txt`; its body is markdown either way.
+
+Its "not for indexing" section is **advisory** — it asks politely.
+`staff.decorators` and the API permission classes are what actually refuse.
+
 ## Staff roles and permissions
 
 Access to the admin panel is controlled by twelve **capabilities**. A

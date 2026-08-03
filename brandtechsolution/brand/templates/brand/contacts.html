@@ -349,6 +349,8 @@
                             <span id="validationAlertMsg">Please fill in all required fields.</span>
                         </div>
 
+                        {% include 'brand/_turnstile.html' with widget_id="contactTurnstile" %}
+
                         <!-- Submit Button -->
                         <button type="submit" id="submitContactBtn" class="w-full btn-premium btn-premium-primary py-3 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#007AFF]/25 hover:shadow-[#007AFF]/40 transition-all">
                             <span>Initialize Technical Connection</span>
@@ -607,6 +609,10 @@
                     <label class="block text-xs font-semibold text-white">Email Address for Meet Invite</label>
                     <input type="email" id="bookingEmail" class="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#0A0F1D] text-sm text-white focus:outline-none focus:border-[#007AFF]" placeholder="john@company.com" />
                 </div>
+            </div>
+
+            <div class="my-4">
+                {% include 'brand/_turnstile.html' with widget_id="bookingTurnstile" %}
             </div>
 
             <button type="button" onclick="submitBooking()" class="w-full btn-premium btn-premium-primary py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
@@ -926,10 +932,12 @@
                 date: formattedDate,
                 time: timeStr,
                 estimated_duration: 30,
-                status: 'pending',
                 email: email,
                 phone: phone,
-                full_name: name
+                full_name: name,
+                // The server sets status itself and ignores anything sent
+                // here, so it is no longer part of the payload.
+                'cf-turnstile-response': turnstileToken('bookingTurnstile')
             };
 
             try {
@@ -943,6 +951,9 @@
                 });
 
                 const data = await res.json();
+                // The token is spent either way - a retry with the same one
+                // is rejected as a replay.
+                resetTurnstile('bookingTurnstile');
                 if (res.ok || data.success) {
                     closeBookingModal();
                     document.getElementById('bookingSuccessDetails').textContent = `Thank you, ${name}! Your strategy consultation is confirmed for ${selectedCalendarDate} at ${selectedTimeSlotStr}. A calendar invite has been sent to ${email} and our technical directors have been notified.`;
@@ -970,5 +981,14 @@
         // Initialize Calendar
         renderCalendar();
     </script>
+
+    {% if turnstile_enabled %}
+    {% load static %}
+    {# Loaded once for both widgets on this page - the contact form and the #}
+    {# booking modal. Cloudflare serves api.js from a versionless URL that   #}
+    {# it updates in place, so there is no stable hash to pin it with.       #}
+    <script src="{% static 'brand/js/turnstile.js' %}"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
 </body>
 </html>

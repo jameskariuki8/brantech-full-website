@@ -8,6 +8,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from brandtechsolution import turnstile
 from .models import Inquiry, Suppression
 from .tokens import read_unsubscribe_token
 
@@ -55,6 +56,17 @@ def contact_submit(request):
         if ajax:
             return JsonResponse({"ok": False, "error": error}, status=429)
         messages.error(request, error)
+        return redirect("contacts")
+
+    # Turnstile sits alongside the honeypot and the rate limit rather than
+    # replacing them: the honeypot costs a naive bot nothing to trip, the
+    # rate limit bounds a determined one, and Turnstile handles the middle
+    # ground that clears both. Checked after the rate limit so a flood cannot
+    # make us call Cloudflare once per request.
+    if not turnstile.passed(request):
+        if ajax:
+            return JsonResponse({"ok": False, "error": turnstile.FAILED}, status=400)
+        messages.error(request, turnstile.FAILED)
         return redirect("contacts")
 
     # Honeypot: real users never fill the hidden 'website' field.
