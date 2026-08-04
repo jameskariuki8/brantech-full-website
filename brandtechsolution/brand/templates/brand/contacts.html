@@ -33,6 +33,8 @@
     
     <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    <link rel="stylesheet" href="{% static 'brand/css/toast.css' %}" />
+    <script src="{% static 'brand/js/toast.js' %}"></script>
 
     <style>
         html, body {
@@ -94,16 +96,6 @@
             opacity: 0.25;
             cursor: not-allowed;
             background: transparent !important;
-        }
-
-        .toast-notification {
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .toast-notification.show {
-            transform: translateY(0);
-            opacity: 1;
         }
 
         .faq-card {
@@ -658,12 +650,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification Popup -->
-    <div id="toast" class="toast-notification fixed bottom-6 right-6 z-50 bg-[#0A0F1D] border border-white/10 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs text-white">
-        <i class="fas fa-check-circle text-[#00FF94]"></i>
-        <span id="toastMessage">Action completed successfully.</span>
-    </div>
-
     <!-- Footer Inheritance -->
     {% include 'brand/footer.html' %}
 
@@ -671,22 +657,10 @@
         // Copy Text Helper
         function copyText(text, successMsg) {
             navigator.clipboard.writeText(text).then(() => {
-                showToast(successMsg || 'Copied to clipboard!');
+                toast.success(successMsg || 'Copied to clipboard.');
             }).catch(() => {
-                showToast('Failed to copy text.');
+                toast.error('That text could not be copied.');
             });
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMessage');
-            if (!toast || !toastMsg) return;
-
-            toastMsg.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
         }
 
         // Topic Pills Handler
@@ -902,7 +876,7 @@
             const phone = phoneInput ? phoneInput.value.trim() : '';
 
             if (!name || !email || !email.includes('@')) {
-                alert("Please fill in your name and a valid email address.");
+                toast.warning('Enter your name and a valid email address.');
                 return;
             }
 
@@ -971,10 +945,10 @@
                     renderCalendar();
                     document.querySelectorAll('#timeSlotsContainer button').forEach(b => b.classList.remove('border-[#007AFF]', 'bg-[#007AFF]/20'));
                 } else {
-                    alert(data.error || "Failed to save appointment.");
+                    toast.error(data.error || 'The appointment could not be saved.');
                 }
             } catch (err) {
-                alert("Network error saving appointment. Please try again.");
+                toastApiError(err, 'The appointment could not be saved. Please try again.');
             }
         }
 

@@ -113,17 +113,17 @@ async function addRecipient(event) {
     });
     if (res.ok) { form.reset(); loadRecipients(); return; }
     const data = await res.json().catch(() => ({}));
-    alert(data.detail || (data.email && data.email[0]) || 'Could not add that address.');
+    toast.error(data.detail || (data.email && data.email[0]) || 'That address could not be added.');
 }
 
 async function removeRecipient(id) {
-    if (!confirm('Remove this address from the campaign?')) return;
+    if (!await tkConfirm('The address is dropped from this campaign.', { title: 'Remove this address?', confirmText: 'Remove', danger: true })) return;
     const res = await fetch(`${API_BASE}/messaging/recipients/${id}/`, {
         method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN },
     });
     if (res.ok) { loadRecipients(); return; }
     const data = await res.json().catch(() => ({}));
-    alert(data.detail || 'Could not remove that address.');
+    toast.error(data.detail || 'That address could not be removed.');
 }
 
 async function checkRecipientDomains() {
@@ -144,7 +144,7 @@ async function checkRecipientDomains() {
 }
 
 async function removeInvalidRecipients() {
-    if (!confirm('Remove every address flagged as malformed or dead-domain?')) return;
+    if (!await tkConfirm('Every address flagged as malformed or dead-domain is removed from this campaign.', { title: 'Remove all flagged addresses?', confirmText: 'Remove all', danger: true })) return;
     const res = await fetch(`${API_BASE}/messaging/recipients/remove_invalid/`, {
         method: 'POST',
         credentials: 'same-origin',
@@ -152,9 +152,9 @@ async function removeInvalidRecipients() {
         body: JSON.stringify({ campaign: RECIPIENTS.campaignId }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { alert(data.detail || 'Could not remove flagged addresses.'); return; }
+    if (!res.ok) { toast.error(data.detail || 'The flagged addresses could not be removed.'); return; }
     const tail = data.skipped ? ` ${data.skipped} could not be withdrawn (already sent).` : '';
-    alert(`Removed ${data.removed} address(es).${tail}`);
+    toast.success(`Removed ${data.removed} address(es).${tail}`);
     RECIPIENTS.page = 1;
     loadRecipients();
 }

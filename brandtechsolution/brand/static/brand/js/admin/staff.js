@@ -166,7 +166,7 @@ async function loadStaff() {
         await Promise.all([loadPeople(), loadActivity()]);
     } catch (e) {
         console.error(e);
-        alert(`Could not load staff data: ${e.message}`);
+        toastApiError(e, 'Staff data could not be loaded.');
     }
 }
 
@@ -257,7 +257,7 @@ function wireRoleSave() {
     document.getElementById('saveRoleBtn').addEventListener('click', async (event) => {
         const roleId = event.currentTarget.dataset.roleId;
         const name = document.getElementById('roleName').value.trim();
-        if (!name) { alert('Give the role a name.'); return; }
+        if (!name) { toast.warning('Give the role a name.'); return; }
         const payload = JSON.stringify({ name, capabilities: selectedCapabilities() });
         try {
             if (roleId) {
@@ -267,7 +267,7 @@ function wireRoleSave() {
             }
             closeStaffModal();
             await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
-        } catch (e) { alert(`Could not save the role: ${e.message}`); }
+        } catch (e) { toastApiError(e, 'The role could not be saved.'); }
     });
 }
 
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('sendInviteBtn').addEventListener('click', async () => {
             const email = document.getElementById('inviteEmail').value.trim();
-            if (!email) { alert('Enter an email address.'); return; }
+            if (!email) { toast.warning('Enter an email address.'); return; }
             try {
                 await staffFetch('/invitations/', {
                     method: 'POST',
@@ -322,8 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 closeStaffModal();
                 await Promise.all([loadPeople(), loadActivity()]);
-                alert('Invitation sent.');
-            } catch (e) { alert(`Could not send the invitation: ${e.message}`); }
+                toast.success('Invitation sent.');
+            } catch (e) { toastApiError(e, 'The invitation could not be sent.'); }
         });
     });
 
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await loadList(key, true);
             } catch (e) {
-                alert(`Could not load more: ${e.message}`);
+                toastApiError(e, 'The next page could not be loaded.');
             } finally {
                 button.disabled = false;
             }
@@ -372,28 +372,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // Activity pane as well as the list it changed - otherwise a user
         // watching Activity sees nothing until they re-enter the section.
         if (button.dataset.action === 'revoke-invite') {
-            if (!confirm('Revoke this invitation? The link stops working.')) return;
+            if (!await tkConfirm('The invitation link stops working immediately.', { title: 'Revoke this invitation?', confirmText: 'Revoke', danger: true })) return;
             try {
                 await staffFetch(`/invitations/${id}/`, { method: 'DELETE' });
+                toast.success('Invitation revoked.');
                 await Promise.all([loadPeople(), loadActivity()]);
-            } catch (e) { alert(`Could not revoke: ${e.message}`); }
+            } catch (e) { toastApiError(e, 'The invitation could not be revoked.'); }
         }
 
         if (button.dataset.action === 'resend-invite') {
             try {
                 await staffFetch(`/invitations/${id}/resend/`, { method: 'POST' });
                 await loadActivity();
-                alert('Invitation resent.');
-            } catch (e) { alert(`Could not resend: ${e.message}`); }
+                toast.success('Invitation resent.');
+            } catch (e) { toastApiError(e, 'The invitation could not be resent.'); }
         }
 
         if (button.dataset.action === 'delete-role') {
             const role = ROLES.find(r => r.id === id);
-            if (!confirm(`Delete the role "${role ? role.name : ''}"? Members keep their accounts but lose these capabilities.`)) return;
+            if (!await tkConfirm(`Members keep their accounts but lose the capabilities granted by "${role ? role.name : ''}".`, { title: 'Delete this role?', confirmText: 'Delete role', danger: true })) return;
             try {
                 await staffFetch(`/roles/${id}/`, { method: 'DELETE' });
+                toast.success('Role deleted.');
                 await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
-            } catch (e) { alert(`Could not delete: ${e.message}`); }
+            } catch (e) { toastApiError(e, 'The role could not be deleted.'); }
         }
 
         if (button.dataset.action === 'edit-role') {
@@ -419,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let person;
             try {
                 person = await staffFetch(`/people/${id}/`);
-            } catch (e) { alert(`Could not open: ${e.message}`); return; }
+            } catch (e) { toastApiError(e, 'That person could not be opened.'); return; }
 
             openStaffModal(`Edit ${person.username}`, `
                 <div class="space-y-4">
@@ -448,8 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }),
                     });
                     closeStaffModal();
+                    toast.success('Changes saved.');
                     await Promise.all([loadPeople(), loadRoles(), loadActivity()]);
-                } catch (e) { alert(`Could not save: ${e.message}`); }
+                } catch (e) { toastApiError(e, 'The changes could not be saved.'); }
             });
         }
     });

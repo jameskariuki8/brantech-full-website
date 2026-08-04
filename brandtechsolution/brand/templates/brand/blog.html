@@ -34,6 +34,8 @@
   <!-- Styles (same order as homepage) -->
   <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
   <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
+  <link rel="stylesheet" href="{% static 'brand/css/toast.css' %}">
+  <script src="{% static 'brand/js/toast.js' %}"></script>
 
   <style>
     :root {
@@ -1032,7 +1034,7 @@ async function openPost(id) {
     modal.classList.add('show');
     modal.scrollTo(0, 0);
     document.body.style.overflow = 'hidden';
-  } catch { alert('Unable to load article. Please try again.'); }
+  } catch (err) { toastApiError(err, 'That article could not be loaded. Please try again.'); }
 }
 
 function closePost() {

@@ -33,8 +33,8 @@ async function saveTemplate(event) {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify(payload),
     });
-    if (res.ok) { hideAddForm('template'); form.reset(); form.id.value = ''; loadTemplates(); }
-    else { alert('Save failed'); }
+    if (res.ok) { hideAddForm('template'); form.reset(); form.id.value = ''; toast.success('Template saved.'); loadTemplates(); }
+    else { toastApiError(await apiErrorFromResponse(res), 'The template could not be saved.'); }
 }
 
 async function editTemplate(id) {
@@ -47,8 +47,11 @@ async function editTemplate(id) {
 }
 
 async function deleteTemplate(id) {
-    if (!confirm('Delete this template?')) return;
-    await fetch(`${API_BASE}/messaging/templates/${id}/`, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+    if (!await tkConfirm('This removes the template permanently.', { title: 'Delete this template?', confirmText: 'Delete', danger: true })) return;
+    try {
+        await fetchJson(`${API_BASE}/messaging/templates/${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+        toast.success('Template deleted.');
+    } catch (e) { toastApiError(e, 'The template could not be deleted.'); }
     loadTemplates();
 }
 

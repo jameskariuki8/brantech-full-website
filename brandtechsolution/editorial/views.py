@@ -16,13 +16,14 @@ draft -> published for ordinary posts. Approving here IS publishing, so it
 must not be reachable with a weaker permission than the blog editor's.
 """
 import json
+from django.db import transaction
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse, Http404
-from staff.decorators import capability_required
+from staff.decorators import capability_required, capability_required_api
 from trends.models import TrendTopic, CompetitorArticle, TrendPrediction
 from research.models import ResearchDossier, VerifiedFactReport
-from editorial.models import EditorialArticle, SocialPackage
-from editorial.orchestrator import EditorialPipelineOrchestrator
+from editorial.models import EditorialArticle, EditorialPipelineRun, SocialPackage
+from editorial.tasks import run_editorial_pipeline_task
 from approval.services.workflow import HumanApprovalWorkflow
 from publishing.services.publisher import PublishingAgent
 from knowledge_base.services.knowledge_graph import KnowledgeBaseAgent
@@ -45,30 +46,78 @@ def dashboard_view(request):
     return render(request, 'editorial/dashboard.html', context)
 
 
-@capability_required('publish_blog')
+@capability_required_api('publish_blog')
 def trigger_pipeline_api(request):
-    """API endpoint to manually trigger autonomous pipeline cycle."""
-    if request.method == 'POST':
-        try:
-            body = json.loads(request.body.decode('utf-8')) if request.body else {}
-            limit = int(body.get('limit', 1))
-            auto_publish = bool(body.get('auto_publish', False))
-        except Exception:
-            limit = 1
-            auto_publish = False
+    """Queue an autonomous pipeline cycle and return immediately.
 
-        orchestrator = EditorialPipelineOrchestrator()
-        articles = orchestrator.run_full_autonomous_cycle(limit=limit, auto_publish=auto_publish)
+    This used to run the whole cycle inline. The cycle makes eight sequential
+    Gemini calls and takes around three minutes, so behind the Cloudflare
+    tunnel the connection was killed at 100s and the browser was handed a 524
+    HTML page where it expected JSON -- while the work carried on to
+    completion, invisibly. It now returns 202 with a run id to poll.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
 
+    try:
+        body = json.loads(request.body.decode('utf-8')) if request.body else {}
+        limit = int(body.get('limit', 1))
+        auto_publish = bool(body.get('auto_publish', False))
+    except Exception:
+        limit = 1
+        auto_publish = False
+
+    limit = max(1, min(limit, 5))
+
+    # One cycle at a time. Two concurrent runs would research and draft the
+    # same prioritised topics, doubling the model spend for duplicate output.
+    active = EditorialPipelineRun.objects.filter(status__in=['queued', 'running']).first()
+    if active:
         return JsonResponse({
-            'status': 'success',
-            'articles_processed': len(articles),
-            'articles': [{'id': a.id, 'title': a.title, 'status': a.status} for a in articles]
-        })
-    return JsonResponse({'error': 'POST required'}, status=405)
+            'status': 'already_running',
+            'run_id': active.pk,
+            'detail': 'A pipeline run is already in progress.',
+        }, status=409)
+
+    run = EditorialPipelineRun.objects.create(
+        limit=limit,
+        auto_publish=auto_publish,
+        triggered_by=request.user if request.user.is_authenticated else None,
+    )
+
+    # on_commit so the worker cannot pick the task up before the row it needs
+    # is committed -- the worker has its own connection and would not see it.
+    transaction.on_commit(lambda: run_editorial_pipeline_task.delay(run.pk))
+
+    return JsonResponse(_run_payload(run), status=202)
 
 
-@capability_required('manage_blog')
+def _run_payload(run):
+    """Serialise a pipeline run for the dashboard poller."""
+    return {
+        'status': run.status,
+        'run_id': run.pk,
+        'stage': run.stage,
+        'stage_label': run.stage_label,
+        'stage_index': run.stage_index,
+        'stage_total': len(EditorialPipelineRun.STAGES),
+        'error': run.error,
+        'articles_processed': run.articles.count() if run.is_terminal else 0,
+        'articles': [
+            {'id': a.id, 'title': a.title, 'status': a.status}
+            for a in run.articles.all()
+        ] if run.is_terminal else [],
+    }
+
+
+@capability_required_api('manage_blog')
+def pipeline_run_status_api(request, run_id):
+    """Poll target for a queued pipeline run."""
+    run = get_object_or_404(EditorialPipelineRun, pk=run_id)
+    return JsonResponse(_run_payload(run))
+
+
+@capability_required_api('manage_blog')
 def article_detail_api(request, article_id):
     """Returns full JSON metadata for an article (including social package & preview)."""
     article = get_object_or_404(EditorialArticle, pk=article_id)
@@ -99,7 +148,7 @@ def article_detail_api(request, article_id):
     return JsonResponse(data)
 
 
-@capability_required('publish_blog')
+@capability_required_api('publish_blog')
 def approve_article_api(request, article_id):
     """Approves and automatically publishes article to live Teklora website."""
     if request.method == 'POST':
@@ -120,7 +169,7 @@ def approve_article_api(request, article_id):
     return JsonResponse({'error': 'POST required'}, status=405)
 
 
-@capability_required('publish_blog')
+@capability_required_api('publish_blog')
 def reject_article_api(request, article_id):
     """Rejects draft article."""
     if request.method == 'POST':
@@ -146,7 +195,7 @@ def export_docx_view(request, article_id):
     return response
 
 
-@capability_required('manage_blog')
+@capability_required_api('manage_blog')
 def semantic_search_api(request):
     """Searches vector knowledge base using pgvector embeddings."""
     q = request.GET.get('q', '')

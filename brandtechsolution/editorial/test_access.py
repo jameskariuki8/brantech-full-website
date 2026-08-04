@@ -24,6 +24,25 @@ READING = [
     "/editorial/api/knowledge-search/?q=test",
 ]
 
+# The JSON endpoints answer an unauthenticated caller with 401 JSON rather than
+# a redirect to the login page. fetch() follows redirects transparently, so the
+# HTML login page arrived at the browser as a JSON parse failure ("Unexpected
+# token '<'") that gave no hint permissions were the cause. The two endpoints
+# that genuinely render HTML -- the dashboard and the .docx download -- still
+# redirect, because for those a login page is the right answer.
+JSON_ENDPOINTS = [
+    "/editorial/api/run-pipeline/",
+    "/editorial/api/articles/{id}/approve/",
+    "/editorial/api/articles/{id}/reject/",
+    "/editorial/api/articles/{id}/",
+    "/editorial/api/knowledge-search/?q=test",
+]
+
+HTML_ENDPOINTS = [
+    "/editorial/dashboard/",
+    "/editorial/api/articles/{id}/export-docx/",
+]
+
 
 def staff_with(*codenames):
     user = User.objects.create_user("u", password="pw", is_staff=True)
@@ -45,15 +64,31 @@ class AnonymousAccessTest(TestCase):
         for path in PUBLISHING:
             with self.subTest(path=path):
                 response = self.client.post(path.format(id=self.article.pk))
-                # capability_required bounces anonymous users to the login
-                # page rather than 403ing them.
-                self.assertIn(response.status_code, (302, 403))
+                self.assertIn(response.status_code, (302, 401, 403))
 
     def test_anonymous_cannot_reach_reading_endpoints(self):
         for path in READING:
             with self.subTest(path=path):
                 response = self.client.get(path.format(id=self.article.pk))
-                self.assertIn(response.status_code, (302, 403))
+                self.assertIn(response.status_code, (302, 401, 403))
+
+    def test_json_endpoints_refuse_anonymous_callers_in_json(self):
+        """Never a login page where the caller asked for JSON."""
+        for path in JSON_ENDPOINTS:
+            with self.subTest(path=path):
+                response = self.client.post(path.format(id=self.article.pk))
+
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(response["Content-Type"], "application/json")
+                self.assertEqual(response.json()["error"], "Unauthorized")
+
+    def test_html_endpoints_still_redirect_anonymous_callers_to_login(self):
+        for path in HTML_ENDPOINTS:
+            with self.subTest(path=path):
+                response = self.client.get(path.format(id=self.article.pk))
+
+                self.assertEqual(response.status_code, 302)
+                self.assertIn("/login/", response["Location"])
 
     def test_anonymous_cannot_publish_to_the_live_site(self):
         """The finding that mattered most: this created a public BlogPost."""
@@ -77,6 +112,16 @@ class CapabilityBoundaryTest(TestCase):
             with self.subTest(path=path):
                 response = self.client.get(path.format(id=self.article.pk))
                 self.assertEqual(response.status_code, 403)
+
+    def test_json_endpoints_refuse_uncapable_staff_in_json(self):
+        self.client.force_login(staff_with())
+        for path in JSON_ENDPOINTS:
+            with self.subTest(path=path):
+                response = self.client.post(path.format(id=self.article.pk))
+
+                self.assertEqual(response.status_code, 403)
+                self.assertEqual(response["Content-Type"], "application/json")
+                self.assertEqual(response.json()["error"], "Forbidden")
 
     def test_manage_blog_alone_cannot_publish(self):
         """Approving here IS publishing, so it must need publish_blog - the

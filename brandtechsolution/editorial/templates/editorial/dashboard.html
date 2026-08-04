@@ -365,6 +365,21 @@
             display: none;
         }
 
+        .pipeline-progress-track {
+            margin-top: 1rem;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .pipeline-progress-bar {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
         .spinner {
             width: 24px;
             height: 24px;
@@ -397,10 +412,14 @@
         
         <!-- Live Status Bar -->
         <div id="pipeline-status-box" class="pipeline-status-box">
-            <h3 style="color: var(--accent-cyan); margin-bottom: 0.5rem;">🤖 Autonomous Newsroom Pipeline Executing...</h3>
+            <h3 style="color: var(--accent-cyan); margin-bottom: 0.5rem;">🤖 Autonomous Newsroom Pipeline Running</h3>
             <p id="pipeline-status-msg" style="color: var(--text-secondary); font-size: 0.9rem;">
-                Monitoring global tech trends -> Evaluating Priority Scores -> Synthesizing Deep Research Dossier -> Fact Verification -> AI Writing -> SEO Optimization...
+                Queued. Waiting for a worker to pick up the run…
             </p>
+            <div class="pipeline-progress-track">
+                <div id="pipeline-progress-bar" class="pipeline-progress-bar" style="width: 0%;"></div>
+            </div>
+            <p id="pipeline-status-step" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;"></p>
         </div>
 
         <!-- KPI Metrics Grid -->
@@ -620,39 +639,100 @@
             return '';
         }
 
-        async function runAutonomousPipeline() {
-            document.getElementById('run-spinner').style.display = 'inline-block';
-            document.getElementById('pipeline-status-box').style.display = 'block';
+        // The cycle takes minutes, so the request only queues it and the page
+        // polls the run row. Holding the connection open for the whole run is
+        // what produced the "Unexpected token '<'" failures: Cloudflare closed
+        // it at 100s and handed the browser a 524 page where JSON was expected.
+        const PIPELINE_POLL_MS = 3000;
+        let pipelinePollTimer = null;
+        let pipelineWatching = false;
 
+        function setPipelineRunning(running) {
+            document.getElementById('run-spinner').style.display = running ? 'inline-block' : 'none';
+            document.getElementById('pipeline-status-box').style.display = running ? 'block' : 'none';
+        }
+
+        function renderPipelineProgress(data) {
+            const total = data.stage_total || 1;
+            const pct = data.stage_index ? Math.round((data.stage_index / total) * 100) : 0;
+            document.getElementById('pipeline-progress-bar').style.width = `${pct}%`;
+            document.getElementById('pipeline-status-msg').textContent =
+                data.stage_label || 'Queued. Waiting for a worker to pick up the run…';
+            document.getElementById('pipeline-status-step').textContent =
+                data.stage_index ? `Step ${data.stage_index} of ${total}` : '';
+        }
+
+        async function pollPipelineRun(runId) {
+            let data;
             try {
-                const res = await fetch('/editorial/api/run-pipeline/', {
+                data = await fetchJson(`/editorial/api/pipeline-runs/${runId}/`);
+            } catch (err) {
+                // A single failed poll is not a failed run -- the worker may
+                // still be going. Keep polling and let the run itself decide.
+                console.warn('Pipeline poll failed', err);
+                pipelinePollTimer = setTimeout(() => pollPipelineRun(runId), PIPELINE_POLL_MS * 2);
+                return;
+            }
+
+            renderPipelineProgress(data);
+
+            if (data.status === 'success') {
+                pipelineWatching = false;
+                pipelinePollTimer = null;
+                setPipelineRunning(false);
+                toast.success(`Autonomous cycle completed. Processed ${data.articles_processed} article(s).`);
+                setTimeout(() => window.location.reload(), 1200);
+                return;
+            }
+
+            if (data.status === 'failed') {
+                pipelineWatching = false;
+                pipelinePollTimer = null;
+                setPipelineRunning(false);
+                toast.error('The pipeline run failed.', { detail: data.error || undefined });
+                return;
+            }
+
+            pipelinePollTimer = setTimeout(() => pollPipelineRun(runId), PIPELINE_POLL_MS);
+        }
+
+        async function runAutonomousPipeline() {
+            if (pipelineWatching) return;   // guard a double click
+            pipelineWatching = true;
+            setPipelineRunning(true);
+            renderPipelineProgress({});
+
+            let data;
+            try {
+                data = await fetchJson('/editorial/api/run-pipeline/', {
                     method: 'POST',
-                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': editorialCsrfToken()
                     },
                     body: JSON.stringify({limit: 1, auto_publish: false})
                 });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    alert(`✅ Autonomous cycle completed! Processed ${data.articles_processed} articles.`);
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + JSON.stringify(data));
-                }
             } catch (err) {
-                alert('Pipeline execution failed: ' + err);
-            } finally {
-                document.getElementById('run-spinner').style.display = 'none';
-                document.getElementById('pipeline-status-box').style.display = 'none';
+                // 409 means a run is already in flight -- attach to it rather
+                // than reporting a failure the user can do nothing about.
+                if (err instanceof ApiError && err.status === 409 && err.data && err.data.run_id) {
+                    toast.info('A pipeline run is already in progress. Following it.');
+                    pollPipelineRun(err.data.run_id);
+                    return;
+                }
+                pipelineWatching = false;
+                setPipelineRunning(false);
+                toastApiError(err, 'The pipeline run could not be started.');
+                return;
             }
+
+            toast.info('Pipeline queued. This takes a few minutes.');
+            pollPipelineRun(data.run_id);
         }
 
         async function openPreviewModal(articleId) {
             try {
-                const res = await fetch(`/editorial/api/articles/${articleId}/`);
-                const data = await res.json();
+                const data = await fetchJson(`/editorial/api/articles/${articleId}/`);
 
                 document.getElementById('modal-title').innerText = data.title;
                 document.getElementById('modal-subtitle').innerText = data.subtitle;
@@ -673,7 +753,7 @@
                 document.getElementById('modal-approve-btn').onclick = () => approveArticle(articleId);
                 document.getElementById('preview-modal').style.display = 'flex';
             } catch (err) {
-                alert('Error loading preview: ' + err);
+                toastApiError(err, 'The article preview could not be loaded.');
             }
         }
 
@@ -682,20 +762,29 @@
         }
 
         async function approveArticle(articleId) {
-            if (!confirm('Approve and publish this article to the Teklora blog?')) return;
+            const ok = await tkConfirm(
+                'This publishes the article to the live Teklora blog immediately.',
+                { title: 'Approve and publish?', confirmText: 'Publish' }
+            );
+            if (!ok) return;
+
             try {
-                const res = await fetch(`/editorial/api/articles/${articleId}/approve/`, {
+                const data = await fetchJson(`/editorial/api/articles/${articleId}/approve/`, {
                     method: 'POST',
-                    credentials: 'same-origin',
                     headers: {'X-CSRFToken': editorialCsrfToken()}
                 });
-                const data = await res.json();
                 if (data.status === 'published') {
-                    alert('🎉 Article Published Successfully!');
-                    window.location.reload();
+                    toast.success('Article published to the blog.');
+                    setTimeout(() => window.location.reload(), 900);
+                } else {
+                    // Previously this branch was silent, so a non-publishing
+                    // response looked identical to success.
+                    toast.warning('The article was not published.', {
+                        detail: JSON.stringify(data, null, 2)
+                    });
                 }
             } catch (err) {
-                alert('Publishing failed: ' + err);
+                toastApiError(err, 'Publishing failed.');
             }
         }
 
@@ -704,8 +793,7 @@
             if (!q) return;
 
             try {
-                const res = await fetch(`/editorial/api/knowledge-search/?q=${encodeURIComponent(q)}`);
-                const data = await res.json();
+                const data = await fetchJson(`/editorial/api/knowledge-search/?q=${encodeURIComponent(q)}`);
                 const container = document.getElementById('kb-results-list');
                 container.innerHTML = '';
 
@@ -720,7 +808,7 @@
                     container.appendChild(card);
                 });
             } catch (err) {
-                alert('Search failed: ' + err);
+                toastApiError(err, 'The knowledge base search failed.');
             }
         }
     </script>

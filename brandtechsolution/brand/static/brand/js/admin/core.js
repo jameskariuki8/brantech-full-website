@@ -291,17 +291,13 @@ async function addItem(endpoint, form) {
     const formData = new FormData(form);
     if (formData.has('featured')) { formData.set('featured', formData.get('featured') === 'on' ? 'true' : 'false'); } else { formData.set('featured', 'false'); }
     try {
-        const response = await fetch(`${API_BASE}/${endpoint}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-        if (response.ok) {
-            alert('Saved successfully!');
-            form.reset();
-            // hideAddForm call moved to specific blocks below to ensure correct ID is used
-            if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); }
-            if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); }
-        } else {
-            alert('Error saving item');
-        }
-    } catch (e) { console.error(e); alert('Error'); }
+        await fetchJson(`${API_BASE}/${endpoint}/`, { method: 'POST', body: formData, headers: { 'X-CSRFToken': CSRF_TOKEN } });
+        toast.success('Saved.');
+        form.reset();
+        // hideAddForm call moved to specific blocks below to ensure correct ID is used
+        if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); }
+        if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); }
+    } catch (e) { console.error(e); toastApiError(e, 'The item could not be saved.'); }
 }
 
 async function updateItem(endpoint, id, form) {
@@ -310,32 +306,32 @@ async function updateItem(endpoint, id, form) {
 
     try {
         // Use POST for updates to support file uploads (Django doesn't handle multipart PUT well)
-        const response = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'POST', body: formData, credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-        if (response.ok) {
-            alert('Updated!');
-            form.reset();
-            form.onsubmit = null; // Remove override
+        await fetchJson(`${API_BASE}/${endpoint}/${id}/`, { method: 'POST', body: formData, headers: { 'X-CSRFToken': CSRF_TOKEN } });
+        toast.success('Updated.');
+        form.reset();
+        form.onsubmit = null; // Remove override
 
-            // Reset UI text
-            const type = endpoint === 'posts' ? 'blog' : 'project';
-            document.querySelector(`#${type}Form h3`).textContent = type === 'blog' ? 'New Blog Post' : 'New Project Details';
-            document.querySelector(`#${type}Form button[type="submit"]`).textContent = type === 'blog' ? 'Save Post' : 'Save Project';
+        // Reset UI text
+        const type = endpoint === 'posts' ? 'blog' : 'project';
+        document.querySelector(`#${type}Form h3`).textContent = type === 'blog' ? 'New Blog Post' : 'New Project Details';
+        document.querySelector(`#${type}Form button[type="submit"]`).textContent = type === 'blog' ? 'Save Post' : 'Save Project';
 
-            if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); }; }
-            if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); }; }
-        } else { alert('Update failed'); }
-    } catch (e) { console.error(e); alert('Error'); }
+        if (endpoint === 'posts') { hideAddForm('blog'); loadBlogs(); document.getElementById('addBlogForm').onsubmit = async (e) => { e.preventDefault(); await addItem('posts', e.target); }; }
+        if (endpoint === 'projects') { hideAddForm('project'); loadProjects(); document.getElementById('addProjectForm').onsubmit = async (e) => { e.preventDefault(); await addItem('projects', e.target); }; }
+    } catch (e) { console.error(e); toastApiError(e, 'The update failed.'); }
 }
 
 async function deleteItem(endpoint, id) {
-    if (!confirm('Delete this item permanently?')) return;
+    const ok = await tkConfirm('This permanently deletes the item. It cannot be undone.', {
+        title: 'Delete this item?', confirmText: 'Delete', danger: true
+    });
+    if (!ok) return;
     try {
-        const res = await fetch(`${API_BASE}/${endpoint}/${id}/`, { method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
-        if (res.ok) {
-            if (endpoint === 'posts') loadBlogs();
-            if (endpoint === 'projects') loadProjects();
-        } else { alert('Delete failed'); }
-    } catch (e) { console.error(e); }
+        await fetchJson(`${API_BASE}/${endpoint}/${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+        toast.success('Deleted.');
+        if (endpoint === 'posts') loadBlogs();
+        if (endpoint === 'projects') loadProjects();
+    } catch (e) { console.error(e); toastApiError(e, 'The item could not be deleted.'); }
 }
 
 // Init

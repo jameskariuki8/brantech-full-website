@@ -477,7 +477,7 @@ async function openTaskDetail(id) {
             taskApi(`/tasks/${id}/activity/`),
         ]);
         openTaskModal(task.title, taskDetailBody(task, activity));
-    } catch (e) { alert(e.message); }
+    } catch (e) { toastApiError(e, 'The task could not be opened.'); }
 }
 
 /* ---------- create / edit form ---------- */
@@ -572,8 +572,9 @@ async function saveTask(id) {
             body: JSON.stringify(payload),
         });
         closeTaskModal();
+        toast.success(id ? 'Task updated.' : 'Task created.');
         await loadTasks();
-    } catch (e) { alert(e.message); }
+    } catch (e) { toastApiError(e, 'The task could not be saved.'); }
 }
 
 /* ---------- actions ---------- */
@@ -603,7 +604,7 @@ async function runTaskAction(action, id, userId) {
         });
     }
     if (action === 'delete-task') {
-        if (!confirm('Delete this task and its history permanently?')) return null;
+        if (!await tkConfirm('The task and its full activity history are removed permanently.', { title: 'Delete this task?', confirmText: 'Delete', danger: true })) return null;
         return taskApi(`/tasks/${id}/`, { method: 'DELETE' });
     }
     if (action === 'comment') {
@@ -651,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!TASK_NEXT) return;
         event.target.disabled = true;
         try { await loadTaskPage(TASK_NEXT, true); }
-        catch (e) { alert(e.message); }
+        catch (e) { toastApiError(e, 'The next page of tasks could not be loaded.'); }
         finally { event.target.disabled = false; }
     });
 
@@ -692,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else await openTaskDetail(id);
             await loadTasks();
         } catch (e) {
-            alert(e.message);
+            toastApiError(e, 'That action could not be completed.');
         } finally {
             button.disabled = false;
         }

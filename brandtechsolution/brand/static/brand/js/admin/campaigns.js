@@ -76,7 +76,8 @@ async function createCampaign(event) {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify(payload),
     });
-    if (res.ok) { hideAddForm('campaign'); form.reset(); loadCampaigns(); } else { alert('Create failed'); }
+    if (res.ok) { hideAddForm('campaign'); form.reset(); toast.success('Campaign created.'); loadCampaigns(); }
+    else { toastApiError(await apiErrorFromResponse(res), 'The campaign could not be created.'); }
 }
 
 function _manualEmails(id) {
@@ -96,8 +97,8 @@ async function importEmails(event) {
         const data = await res.json();
         const box = document.getElementById(`manual-${id}`);
         box.value = (box.value ? box.value + '\n' : '') + data.emails.join('\n');
-        alert(`Imported ${data.count} email(s).`);
-    } else { alert('Import failed'); }
+        toast.success(`Imported ${data.count} email(s).`);
+    } else { toastApiError(await apiErrorFromResponse(res), 'The email import failed.'); }
 }
 
 async function buildRecipients(id) {
@@ -108,34 +109,38 @@ async function buildRecipients(id) {
         body: JSON.stringify({ sources, manual_emails: _manualEmails(id) }),
     });
     const data = await res.json();
-    if (res.ok) { alert(`${data.count} recipient(s) ready.`); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
+    if (res.ok) { toast.success(`${data.count} recipient(s) ready.`); loadCampaigns(); }
+    else { toast.error(data.detail || 'The recipient list could not be built.'); }
 }
 
 async function queueCampaign(id) {
-    if (!confirm('Queue this campaign for sending?')) return;
+    if (!await tkConfirm('Queued campaigns begin sending on the next outbox run.', { title: 'Queue this campaign?', confirmText: 'Queue' })) return;
     const res = await fetch(`${API_BASE}/messaging/campaigns/${id}/queue/`, {
         method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN },
     });
     const data = await res.json();
-    if (res.ok) { alert('Queued! Sending will begin shortly.'); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
+    if (res.ok) { toast.success('Queued. Sending begins shortly.'); loadCampaigns(); }
+    else { toast.error(data.detail || 'The campaign could not be queued.'); }
 }
 
 async function pauseCampaign(id) {
-    if (!confirm('Pause this campaign? In-flight sending will stop before the next email.')) return;
+    if (!await tkConfirm('In-flight sending stops before the next email.', { title: 'Pause this campaign?', confirmText: 'Pause' })) return;
     const res = await fetch(`${API_BASE}/messaging/campaigns/${id}/pause/`, {
         method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN },
     });
     const data = await res.json();
-    if (res.ok) { alert('Campaign paused.'); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
+    if (res.ok) { toast.success('Campaign paused.'); loadCampaigns(); }
+    else { toast.error(data.detail || 'The campaign could not be paused.'); }
 }
 
 async function resumeCampaign(id) {
-    if (!confirm('Resume this campaign?')) return;
+    if (!await tkConfirm('Sending resumes from where it stopped.', { title: 'Resume this campaign?', confirmText: 'Resume' })) return;
     const res = await fetch(`${API_BASE}/messaging/campaigns/${id}/resume/`, {
         method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN },
     });
     const data = await res.json();
-    if (res.ok) { alert('Campaign resumed.'); loadCampaigns(); } else { alert(data.detail || 'Failed'); }
+    if (res.ok) { toast.success('Campaign resumed.'); loadCampaigns(); }
+    else { toast.error(data.detail || 'The campaign could not be resumed.'); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

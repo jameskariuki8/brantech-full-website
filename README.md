@@ -107,6 +107,8 @@ The platform has undergone a complete architectural redesign for high visual imp
 
 - **Backend**: Django 5.2.7 (Python 3.13)
 - **Database**: PostgreSQL with `pgvector` / SQLite (development)
+- **Background jobs**: Celery (worker + beat) with Redis as broker and result backend
+- **Cache**: Redis (falls back to local memory when no Redis is configured)
 - **AI / ML**: Google Gemini API, LangChain, LangGraph
 - **Vector Database**: ChromaDB / PGVector
 - **Styling**: Custom Vanilla CSS Design System (`redesign.css`) + Tailwind CSS (utilities)
@@ -303,6 +305,68 @@ docker compose exec web python manage.py createsuperuser
 docker compose exec web python manage.py init_vector_stores
 ```
 
+## Background jobs (Celery)
+
+Work that takes longer than a request should runs on Celery rather than in the
+web process. The editorial pipeline is the reason: it makes eight sequential
+Gemini calls and takes around three minutes, so running it inline meant the
+Cloudflare tunnel closed the connection at its 100-second limit and handed the
+browser an HTML error page where it expected JSON — while the run carried on to
+completion, invisibly. The dashboard now queues a run and polls it.
+
+### Services
+
+| Service  | Command      | Role                                             |
+|----------|--------------|--------------------------------------------------|
+| `redis`  | -            | Broker (db 0), results (db 1), Django cache (db 2) |
+| `worker` | `worker`     | Executes all tasks                                |
+| `beat`   | `beat`       | Fires the scheduled jobs. **Never run more than one.** |
+
+`entrypoint.sh` dispatches on its first argument, so all three roles share one
+image. Only the `web` role runs `migrate` and `collectstatic`.
+
+### Registered tasks
+
+| Task                                  | Trigger                        |
+|---------------------------------------|--------------------------------|
+| `editorial.run_pipeline`              | Dashboard button               |
+| `editorial.index_article_embeddings`  | On publish (retried w/ backoff) |
+| `editorial.release_stale_pipeline_runs` | Beat, nightly 02:30          |
+| `messaging.process_email_outbox`      | Beat, every `BEAT_OUTBOX_INTERVAL`s |
+| `brand.sync_github`                   | Beat, every `BEAT_GITHUB_SYNC_INTERVAL`s |
+| `brand.rebuild_vector_stores`         | On demand                      |
+
+### Watching a run
+
+```bash
+docker compose logs -f worker
+docker compose exec web python manage.py shell -c \
+  "from editorial.models import EditorialPipelineRun as R; print(R.objects.first().__dict__)"
+```
+
+### Working without Redis
+
+Set `CELERY_TASK_ALWAYS_EAGER=true` in `.env`. Tasks then execute inline in the
+calling process - the pipeline blocks its request again, but nothing silently
+never runs. The test suite forces this on regardless, so tests never need a
+broker.
+
+### Notes on the configuration
+
+- `task_acks_late` + `worker_prefetch_multiplier=1`: a three-minute run must
+  survive its worker being killed, and a worker must not sit on tasks it cannot
+  start.
+- `task_reject_on_worker_lost` is deliberately **off** for the pipeline. It is
+  not idempotent enough to auto-replay - a blind retry would re-research the
+  same topics and double the model spend - so a lost run is failed by the
+  nightly sweep instead.
+- Redis runs with `maxmemory-policy noeviction`: evicting a key under memory
+  pressure would silently drop a queued task.
+- Prefork pool, not gevent. The tasks are I/O-bound on the Gemini API, but
+  psycopg2 and LangChain underneath do not monkey-patch cleanly.
+
+---
+
 ### Notes
 
 - Static files are served by WhiteNoise; user-uploaded media is served by Django
@@ -315,10 +379,17 @@ docker compose exec web python manage.py init_vector_stores
 
 Queued campaigns are sent by the `process_email_outbox` management command.
 
-**Docker Compose deployments:** the `outbox` service in `docker-compose.yml`
-runs this command automatically in a loop (every 60 seconds) alongside `web`
-and `db`. There is nothing extra to configure or run — `docker compose up`
-starts it for you.
+**Docker Compose deployments:** delivery is a Celery Beat schedule that fires
+`BEAT_OUTBOX_INTERVAL` seconds apart (default 60) and is executed by the
+`worker` service. There is nothing extra to configure or run — `docker compose
+up` starts it for you. This replaced the old `outbox` service, which was a
+`while true; do ... ; sleep 60; done` shell loop.
+
+The claim-token protocol inside the command is unchanged and is what makes
+concurrent delivery safe: pending rows are claimed under a per-run token, and
+anything still `sending` after `OUTBOX_STALE_CLAIM_MINUTES` is released back to
+`pending`. The command remains runnable by hand, which is how you drain the
+queue when no worker is running.
 
 **Non-Docker deployments:** run the command every minute via cron, using the
 `python` interpreter that this project's dependencies are actually installed

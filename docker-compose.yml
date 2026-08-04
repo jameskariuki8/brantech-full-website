@@ -14,30 +14,84 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # appendonly so a restart does not lose queued tasks. The queue holds
+    # editorial pipeline runs that cost real model quota to redo, and email
+    # sends that must not be dropped.
+    #
+    # noeviction rather than an LRU policy: evicting a key under memory
+    # pressure would silently drop a queued task. Better to fail the enqueue
+    # loudly. The cache lives on db 2 of the same instance and is small.
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   web:
     build: .
     restart: unless-stopped
     env_file: .env
     environment:
       DATABASE_HOST: db
+      REDIS_HOST: redis
     volumes:
       - ./data/media:/app/brandtechsolution/media
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  outbox:
+  # Replaces the old `outbox` service, which was a
+  # `while true; do manage.py process_email_outbox; sleep 60; done` loop.
+  # That work is now a Beat schedule; this container executes it, along with
+  # the editorial pipeline, GitHub sync and embedding indexing.
+  worker:
     build: .
     restart: unless-stopped
     env_file: .env
     environment:
       DATABASE_HOST: db
+      REDIS_HOST: redis
     volumes:
+      # Same media mount as web: the visual agent writes generated assets.
       - ./data/media:/app/brandtechsolution/media
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["while true; do python manage.py process_email_outbox --verbosity 0 || true; sleep 60; done"]
+    command: ["worker"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A brandtechsolution inspect ping -d celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Single replica by design -- two beats would double every scheduled job.
+  beat:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_HOST: db
+      REDIS_HOST: redis
+    command: ["beat"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   cloudflared:

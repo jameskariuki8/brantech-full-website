@@ -6,7 +6,7 @@ Discovery -> Priority Intelligence -> Research -> Fact Verification -> Strategy 
 SEO -> Visual Media -> Multi-Platform -> Human Approval Notification -> Publishing -> Analytics.
 """
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from trends.services.discovery import TrendDiscoveryEngine
 from trends.services.intelligence import TrendIntelligenceAgent
 from trends.services.competitor import CompetitorIntelligenceAgent
@@ -48,19 +48,37 @@ class EditorialPipelineOrchestrator:
         self.analytics_agent = AnalyticsIntelligenceAgent()
         self.memory_agent = EditorialMemoryAgent()
 
-    def run_full_autonomous_cycle(self, limit: int = 1, auto_publish: bool = False) -> List[EditorialArticle]:
-        """Executes full newsroom pipeline from web discovery to editor notification or publishing."""
+    def run_full_autonomous_cycle(
+        self,
+        limit: int = 1,
+        auto_publish: bool = False,
+        on_stage: Optional[Callable[[str], None]] = None,
+    ) -> List[EditorialArticle]:
+        """Executes full newsroom pipeline from web discovery to editor notification or publishing.
+
+        on_stage is called with a stage key from EditorialPipelineRun.STAGES as
+        each phase begins. It exists so a Celery task can report progress to
+        the dashboard: the run takes minutes, and without it the UI can only
+        show an indeterminate spinner. A callback rather than a direct model
+        write keeps the orchestrator usable from the management command, where
+        there is no run row to update.
+        """
+        stage = on_stage or (lambda key: None)
+
         logger.info("================================================================")
         logger.info("🤖 TEKLORA AI EDITORIAL INTELLIGENCE PIPELINE STARTED")
         logger.info("================================================================")
 
         # Step 1: Discover global trends
+        stage('discovery')
         discovered_topics = self.discovery_engine.run_discovery(limit_per_source=5)
-        
+
         # Step 2: Score trends & prioritize high-impact topics
+        stage('intelligence')
         self.intelligence_agent.evaluate_all_discovered()
 
         # Step 3: Run competitor gap analysis & predictions
+        stage('secondary')
         try:
             self.competitor_agent.analyze_competitor_gaps()
             self.prediction_agent.generate_predictions(timeframe='next_quarter')
@@ -85,27 +103,35 @@ class EditorialPipelineOrchestrator:
                     continue
 
                 # Step 5: Perform Deep Research Dossier synthesis
+                stage('research')
                 dossier = self.research_agent.conduct_research(topic)
 
                 # Step 6: Fact Verification
+                stage('verification')
                 fact_report = self.fact_verifier.verify_dossier(dossier)
 
                 # Step 7: Editorial Strategy & Persona selection
+                stage('strategy')
                 strategy = self.strategy_agent.determine_strategy(fact_report)
 
                 # Step 8: AI Article Writing
+                stage('writing')
                 article = self.writer_agent.write_article(fact_report, strategy)
 
                 # Step 9: SEO Intelligence Optimization
+                stage('seo')
                 self.seo_agent.optimize_article(article)
 
                 # Step 10: Visual Media Generation (Hero prompt & SVG infographic)
+                stage('visual')
                 self.visual_agent.generate_visual_package(article)
 
                 # Step 11: Multi-Platform Content Generation (LinkedIn, Twitter, Newsletter, etc.)
+                stage('social')
                 self.social_agent.generate_social_ecosystem(article)
 
                 # Step 12: Human Approval Notification
+                stage('handoff')
                 if auto_publish:
                     self.approval_workflow.approve_article(article, editor_notes="Auto-approved by autonomous policy")
                     self.publisher_agent.publish_approved_article(article)

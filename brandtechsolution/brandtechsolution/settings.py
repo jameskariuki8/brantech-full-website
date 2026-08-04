@@ -293,6 +293,85 @@ LOGGING = {
 }
 
 # ============================================================
+# CACHE
+# ============================================================
+# Redis rather than locmem. locmem is per-process, so a value cached by one
+# gunicorn worker was invisible to the other two and to the background worker;
+# every process kept its own copy and its own staleness. Redis makes the cache
+# actually shared.
+#
+# Note this does NOT fix brand.performance_utils.invalidate_cache_prefix.
+# That checks for a delete_pattern() method, which only django-redis provides --
+# Django's own RedisCache has no such method, so the function remains a no-op.
+# Fixing it means either adding the django-redis dependency or switching that
+# helper to cache versioning; neither is done here.
+#
+# Falls back to locmem when no Redis is configured so `runserver` on a laptop
+# without Redis still works.
+if config.redis_host:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': config.django_cache_url,
+            'KEY_PREFIX': 'teklora',
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+# ============================================================
+# CELERY
+# ============================================================
+# Read by brandtechsolution/celery.py via config_from_object(namespace='CELERY').
+CELERY_BROKER_URL = config.celery_broker_url
+CELERY_RESULT_BACKEND = config.celery_result_backend
+CELERY_TASK_ALWAYS_EAGER = config.celery_task_always_eager
+CELERY_TASK_EAGER_PROPAGATES = True
+
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Results are a debugging aid only -- durable state lives in EditorialPipelineRun
+# and in the outbox tables -- so let them expire in a day.
+CELERY_RESULT_EXPIRES = 60 * 60 * 24
+
+# acks_late + prefetch 1: a three-minute pipeline must survive a worker being
+# killed mid-run, and a worker must not sit on queued tasks it cannot start.
+# reject_on_worker_lost is deliberately off -- the pipeline is not idempotent
+# enough to auto-replay, so a lost run is failed by the nightly sweep instead
+# of silently re-running and double-spending model quota.
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_REJECT_ON_WORKER_LOST = False
+
+CELERY_TASK_SOFT_TIME_LIMIT = config.celery_task_soft_time_limit
+CELERY_TASK_TIME_LIMIT = config.celery_task_time_limit
+CELERY_WORKER_CONCURRENCY = config.celery_worker_concurrency
+
+# The LangChain/pgvector stack leaks enough per-run that a long-lived worker
+# grows steadily; recycling after 50 tasks keeps it flat.
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Beat intervals (seconds), consumed in celery.py.
+BEAT_OUTBOX_INTERVAL = config.beat_outbox_interval
+BEAT_GITHUB_SYNC_INTERVAL = config.beat_github_sync_interval
+
+# The test suite must never need a live broker or Redis.
+if 'test' in sys.argv:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+
+# ============================================================
 # DEFAULT PRIMARY KEY FIELD
 # ============================================================
 

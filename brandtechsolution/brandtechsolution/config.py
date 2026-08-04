@@ -58,6 +58,54 @@ class AppSettings(BaseSettings):
     site_base_url: str = "https://teklora.co.ke"
 
     # ============================================================
+    # Redis / Celery
+    # ============================================================
+    # One Redis instance backs three things: the Celery broker (db 0), the
+    # Celery result backend (db 1) and the Django cache (db 2). Separate
+    # logical databases so that clearing the cache can never drop queued work.
+    #
+    # In docker compose the host is the `redis` service; on a developer
+    # machine it defaults to localhost, and if no Redis is running the cache
+    # falls back to locmem (see settings.py) so runserver still works.
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_password: str = ""
+
+    # Set to True on a developer machine without a worker: tasks then execute
+    # inline in the calling process instead of being queued. The test suite
+    # forces this on regardless, so tests never need a live broker.
+    celery_task_always_eager: bool = False
+
+    # Hard ceilings for a single task. The editorial pipeline makes eight
+    # sequential Gemini calls and routinely runs three minutes, so these are
+    # deliberately generous; the soft limit fires first and raises
+    # SoftTimeLimitExceeded, which the tasks catch to record a failure.
+    celery_task_soft_time_limit: int = 900
+    celery_task_time_limit: int = 1200
+    celery_worker_concurrency: int = 2
+
+    # Beat intervals, in seconds.
+    beat_outbox_interval: int = 60
+    beat_github_sync_interval: int = 3600
+
+    @property
+    def redis_url_base(self) -> str:
+        auth = f":{self.redis_password}@" if self.redis_password else ""
+        return f"redis://{auth}{self.redis_host}:{self.redis_port}"
+
+    @property
+    def celery_broker_url(self) -> str:
+        return f"{self.redis_url_base}/0"
+
+    @property
+    def celery_result_backend(self) -> str:
+        return f"{self.redis_url_base}/1"
+
+    @property
+    def django_cache_url(self) -> str:
+        return f"{self.redis_url_base}/2"
+
+    # ============================================================
     # Cloudflare Turnstile (bot protection on public forms)
     # ============================================================
     # Both come from the Cloudflare dashboard under Turnstile. The site key is

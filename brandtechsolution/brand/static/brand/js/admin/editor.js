@@ -128,10 +128,14 @@ function createEmailEditor(prefix) {
                 }
             }
         },
-        toggleSource() {
+        async toggleSource() {
             if (sourceMode) {
                 // Source -> visual. Quill may normalise markup it cannot model.
-                if (!confirm('Switch back to the visual editor? It may simplify HTML it does not support.')) return;
+                const ok = await tkConfirm(
+                    'The visual editor may simplify HTML it does not support.',
+                    { title: 'Switch back to the visual editor?', confirmText: 'Switch' }
+                );
+                if (!ok) return;
                 quill.root.innerHTML = textarea.value;
                 showMode(false);
             } else {
@@ -155,7 +159,7 @@ function createEmailEditor(prefix) {
                     body_source: editor.getValue(),
                 }),
             });
-            if (!res.ok) { alert('Preview failed'); return; }
+            if (!res.ok) { toastApiError(await apiErrorFromResponse(res), 'The preview could not be rendered.'); return; }
             const data = await res.json();
             if (frame) {
                 frame.classList.remove('hidden');

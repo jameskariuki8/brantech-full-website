@@ -1,0 +1,356 @@
+/* ============================================================
+   Teklora toast notifications
+   ------------------------------------------------------------
+   Replaces native alert(). Self-contained on purpose: the admin
+   shell, the editorial dashboard and the public pages each define
+   their own :root palettes, so this file carries its own tokens
+   rather than inheriting whichever one happens to be loaded.
+   ============================================================ */
+
+.tk-toast-region {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  pointer-events: none;
+  max-width: min(26rem, calc(100vw - 3rem));
+}
+
+.tk-toast {
+  --tk-accent: #3b82f6;
+  --tk-accent-soft: rgba(59, 130, 246, 0.16);
+
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 0.875rem 0.875rem 1.125rem;
+  overflow: hidden;
+
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+
+  background: rgba(13, 19, 33, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  box-shadow:
+    0 18px 40px -12px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+
+  opacity: 0;
+  transform: translateY(0.75rem) scale(0.97);
+  transition:
+    opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The accent rail. Carries the toast's semantic colour. */
+.tk-toast::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--tk-accent);
+}
+
+.tk-toast.tk-toast--in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.tk-toast.tk-toast--out {
+  opacity: 0;
+  transform: translateY(0.25rem) scale(0.98);
+}
+
+.tk-toast__icon {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.0625rem;
+  border-radius: 0.5rem;
+  background: var(--tk-accent-soft);
+  color: var(--tk-accent);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.tk-toast__body {
+  min-width: 0;
+}
+
+.tk-toast__title {
+  font-family: 'Outfit', 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+  margin: 0 0 0.125rem;
+}
+
+.tk-toast__message {
+  margin: 0;
+  color: #94a3b8;
+  overflow-wrap: anywhere;
+}
+
+/* Detail is used for the technical half of an error (status codes,
+   response snippets) — present but visually subordinate. */
+.tk-toast__detail {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 8rem;
+  overflow-y: auto;
+}
+
+.tk-toast__close {
+  display: grid;
+  place-items: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tk-toast__close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.tk-toast__close:focus-visible {
+  outline: 2px solid var(--tk-accent);
+  outline-offset: 1px;
+}
+
+/* Auto-dismiss countdown. Paused while hovered or focused so a toast
+   can't disappear mid-read. */
+.tk-toast__timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  transform-origin: left center;
+  background: var(--tk-accent);
+  opacity: 0.5;
+  animation: tk-toast-timer linear forwards;
+}
+
+.tk-toast:hover .tk-toast__timer,
+.tk-toast:focus-within .tk-toast__timer {
+  animation-play-state: paused;
+}
+
+@keyframes tk-toast-timer {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* ---- Variants ---- */
+
+.tk-toast--success {
+  --tk-accent: #10b981;
+  --tk-accent-soft: rgba(16, 185, 129, 0.16);
+}
+
+.tk-toast--error {
+  --tk-accent: #f43f5e;
+  --tk-accent-soft: rgba(244, 63, 94, 0.16);
+}
+
+.tk-toast--warning {
+  --tk-accent: #f59e0b;
+  --tk-accent-soft: rgba(245, 158, 11, 0.16);
+}
+
+.tk-toast--info {
+  --tk-accent: #3b82f6;
+  --tk-accent-soft: rgba(59, 130, 246, 0.16);
+}
+
+/* ---- Light-scheme pages ----
+   The admin shell and public site are dark by design, but honour an
+   explicit light preference so the toast never becomes unreadable. */
+@media (prefers-color-scheme: light) {
+  .tk-toast {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: #1e293b;
+    box-shadow: 0 18px 40px -12px rgba(15, 23, 42, 0.22);
+  }
+  .tk-toast__title { color: #0f172a; }
+  .tk-toast__message { color: #475569; }
+  .tk-toast__detail {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: #334155;
+  }
+  .tk-toast__close { color: #94a3b8; }
+  .tk-toast__close:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+  }
+}
+
+@media (max-width: 640px) {
+  .tk-toast-region {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-toast {
+    transition: opacity 0.01ms;
+    transform: none;
+  }
+  .tk-toast.tk-toast--in,
+  .tk-toast.tk-toast--out { transform: none; }
+  .tk-toast__timer { animation: none; }
+}
+
+/* ============================================================
+   Confirm dialog — the modal counterpart, used where the old code
+   called window.confirm() before a destructive action.
+   ============================================================ */
+
+.tk-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(3, 6, 15, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tk-confirm-backdrop.tk-confirm--in { opacity: 1; }
+
+.tk-confirm {
+  width: min(26rem, 100%);
+  padding: 1.5rem;
+  background: rgba(13, 19, 33, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1rem;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.85);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  transform: scale(0.96);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tk-confirm-backdrop.tk-confirm--in .tk-confirm { transform: scale(1); }
+
+.tk-confirm__title {
+  margin: 0 0 0.5rem;
+  font-family: 'Outfit', 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+}
+
+.tk-confirm__message {
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  overflow-wrap: anywhere;
+}
+
+.tk-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.tk-confirm__btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.625rem;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.tk-confirm__btn--cancel {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.tk-confirm__btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+}
+
+.tk-confirm__btn--confirm {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.tk-confirm__btn--confirm:hover { background: #2563eb; }
+
+.tk-confirm--danger .tk-confirm__btn--confirm { background: #e11d48; }
+.tk-confirm--danger .tk-confirm__btn--confirm:hover { background: #be123c; }
+
+.tk-confirm__btn:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: light) {
+  .tk-confirm {
+    background: #fff;
+    border-color: rgba(15, 23, 42, 0.08);
+  }
+  .tk-confirm__title { color: #0f172a; }
+  .tk-confirm__message { color: #475569; }
+  .tk-confirm__btn--cancel {
+    border-color: rgba(15, 23, 42, 0.12);
+    color: #334155;
+  }
+  .tk-confirm__btn--cancel:hover { background: rgba(15, 23, 42, 0.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-confirm-backdrop,
+  .tk-confirm { transition: none; }
+  .tk-confirm { transform: none; }
+}
