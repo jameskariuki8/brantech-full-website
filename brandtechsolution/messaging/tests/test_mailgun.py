@@ -181,6 +181,51 @@ class FailureTest(SimpleTestCase):
             send_mail('S', 'B', None, ['to@example.com'])
 
 
+@override_settings(**MAILGUN_SETTINGS)
+class BaseUrlGuardTest(SimpleTestCase):
+    """A base URL without a version segment kills every send at once.
+
+    Mailgun answers an unversioned path with a plain-text "404 page not
+    found", which reads as a problem with the message rather than the URL.
+    """
+
+    @override_settings(MAILGUN_BASE_URL="https://api.mailgun.net")
+    def test_a_missing_version_segment_is_a_startup_error(self):
+        errors = mailgun.check_mailgun_base_url(None)
+        self.assertEqual([e.id for e in errors], ["mailgun.E002"])
+
+    def test_the_versioned_api_root_passes(self):
+        self.assertEqual(mailgun.check_mailgun_base_url(None), [])
+
+    @override_settings(MAILGUN_BASE_URL="https://api.eu.mailgun.net/v3")
+    def test_the_eu_api_root_passes(self):
+        self.assertEqual(mailgun.check_mailgun_base_url(None), [])
+
+    @override_settings(MAILGUN_BASE_URL="https://api.mailgun.net/v3/mg.example.com")
+    def test_a_base_url_ending_in_the_domain_passes(self):
+        """messages_url() tolerates this form, so the check must too."""
+        self.assertEqual(mailgun.check_mailgun_base_url(None), [])
+
+    @override_settings(MAILGUN_API_KEY="", MAILGUN_DOMAIN="")
+    def test_an_unconfigured_backend_is_not_flagged(self):
+        self.assertEqual(mailgun.check_mailgun_base_url(None), [])
+
+    def test_a_rejection_names_the_url_it_posted_to(self):
+        """A 404 is unactionable without knowing which URL produced it."""
+        response = MagicMock()
+        response.status_code = 404
+        response.json.side_effect = ValueError
+        response.text = "404 page not found"
+
+        with patch("requests.Session.post", return_value=response):
+            with self.assertRaises(RuntimeError) as ctx:
+                send_mail("S", "B", None, ["to@example.com"])
+
+        self.assertIn(
+            "https://api.mailgun.net/v3/mg.example.com/messages", str(ctx.exception)
+        )
+
+
 class ProductionGuardTest(SimpleTestCase):
     """The console backend prints mail to stdout and reports it as sent."""
 

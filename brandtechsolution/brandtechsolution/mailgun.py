@@ -23,6 +23,7 @@ Two details matter for the outbox specifically:
    way that no test would catch.
 """
 import logging
+import re
 
 import requests
 from django.conf import settings
@@ -133,13 +134,14 @@ class MailgunEmailBackend(BaseEmailBackend):
             data[f"h:{name}"] = value
 
         files = self._attachments(message)
+        url = messages_url()
 
         try:
             response = self.session.post(
-                messages_url(), data=data, files=files or None, timeout=self.timeout
+                url, data=data, files=files or None, timeout=self.timeout
             )
         except requests.RequestException as exc:
-            logger.warning("Mailgun request failed for %s: %s", recipients, exc)
+            logger.warning("Mailgun request to %s failed for %s: %s", url, recipients, exc)
             if not self.fail_silently:
                 raise
             return False
@@ -153,12 +155,17 @@ class MailgunEmailBackend(BaseEmailBackend):
                 detail = response.json().get("message", detail)
             except ValueError:
                 pass
+            # The URL belongs in the message. A 404 from Mailgun is almost always
+            # a malformed base URL rather than anything about the message, and
+            # without the URL there is nothing in the error to act on.
             logger.warning(
-                "Mailgun rejected a message to %s (HTTP %s): %s",
-                recipients, response.status_code, detail,
+                "Mailgun rejected a message to %s at %s (HTTP %s): %s",
+                recipients, url, response.status_code, detail,
             )
             if not self.fail_silently:
-                raise RuntimeError(f"Mailgun error {response.status_code}: {detail}")
+                raise RuntimeError(
+                    f"Mailgun error {response.status_code} from {url}: {detail}"
+                )
             return False
 
         return True
@@ -180,6 +187,40 @@ class MailgunEmailBackend(BaseEmailBackend):
 
 
 CONSOLE_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Matches the version segment of an API root: /v3, /v4, ...
+_VERSION_SEGMENT = re.compile(r"/v\d+$")
+
+
+@register()
+def check_mailgun_base_url(app_configs, **kwargs):
+    """Catch an API root missing its version segment.
+
+    Mailgun's router answers anything outside a versioned path with a plain
+    "404 page not found" -- not a JSON API error -- so this misconfiguration
+    looks like a problem with the message rather than the URL, and it takes
+    out every outbound email at once. Cheaper to refuse at boot.
+
+    A base URL already ending in the sending domain is accepted, because
+    messages_url() tolerates that form.
+    """
+    if not is_configured():
+        return []
+    base = (getattr(settings, "MAILGUN_BASE_URL", "") or DEFAULT_BASE_URL).rstrip("/")
+    domain = getattr(settings, "MAILGUN_DOMAIN", "")
+    if _VERSION_SEGMENT.search(base) or (domain and base.endswith(f"/{domain}")):
+        return []
+    return [
+        Error(
+            f"MAILGUN_BASE_URL ({base!r}) has no API version segment.",
+            hint=(
+                "Use the versioned API root, e.g. https://api.mailgun.net/v3 "
+                "(or https://api.eu.mailgun.net/v3 for an EU account). Without "
+                "it every send fails with a plain-text 404."
+            ),
+            id="mailgun.E002",
+        )
+    ]
 
 
 @register()
