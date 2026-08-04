@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from editorial.models import EditorialArticle
 from approval.models import ApprovalNotification
+from staff.emails import capability_holder_emails
 from brandtechsolution.config import config
 
 logger = logging.getLogger(__name__)
@@ -39,17 +40,34 @@ class HumanApprovalWorkflow:
 
         # Email Notification
         try:
-            # Gated on the review recipient, not on SMTP credentials: mail now
-            # goes out over the Mailgun API, so email_host_user is empty on a
-            # normal deployment and this notification would never be sent.
-            review_inbox = settings.EDITORIAL_REVIEW_EMAIL
-            if review_inbox:
+            # Addressed to whoever currently holds publish_blog -- the people
+            # who can actually approve this draft -- rather than a configured
+            # inbox. Granting or revoking the capability in the panel changes
+            # who gets told, with nothing to keep in step by hand.
+            #
+            # It was previously gated on config.email_host_user, which is empty
+            # on a Mailgun deployment: the notification would have stopped
+            # going out with no error.
+            recipients = capability_holder_emails('publish_blog')
+            if not recipients and settings.EDITORIAL_REVIEW_EMAIL:
+                # Nobody holds it yet (a fresh deployment). Fall back so the
+                # first drafts are not reviewed by nobody.
+                recipients = [settings.EDITORIAL_REVIEW_EMAIL]
+
+            if recipients:
                 send_mail(
                     subject=f"[Teklora Editorial Review] {article.title}",
                     message=preview_summary,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[review_inbox],
+                    recipient_list=recipients,
                     fail_silently=True
+                )
+            else:
+                logger.warning(
+                    "[HumanApprovalWorkflow] No publish_blog holder has an "
+                    "email address; article #%s is awaiting review with "
+                    "nobody notified.",
+                    article.id,
                 )
         except Exception as e:
             logger.warning(f"Email dispatch warning: {e}")

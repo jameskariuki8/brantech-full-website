@@ -389,7 +389,7 @@ else.
 | `MAILGUN_DOMAIN` | Verified sending domain, e.g. `mg.teklora.co.ke`. |
 | `MAILGUN_BASE_URL` | API root only — **not** the per-domain path. EU accounts use `https://api.eu.mailgun.net/v3`. |
 | `DEFAULT_FROM_EMAIL` | Public From address. Defaults to `noreply@$MAILGUN_DOMAIN`. |
-| `EDITORIAL_REVIEW_EMAIL` | Where "article awaiting review" is sent. |
+| `EDITORIAL_REVIEW_EMAIL` | Optional fallback only — see below. |
 | `EMAIL_TIMEOUT` | Per-request timeout on the Mailgun call. |
 
 The From address must sit inside the sending domain. Anything else — a
@@ -406,6 +406,22 @@ with `DEBUG` off — the same guard, for the same reason, as the Turnstile one.
 SMTP remains available as a fallback for development. It is not a route for
 campaign mail: Gmail caps a consumer account near 500 recipients/day and
 Workspace near 2,000, which the outbox exhausts in minutes at its defaults.
+
+### Who gets notified
+
+Staff notifications are addressed by capability, not by configuration.
+`staff.emails.capability_holder_emails(codename)` resolves the capability to
+the accounts that currently hold it — directly, through a role group, or by
+being a superuser — filtered to active staff with an address, which is exactly
+what `User.has_perm()` and `staff.decorators` consult. Granting or revoking a
+capability in the panel therefore changes who is notified, with nothing to keep
+in step by hand.
+
+The editorial review notification uses `publish_blog`, since that is the
+capability that gates approving a draft. `EDITORIAL_REVIEW_EMAIL` is only
+consulted when nobody holds it yet, so that a fresh deployment's first drafts
+are not reviewed by nobody; once a single account has the capability the
+fallback is never used.
 
 ## Bulk email outbox
 
