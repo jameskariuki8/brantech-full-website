@@ -10,6 +10,7 @@ from django.db.models import F, Count
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.core.cache import cache
 
 from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
@@ -19,6 +20,60 @@ from .markdown_utils import render_markdown
 
 def is_admin(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def _published_post_or_404(post_id):
+    """Look up a post by id, refusing anything not published.
+
+    Every public entry point must go through this. The lookups here take an
+    integer primary key straight from the URL, so without the status filter a
+    visitor can walk the id space and reach drafts -- and the editorial
+    pipeline keeps a standing queue of generated drafts awaiting approval.
+    blog_detail() has always filtered on status; these paths had not.
+    """
+    return get_object_or_404(BlogPost, pk=post_id, status='published')
+
+
+def _client_ip(request):
+    """The visitor's address as seen behind the Cloudflare tunnel.
+
+    Every request reaches the origin from the tunnel, so REMOTE_ADDR is the
+    proxy and would put every visitor in one throttle bucket. Both headers are
+    checked because the codebase already relies on each: turnstile.py reads
+    CF-Connecting-IP, messaging.views reads X-Forwarded-For.
+
+    A client able to reach the origin directly could forge either one, so this
+    is only ever used for rate limiting -- never to grant access. Forging it
+    buys an attacker nothing that rotating browser_id would not.
+    """
+    cf = request.META.get('HTTP_CF_CONNECTING_IP', '').strip()
+    if cf:
+        return cf
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
+
+def _rate_limited(request, bucket, limit, window_seconds):
+    """True once this client has spent its allowance for `bucket`.
+
+    Backed by the shared cache, so the count holds across gunicorn workers
+    instead of resetting per process.
+
+    cache.add() only writes when the key is absent, which is what starts the
+    window on the first request and lets it expire on its own; incr() then runs
+    against a key known to exist. This is deliberately atomic where
+    messaging._contact_rate_limited's get/set pair is not -- likes are the
+    endpoint someone would actually hammer in parallel.
+    """
+    key = f'ratelimit:{bucket}:{_client_ip(request)}'
+    cache.add(key, 0, window_seconds)
+    try:
+        return cache.incr(key) > limit
+    except ValueError:
+        # The key expired between add() and incr(); treat it as a fresh window.
+        return False
 
 
 def index(request):
@@ -292,9 +347,24 @@ def like_blog_post(request, post_id):
         
     if not browser_id:
         return JsonResponse({'error': 'browser_id required'}, status=400)
-        
-    post = get_object_or_404(BlogPost, pk=post_id)
-    
+
+    # browser_id is supplied by the client and nothing binds it to a real
+    # visitor, so a script can mint a fresh one per request and like without
+    # limit -- and the blog list ranks by likes_count under ?sort=popular.
+    # Throttling by address caps how fast that can be done. It does not make
+    # the count trustworthy; only a server-issued identity would.
+    if _rate_limited(
+        request,
+        'blog-like',
+        limit=settings.BLOG_LIKE_RATE_LIMIT_COUNT,
+        window_seconds=settings.BLOG_LIKE_RATE_LIMIT_WINDOW_SECONDS,
+    ):
+        return JsonResponse(
+            {'error': 'Too many requests. Please slow down.'}, status=429
+        )
+
+    post = _published_post_or_404(post_id)
+
     like_qs = BlogLike.objects.filter(post=post, browser_id=browser_id)
     if like_qs.exists():
         like_qs.delete()
@@ -333,9 +403,9 @@ def comment_blog_post(request, post_id):
         
     if not browser_id or not content:
         return JsonResponse({'error': 'browser_id and content required'}, status=400)
-        
-    post = get_object_or_404(BlogPost, pk=post_id)
-    
+
+    post = _published_post_or_404(post_id)
+
     comment = BlogComment.objects.create(
         post=post,
         browser_id=browser_id,
@@ -355,8 +425,12 @@ def comment_blog_post(request, post_id):
 
 
 def get_blog_comments(request, post_id):
-    post = get_object_or_404(BlogPost, pk=post_id)
-    comments = post.comments.all()
+    post = _published_post_or_404(post_id)
+    # is_approved=True, matching blog_detail() and blog_json(). It defaults to
+    # True, so this is not about spam waiting for review -- it is about a
+    # comment a moderator has taken down staying readable from the API after
+    # it has vanished from the page.
+    comments = post.comments.filter(is_approved=True)
     comments_list = [
         {
             'id': c.id,
@@ -370,7 +444,7 @@ def get_blog_comments(request, post_id):
 
 
 def blog_json(request, post_id):
-    post = get_object_or_404(BlogPost, pk=post_id)
+    post = _published_post_or_404(post_id)
     content_html = render_markdown(post.content)
     likes_count = post.likes.count()
     

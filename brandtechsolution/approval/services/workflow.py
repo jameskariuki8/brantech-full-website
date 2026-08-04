@@ -39,12 +39,16 @@ class HumanApprovalWorkflow:
 
         # Email Notification
         try:
-            if config.email_host_user:
+            # Gated on the review recipient, not on SMTP credentials: mail now
+            # goes out over the Mailgun API, so email_host_user is empty on a
+            # normal deployment and this notification would never be sent.
+            review_inbox = settings.EDITORIAL_REVIEW_EMAIL
+            if review_inbox:
                 send_mail(
                     subject=f"[Teklora Editorial Review] {article.title}",
                     message=preview_summary,
-                    from_email=config.email_host_user,
-                    recipient_list=[config.email_host_user],
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[review_inbox],
                     fail_silently=True
                 )
         except Exception as e:

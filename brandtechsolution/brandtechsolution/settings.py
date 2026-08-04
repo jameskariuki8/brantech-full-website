@@ -203,20 +203,49 @@ STORAGES = {
 # EMAIL SETTINGS
 # ============================================================
 
-# Use console backend during local development if Gmail credentials are not configured yet
-if not config.email_host_user or config.email_host_user == "your-email@gmail.com" or not config.email_host_password or config.email_host_password == "your-app-password":
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
+MAILGUN_API_KEY = (config.mailgun_api_key or "").strip()
+MAILGUN_BASE_URL = (config.mailgun_base_url or "").strip()
+MAILGUN_DOMAIN = (config.mailgun_domain or "").strip()
+
+_SMTP_CONFIGURED = (
+    config.email_host_user
+    and config.email_host_user != "your-email@gmail.com"
+    and config.email_host_password
+    and config.email_host_password != "your-app-password"
+)
+
+# Mailgun first, SMTP only as a fallback for a deployment that has not been
+# given Mailgun credentials, console last. The console backend prints mail to
+# stdout and reports it as sent, which is right for development and silent data
+# loss in production -- mailgun.check_email_configured refuses to start if it
+# is ever selected with DEBUG off.
+if MAILGUN_API_KEY and MAILGUN_DOMAIN:
+    EMAIL_BACKEND = 'brandtechsolution.mailgun.MailgunEmailBackend'
+elif _SMTP_CONFIGURED:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 EMAIL_HOST = config.email_host
 EMAIL_PORT = config.email_port
 EMAIL_USE_TLS = config.email_use_tls
 EMAIL_HOST_USER = (config.email_host_user or "").strip()
 EMAIL_HOST_PASSWORD = (config.email_host_password or "").replace(" ", "").strip()
+# Also the per-request timeout for the Mailgun HTTP call.
 EMAIL_TIMEOUT = config.email_timeout
 
-DEFAULT_FROM_EMAIL = config.email_host_user if config.email_host_user and config.email_host_user != "your-email@gmail.com" else "juniorkariuuki735@gmail.com"
+# Explicit setting wins; otherwise noreply@<mailgun domain>, which is the only
+# address guaranteed to pass SPF and DKIM alignment for mail Mailgun sends.
+if config.default_from_email:
+    DEFAULT_FROM_EMAIL = config.default_from_email.strip()
+elif MAILGUN_DOMAIN:
+    DEFAULT_FROM_EMAIL = f"noreply@{MAILGUN_DOMAIN}"
+else:
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "noreply@teklora.co.ke"
+
+EDITORIAL_REVIEW_EMAIL = (
+    config.editorial_review_email or config.email_host_user or ""
+).strip()
 
 OUTBOX_BATCH_SIZE = config.outbox_batch_size
 OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
@@ -232,6 +261,8 @@ TURNSTILE_SECRET_KEY = config.turnstile_secret_key
 # Public contact form rate limiting (per-IP, via Django's default cache).
 CONTACT_RATE_LIMIT_COUNT = config.contact_rate_limit_count
 CONTACT_RATE_LIMIT_WINDOW_SECONDS = config.contact_rate_limit_window_seconds
+BLOG_LIKE_RATE_LIMIT_COUNT = config.blog_like_rate_limit_count
+BLOG_LIKE_RATE_LIMIT_WINDOW_SECONDS = config.blog_like_rate_limit_window_seconds
 
 # ============================================================
 # AUTHENTICATION REDIRECTS

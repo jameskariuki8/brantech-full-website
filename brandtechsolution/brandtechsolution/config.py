@@ -49,6 +49,23 @@ class AppSettings(BaseSettings):
     email_host_password: str = ""
     email_timeout: int = 10
 
+    # Mailgun is the preferred transport; the SMTP settings above are only a
+    # fallback for a deployment that has not been given Mailgun credentials.
+    # base_url is the API root and must not include the domain -- EU accounts
+    # use https://api.eu.mailgun.net/v3.
+    mailgun_api_key: str = ""
+    mailgun_base_url: str = "https://api.mailgun.net/v3"
+    mailgun_domain: str = ""
+
+    # The public From address. Defaults to noreply@<mailgun_domain>, because a
+    # From address outside the sending domain fails SPF and DKIM alignment and
+    # lands the mail in spam.
+    default_from_email: str = ""
+
+    # Where "an article is waiting for review" lands. Falls back to
+    # email_host_user, which is what this used before the move to Mailgun.
+    editorial_review_email: str = ""
+
     # ============================================================
     # Bulk mail outbox
     # ============================================================
@@ -124,6 +141,12 @@ class AppSettings(BaseSettings):
     # ============================================================
     contact_rate_limit_count: int = 5
     contact_rate_limit_window_seconds: int = 3600
+
+    # Likes are one request each and a reader may work through a page of
+    # posts, so this is far looser than the contact form -- it exists to stop
+    # a script inflating the "popular" ranking, not to pace a human.
+    blog_like_rate_limit_count: int = 30
+    blog_like_rate_limit_window_seconds: int = 60
 
     # ============================================================
     # Gemini API Configuration

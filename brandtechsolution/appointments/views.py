@@ -129,11 +129,12 @@ def create_appointment(request: HttpRequest):
                     f"Estimated Duration: {estimated_duration} minutes\n\n"
                     f"Description / Notes:\n{description}\n"
                 ),
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'juniorkariuki735@gmail.com') or 'juniorkariuki735@gmail.com',
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[
                     "juniorkariuki735@gmail.com",
                     "mugishalionel02@gmail.com",
-                    "teklorasolutionsltd@gamil.com",
+                    # was "@gamil.com" -- a typosquat domain, not a typo that bounces.
+                    "teklorasolutionsltd@gmail.com",
                     "leonmusungu138@gmail.com",
                     "davidnjihia536@gmail.com",
                 ],

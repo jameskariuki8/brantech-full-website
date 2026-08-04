@@ -104,11 +104,14 @@ def contact_submit(request):
                 f"Phone / WhatsApp: {phone or 'N/A'}\n\n"
                 f"Inquiry Message:\n{message}\n"
             ),
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "juniorkariuki735@gmail.com") or "juniorkariuki735@gmail.com",
+            # A gmail.com From address cannot pass SPF/DKIM alignment for mail
+            # Mailgun sends, so it is no longer an acceptable fallback.
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[
                 "juniorkariuki735@gmail.com",
                 "mugishalionel02@gmail.com",
-                "teklorasolutionsltd@gamil.com",
+                # was "@gamil.com" -- a typosquat domain, not a typo that bounces.
+                "teklorasolutionsltd@gmail.com",
                 "leonmusungu138@gmail.com",
                 "davidnjihia536@gmail.com",
             ],

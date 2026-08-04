@@ -13,6 +13,10 @@ pgvector
 celery
 redis
 
+# Mailgun's HTTP API (brandtechsolution/mailgun.py). Already present as a
+# PyGithub dependency; pinned here because it is now imported directly.
+requests
+
 gunicorn
 whitenoise
 markdown

@@ -23,7 +23,7 @@ This repository contains the enterprise Django web application for **Teklora Sol
 
 ### 🎨 4-Column Footer & Global Chatbot Integration
 - **Redesigned Footer**: Silicon Valley 4-column structure featuring company branding, social links (LinkedIn, Facebook, TikTok, Instagram), Quick Links, Services, Contact details, and explicit legal links (`/privacy/` and `/terms/`).
-- **Updated Contact Email**: Global official email updated to `teklorasolutionsltd@gamil.com` across footer, contact page, privacy policy, and terms pages.
+- **Updated Contact Email**: Global official email updated to `teklorasolutionsltd@gmail.com` across footer, contact page, privacy policy, and terms pages.
 - **Site-Wide AI Chatbot Assistant**: Embedded reusable `chatbot.html` widget included inside `footer.html` for site-wide inheritance across all public pages.
 
 ### 📊 Admin Panel Restructuring
@@ -375,6 +375,38 @@ broker.
 - The `web` container runs as root to keep the bind-mounted `./data/media`
   writable regardless of host UID.
 
+## Email delivery
+
+Everything outbound goes through Mailgun's HTTP API via a Django email
+backend (`brandtechsolution/mailgun.py`). Because it is a backend and not a
+separate send path, `send_mail()`, the bulk outbox and every other caller are
+unchanged; swapping providers again means changing `EMAIL_BACKEND` and nothing
+else.
+
+| Variable | Purpose |
+|---|---|
+| `MAILGUN_API_KEY` | Private API key. Selects the Mailgun backend when set alongside the domain. |
+| `MAILGUN_DOMAIN` | Verified sending domain, e.g. `mg.teklora.co.ke`. |
+| `MAILGUN_BASE_URL` | API root only — **not** the per-domain path. EU accounts use `https://api.eu.mailgun.net/v3`. |
+| `DEFAULT_FROM_EMAIL` | Public From address. Defaults to `noreply@$MAILGUN_DOMAIN`. |
+| `EDITORIAL_REVIEW_EMAIL` | Where "article awaiting review" is sent. |
+| `EMAIL_TIMEOUT` | Per-request timeout on the Mailgun call. |
+
+The From address must sit inside the sending domain. Anything else — a
+`gmail.com` address in particular — fails SPF and DKIM alignment and lands in
+spam, which is why the previous hardcoded Gmail fallbacks were removed.
+
+Backend selection is Mailgun → SMTP → console, in that order. The console
+backend prints mail to stdout and reports it as sent, so a misconfigured
+deployment would march a campaign through every recipient marking them
+delivered while nothing left the building. A system check
+(`mailgun.check_email_configured`) refuses to start if it is ever selected
+with `DEBUG` off — the same guard, for the same reason, as the Turnstile one.
+
+SMTP remains available as a fallback for development. It is not a route for
+campaign mail: Gmail caps a consumer account near 500 recipients/day and
+Workspace near 2,000, which the outbox exhausts in minutes at its defaults.
+
 ## Bulk email outbox
 
 Queued campaigns are sent by the `process_email_outbox` management command.
@@ -402,9 +434,10 @@ there):
 
 Application DEBUG logging can include credential values, so avoid redirecting full stdout into a persistent log.
 
-Tune `OUTBOX_BATCH_SIZE` (default 50) and cron frequency to stay under your
-Gmail limits (~500/day free, ~2000/day Workspace). Example: batch 20 + a
-per-5-minute cron ≈ safe for a free Gmail account.
+Tune `OUTBOX_BATCH_SIZE` (default 50) and the send frequency against your
+Mailgun plan's monthly allowance and per-hour rate limit. The old advice here
+sized batches around Gmail's ~500/day cap, which is why Mailgun replaced it —
+see [Email delivery](#email-delivery).
 
 `OUTBOX_STALE_CLAIM_MINUTES` controls how long a claimed-but-unfinished batch
 is held before the reaper releases it back to the queue. A single run's
