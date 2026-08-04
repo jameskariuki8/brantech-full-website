@@ -17,6 +17,14 @@ case "$ROLE" in
     echo "[entrypoint] Collecting static files..."
     python manage.py collectstatic --noinput
 
+    # Invites any seed team address that has no account yet. Deduplicated
+    # against pending invitations, so redeploying does not resend; only the
+    # web role runs it, so the worker and beat containers do not each send a
+    # copy. Never fatal - a mail outage must not stop the site coming up.
+    echo "[entrypoint] Seeding team invitations..."
+    python manage.py seed_team_invitations || \
+        echo "[entrypoint] WARNING: team invitation seeding failed; continuing."
+
     echo "[entrypoint] Starting gunicorn..."
     exec gunicorn brandtechsolution.wsgi:application \
         --bind 0.0.0.0:8000 \

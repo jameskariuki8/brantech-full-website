@@ -84,6 +84,11 @@ class StaffInvitation(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_at = models.DateTimeField(null=True, blank=True)
+    # When the invitation email last went out, which is not created_at once an
+    # invitation has been resent. The seeding command needs this to tell a
+    # still-valid invitation from one whose token has expired, so it can reissue
+    # the dead one without mailing the live one again on every deployment.
+    last_sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

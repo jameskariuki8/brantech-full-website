@@ -6,7 +6,7 @@ The .env file should be located in the brandtechsolution/ directory.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 # BASE_DIR points to brandtechsolution directory (where .env file is located)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,6 +65,24 @@ class AppSettings(BaseSettings):
     # Where "an article is waiting for review" lands. Falls back to
     # email_host_user, which is what this used before the move to Mailgun.
     editorial_review_email: str = ""
+
+    # The founding team, used ONCE per address to issue a panel invitation.
+    # Notifications are addressed to capability holders, never to this list --
+    # its only job is to get these people onto the platform in the first place,
+    # after which the panel is the single record of who is on the team. Someone
+    # who never accepts stops being contacted; someone who joins later is
+    # enrolled through the panel, not by editing this.
+    team_seed_emails: List[str] = [
+        "juniorkariuki735@gmail.com",
+        "mugishalionel02@gmail.com",
+        "teklorasolutionsltd@gmail.com",
+        "leonmusungu138@gmail.com",
+        "davidnjihia536@gmail.com",
+    ]
+    # The preset role a seeded invitation carries: view_inbox,
+    # handle_inquiries and manage_appointments -- exactly the capabilities the
+    # contact-form and booking notifications are addressed by.
+    team_seed_role: str = "Support"
 
     # ============================================================
     # Bulk mail outbox

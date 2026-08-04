@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.core import signing
@@ -9,8 +11,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
+from staff.emails import capability_holder_emails
 from .models import Inquiry, Suppression
 from .tokens import read_unsubscribe_token
+
+logger = logging.getLogger(__name__)
 
 
 def _is_ajax(request):
@@ -94,6 +99,17 @@ def contact_submit(request):
         name=name, email=email, phone=phone, message=message
     )
 
+    # Whoever currently holds handle_inquiries, rather than a list of addresses
+    # compiled into this module. Someone leaving the team stops receiving
+    # customer contact details the moment their capability is revoked.
+    recipients = capability_holder_emails("handle_inquiries")
+    if not recipients:
+        logger.warning(
+            "No handle_inquiries holder has an email address; inquiry #%s "
+            "saved with nobody notified.",
+            inquiry.pk,
+        )
+
     try:
         send_mail(
             subject=f"New Contact Inquiry from {name}",
@@ -107,19 +123,13 @@ def contact_submit(request):
             # A gmail.com From address cannot pass SPF/DKIM alignment for mail
             # Mailgun sends, so it is no longer an acceptable fallback.
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[
-                "juniorkariuki735@gmail.com",
-                "mugishalionel02@gmail.com",
-                # was "@gamil.com" -- a typosquat domain, not a typo that bounces.
-                "teklorasolutionsltd@gmail.com",
-                "leonmusungu138@gmail.com",
-                "davidnjihia536@gmail.com",
-            ],
+            recipient_list=recipients,
             fail_silently=True,
         )
     except Exception:
-        # Notification is best-effort; the inquiry is already saved.
-        pass
+        # Notification is best-effort; the inquiry is already saved and shows
+        # in the panel's inbox regardless.
+        logger.exception("Could not send contact notification for %s", email)
 
     if ajax:
         return JsonResponse({"ok": True})

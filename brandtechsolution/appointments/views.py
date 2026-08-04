@@ -112,10 +112,21 @@ def create_appointment(request: HttpRequest):
             full_name=full_name
         )
 
-        # Send email notification to admin (juniorkariuuki735@gmail.com)
+        # Notify whoever currently holds manage_appointments, rather than a
+        # list of addresses compiled into this module. Enrolling a new team
+        # member is a panel action; nobody has to remember to edit this.
         try:
             from django.core.mail import send_mail
             from django.conf import settings
+            from staff.emails import capability_holder_emails
+
+            recipients = capability_holder_emails("manage_appointments")
+            if not recipients:
+                logger.warning(
+                    "No manage_appointments holder has an email address; "
+                    "appointment #%s saved with nobody notified.",
+                    appointment.id,
+                )
             send_mail(
                 subject=f"New Strategy Session Booking: {title} ({full_name})",
                 message=(
@@ -130,18 +141,17 @@ def create_appointment(request: HttpRequest):
                     f"Description / Notes:\n{description}\n"
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[
-                    "juniorkariuki735@gmail.com",
-                    "mugishalionel02@gmail.com",
-                    # was "@gamil.com" -- a typosquat domain, not a typo that bounces.
-                    "teklorasolutionsltd@gmail.com",
-                    "leonmusungu138@gmail.com",
-                    "davidnjihia536@gmail.com",
-                ],
+                recipient_list=recipients,
                 fail_silently=True,
             )
         except Exception:
-            pass
+            # Best-effort: the booking is saved and shows in the appointments
+            # list regardless. Logged rather than swallowed, because a silent
+            # mail outage on a lead path is indistinguishable from no leads.
+            logger.exception(
+                "Could not send booking notification for appointment %s",
+                appointment.id,
+            )
 
         return JsonResponse({"success": "Appointment created successfully", "id": appointment.id}, status=201)
     except IntegrityError:

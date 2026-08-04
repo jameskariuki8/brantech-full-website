@@ -247,6 +247,11 @@ EDITORIAL_REVIEW_EMAIL = (
     config.editorial_review_email or config.email_host_user or ""
 ).strip()
 
+# Seed addresses for the one-off team invitation sweep. See
+# staff/management/commands/seed_team_invitations.py -- nothing else reads this.
+TEAM_SEED_EMAILS = [e.strip() for e in config.team_seed_emails if e.strip()]
+TEAM_SEED_ROLE = config.team_seed_role.strip()
+
 OUTBOX_BATCH_SIZE = config.outbox_batch_size
 OUTBOX_MAX_ATTEMPTS = config.outbox_max_attempts
 OUTBOX_STALE_CLAIM_MINUTES = config.outbox_stale_claim_minutes
@@ -396,11 +401,21 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 BEAT_OUTBOX_INTERVAL = config.beat_outbox_interval
 BEAT_GITHUB_SYNC_INTERVAL = config.beat_github_sync_interval
 
-# The test suite must never need a live broker or Redis.
+# The test suite must never need a live broker, Redis, or a network round trip
+# to Cloudflare.
 if 'test' in sys.argv:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
     CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+
+    # Whether the suite passes must not depend on what a developer happens to
+    # have in .env. With a real secret present, every test that POSTs to a
+    # protected public form without a widget token gets a 400 -- fifteen
+    # failures across messaging and appointments that say nothing about the
+    # code. turnstile.py's own tests set both keys through override_settings in
+    # either direction, so they are unaffected by this.
+    TURNSTILE_SECRET_KEY = ''
+    TURNSTILE_SITE_KEY = ''
 
 # ============================================================
 # DEFAULT PRIMARY KEY FIELD

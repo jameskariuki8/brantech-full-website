@@ -17,7 +17,7 @@ This repository contains the enterprise Django web application for **Teklora Sol
 - Enhanced both contact inquiry submissions (`contact_submit`) and calendar consultation bookings (`create_appointment`) to automatically broadcast real-time notification emails to all 5 team email addresses simultaneously:
   - `juniorkariuki735@gmail.com`
   - `mugishalionel02@gmail.com`
-  - `teklorasolutionsltd@gamil.com`
+  - `teklorasolutionsltd@gmail.com`
   - `leonmusungu138@gmail.com`
   - `davidnjihia536@gmail.com`
 
@@ -75,7 +75,7 @@ The appointment module (`appointments/`) provides an intuitive scheduling workfl
 - **Multi-Recipient Notification System**: Every booking automatically dispatches a real-time notification email to the primary admin and team members:
   - `juniorkariuki735@gmail.com`
   - `mugishalionel02@gmail.com`
-  - `teklorasolutionsltd@gamil.com`
+  - `teklorasolutionsltd@gmail.com`
   - `leonmusungu138@gmail.com`
   - `davidnjihia536@gmail.com`
 
@@ -417,11 +417,44 @@ what `User.has_perm()` and `staff.decorators` consult. Granting or revoking a
 capability in the panel therefore changes who is notified, with nothing to keep
 in step by hand.
 
-The editorial review notification uses `publish_blog`, since that is the
-capability that gates approving a draft. `EDITORIAL_REVIEW_EMAIL` is only
-consulted when nobody holds it yet, so that a fresh deployment's first drafts
-are not reviewed by nobody; once a single account has the capability the
-fallback is never used.
+| Notification | Capability |
+|---|---|
+| Contact form inquiry | `handle_inquiries` |
+| Strategy session booking | `manage_appointments` |
+| Task ready for review | `manage_tasks` |
+| Editorial draft ready for review | `publish_blog` |
+
+`EDITORIAL_REVIEW_EMAIL` is consulted only when nobody holds `publish_blog`
+yet, so a fresh deployment's first drafts are not reviewed by nobody; once a
+single account has the capability the fallback is never used. Note that
+superusers hold every capability implicitly, so they receive all of these.
+
+### Team seeding
+
+These notifications used to go to five email addresses hardcoded in
+`messaging/views.py` and `appointments/views.py`. That made the roster a deploy
+artefact — somebody leaving kept receiving customer names and phone numbers
+until a developer edited Python, somebody joining received nothing until the
+same happened, and one mistyped address survived in both copies because fixing
+one did not fix the other.
+
+`manage.py seed_team_invitations` replaces it. `entrypoint.sh`'s `web` role runs
+it after `migrate`, and for each address in `TEAM_SEED_EMAILS` it issues a panel
+invitation carrying the `TEAM_SEED_ROLE` preset — unless that address already
+has an account, or already has an invitation whose token has not expired. So a
+redeployment sends nothing, and an invitation that expired unaccepted is
+reissued rather than stranding its holder.
+
+The list is a **seed, not a recipient list**. Nothing else reads it. Someone who
+never accepts is never notified, and enrolling a new colleague afterwards is an
+invitation from the panel rather than a code change.
+
+It is a management command rather than `AppConfig.ready()` deliberately:
+`ready()` runs in every process that loads Django — all three gunicorn workers,
+the Celery worker, beat, and every `manage.py` invocation including `migrate`
+itself — so seeding there would send each invitation five times per deployment,
+run before `migrate` had prepared the tables, and put a network call in every
+process's boot path.
 
 ## Bulk email outbox
 

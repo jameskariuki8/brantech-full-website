@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 from django.urls import reverse
 from django.core import mail
@@ -42,11 +43,41 @@ class ContactSubmitTests(TestCase):
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="admin@example.com",
+        # Without a token in the payload an enabled Turnstile refuses the POST
+        # before any of this is reached, so the assertion below would pass or
+        # fail for reasons unrelated to the notification.
+        TURNSTILE_SECRET_KEY="",
     )
-    def test_valid_submission_sends_admin_notification(self):
+    def test_valid_submission_notifies_handle_inquiries_holders(self):
+        """Recipients come from the capability, not from a list in the view."""
+        handler = User.objects.create_user(
+            "handler", "handler@example.com", "pw", is_staff=True
+        )
+        handler.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="staff", codename="handle_inquiries"
+            )
+        )
+
         self._post()
+
         self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["handler@example.com"])
         self.assertIn("grace@example.com", mail.outbox[0].body)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        TURNSTILE_SECRET_KEY="",
+    )
+    def test_the_inquiry_is_saved_even_when_nobody_can_be_notified(self):
+        """The panel's inbox is the record; the email is only an alert.
+
+        A team with nobody holding handle_inquiries must still capture leads.
+        """
+        self._post()
+
+        self.assertEqual(Inquiry.objects.count(), 1)
+        self.assertEqual(mail.outbox, [])
 
     def test_ajax_valid_submission_returns_json_ok(self):
         data = {

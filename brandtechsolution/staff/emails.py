@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 
 from .tokens import make_invitation_token
 
@@ -68,3 +69,8 @@ def send_invitation(invitation, request=None):
         recipient_list=[invitation.email],
         fail_silently=False,
     )
+
+    # Stamped only after a successful send, so a failure leaves the invitation
+    # looking unsent and the next attempt reissues it.
+    invitation.last_sent_at = timezone.now()
+    invitation.save(update_fields=["last_sent_at"])
