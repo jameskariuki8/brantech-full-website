@@ -1,5 +1,6 @@
-django
-djangorestframework
+Django>=5.0,<5.3
+djangorestframework>=3.15.2
+
 pillow
 langchain
 langgraph

@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
@@ -22,13 +24,69 @@ from .validation import validate_campaign_recipients
 
 
 class InquiryViewSet(viewsets.ModelViewSet):
-    queryset = Inquiry.objects.all()
     serializer_class = InquirySerializer
 
+    def get_queryset(self):
+        qs = Inquiry.objects.all()
+        status_param = self.request.query_params.get("status")
+        if status_param and status_param != "all":
+            qs = qs.filter(status=status_param)
+
+        q_param = self.request.query_params.get("q") or self.request.query_params.get("search")
+        if q_param:
+            qs = qs.filter(
+                Q(name__icontains=q_param)
+                | Q(email__icontains=q_param)
+                | Q(message__icontains=q_param)
+            )
+        return qs.order_by("-created_at")
+
     def get_permissions(self):
-        if self.request.method in permissions.SAFE_METHODS:
+        if self.action in ["list", "retrieve"]:
             return [has_capability("view_inbox")()]
         return [has_capability("handle_inquiries")()]
+
+    @action(detail=True, methods=["post"])
+    def reply(self, request, pk=None):
+        inquiry = self.get_object()
+        reply_message = (request.data.get("message") or request.data.get("reply_message") or "").strip()
+        if not reply_message:
+            return Response({"ok": False, "error": "Reply message content cannot be empty."}, status=400)
+
+        subject = f"Re: Technical Inquiry - Teklora Solutions"
+        try:
+            send_mail(
+                subject=subject,
+                message=reply_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[inquiry.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response({"ok": False, "error": f"Failed to send email: {str(e)}"}, status=500)
+
+        inquiry.status = "replied"
+        sender_label = getattr(request.user, "username", "Staff")
+        inquiry.message += f"\n\n--- STAFF REPLY ({sender_label}) ---\n{reply_message}"
+        inquiry.save(update_fields=["status", "message"])
+
+        return Response({"ok": True, "inquiry": self.get_serializer(inquiry).data})
+
+    @action(detail=True, methods=["post"])
+    def mark_read(self, request, pk=None):
+        inquiry = self.get_object()
+        if inquiry.status == "new":
+            inquiry.status = "read"
+            inquiry.save(update_fields=["status"])
+        return Response({"ok": True, "inquiry": self.get_serializer(inquiry).data})
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        inquiry = self.get_object()
+        inquiry.status = "archived"
+        inquiry.save(update_fields=["status"])
+        return Response({"ok": True, "inquiry": self.get_serializer(inquiry).data})
+
 
 
 class EmailTemplateViewSet(viewsets.ModelViewSet):

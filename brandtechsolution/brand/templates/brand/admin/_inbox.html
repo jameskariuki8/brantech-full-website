@@ -1,7 +1,74 @@
 <div id="inbox" class="section hidden">
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold text-white">Inbox</h2>
-        <p class="text-gray-500 text-sm">Messages from the contact form</p>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                <i class="fas fa-inbox text-brand-blue"></i> Official Communications Mailbox
+            </h2>
+            <p class="text-gray-400 text-sm">Manage inquiries, customer correspondence, and inbound Mailgun messages</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="unreadBadge" class="hidden px-3 py-1 bg-brand-blue/20 border border-brand-blue/40 text-brand-blue text-xs font-semibold rounded-full">
+                0 Unread
+            </span>
+            <button onclick="loadInbox()" class="px-3.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5">
+                <i class="fas fa-sync-alt text-brand-blue"></i> Refresh
+            </button>
+        </div>
     </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="bg-dark-card border border-dark-border p-4 rounded-xl mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-1.5 w-full md:w-auto" id="inboxStatusTabs">
+            <button onclick="filterInboxStatus('all')" data-status="all" class="inbox-tab px-3.5 py-1.5 rounded-lg text-xs font-medium bg-brand-blue text-white shadow-sm transition-all">All</button>
+            <button onclick="filterInboxStatus('new')" data-status="new" class="inbox-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">New</button>
+            <button onclick="filterInboxStatus('read')" data-status="read" class="inbox-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">Read</button>
+            <button onclick="filterInboxStatus('replied')" data-status="replied" class="inbox-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">Replied</button>
+            <button onclick="filterInboxStatus('archived')" data-status="archived" class="inbox-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all">Archived</button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative w-full md:w-72">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+            <input type="text" id="inboxSearch" oninput="handleInboxSearch()" placeholder="Search sender, email, message..." class="w-full bg-[#06090F] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue/50 transition-colors">
+        </div>
+    </div>
+
+    <!-- Inbox List Container -->
     <div id="inboxList" class="space-y-4"></div>
+
+    <!-- Email Reply Modal -->
+    <div id="replyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-fadeIn">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-paper-plane text-brand-blue"></i> Send Direct Email Reply
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-0.5" id="replyToLabel">To: </p>
+                </div>
+                <button onclick="closeReplyModal()" class="text-gray-400 hover:text-white transition-colors p-1">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <form id="replyForm" onsubmit="submitReply(event)" class="p-6 space-y-4">
+                <input type="hidden" id="replyInquiryId">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Subject</label>
+                    <input type="text" id="replySubject" readonly class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Response Body</label>
+                    <textarea id="replyMessageBody" rows="6" required placeholder="Type your formal response here..." class="w-full bg-[#06090F] border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue transition-colors"></textarea>
+                </div>
+                <div class="flex justify-end items-center gap-3 pt-2">
+                    <button type="button" onclick="closeReplyModal()" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-lg text-xs font-semibold transition-all">Cancel</button>
+                    <button type="submit" id="replySubmitBtn" class="px-5 py-2 bg-brand-blue hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Dispatch Reply
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+

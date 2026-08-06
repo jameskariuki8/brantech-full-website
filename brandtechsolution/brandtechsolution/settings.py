@@ -176,9 +176,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    BASE_DIR / 'brand' / 'static',
-]
+STATICFILES_DIRS = []
+
 
 # Roots come from config (env-driven); see brandtechsolution/config.py
 STATIC_ROOT = config.static_root
@@ -204,8 +203,11 @@ STORAGES = {
 # ============================================================
 
 MAILGUN_API_KEY = (config.mailgun_api_key or "").strip()
+MAILGUN_WEBHOOK_SIGNING_KEY = (config.mailgun_webhook_signing_key or "").strip()
+MAILGUN_SKIP_WEBHOOK_VERIFICATION = config.mailgun_skip_webhook_verification
 MAILGUN_BASE_URL = (config.mailgun_base_url or "").strip()
 MAILGUN_DOMAIN = (config.mailgun_domain or "").strip()
+
 
 _SMTP_CONFIGURED = (
     config.email_host_user

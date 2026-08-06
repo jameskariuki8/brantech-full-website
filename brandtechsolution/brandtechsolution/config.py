@@ -54,8 +54,11 @@ class AppSettings(BaseSettings):
     # base_url is the API root and must not include the domain -- EU accounts
     # use https://api.eu.mailgun.net/v3.
     mailgun_api_key: str = ""
+    mailgun_webhook_signing_key: str = ""
+    mailgun_skip_webhook_verification: bool = False
     mailgun_base_url: str = "https://api.mailgun.net/v3"
     mailgun_domain: str = ""
+
 
     # The public From address. Defaults to noreply@<mailgun_domain>, because a
     # From address outside the sending domain fails SPF and DKIM alignment and

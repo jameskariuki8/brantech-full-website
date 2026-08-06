@@ -24,6 +24,33 @@ class Inquiry(models.Model):
         return f"{self.name} <{self.email}>"
 
 
+class InboundEmail(models.Model):
+    STATUS_CHOICES = [
+        ("received", "Received"),
+        ("processed", "Processed"),
+        ("archived", "Archived"),
+    ]
+
+    sender = models.EmailField()
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=500, blank=True, default="")
+    body_plain = models.TextField(blank=True, default="")
+    body_html = models.TextField(blank=True, default="")
+    message_headers = models.JSONField(default=dict, blank=True)
+    attachments_info = models.JSONField(default=list, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="received")
+    received_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-received_at"]
+        verbose_name = "Inbound Email"
+        verbose_name_plural = "Inbound Emails"
+
+    def __str__(self):
+        return f"From {self.sender}: {self.subject[:50]}"
+
+
+
 class EmailTemplate(models.Model):
     name = models.CharField(max_length=200)
     subject = models.CharField(max_length=255)
