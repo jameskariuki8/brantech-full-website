@@ -66,9 +66,14 @@ p {
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 0.95rem;
+  white-space: nowrap;
   transition: var(--transition-smooth);
   cursor: pointer;
   border: none;
+}
+
+.btn-premium.hidden {
+  display: none;
 }
 
 .btn-premium-primary {
@@ -787,6 +792,10 @@ header.premium-nav-container {
   to { transform: rotate(0deg); }
 }
 
+.cosmos-orbit-pills-container {
+  display: contents;
+}
+
 .cosmos-orbit-pill {
   position: absolute;
   display: inline-flex;
@@ -812,6 +821,60 @@ header.premium-nav-container {
   box-shadow: 0 15px 35px rgba(0, 255, 148, 0.25);
   background: rgba(0, 122, 255, 0.2);
   z-index: 50;
+}
+
+@media (max-width: 768px) {
+  .cosmos-orbit-wrapper {
+    min-height: auto !important;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 2rem 0;
+    overflow: visible;
+  }
+
+  .cosmos-orbit-ring-1 {
+    width: 260px;
+    height: 260px;
+  }
+  .cosmos-orbit-ring-2 {
+    width: 340px;
+    height: 340px;
+  }
+  .cosmos-orbit-ring-3 {
+    width: 420px;
+    height: 420px;
+  }
+
+  .cosmos-orbit-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    position: relative;
+    z-index: 30;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0.5rem;
+  }
+
+  .cosmos-orbit-pill {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  }
+
+  .cosmos-orbit-pill:hover {
+    transform: scale(1.05) translateY(-2px) !important;
+  }
 }
 
 /* Flagship EduShare Card */
