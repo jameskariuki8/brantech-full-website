@@ -110,6 +110,25 @@ class EditorialPipelineOrchestrator:
                 stage('verification')
                 fact_report = self.fact_verifier.verify_dossier(dossier)
 
+                # Honour the verdict. The verifier used to hardcode
+                # is_approved=True and nothing read the flag, so a dossier it
+                # had flagged as self-contradictory was written up and sent for
+                # review exactly like a clean one. Rejection skips the topic
+                # rather than failing the run: the other prioritised topics in
+                # this cycle are unaffected, and the same rejection path the
+                # duplicate check above already uses applies here.
+                if not fact_report.is_approved:
+                    logger.warning(
+                        "Skipping '%s': fact verification rejected the dossier "
+                        "(%.0f%% confidence, %d contradiction(s)).",
+                        topic.title,
+                        fact_report.confidence_level * 100,
+                        len(fact_report.contradictions_detected),
+                    )
+                    topic.status = 'rejected'
+                    topic.save()
+                    continue
+
                 # Step 7: Editorial Strategy & Persona selection
                 stage('strategy')
                 strategy = self.strategy_agent.determine_strategy(fact_report)

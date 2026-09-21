@@ -14,6 +14,12 @@ from research.models import ResearchDossier, VerifiedFactReport
 
 logger = logging.getLogger(__name__)
 
+# Below this, the agent is not confident enough for the dossier to be written
+# up as an article. Deliberately a named constant rather than a literal: the
+# value is a judgement call and will be tuned, and a reader needs to see that
+# it is one.
+MIN_CONFIDENCE = 0.6
+
 VERIFICATION_PROMPT = """You are the Lead Fact Verification Editor at Teklora.
 Audit the following research dossier for factual accuracy, hallucinations, and logical consistency.
 
@@ -66,18 +72,55 @@ class FactVerificationAgent:
 
         verification_data = self._audit_dossier(dossier)
 
+        confidence = verification_data.get('confidence_level', 0.92)
+        contradictions = verification_data.get('contradictions_detected', [])
+
         report = VerifiedFactReport.objects.create(
             dossier=dossier,
-            confidence_level=verification_data.get('confidence_level', 0.92),
-            contradictions_detected=verification_data.get('contradictions_detected', []),
+            confidence_level=confidence,
+            contradictions_detected=contradictions,
             unsupported_claims_removed=verification_data.get('unsupported_claims_removed', []),
             verified_statistics=verification_data.get('verified_statistics', []),
             verified_quotes=verification_data.get('verified_quotes', []),
             verified_dossier=verification_data.get('sanitized_text', dossier.structured_dossier),
-            is_approved=True
+            is_approved=self._approves(confidence, contradictions),
         )
-        logger.info(f"[FactVerificationAgent] Verified '{dossier.topic.title}' with {report.confidence_level*100:.0f}% confidence.")
+
+        if report.is_approved:
+            logger.info(
+                "[FactVerificationAgent] Verified '%s' with %.0f%% confidence.",
+                dossier.topic.title, report.confidence_level * 100,
+            )
+        else:
+            logger.warning(
+                "[FactVerificationAgent] REJECTED '%s': %.0f%% confidence, "
+                "%d contradiction(s).",
+                dossier.topic.title, report.confidence_level * 100, len(contradictions),
+            )
         return report
+
+    @staticmethod
+    def _approves(confidence, contradictions) -> bool:
+        """Decide whether this dossier may be written up.
+
+        This used to be the literal `is_approved=True`, which made the whole
+        agent decorative: it reported contradictions and a confidence score,
+        then approved regardless, and nothing downstream looked at the flag
+        anyway. The only test covering it asserted a constant.
+
+        The rule uses what the agent already returns rather than inventing a
+        new signal. A detected contradiction is disqualifying on its own -- the
+        agent has said the dossier disagrees with itself, and averaging that
+        away against a high confidence score would be perverse.
+        """
+        if contradictions:
+            return False
+        try:
+            return float(confidence) >= MIN_CONFIDENCE
+        except (TypeError, ValueError):
+            # A model that returned something non-numeric has not given us
+            # grounds to approve.
+            return False
 
     def _audit_dossier(self, dossier: ResearchDossier) -> Dict[str, Any]:
         if not self.model:
