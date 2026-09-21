@@ -290,3 +290,148 @@ class AgentProfile(models.Model):
     def load(cls):
         profile, _ = cls.objects.get_or_create(pk=cls.SINGLETON_ID)
         return profile
+
+
+# ============================================================
+# PROVIDERS AND THE MODEL CATALOGUE
+# ============================================================
+
+
+class Provider(models.Model):
+    """One model provider, and whether it can actually be used.
+
+    Three states, because "a key is present" and "a key works" are different
+    things and conflating them is how a typo becomes a silent outage. A
+    provider with a key starts as `candidate` and is promoted only once it has
+    answered its own model-list endpoint.
+
+    Never probed at import time -- config.py is imported by settings.py, and a
+    network call there would make Django's startup depend on five third
+    parties -- and never in the request path, which would double latency and
+    burn rate limit.
+    """
+
+    ABSENT = 'absent'
+    CANDIDATE = 'candidate'
+    ACTIVE = 'active'
+    STATUS_CHOICES = [
+        (ABSENT, 'No credential configured'),
+        (CANDIDATE, 'Credential present, not yet verified'),
+        (ACTIVE, 'Verified'),
+    ]
+
+    USAGE = 'usage'
+    SUBSCRIPTION = 'subscription'
+    BILLING_CHOICES = [
+        (USAGE, 'Billed per token'),
+        (SUBSCRIPTION, 'Consumes a subscription seat'),
+    ]
+
+    name = models.CharField(max_length=40, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=ABSENT)
+    billing = models.CharField(max_length=20, choices=BILLING_CHOICES, default=USAGE)
+
+    # Lower sorts first when resolving a role to a model. An operator reorders
+    # preference here rather than in code.
+    preference = models.PositiveSmallIntegerField(default=100)
+    enabled = models.BooleanField(
+        default=True,
+        help_text="Off keeps a provider out of resolution even with a valid key.",
+    )
+
+    last_checked_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['preference', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.status})"
+
+    @property
+    def usable(self):
+        return self.enabled and self.status == self.ACTIVE
+
+
+class CatalogueEntry(models.Model):
+    """One model a provider offers, with what it costs and what it can do.
+
+    Refreshed from the providers' own listings. Of the five, only OpenRouter
+    publishes pricing through its API -- unauthenticated, per token -- and it
+    also lists the other four providers' models, which makes it the obvious
+    metadata source. It is not an authoritative one: its prices are what
+    OpenRouter charges to proxy a model, not what the provider charges
+    directly. Hence `price_source`.
+    """
+
+    PROVIDER = 'provider'
+    OPENROUTER = 'openrouter'
+    MANUAL = 'manual'
+    UNKNOWN = 'unknown'
+    PRICE_SOURCE_CHOICES = [
+        (PROVIDER, "The provider's own API"),
+        (OPENROUTER, "Derived from OpenRouter's listing"),
+        (MANUAL, 'Checked-in table'),
+        (UNKNOWN, 'Not known'),
+    ]
+
+    provider = models.CharField(max_length=40, db_index=True)
+    model_id = models.CharField(max_length=200)
+    display_name = models.CharField(max_length=200, blank=True, default='')
+
+    context_tokens = models.PositiveIntegerField(null=True, blank=True)
+    max_output_tokens = models.PositiveIntegerField(null=True, blank=True)
+
+    input_price_per_mtok = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True)
+    output_price_per_mtok = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True)
+    price_source = models.CharField(
+        max_length=20, choices=PRICE_SOURCE_CHOICES, default=UNKNOWN)
+    price_checked_at = models.DateTimeField(null=True, blank=True)
+
+    capabilities = models.JSONField(default=dict, blank=True)
+    deprecated_at = models.DateTimeField(null=True, blank=True)
+
+    # A model that disappears from a listing is marked unavailable, never
+    # deleted: invocation rows point at it, and history should not rewrite
+    # itself because a vendor retired something.
+    available = models.BooleanField(default=True)
+    refreshed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['provider', 'model_id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['provider', 'model_id'], name='one_catalogue_entry_per_model',
+            ),
+        ]
+        indexes = [models.Index(fields=['provider', 'available'])]
+        verbose_name_plural = 'Catalogue entries'
+
+    def __str__(self):
+        return f"{self.provider}/{self.model_id}"
+
+    @property
+    def price_is_known(self):
+        return self.input_price_per_mtok is not None
+
+    @property
+    def price_is_authoritative(self):
+        """Whether the price came from the provider that will bill for it."""
+        return self.price_source in (self.PROVIDER, self.MANUAL)
+
+    def cost_for(self, prompt_tokens, completion_tokens):
+        """What a call of this shape costs, or None when the price is unknown.
+
+        None rather than zero: a model whose price nobody knows has not been
+        established as free, and reporting it as free would quietly understate
+        every total it appears in.
+        """
+        if self.input_price_per_mtok is None or self.output_price_per_mtok is None:
+            return None
+        million = 1_000_000
+        return (
+            float(self.input_price_per_mtok) * prompt_tokens / million
+            + float(self.output_price_per_mtok) * completion_tokens / million
+        )

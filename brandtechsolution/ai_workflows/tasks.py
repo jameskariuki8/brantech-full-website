@@ -49,3 +49,22 @@ def embed_object_task(self, app_label, model_name, pk, kind, title, text):
 
     Memory().remember(text, title=title, kind=kind, obj=obj)
     return {'status': 'ok', 'pk': pk}
+
+
+@shared_task(name='harness.refresh_catalogue')
+def refresh_catalogue_task():
+    """Verify every provider and rebuild the model catalogue.
+
+    Daily rather than hourly: model lists move in weeks, and a refresh is a
+    handful of cheap calls. Not retried -- the next tick does the same work,
+    and a retry would only race it.
+    """
+    from ai_workflows.harness.catalogue import refresh
+
+    result = refresh()
+    return {
+        'providers': {name: provider.status
+                      for name, provider in result['providers'].items()},
+        'borrowed': result['borrowed'],
+        'manual': result['manual'],
+    }

@@ -1,0 +1,48 @@
+# Prices for providers whose APIs do not publish them.
+#
+# Of the five providers, only OpenRouter exposes pricing programmatically.
+# OpenAI returns id/object/created/owned_by; Anthropic adds display_name and
+# token limits; Gemini gives token limits and supported methods; DeepSeek gives
+# the OpenAI shape. None of the four carries a price, and none of their pricing
+# pages is reliably machine-readable. Hence this table.
+#
+# Rules:
+#   * Every table carries an `as_of`. A row without a date is not trusted.
+#   * Prices are USD per million tokens.
+#   * A model absent from here is not free -- it is unpriced, and the
+#     catalogue records it as such rather than reporting zero. OpenRouter's
+#     listing fills many of these in automatically, marked `openrouter`, which
+#     is close enough to choose a model by and explicitly not good enough to
+#     bill from.
+#
+# Leave a provider out rather than guessing at it. A wrong price presented
+# confidently is worse than a missing one.
+
+[anthropic]
+as_of = 2026-06-24
+source = "Anthropic published API pricing"
+
+  [anthropic.models]
+  "claude-opus-5"     = { input = 5.00,  output = 25.00 }
+  "claude-opus-4-8"   = { input = 5.00,  output = 25.00 }
+  "claude-sonnet-5"   = { input = 2.00,  output = 10.00 }
+  "claude-sonnet-4-6" = { input = 3.00,  output = 15.00 }
+  "claude-haiku-4-5"  = { input = 1.00,  output = 5.00 }
+  "claude-fable-5-1"  = { input = 10.00, output = 50.00 }
+
+# openai, gemini and deepseek are deliberately absent.
+#
+# Their rates were not verified at the time this file was written, and an
+# unverified number here would be indistinguishable from a checked one at the
+# point it is read. Until somebody fills them in from the vendor's pricing
+# page -- with the date they did it -- those models take their prices from
+# OpenRouter's listing, marked `openrouter`, or show as unpriced.
+#
+# To add one:
+#
+#   [openai]
+#   as_of = 2026-09-21
+#   source = "https://openai.com/api/pricing/"
+#
+#     [openai.models]
+#     "gpt-..." = { input = 0.00, output = 0.00 }

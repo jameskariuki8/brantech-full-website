@@ -192,6 +192,26 @@ class AppSettings(BaseSettings):
     langsmith_endpoint: str = "https://api.smith.langchain.com"
 
     # ============================================================
+    # Model providers
+    # ============================================================
+    # One key per provider. Presence makes a provider a *candidate*; it only
+    # becomes active once it has answered its own model-list endpoint, because
+    # "a key is present" and "a key works" are different things and conflating
+    # them turns a typo into a silent outage. Gemini's key is google_api_key
+    # above -- it predates this block and everything currently runs on it.
+    openrouter_api_key: str = ""
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    deepseek_api_key: str = ""
+
+    # ChatGPT OAuth for Codex. Subscription-billed rather than usage-billed,
+    # and off unless deliberately enabled -- see harness/providers.py for why.
+    codex_oauth_token: str = ""
+
+    # Per-request ceiling for a chat model call, in seconds.
+    llm_timeout: int = 60
+
+    # ============================================================
     # GitHub Integration Configuration
     # ============================================================
     github_access_token: Optional[str] = None

@@ -38,6 +38,7 @@ def setup_periodic_tasks(sender, **kwargs):
     from brand.tasks import sync_github_task
     from editorial.tasks import release_stale_pipeline_runs_task
     from messaging.tasks import process_email_outbox_task
+    from ai_workflows.tasks import refresh_catalogue_task
 
     sender.add_periodic_task(
         settings.BEAT_OUTBOX_INTERVAL,
@@ -60,4 +61,14 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=2, minute=30),
         release_stale_pipeline_runs_task.s(),
         name="fail pipeline runs abandoned by a dead worker",
+    )
+
+    # Daily, not hourly: model lists move in weeks, and a refresh is a handful
+    # of cheap calls. It is also what verifies each provider's credential, so
+    # a key that stopped working shows up within a day rather than at the next
+    # agent run.
+    sender.add_periodic_task(
+        crontab(hour=3, minute=15),
+        refresh_catalogue_task.s(),
+        name="refresh the model catalogue",
     )
