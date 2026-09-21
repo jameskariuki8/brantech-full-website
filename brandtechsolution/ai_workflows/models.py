@@ -203,3 +203,38 @@ class EvalResult(models.Model):
 
     def __str__(self):
         return f"{self.agent}/{self.case}#{self.sample}: {self.score}"
+
+
+class StepResult(models.Model):
+    """One agent step's output, keyed by what produced it.
+
+    The editorial pipeline is eleven stages and several model calls over
+    roughly three minutes. A failure at stage nine re-runs stages one to eight
+    -- paid for again, and a three-minute wait for every iteration on the
+    failing stage. Three services already reach for this by hand, looking up an
+    `existing` row before working, which is accidental idempotency applied
+    inconsistently.
+
+    The key includes the agent's fingerprint, not just the inputs. Without
+    that, editing a persona or a schema would reuse results produced by the old
+    one and prompt work would appear to do nothing -- which is a genuinely
+    miserable thing to debug.
+    """
+
+    key = models.CharField(max_length=64, unique=True, db_index=True)
+    step = models.CharField(max_length=120, db_index=True)
+    agent = models.CharField(max_length=60, blank=True, default='')
+    fingerprint = models.CharField(
+        max_length=32, blank=True, default='',
+        help_text="Digest of the agent version that produced this.",
+    )
+
+    value = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['step', '-created_at'])]
+
+    def __str__(self):
+        return f"{self.step} [{self.key[:12]}]"
