@@ -125,9 +125,11 @@ Settled with the user on 2026-09-21:
    agent keeps its own control flow. Editorial's eleven stages stay a fixed
    sequence and `EditorialPipelineRun` stage tracking keeps its meaning. No
    LLM decides what runs next.
-2. **Fail loudly.** A missing, unreachable or incoherent model raises. The run
-   is marked failed and surfaced. No canned prose is ever written to an
-   article. This reverses today's behaviour deliberately.
+2. **Fail loudly, and tell someone.** A missing, unreachable or incoherent
+   model raises. The run is marked failed, and the failure is mailed to the
+   capability holders rather than left on a dashboard nobody is watching. No
+   canned prose is ever written to an article. This reverses today's behaviour
+   deliberately.
 3. **One framework, no duplication.** Model access, response parsing, retry,
    memory, tools and personas each have exactly one implementation.
 4. **Explicit LLM touch points.** Provider wiring is confined to named seams,
@@ -151,6 +153,7 @@ ai_workflows/harness/
     base.py         Agent contract
     registry.py     name -> agent
     errors.py       the failure taxonomy
+    alerts.py       health state + capability-addressed alerting
 
 ai_workflows/orchestrator.py    the single supervisor
 ```
@@ -368,6 +371,75 @@ Two consequences to accept deliberately:
   So `ModelUnavailable` is caught at the *edge* — the chat view — and rendered
   as a message. It is never caught at the agent layer.
 
+### Alerting
+
+Failing loudly is only loud if somebody hears it. A failed run that is visible
+only on `/editorial/dashboard/` is visible only to whoever happens to open it,
+which for an overnight Beat run is nobody.
+
+The transport for this already exists and is trustworthy: `send_mail` over the
+Mailgun backend, with `mailgun.check_email_configured` refusing to boot in
+production if mail would go to the console. What does **not** exist is any
+health alert — all six current `send_mail` sites are transactional
+notifications (invitations, review-ready, inquiries, bookings). This design
+adds the first one.
+
+**Address by capability, not by config.** `staff/emails.py:capability_holder_emails`
+already solves the recipient problem: it resolves a capability codename to the
+staff accounts that hold it, counting direct grants, role groups and
+superusers. `approval/services/workflow.py:58` uses it to reach whoever holds
+`publish_blog`. Alerts use the same helper, so who gets paged is changed by
+granting a capability in the panel rather than by editing an environment
+variable.
+
+That requires one new capability, because none of the twelve in
+`staff/capabilities.py` means "operations":
+
+```python
+("receive_alerts", "Receive system health alerts"),   # Administration group
+```
+
+A new codename rather than reusing `manage_staff`: the people who should be
+woken by a dead pipeline are not necessarily the people who administer
+accounts, and conflating them means the only way to stop being paged is to
+give up an unrelated permission.
+
+**Alert on state change, not per failure.** A dead provider fails every stage
+of every run. Sending one message per failure turns an outage into a mail
+storm, and the storm is worse than the silence it replaced. So:
+
+- The first transition from healthy to failing sends one alert.
+- Further failures of the same agent with the same error class are recorded
+  and suppressed.
+- Recovery sends one "resolved" message.
+
+State lives in a small `AgentHealth` row per agent — last status, last error
+class, the count suppressed since the alert, and when it was sent. It also
+gives the dashboard something honest to render.
+
+**Send directly, never through the campaign outbox.** An alert is
+transactional and urgent; the outbox is drained on a Beat interval and is for
+bulk. `staff/emails.py:send_invitation` already documents exactly this
+reasoning, and the same applies with more force here.
+
+**`fail_silently=False`.** The approval workflow passes `fail_silently=True`,
+which is defensible for a review notice — the draft is still on the dashboard.
+It is not defensible for an alert, where a swallowed send means the failure is
+silent again by a different route. A failed alert is logged at `ERROR` and
+recorded against the `AgentHealth` row.
+
+**The honest limit.** An email alert cannot report a mail outage. If Mailgun
+is the thing that is down, nothing here fires, and the only signal is the
+dashboard and the logs. Covering that needs a channel that does not share a
+dependency with the thing it monitors — out of scope here, but worth naming
+so it is not mistaken for covered. `ApprovalNotification.channel` already
+anticipates multiple channels, and the same shape would extend to a webhook.
+
+This materially de-risks the migration. Step 4's reversal — runs that used to
+produce a mediocre draft now produce nothing — is safe to ship precisely
+because the failure reaches a person the first time it happens, rather than
+waiting to be discovered.
+
 ## What each existing piece becomes
 
 | Today | After |
@@ -398,17 +470,22 @@ Each step ships and is green before the next starts.
    dedup stays until step 4.
 3. **Tools.** Registry plus suites; the chat assistant switches to the registry
    for its existing three. No new tools yet.
-4. **Editorial onto the harness.** Six agents lose their clients, parsers and
+4. **Alerting, before anything can fail silently.** `receive_alerts`
+   capability, `AgentHealth`, the state-change alert. Ships *ahead* of the
+   fallback removal deliberately: the alarm is wired before the thing it
+   watches can break.
+5. **Editorial onto the harness.** Six agents lose their clients, parsers and
    fallbacks; personas declared; schemas declared; dedup becomes semantic.
    This is the step that deletes the most code and changes failure behaviour.
-5. **Assistant onto the harness.** Persona from shared voice; model from `llm`.
-6. **Orchestrator.** Supervisor, registry, dispatch. Until this lands the
+6. **Assistant onto the harness.** Persona from shared voice; model from `llm`.
+7. **Orchestrator.** Supervisor, registry, dispatch. Until this lands the
    agents are already unified — the orchestrator is the last piece, not the
    first.
-7. **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
+8. **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
    verifier). Separate review; this changes what the agents can do.
 
-Steps 1-3 are additive and safe. Step 4 is the sharp one.
+Steps 1-4 are additive and safe. Step 5 is the sharp one, and step 4 is what
+makes it safe to take.
 
 ## Testing
 
@@ -427,6 +504,10 @@ the fake currently has to know all six module paths.
 - Persona: rendered prompt contains the shared brand voice and no
   output-format instruction.
 - Tools: an agent is bound its declared suite and nothing else.
+- Alerting: a first failure mails the `receive_alerts` holders; a second
+  identical failure does not; recovery mails once; a send failure is logged
+  rather than swallowed. The suite must never send real mail — Django's
+  `locmem` backend is already forced under test in `settings.py`.
 - The eighteen editorial tests stay green throughout, unchanged where possible
   — they are the regression net for steps 4-6.
 
@@ -442,9 +523,12 @@ the fake currently has to know all six module paths.
 ## Open risks
 
 **The reversal is user-visible.** Today a broken key yields a mediocre draft;
-after step 4 it yields a failed run. If the newsroom has been quietly running
+after step 5 it yields a failed run. If the newsroom has been quietly running
 on fallbacks, this will look like a new outage rather than a newly visible one.
-Worth checking the fallback rate in logs before shipping step 4.
+Alerting (step 4) is the mitigation — the failure reaches a person immediately
+instead of being discovered later — but it is worth grepping the logs for the
+fallback warnings first, to know whether this will be a trickle or a flood on
+the day it ships.
 
 **Embedding cost and quota.** Vectorise-on-write adds Gemini embedding calls on
 every `BlogPost`/`Project` save. Queued and debounced, but it is new spend
