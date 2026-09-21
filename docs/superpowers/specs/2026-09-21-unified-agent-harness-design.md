@@ -104,6 +104,60 @@ bound to the chat assistant and nothing else. The six newsroom agents have no
 tools at all — the research agent cannot search the knowledge base its own
 pipeline populates.
 
+### Nothing measures whether the output is any good
+
+There are 730 tests and zero evals. The tests answer "did it run"; nothing
+answers "was it worth reading". Every prompt is therefore unfalsifiable: a
+persona can be rewritten, a provider swapped, a schema changed, and the only
+signal is whether an exception was raised.
+
+This matters more after this work than before it, because this design
+introduces provider fallback — a run that silently moves from one model to
+another produces different prose from the same prompt, and nothing would
+notice.
+
+### The context window is spent badly
+
+`service.py:173` sets `MAX_TOKENS_FOR_TRIMMING = 2000`. The assistant discards
+almost all history on every turn, by blunt recency, so something established
+ten turns ago is gone regardless of how relevant it is. Nothing in the codebase
+owns what goes into the window, in what order, or what is dropped first — which
+is the single largest determinant of output quality.
+
+Worse, `_render_system_prompt` (`service.py:143`) substitutes
+`datetime.now()` into the *system prompt* on every call. Provider prompt caching
+works on an exact prefix match, so a timestamp at the top of the prompt
+invalidates the entire cached prefix on every single request. The highest
+volume path in the system is built so that caching can never hit.
+
+### JSON is requested, never guaranteed
+
+There is no use of `response_format`, `response_schema`, or
+`with_structured_output` anywhere. All six agents ask for JSON in prose — "Return
+ONLY raw JSON" — then strip fences with string operations and hope. Every
+provider now offers a native mode that makes the shape structural rather than
+requested.
+
+The subtler cost is that the persona and the format fight. One call is asked to
+be an award-winning journalist *and* a JSON emitter, and both suffer.
+
+### A model with no way to say "I don't know" will make something up
+
+`research/services/fact_verifier.py:77` hardcodes `is_approved=True`.
+`VerifiedFactReport.is_approved` defaults to `True`. Nothing anywhere branches
+on it — the only assertion, `editorial/tests.py:93`, is asserting a constant.
+The agent dutifully records `contradictions_detected` and
+`unsupported_claims_removed`, and then approves regardless.
+
+The gate that exists to stop unverified claims reaching publication is
+decorative.
+
+The general case matters more than the bug. Every agent schema demands a full
+set of fields and offers no legal way to decline, so a model that cannot verify
+something fills the field anyway. That — not only the fallback path — is the
+mechanism behind *"Representative enterprise deployments demonstrate a 40%
+improvement in performance."*
+
 ### Failure is silent and fabricates
 
 Because every agent degrades to a canned draft, a deployment with a missing or
@@ -144,6 +198,15 @@ Settled with the user on 2026-09-21:
    per tool; each agent declares the suite it is issued.
 7. **One persona per agent, first-class.** A single declared persona per agent,
    composed from a shared brand voice. No second contradicting system message.
+8. **Evals before the harness.** A held-out set and a grader per agent, built
+   first, so every later step can be shown not to have made the output worse.
+9. **Context assembly is a module, not an afterthought.** One place owns the
+   token budget, the ordering and the eviction policy, and prompts are built
+   stable-prefix-first so provider caching can actually hit.
+10. **Structure is guaranteed, not requested.** Native structured output, and
+   every schema admits abstention as a legal answer.
+11. **Stages are resumable.** Step results are content-addressed, so a failure
+   at stage nine does not re-run stages one to eight.
 
 ## Architecture
 
@@ -151,13 +214,16 @@ Settled with the user on 2026-09-21:
 ai_workflows/harness/
     llm.py          model access, the only provider touch point
     contract.py     prompt -> validated object; the only parser
+    context.py      what goes in the window, in what order, what is dropped
     memory.py       the unified memory facade
     tools.py        registry + per-agent suites
     persona.py      persona composition from shared brand voice
     base.py         Agent contract
     registry.py     name -> agent
+    steps.py        content-addressed step results (resume)
     errors.py       the failure taxonomy
     alerts.py       health state + capability-addressed alerting
+    evals/          held-out sets, graders, the runner
 
 ai_workflows/orchestrator.py    the single supervisor
 ```
@@ -394,10 +460,107 @@ def ask(
 ) -> BaseModel
 ```
 
-It renders the persona as the system message, calls the model, strips a fenced
-block if present, parses, and validates against a Pydantic schema. On invalid
-JSON or a schema mismatch it retries once with the validation error appended,
-then raises `AgentOutputInvalid`.
+It renders the persona, assembles the context (below), calls the model through
+the provider's **native structured-output mode**, and validates against a
+Pydantic schema. On a schema mismatch it retries once with the validation error
+appended, then raises `AgentOutputInvalid`.
+
+**Native, not requested.** Every provider now offers a mode that constrains the
+output shape — `response_format` / `response_schema` / tool-call extraction —
+and the contract uses it. Prompt-instructed JSON is a request the model may
+decline; a native mode is structural. The fence-stripping path survives only as
+a fallback for a model that lacks the feature, and it lives in one function
+instead of six.
+
+This also separates two jobs that currently fight. A persona asked to be an
+award-winning journalist *and* a JSON emitter does neither well. For the writer
+specifically, generating prose and extracting structure should be two calls: a
+creative one with no schema pressure, then a cheap `PRECISE` extraction. That
+costs one extra call and measurably improves both halves.
+
+**Abstention is part of every schema.** A model handed a mandatory field and no
+way to decline will fill it — which is where fabricated statistics come from.
+So every response model carries the option of not knowing:
+
+```python
+class AgentOutput(BaseModel):
+    status: Literal["ok", "insufficient_evidence", "refused"]
+    confidence: float | None = None
+    notes: str = ""
+```
+
+and the pipeline routes on it. A verifier returning `insufficient_evidence`
+stops the article rather than approving it; the run ends in a reviewable state
+with the reason attached, not in a published draft. This is the fix for
+`fact_verifier.py:77`'s hardcoded `is_approved=True`, and it generalises: an
+agent that cannot do its job must have a way to say so that the caller respects.
+
+### Context assembly (`harness/context.py`)
+
+The largest lever on output quality has no owner today. Retrieval that finds
+the right document and then places it fortieth of sixty has not helped. This
+module owns three things:
+
+- **The budget.** A real token budget per agent, counted with the provider's
+  tokenizer, replacing `service.py:173`'s `MAX_TOKENS_FOR_TRIMMING = 2000` —
+  a figure that discards nearly all history in a 1M-context era.
+- **The order.** Stable content first — persona, tool definitions, profile —
+  then retrieved context, then the volatile turn. This is what makes provider
+  prompt caching possible; today `_render_system_prompt` puts `datetime.now()`
+  at the very top and invalidates the cached prefix on every request. Moving
+  the timestamp below the last cache breakpoint is a few lines and is probably
+  the single largest cost reduction available.
+- **Eviction.** What is dropped when it does not fit, by salience rather than
+  by recency alone, so an important fact from ten turns ago outranks small
+  talk from two.
+
+Tool results are context too. A suite that includes `fetch_url` can return a
+200KB page into a window that also has to hold the instructions, so the module
+caps and summarises tool output rather than letting one call evict the prompt.
+
+### Resumable steps (`harness/steps.py`)
+
+The pipeline is eleven stages and several model calls over roughly three
+minutes. A failure at stage nine currently re-runs stages one to eight — paid
+for again, and a three-minute wait for every iteration on the failing stage.
+
+Step results are content-addressed: a hash of `(step name, agent version,
+inputs)` keys a stored result, so a retry resumes and a re-run with unchanged
+inputs is free. Three of the services already reach for this by hand — writer,
+verifier and investigator each look up an `existing` row before working — which
+is accidental idempotency, inconsistently applied. Making it a harness property
+replaces those checks with one mechanism.
+
+Worth being precise about the invalidation key: `agent version` is in the hash
+so that changing a persona or a schema invalidates cached steps. Otherwise
+editing a prompt would appear to do nothing, which is a deeply confusing
+failure to debug.
+
+### Evals (`harness/evals/`)
+
+Tests answer "did it run". Nothing currently answers "was the output any good",
+and that gap is what makes every prompt change a guess.
+
+The shape is deliberately modest, because an eval nobody runs is worse than
+none:
+
+- **20-50 held-out inputs per agent**, drawn from real trend topics and real
+  dossiers, stored as fixtures.
+- **A grader per agent.** Deterministic where the answer is checkable (did the
+  verifier reject a dossier containing a planted false claim? did the SEO agent
+  emit valid JSON-LD?), and a model-graded rubric where it is not (is the draft
+  accurate, on-voice, and free of invented figures?).
+- **A runner** that reports per-agent scores and a diff against the last run,
+  cheap enough to run on a branch.
+
+The planted-false-claim case deserves to exist on day one, because it is the
+test that `fact_verifier.py` would fail today and that
+`editorial/tests.py:93` pretends to cover.
+
+Evals are what make the rest of this design safe to land. Provider fallback,
+persona relocation, native structured output and the two-call writer split are
+all changes to *what the model says*, and without a measurement each one ships
+on hope.
 
 This kills the "Return ONLY raw JSON" instruction in all six agents: the
 requirement moves into the contract, where it can be enforced rather than
@@ -829,6 +992,9 @@ likely: a rate limit on one is a fallback, not an outage.
 | `editorial/services/memory.py` | folded into `harness/memory.py`; dedup becomes semantic |
 | `knowledge_base/services/knowledge_graph.py` | becomes the semantic layer's implementation |
 | `ai_workflows/tools.py` | tools move into the registry |
+| `MAX_TOKENS_FOR_TRIMMING = 2000` | replaced by a real budget in `context.py` |
+| `fact_verifier.py`'s `is_approved=True` | replaced by routing on `status` |
+| per-service `existing` lookups | replaced by content-addressed steps |
 
 Note the eight non-LLM "agents" are explicitly *not* migrated. The SEO
 "agent" builds a JSON-LD dict and the publisher copies fields into a
@@ -839,8 +1005,14 @@ a model harness would add cost and failure modes for nothing.
 
 Each step ships and is green before the next starts.
 
-1. **Harness, no callers.** `llm`, `contract`, `errors`, `persona`, `base`.
-   Unit-tested against the existing fakes. Nothing else changes.
+0. **Evals first.** Held-out sets, graders and the runner, measured against
+   the *current* agents. This produces the baseline every later step is
+   compared to, and it is the only step that gets harder the longer it is
+   deferred — once the agents are rewritten there is nothing left to compare
+   to. Includes the planted-false-claim case that today's verifier fails.
+1. **Harness, no callers.** `llm`, `contract`, `context`, `steps`, `errors`,
+   `persona`, `base`. Unit-tested against the existing fakes. Nothing else
+   changes.
 2. **Memory unification.** Facade over the three stores, vectorise-on-write,
    save hooks for `BlogPost`/`Project`. Vectors move out of the three content
    models into `Embedding`, carrying their space, provider and model, and the
@@ -868,8 +1040,18 @@ Each step ships and is green before the next starts.
 9. **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
    verifier). Separate review; this changes what the agents can do.
 
-Steps 1-5 are additive and safe. Step 6 is the sharp one, and step 5 is what
-makes it safe to take.
+Steps 0-5 are additive and safe. Step 6 is the sharp one; step 0 is what makes
+it *checkable* and step 5 is what makes it *survivable*.
+
+Two cheap fixes do not need to wait for any of this, and should land on their
+own:
+
+- **`fact_verifier.py:77`'s hardcoded `is_approved=True`**, with a test that
+  can actually fail. This is a live defect — the publication gate does
+  nothing — and it is independent of the harness.
+- **Moving `datetime.now()` out of the cached prompt prefix**
+  (`service.py:143`). A few lines, and it stops every assistant request
+  from destroying its own cache.
 
 ## Testing
 
@@ -879,7 +1061,20 @@ all six modules and is the foundation. It moves to
 instead of six patch targets — which is itself an argument for the design, as
 the fake currently has to know all six module paths.
 
-- Harness units: role→config mapping, fence-strip, schema retry, each error.
+Tests and evals are different instruments and both are required. Tests are
+deterministic, offline and gate the merge. Evals are sampled, cost money, and
+gate the *behaviour* changes — they run on demand and before steps 6 and 7, not
+on every commit.
+
+- Harness units: role→config mapping, schema retry, each error.
+- Context: the budget is respected; ordering puts the persona before the
+  volatile turn; a 200KB tool result is capped rather than evicting the
+  prompt; eviction drops the least salient item, not simply the oldest.
+- Abstention: a schema returning `insufficient_evidence` stops the pipeline
+  and leaves a reviewable reason; it never reaches `publish`.
+- Steps: an unchanged input re-uses the stored result; changing the persona or
+  the schema invalidates it. That second case is the one that bites — a cache
+  that ignores prompt edits makes prompt work look inert.
 - Providers: a key that is absent, present-but-rejected, and valid produce
   `absent`/`candidate`/`active`; resolution honours the preference order and
   skips inactive providers; `allow_fallback = False` raises instead of
@@ -949,6 +1144,26 @@ managed migration (see Changing the embedding model) and losing the embedding
 provider's key degrades *memory* whatever else is configured. The migration
 design removes the cost and the risk of a switch; it does not make embeddings
 a runtime fallback, and nothing can.
+
+**One persona will not perform identically on five providers.** Prompts are
+model-coupled in practice: wording tuned on Gemini can underperform on Claude
+or DeepSeek, and the design's single-persona-per-agent rule implies a
+consistency that will not hold. Either allow per-family overrides or accept the
+variance — but either way it is only knowable with evals, which is the main
+reason they are step 0 rather than step 9.
+
+**Evals cost money and can rot.** A model-graded rubric is itself a model call,
+so a full eval run is a real (small) bill, and a held-out set drawn from today's
+topics will slowly stop resembling the work. Budget for refreshing the fixtures,
+and keep the deterministic graders — planted false claims, schema validity — as
+the part that cannot drift.
+
+**Captured prompts are a retention decision.** Debugging bad output needs the
+exact rendered prompt and response, which means storing user questions and
+article drafts somewhere durable. LangSmith tracing is already enabled
+(project `pr-dear-lox-70`), so this is partly true already and worth deciding
+deliberately rather than inheriting: what is captured, for how long, and who
+can read it.
 
 **The importance score will be wrong at first.** Until `recall()` has
 accumulated retrieval counts, the score leans on view counts and recency,
