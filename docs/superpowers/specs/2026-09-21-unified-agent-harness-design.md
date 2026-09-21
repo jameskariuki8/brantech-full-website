@@ -132,8 +132,11 @@ Settled with the user on 2026-09-21:
    deliberately.
 3. **One framework, no duplication.** Model access, response parsing, retry,
    memory, tools and personas each have exactly one implementation.
-4. **Explicit LLM touch points.** Provider wiring is confined to named seams,
-   so swapping or adding a model is a change in one file.
+4. **Explicit LLM touch points, five live providers.** OpenRouter, OpenAI,
+   Anthropic, Gemini and DeepSeek, each activating when a valid key is present
+   and verified. Provider wiring is confined to `harness/llm.py`. Model
+   identities, capabilities and prices come from a refreshed catalogue rather
+   than from constants.
 5. **Vectorised memory by default.** Writing to memory embeds it; callers do
    not opt in.
 6. **Shared tool management, per-agent suites.** One registry, one definition
@@ -186,10 +189,149 @@ place. Timeout, retry, token budget and tracing attach here, once.
 never returns `None` — the `self.model = None` pattern is what made silent
 degradation possible, so the type makes it unrepresentable.
 
-**Provider seam.** `llm.py` is the only file naming a vendor. Adding a second
-provider means adding a branch here and nothing else. Model identifiers keep
-coming from `brandtechsolution/config.py`, which already holds
-`gemini_chat_model` and `gemini_embedding_model`.
+**Provider seam.** `llm.py` is the only file naming a vendor. Model identifiers
+stop being hardcoded and come from the catalogue below; `config.py` keeps
+`gemini_chat_model` and `gemini_embedding_model` as the pinned defaults.
+
+## Providers
+
+Five providers, not six. **Codex is not one of them** — it is OpenAI's coding
+agent (CLI, desktop app, IDE integrations), authenticated with a ChatGPT plan
+or an OpenAI API key, and it *consumes* models rather than serving them. There
+is no Codex chat-completions endpoint to route to. If the intent was "be able
+to use OpenAI's coding models", that arrives through the OpenAI provider.
+Flagged rather than silently dropped.
+
+| Provider | Key | Chat endpoint |
+|---|---|---|
+| OpenRouter | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` |
+| OpenAI | `OPENAI_API_KEY` | `https://api.openai.com/v1` |
+| Anthropic | `ANTHROPIC_API_KEY` | `https://api.anthropic.com/v1` |
+| Gemini | `GOOGLE_API_KEY` (already present) | `https://generativelanguage.googleapis.com/v1beta` |
+| DeepSeek | `DEEPSEEK_API_KEY` | `https://api.deepseek.com` |
+
+### Activation on a valid key
+
+Three states, because "a key is present" and "a key works" are different
+things, and conflating them is how a typo becomes a silent outage:
+
+```
+absent     no key in config
+candidate  key present, never validated or last probe failed
+active     key present and the provider answered its model list
+```
+
+Validation calls the provider's model-list endpoint — the cheapest
+authenticated call each one has, and the same call the catalogue refresh
+needs, so activation and catalogue refresh are one operation.
+
+Three rules about *when*:
+
+- **Never at import time.** `config.py` is imported by `settings.py`; a network
+  call there would make Django's startup depend on five third parties. A
+  provider with a key starts as `candidate` and is promoted by the first
+  refresh.
+- **Never in the request path.** Probing per request doubles latency and burns
+  rate limit. State lives in a `Provider` row with `last_checked_at`.
+- **On a Beat schedule**, alongside the catalogue refresh, plus on demand from
+  the panel so adding a key does not mean waiting for the next tick.
+
+A Django system check reports which providers resolved, following the
+precedent `mailgun.check_email_configured` and `turnstile.py` already set in
+this codebase — a deployment should not have to guess whether its keys took.
+
+### Where model metadata and pricing actually come from
+
+This is the part worth reading before building anything, because the obvious
+assumption is wrong. **Only one of the five publishes pricing through its
+API.** Verified against the live endpoints on 2026-09-21:
+
+| Provider | List endpoint | Auth to list | Pricing in response | Other metadata |
+|---|---|---|---|---|
+| OpenRouter | `GET /api/v1/models` | **none** | **yes** — `pricing.prompt`, `pricing.completion`, per token, as strings | `context_length`, `architecture`, `supported_parameters`, `top_provider`, `knowledge_cutoff`, `expiration_date` |
+| OpenAI | `GET /v1/models` | yes | no | `id`, `object`, `created`, `owned_by` — nothing else |
+| Anthropic | `GET /v1/models` | yes | no | `id`, `display_name`, `created_at`, `max_input_tokens`, `max_tokens`, `capabilities` |
+| Gemini | `GET /v1beta/models` | yes | no | `inputTokenLimit`, `outputTokenLimit`, `supportedGenerationMethods`, `thinking`, default sampling params |
+| DeepSeek | `GET /models` | yes | no | `id`, `object`, `owned_by` |
+
+OpenRouter's catalogue is unauthenticated, covers the other four providers'
+models under `anthropic/…`, `openai/…`, `google/…`, `deepseek/…`, and carries
+prices and deprecation dates for all of them. That makes it the obvious
+metadata source — and it should be used as one — but the ceiling has to be
+stated plainly:
+
+> **OpenRouter's prices are OpenRouter's prices.** They are what OpenRouter
+> charges to proxy a model, which need not equal what the provider charges you
+> directly. Treating them as first-party rates is an approximation, close
+> enough to choose a model by and **not** good enough to bill anyone from.
+
+So the catalogue records provenance per row rather than pretending one number
+is authoritative:
+
+```python
+class PriceSource(str, Enum):
+    PROVIDER = "provider"     # the provider's own API said so
+    OPENROUTER = "openrouter" # derived from OpenRouter's listing
+    MANUAL = "manual"         # checked-in table, with an as_of date
+    UNKNOWN = "unknown"
+```
+
+Every price carries its source and `price_checked_at`. Anything shown as money
+in the panel shows its provenance next to it. A `MANUAL` row older than its
+staleness window is rendered as stale rather than quietly trusted — a wrong
+price presented confidently is worse than a missing one.
+
+Direct-provider prices come from a checked-in `harness/pricing.toml` seeded
+with an explicit `as_of` date, so a fresh deployment has usable numbers before
+the first refresh and it is obvious when they were last touched by a human.
+The Anthropic rates for that seed are in this skill-cached table and on the
+published pricing page; OpenAI, Gemini and DeepSeek publish theirs on their
+pricing pages only. None of it is scrape-able reliably, which is the honest
+reason the manual table exists.
+
+### The catalogue
+
+```python
+class CatalogueEntry(models.Model):
+    provider, model_id, display_name
+    context_tokens, max_output_tokens
+    input_price_per_mtok, output_price_per_mtok
+    price_source, price_checked_at
+    capabilities          # JSON: tools, vision, json_mode, thinking
+    deprecated_at         # OpenRouter's expiration_date, where known
+    available             # last refresh saw it
+    refreshed_at
+```
+
+Refreshed by a Beat task on a daily cadence — model lists move in weeks, not
+minutes, and a daily pull is five cheap calls. The task is additive: a model
+that disappears from a listing is marked `available=False`, never deleted,
+because historical invocation rows point at it.
+
+### Resolving a role to a model
+
+`ModelRole` stops meaning "a temperature" and starts meaning "a requirement".
+Resolution order, first match wins:
+
+1. An explicit pin for that agent, if set. Always wins.
+2. The configured provider preference order, filtered to `active` providers.
+3. Within a provider, the model mapped to that role.
+
+A provider failure (rate limit, 5xx, timeout) falls through to the next
+candidate and records which model actually served the call. An agent that must
+not fail over — a verifier whose output is compared across runs, say — can
+declare `allow_fallback = False` and get `ModelUnavailable` instead.
+
+### Spend becomes visible
+
+Pricing in the catalogue is what makes this possible, and it is arguably worth
+more than the provider choice. Each call records an `AgentInvocation`: agent,
+provider, model, prompt and completion tokens, computed cost, the run it
+belonged to. The newsroom's cost per published article becomes a number.
+
+`celery.py` already says the pipeline must not "double-spend model quota" as
+its reason for not auto-retrying lost runs. That constraint is currently
+enforced by reasoning about it; with invocation rows it can be measured.
 
 ### The prompt contract (`harness/contract.py`)
 
@@ -492,7 +634,8 @@ anticipates multiple channels, and the same shape would extend to a webhook.
 This materially de-risks the migration. Step 4's reversal — runs that used to
 produce a mediocre draft now produce nothing — is safe to ship precisely
 because the failure reaches a person the first time it happens, rather than
-waiting to be discovered.
+waiting to be discovered. With five providers configured it is also less
+likely: a rate limit on one is a fallback, not an outage.
 
 ## What each existing piece becomes
 
@@ -522,23 +665,27 @@ Each step ships and is green before the next starts.
 2. **Memory unification.** Facade over the three stores, vectorise-on-write,
    save hooks for `BlogPost`/`Project`. Behaviour-compatible; the substring
    dedup stays until step 4.
-3. **Tools.** Registry plus suites; the chat assistant switches to the registry
+3. **Providers and the catalogue.** `Provider` and `CatalogueEntry`, the
+   refresh task, the activation states, the system check, `pricing.toml`.
+   Gemini stays the only configured provider until this is proven — adding a
+   key is then the whole of turning a second one on.
+4. **Tools.** Registry plus suites; the chat assistant switches to the registry
    for its existing three. No new tools yet.
-4. **Alerting, before anything can fail silently.** `receive_alerts`
+5. **Alerting, before anything can fail silently.** `receive_alerts`
    capability, `AgentHealth`, the themed HTML shell, the state-change alert.
    Ships *ahead* of the fallback removal deliberately: the alarm is wired
    before the thing it watches can break.
-5. **Editorial onto the harness.** Six agents lose their clients, parsers and
+6. **Editorial onto the harness.** Six agents lose their clients, parsers and
    fallbacks; personas declared; schemas declared; dedup becomes semantic.
    This is the step that deletes the most code and changes failure behaviour.
-6. **Assistant onto the harness.** Persona from shared voice; model from `llm`.
-7. **Orchestrator.** Supervisor, registry, dispatch. Until this lands the
+7. **Assistant onto the harness.** Persona from shared voice; model from `llm`.
+8. **Orchestrator.** Supervisor, registry, dispatch. Until this lands the
    agents are already unified — the orchestrator is the last piece, not the
    first.
-8. **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
+9. **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
    verifier). Separate review; this changes what the agents can do.
 
-Steps 1-4 are additive and safe. Step 5 is the sharp one, and step 4 is what
+Steps 1-5 are additive and safe. Step 6 is the sharp one, and step 5 is what
 makes it safe to take.
 
 ## Testing
@@ -550,6 +697,14 @@ instead of six patch targets — which is itself an argument for the design, as
 the fake currently has to know all six module paths.
 
 - Harness units: role→config mapping, fence-strip, schema retry, each error.
+- Providers: a key that is absent, present-but-rejected, and valid produce
+  `absent`/`candidate`/`active`; resolution honours the preference order and
+  skips inactive providers; `allow_fallback = False` raises instead of
+  falling over. Every provider HTTP call is stubbed — the suite must not
+  reach a vendor, and must not need five API keys to run.
+- Catalogue: a refresh that loses a model marks it unavailable rather than
+  deleting it; a price keeps its `price_source`; a stale `MANUAL` row is
+  reported stale. Fixtures are recorded payloads, not live calls.
 - **Fallback removal is asserted:** with the model unavailable, a pipeline run
   must fail and write nothing. Today the equivalent test would assert a canned
   draft exists.
@@ -570,7 +725,12 @@ the fake currently has to know all six module paths.
 
 ## Out of scope
 
-- Multi-provider support. The seam is designed for it; only Gemini is wired.
+- Billing anyone from catalogue prices. They are good enough to choose a model
+  and to report internal spend, not to invoice from.
+- A Codex provider — it is an agent product, not a model endpoint (see
+  Providers).
+- Switching the embedding provider. Chat is multi-provider from day one;
+  embeddings stay on Gemini for the reason in the risks below.
 - Making the eight deterministic services agentic.
 - Replacing Celery for agent scheduling.
 - Streaming responses.
@@ -584,9 +744,9 @@ the fake currently has to know all six module paths.
 ## Open risks
 
 **The reversal is user-visible.** Today a broken key yields a mediocre draft;
-after step 5 it yields a failed run. If the newsroom has been quietly running
+after step 6 it yields a failed run. If the newsroom has been quietly running
 on fallbacks, this will look like a new outage rather than a newly visible one.
-Alerting (step 4) is the mitigation — the failure reaches a person immediately
+Alerting (step 5) is the mitigation — the failure reaches a person immediately
 instead of being discovered later — but it is worth grepping the logs for the
 fallback warnings first, to know whether this will be a trickle or a flood on
 the day it ships.
@@ -595,10 +755,31 @@ the day it ships.
 every `BlogPost`/`Project` save. Queued and debounced, but it is new spend
 against the same quota the newsroom uses.
 
-**The 3072-dimension commitment.** All four vector columns are 3072-wide for
-`gemini-embedding-001`. A provider swap means a migration and a full re-embed.
-The seam does not rescue that; nothing short of a dimension-agnostic store
-would.
+**Embeddings do not become multi-provider, and this is the sharpest edge in
+the design.** All four vector columns are 3072-wide for
+`gemini-embedding-001`. Chat can fail over between five providers mid-run
+without anyone noticing; embeddings cannot fail over at all, because a vector
+from a different model is not comparable to the ones already stored — it is
+not merely differently sized, it is meaningless in the same space. So
+`get_model` and `get_embedder` must resolve independently: a deployment can run
+Claude for chat while Gemini remains the only embedding provider, and losing
+the Google key degrades *memory* whatever else is configured. Changing
+embedding provider is a schema migration plus a full re-embed of every
+`BlogPost`, `Project` and `KnowledgeDocument`, and should be treated as a
+project, not a config change.
+
+**Provider fallback can silently change output quality.** A run that falls
+from Claude to DeepSeek on a rate limit produces different prose from the same
+prompt. `AgentInvocation` records which model actually served each call, so
+this is auditable after the fact, but an editor comparing two drafts will not
+be told unless the dashboard surfaces it. Agents whose output is compared
+across runs should set `allow_fallback = False`.
+
+**Catalogue prices can be wrong in the direction that matters.** OpenRouter's
+margin means a derived price is likely an over-estimate of a direct provider's
+rate, and a `MANUAL` row is exactly as current as the day someone last edited
+it. Cost reporting built on this is indicative, not accounting. The
+`price_source` column exists so that is visible rather than assumed.
 
 **Semantic dedup will behave differently.** Replacing a substring match with
 similarity will reject topics the current check waves through, and vice versa.
