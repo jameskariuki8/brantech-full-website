@@ -181,7 +181,12 @@ class AppSettings(BaseSettings):
     # ============================================================
     # LangSmith Configuration
     # ============================================================
-    langsmith_tracing: str = "true"
+    # A real bool, not a str. Declared as `str = "true"` it could not be turned
+    # off: both readers in ai_workflows/service.py test it for truthiness, and
+    # the string "false" is truthy in Python, so LANGSMITH_TRACING=false in the
+    # environment still resolved to enabled. pydantic-settings parses the usual
+    # false/0/no spellings into False.
+    langsmith_tracing: bool = True
     langsmith_api_key: Optional[str] = None
     langsmith_project: str = "brantech-ai"
     langsmith_endpoint: str = "https://api.smith.langchain.com"
