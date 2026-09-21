@@ -452,17 +452,63 @@ meaning. The failure mode is the dangerous kind: nothing errors, search just
 quietly returns worse results. So the switch is a migration with a designed
 shape.
 
-**Vectors belong to a space, and spaces never mix.**
+**Vectors belong to a space, and every vector records who made it.**
 
 ```python
 class EmbeddingSpace(models.Model):
     provider, model_id, dimensions
     status          # building | active | retired
     created_at, activated_at
+
+class Embedding(models.Model):
+    space        = FK(EmbeddingSpace)
+    # Denormalised from the space, deliberately. A space row can be edited and
+    # a model can be renamed or retired; what produced this particular vector
+    # cannot change after the fact. Provenance has to survive its parent being
+    # corrected, so it is copied onto the row and never updated.
+    provider, model_id, dimensions
+
+    content_type, object_id      # BlogPost | Project | KnowledgeDocument
+    vector       = VectorField() # no fixed dimension - see below
+    content_hash                 # skip re-embedding unchanged text
+    created_at
+
+    class Meta:
+        unique_together = ("space", "content_type", "object_id")
 ```
 
-Every stored vector references its space. Changing model **creates a new
-space** and backfills into it; it never overwrites in place. The old space
+This is the part the current schema physically cannot express. `BlogPost.embedding`,
+`Project.embedding` and `KnowledgeDocument.embedding` are single columns, so a
+row can hold exactly one vector and nothing records which model produced it.
+Two spaces cannot coexist, which makes the migration above unimplementable as
+written — so vectors move out of the content models into this table, the old
+columns are backfilled into it and then dropped.
+
+Three things fall out of that, beyond the provenance itself:
+
+- **"Which model served this?" becomes a query**, not an inference from
+  deployment dates. After a switch you can say exactly how many results came
+  from `gemini-embedding-001` and how many from its replacement, and a space
+  containing more than one `model_id` is a bug you can assert against rather
+  than a silent corruption.
+- **"Not embedded yet" becomes representable.** Today `embedding IS NULL`
+  conflates never-attempted, failed, and deliberately-deferred. As row absence
+  in a space, the lazy tail has an honest state, and the backfill's remaining
+  work is a straightforward anti-join.
+- **Rollback becomes data.** The retired space's rows are still there, still
+  labelled, so reverting a cutover is a flag change rather than a re-embed.
+
+**On the fixed-width column.** `pgvector.django.VectorField` with no
+`dimensions` emits a bare `vector` column, which accepts any dimensionality —
+so one table holds both spaces during a migration. That works today at no cost
+because **there is currently no vector index anywhere in the codebase**: all
+four columns are sequential-scanned. If an HNSW or IVFFlat index is added
+later it requires a fixed dimension, and the answer at that point is a partial
+index per space (`WHERE space_id = N`), not a schema redesign. Worth knowing
+before someone adds an index and is surprised.
+
+Changing model **creates a new space** and backfills into it; it never
+overwrites in place. The old space
 keeps serving every query until cutover, so search quality is unchanged
 throughout the migration rather than degrading as rows are converted. Cutover
 is one atomic flip of which space is `active`, and the old space is retired,
@@ -796,8 +842,12 @@ Each step ships and is green before the next starts.
 1. **Harness, no callers.** `llm`, `contract`, `errors`, `persona`, `base`.
    Unit-tested against the existing fakes. Nothing else changes.
 2. **Memory unification.** Facade over the three stores, vectorise-on-write,
-   save hooks for `BlogPost`/`Project`. Behaviour-compatible; the substring
-   dedup stays until step 4.
+   save hooks for `BlogPost`/`Project`. Vectors move out of the three content
+   models into `Embedding`, carrying their space, provider and model, and the
+   old columns are backfilled and dropped — this has to happen before a model
+   switch is possible at all, and it is also what gives `recall()` somewhere to
+   record retrieval counts. Behaviour-compatible; the substring dedup stays
+   until step 6.
 3. **Providers and the catalogue.** `Provider` and `CatalogueEntry`, the
    refresh task, the activation states, the system check, `pricing.toml`.
    Gemini stays the only configured provider until this is proven — adding a
@@ -838,6 +888,10 @@ the fake currently has to know all six module paths.
 - Catalogue: a refresh that loses a model marks it unavailable rather than
   deleting it; a price keeps its `price_source`; a stale `MANUAL` row is
   reported stale. Fixtures are recorded payloads, not live calls.
+- Embedding provenance: every stored vector carries the provider and model that
+  produced it; a space never contains two `model_id` values; renaming a
+  `EmbeddingSpace` leaves existing rows' provenance unchanged; `recall()` only
+  ever reads the active space, so a half-built space cannot leak into results.
 - **Fallback removal is asserted:** with the model unavailable, a pipeline run
   must fail and write nothing. Today the equivalent test would assert a canned
   draft exists.
