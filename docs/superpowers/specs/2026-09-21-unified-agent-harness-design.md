@@ -132,9 +132,10 @@ Settled with the user on 2026-09-21:
    deliberately.
 3. **One framework, no duplication.** Model access, response parsing, retry,
    memory, tools and personas each have exactly one implementation.
-4. **Explicit LLM touch points, five live providers.** OpenRouter, OpenAI,
-   Anthropic, Gemini and DeepSeek, each activating when a valid key is present
-   and verified. Provider wiring is confined to `harness/llm.py`. Model
+4. **Explicit LLM touch points, five key-based providers plus Codex.**
+   OpenRouter, OpenAI, Anthropic, Gemini and DeepSeek activate when a valid key
+   is present and verified; Codex is OAuth and subscription-billed, built but
+   off by default. Provider wiring is confined to `harness/llm.py`. Model
    identities, capabilities and prices come from a refreshed catalogue rather
    than from constants.
 5. **Vectorised memory by default.** Writing to memory embeds it; callers do
@@ -195,20 +196,65 @@ stop being hardcoded and come from the catalogue below; `config.py` keeps
 
 ## Providers
 
-Five providers, not six. **Codex is not one of them** — it is OpenAI's coding
-agent (CLI, desktop app, IDE integrations), authenticated with a ChatGPT plan
-or an OpenAI API key, and it *consumes* models rather than serving them. There
-is no Codex chat-completions endpoint to route to. If the intent was "be able
-to use OpenAI's coding models", that arrives through the OpenAI provider.
-Flagged rather than silently dropped.
+Five providers authenticate with an API key. A sixth, Codex, authenticates
+differently and carries a caveat worth reading before it is enabled.
 
-| Provider | Key | Chat endpoint |
-|---|---|---|
-| OpenRouter | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` |
-| OpenAI | `OPENAI_API_KEY` | `https://api.openai.com/v1` |
-| Anthropic | `ANTHROPIC_API_KEY` | `https://api.anthropic.com/v1` |
-| Gemini | `GOOGLE_API_KEY` (already present) | `https://generativelanguage.googleapis.com/v1beta` |
-| DeepSeek | `DEEPSEEK_API_KEY` | `https://api.deepseek.com` |
+| Provider | Auth | Billed against | Chat endpoint |
+|---|---|---|---|
+| OpenRouter | `OPENROUTER_API_KEY` | usage | `https://openrouter.ai/api/v1` |
+| OpenAI | `OPENAI_API_KEY` | usage | `https://api.openai.com/v1` |
+| Anthropic | `ANTHROPIC_API_KEY` | usage | `https://api.anthropic.com/v1` |
+| Gemini | `GOOGLE_API_KEY` (already present) | usage | `https://generativelanguage.googleapis.com/v1beta` |
+| DeepSeek | `DEEPSEEK_API_KEY` | usage | `https://api.deepseek.com` |
+| Codex | ChatGPT OAuth | **subscription seat** | Responses API, via OAuth token |
+
+### Codex: real, but not a drop-in sixth provider
+
+The mechanism exists and works. `codex login` runs a browser OAuth flow and
+writes access and refresh tokens to `~/.codex/auth.json` (or the OS keyring,
+per `cli_auth_credentials_store`), and several community proxies —
+`dvcrn/codex-oauth-proxy`, `wowyuarm/codex-proxy` — re-expose those
+credentials as an OpenAI-compatible endpoint, serving requests against
+ChatGPT Plus/Pro subscription quota rather than API credits. The traffic goes
+to the **Responses API**, not chat-completions, which is why some proxies
+support it and some do not.
+
+What makes this different from the other five is not technical. OpenAI's own
+Codex authentication documentation says to *"use API key authentication for
+programmatic Codex CLI workflows, such as CI/CD jobs"*, and states that
+ChatGPT subscription credentials are not intended for direct server-side API
+requests. The supported headless path (device-code auth) is for running the
+**CLI** without a browser — not for a server answering requests on the
+subscription's behalf.
+
+That is a business decision, not a technical one, so the design makes it an
+explicit, off-by-default choice rather than quietly wiring it in:
+
+- Modelled as a provider with `auth_mode = OAUTH` and
+  `billing = SUBSCRIPTION`, so it is visibly not the same kind of thing as an
+  API-key provider.
+- **Never in the default preference order.** An agent gets Codex only if an
+  operator puts it there, and the panel says what that means.
+- **Excluded from unattended work by default.** The newsroom runs overnight on
+  Beat with nobody watching; a subscription seat is rate-limited per human, so
+  a pipeline on Codex will hit limits and, worse, a failure there is a failure
+  of someone's personal account. Interactive and development use is the
+  sensible ceiling.
+- **Cost reporting shows it as seat-consuming, not billable.** A run served by
+  Codex has no per-token price, so `AgentInvocation` records zero cost with
+  `price_source = UNKNOWN` rather than implying the run was free.
+- **Token custody is the real risk.** Refresh tokens must rotate, and anything
+  that can reach the endpoint spends the subscription — the proxies bind to
+  `127.0.0.1` for exactly that reason. A Django app holding a long-lived
+  ChatGPT refresh token is a materially worse secret to leak than an API key,
+  because it is an account credential rather than a scoped, revocable,
+  spend-capped one.
+
+My recommendation is to build the seam and leave Codex off: keep it available
+for local development, where it genuinely saves money, and keep production and
+the newsroom on API keys. But the mechanism is real, you asked for it, and the
+constraint is a policy one — so it is yours to decide, and the design supports
+either answer without a rewrite.
 
 ### Activation on a valid key
 
@@ -397,6 +443,93 @@ command stays, for backfill.
 has never seen today. `check_duplicate_coverage` becomes a semantic query
 against everything the company has published instead of a twenty-character
 substring match. A new agent gets all of this by existing.
+
+### Changing the embedding model
+
+Switching embedding model is not a config change, because vectors from two
+models are not comparable — a cosine score between them is a number with no
+meaning. The failure mode is the dangerous kind: nothing errors, search just
+quietly returns worse results. So the switch is a migration with a designed
+shape.
+
+**Vectors belong to a space, and spaces never mix.**
+
+```python
+class EmbeddingSpace(models.Model):
+    provider, model_id, dimensions
+    status          # building | active | retired
+    created_at, activated_at
+```
+
+Every stored vector references its space. Changing model **creates a new
+space** and backfills into it; it never overwrites in place. The old space
+keeps serving every query until cutover, so search quality is unchanged
+throughout the migration rather than degrading as rows are converted. Cutover
+is one atomic flip of which space is `active`, and the old space is retired,
+not deleted — rollback is another flip until someone reclaims the storage.
+
+Querying across two spaces and merging by score is **not** an option, however
+tempting it looks: the scores are not on a shared scale, so the merge is
+arbitrary. Half-migrated means "serve entirely from the old space", always.
+
+**Re-embedding is scored, not sequential.** Re-embedding everything at once is
+the expensive way to do it, and most of the spend buys nothing — the long tail
+of documents is never retrieved. The backfill works a priority queue:
+
+```python
+importance = (
+    w_retrieval * recent_retrieval_rate     # what the system actually uses
+  + w_engagement * normalised_engagement    # views, likes, comments
+  + w_recency   * recency_decay
+  + w_flag      * (featured or pinned)
+)
+```
+
+Signals already in the schema: `BlogPost.view_count`, `featured`, `status`,
+the `BlogLike` and `BlogComment` relations, `Project.featured` and
+`commit_count`, `KnowledgeDocument.doc_type`.
+
+The strongest signal is the one that does not exist yet: **how often a
+document is actually retrieved.** Nothing records that today. `Memory.recall()`
+is the single chokepoint through which every semantic lookup passes once the
+facade lands, so it increments a counter on what it returns. After a few weeks
+that counter says which documents matter far better than view counts do,
+because it measures what the agents use rather than what humans clicked. It is
+worth adding in step 2 purely so this data exists by the time a switch is
+wanted.
+
+**The tail is never bulk-embedded at all.** Below an importance floor,
+documents are left unembedded in the new space and converted **lazily, on
+first retrieval need**. If a document is never needed again, it is never paid
+for. This is the single biggest saving in the design, and it costs one
+cache-miss path in `recall()`.
+
+**Pacing.** The backfill is a Beat-driven drip, not a loop:
+
+- **Batch.** Embedding APIs take arrays; one call for N documents removes N-1
+  round trips. Batch size is capped by the provider's input limit.
+- **Budget.** A configured daily ceiling in tokens or currency, priced from the
+  catalogue. When the day's budget is spent the task stops and resumes at the
+  next window — the migration takes longer and never surprises anyone with a
+  bill.
+- **Off-peak.** The bulk runs overnight, where
+  `release_stale_pipeline_runs_task` already sits at 02:30 EAT. High-importance
+  rows are exempt and go immediately.
+- **Backpressure.** A 429 backs off and lowers the batch size rather than
+  retrying at the same rate. Embedding quota is shared with the newsroom, and a
+  migration must not starve live work.
+- **Idempotence.** Each row stores a content hash; an unchanged document
+  already present in the target space is skipped, so a restarted or
+  overlapping run costs nothing.
+
+**Progress is visible.** The migration reports importance-weighted coverage,
+not row count — "94% of retrieval volume, 31% of rows" is the number that says
+whether cutover is safe. Cutover is offered when weighted coverage passes a
+threshold, and it stays a human decision.
+
+This is also why `get_model` and `get_embedder` resolve independently. Chat can
+fail between five providers freely; embeddings change on this path or not at
+all.
 
 ### Tool management (`harness/tools.py`)
 
@@ -727,8 +860,8 @@ the fake currently has to know all six module paths.
 
 - Billing anyone from catalogue prices. They are good enough to choose a model
   and to report internal spend, not to invoice from.
-- A Codex provider — it is an agent product, not a model endpoint (see
-  Providers).
+- Enabling Codex in production. The seam is built; the default is off, for
+  the reasons under Providers.
 - Switching the embedding provider. Chat is multi-provider from day one;
   embeddings stay on Gemini for the reason in the risks below.
 - Making the eight deterministic services agentic.
@@ -755,18 +888,21 @@ the day it ships.
 every `BlogPost`/`Project` save. Queued and debounced, but it is new spend
 against the same quota the newsroom uses.
 
-**Embeddings do not become multi-provider, and this is the sharpest edge in
-the design.** All four vector columns are 3072-wide for
-`gemini-embedding-001`. Chat can fail over between five providers mid-run
-without anyone noticing; embeddings cannot fail over at all, because a vector
-from a different model is not comparable to the ones already stored — it is
-not merely differently sized, it is meaningless in the same space. So
-`get_model` and `get_embedder` must resolve independently: a deployment can run
-Claude for chat while Gemini remains the only embedding provider, and losing
-the Google key degrades *memory* whatever else is configured. Changing
-embedding provider is a schema migration plus a full re-embed of every
-`BlogPost`, `Project` and `KnowledgeDocument`, and should be treated as a
-project, not a config change.
+**Embeddings still cannot fail over at runtime.** Chat falls between five
+providers mid-run without anyone noticing; embeddings cannot, because a vector
+from another model is meaningless in the stored space. Changing the model is a
+managed migration (see Changing the embedding model) and losing the embedding
+provider's key degrades *memory* whatever else is configured. The migration
+design removes the cost and the risk of a switch; it does not make embeddings
+a runtime fallback, and nothing can.
+
+**The importance score will be wrong at first.** Until `recall()` has
+accumulated retrieval counts, the score leans on view counts and recency,
+which measure human attention rather than agent usage. The first migration
+after this ships will therefore prioritise imperfectly. That is tolerable —
+the tail is lazy, so a mis-ranked document is embedded slightly later rather
+than never — but the weights should be revisited once real retrieval data
+exists rather than being tuned once and forgotten.
 
 **Provider fallback can silently change output quality.** A run that falls
 from Claude to DeepSeek on a rate limit produces different prose from the same
