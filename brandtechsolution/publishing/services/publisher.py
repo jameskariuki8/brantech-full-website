@@ -19,6 +19,39 @@ class PublishingAgent:
     """Publishes approved content automatically to Teklora website."""
 
     @staticmethod
+    def _fit_title(title: str) -> str:
+        """Cut a title down to what BlogPost.title can actually hold.
+
+        EditorialArticle.title is max_length=300 and BlogPost.title is
+        max_length=200, so a generated title anywhere in that 100-character
+        gap saves happily on the article and then raises
+        StringDataRightTruncation at publish -- the editor clicks Publish and
+        gets a 500, with the article stuck on 'approved'. The writer agent
+        takes its title from the model, which is only asked for a headline,
+        not given a length budget, so this is reachable in normal use.
+
+        The limit is read off the field rather than hardcoded, so widening the
+        column is enough to change the behaviour. Cuts on a word boundary
+        where one is close enough to the end to be worth keeping.
+        """
+        limit = BlogPost._meta.get_field('title').max_length
+        text = (title or "").strip()
+        if not limit or len(text) <= limit:
+            return text
+
+        clipped = text[:limit].rstrip()
+        cut = clipped.rfind(' ')
+        # Only honour a space in the last quarter; otherwise a title with one
+        # very long token would lose most of itself.
+        if cut > limit * 0.75:
+            clipped = clipped[:cut].rstrip()
+        logger.warning(
+            "[PublishingAgent] Title exceeded BlogPost.title (%d > %d); truncated.",
+            len(text), limit,
+        )
+        return clipped
+
+    @staticmethod
     def _available_slug(desired: str) -> str:
         """Return a slug that is free on BlogPost.
 
@@ -56,7 +89,7 @@ class PublishingAgent:
         existing_log = PublishingLog.objects.filter(article=article).first()
         if existing_log and existing_log.blog_post:
             blog_post = existing_log.blog_post
-            blog_post.title = article.title
+            blog_post.title = self._fit_title(article.title)
             blog_post.excerpt = article.executive_summary[:300]
             blog_post.content = full_content
             blog_post.category = category
@@ -64,7 +97,7 @@ class PublishingAgent:
             blog_post.save()
         else:
             blog_post = BlogPost.objects.create(
-                title=article.title,
+                title=self._fit_title(article.title),
                 slug=self._available_slug(article.slug),
                 excerpt=article.executive_summary[:300],
                 content=full_content,

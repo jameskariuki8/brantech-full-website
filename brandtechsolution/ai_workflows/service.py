@@ -127,7 +127,7 @@ Style and length:
 - Keep conversational reply concise (1-5 short paragraphs). Use bullet lists for steps or options.
 - Favor clarity and actionable steps over long prose.
 - Today's date: $today_date
-- Current time in Nairobi (EAT): $nairobi_time
+- Current time in Nairobi (EAT), to the hour: $nairobi_time
 
 If you used a tool, include the corresponding items in `sources` within the `METADATA` block. If you could not find relevant content, state that in the human reply and set `sources` to an empty list in metadata.
 """)
@@ -138,10 +138,24 @@ def _render_system_prompt(tz_offset_hours: Optional[int] = None) -> str:
 
     Uses `safe_substitute` so callers can render without raising KeyError.
     The Nairobi/timezone offset can be configured via `config.timezone_offset`.
+
+    The clock is rendered to the hour, not the second. Provider prompt caching
+    matches on an exact prefix, and this string sits in the system prompt --
+    which is the very front of that prefix. At second granularity every single
+    request produced a different prefix, so the cache could never hit on the
+    highest-volume path in the system. Hourly keeps the assistant usefully
+    time-aware while leaving the prefix stable between requests.
+
+    Rounding rather than removal is the conservative half of the fix. Taking
+    the clock out of the prompt entirely and exposing it as a tool is better
+    still -- the model would look the time up when it actually needs it -- but
+    that changes what the assistant knows without being asked, so it belongs
+    with the harness work rather than here.
     """
     offset = tz_offset_hours if tz_offset_hours is not None else getattr(config, "timezone_offset", 3)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    nairobi = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=offset))).strftime("%Y-%m-%d %H:%M:%S %Z")
+    now_utc = datetime.now(timezone.utc)
+    today = now_utc.strftime("%Y-%m-%d")
+    nairobi = now_utc.astimezone(timezone(timedelta(hours=offset))).strftime("%Y-%m-%d %H:00 %Z")
     return SYSTEM_PROMPT_TEMPLATE.safe_substitute(today_date=today, nairobi_time=nairobi)
 
 

@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage
-from .models import BlogPost, Project
+from .models import BlogPost, Project, ProjectFeature, ProjectImage, ProjectNote
 
 logger = logging.getLogger(__name__)
 
@@ -269,16 +269,139 @@ def post_detail(request, pk):
 
 # --- Project APIs ---
 
+# ============================================================
+# SHOWCASE SERIALISATION
+# ============================================================
+# The six /products/ articles are Project rows now, so the panel has to be
+# able to read and write the fields that used to be markup. Kept here beside
+# the rest of the project API rather than in a serializer module, matching how
+# the other function-based endpoints in this file are written.
+
+SHOWCASE_SCALARS = [
+    'slug', 'showcase', 'phase', 'display_order', 'accent', 'accent_deep',
+    'badge_icon', 'badge_label', 'cta_label', 'cta_icon', 'gallery_heading',
+    'features_heading', 'chart_heading', 'chart_icon', 'card_variant',
+]
+_SHOWCASE_BOOLS = {'showcase'}
+_SHOWCASE_INTS = {'display_order'}
+# An unmodified HTML checkbox posts "on", JSON clients post "true", and
+# core.js normalises its own checkboxes to "true"/"false". Accept all three
+# rather than silently reading a ticked box as False.
+_TRUTHY = {'true', 'on', '1', 'yes'}
+
+
+def serialize_showcase(project):
+    """The showcase half of a project, including its child collections."""
+    data = {field: getattr(project, field) for field in SHOWCASE_SCALARS}
+    data['chart_spec'] = project.chart_spec
+    data['style_overrides'] = project.style_overrides
+    data['gallery'] = [
+        {
+            'id': i.id, 'src': i.src, 'expanded_src': i.expanded_src,
+            'static_path': i.static_path, 'remote_url': i.remote_url,
+            'full_url': i.full_url, 'alt': i.alt, 'caption': i.caption,
+            'lightbox_title': i.lightbox_title, 'order': i.order,
+        }
+        for i in project.gallery.all()
+    ]
+    data['features'] = [
+        {
+            'id': f.id, 'style': f.style, 'icon': f.icon,
+            'label': f.label, 'text': f.text, 'order': f.order,
+        }
+        for f in project.features.all()
+    ]
+    data['notes'] = [
+        {
+            'id': n.id, 'heading': n.heading, 'body': n.body,
+            'icon': n.icon, 'color': n.color, 'order': n.order,
+        }
+        for n in project.notes.all()
+    ]
+    return data
+
+
+def apply_showcase_fields(project, post):
+    """Copy any showcase fields present in the payload onto the project.
+
+    Absent keys are left alone so a form that only posts the basic fields --
+    which is every caller that predates the showcase -- cannot blank the
+    theming. Booleans are the exception: an HTML checkbox sends nothing when
+    unticked, so `showcase` is only read when the form declares it did send
+    the field, via the `has_showcase_fields` marker.
+    """
+    declares_showcase = post.get('has_showcase_fields') == 'true'
+
+    for field in SHOWCASE_SCALARS:
+        if field in _SHOWCASE_BOOLS:
+            if declares_showcase:
+                raw = (post.get(field) or '').strip().lower()
+                setattr(project, field, raw in _TRUTHY)
+            continue
+        if field not in post:
+            continue
+        value = post.get(field)
+        if field in _SHOWCASE_INTS:
+            try:
+                value = int(value or 0)
+            except (TypeError, ValueError):
+                continue
+        setattr(project, field, value)
+
+    for field in ('chart_spec', 'style_overrides'):
+        if field not in post:
+            continue
+        raw = (post.get(field) or '').strip()
+        if not raw:
+            setattr(project, field, None if field == 'chart_spec' else {})
+            continue
+        try:
+            setattr(project, field, json.loads(raw))
+        except ValueError as exc:
+            raise ValueError(f"{field} is not valid JSON: {exc}") from exc
+
+
+def replace_showcase_children(project, post):
+    """Replace gallery / features / notes wholesale when the payload has them.
+
+    Replace rather than patch: the panel edits these as ordered lists, and
+    diffing three collections by id from a multipart form is far more code
+    than deleting and recreating rows that carry no foreign keys of their own.
+    A collection the payload does not mention is left untouched.
+    """
+    specs = [
+        ('gallery', ProjectImage, ('static_path', 'remote_url', 'full_url',
+                                   'alt', 'caption', 'lightbox_title')),
+        ('features', ProjectFeature, ('style', 'icon', 'label', 'text')),
+        ('notes', ProjectNote, ('heading', 'body', 'icon', 'color')),
+    ]
+    for key, model, fields in specs:
+        if key not in post:
+            continue
+        raw = (post.get(key) or '').strip()
+        try:
+            rows = json.loads(raw) if raw else []
+        except ValueError as exc:
+            raise ValueError(f"{key} is not valid JSON: {exc}") from exc
+        if not isinstance(rows, list):
+            raise ValueError(f"{key} must be a list")
+
+        getattr(project, key).all().delete()
+        for order, row in enumerate(rows):
+            if not isinstance(row, dict):
+                raise ValueError(f"{key} entries must be objects")
+            model.objects.create(
+                project=project, order=order,
+                **{f: row.get(f) or '' for f in fields},
+            )
+
+
 @require_http_methods(["GET", "POST"])
 def project_list(request):
     if request.method == "GET":
         projects = Project.objects.all().order_by('-created_at')
         # Include GitHub-specific fields alongside standard ones
-        projects = projects.only(
-            'id', 'title', 'short_description', 'description', 'project_url',
-            'github_url', 'featured', 'image',
-            'is_github_synced', 'commit_count', 'github_role'
-        )
+        projects = projects.prefetch_related('gallery', 'features', 'notes')
         
         # Add pagination support
         paginated_projects, pagination_meta = paginate_queryset(projects, request, page_size=20)
@@ -297,6 +420,7 @@ def project_list(request):
                 'is_github_synced': p.is_github_synced,
                 'commit_count': p.commit_count,
                 'github_role': p.github_role,
+                **serialize_showcase(p),
             }
             for p in paginated_projects
         ]
@@ -316,7 +440,7 @@ def project_list(request):
             featured = request.POST.get('featured') == 'true'
             image = request.FILES.get('image')
 
-            project = Project.objects.create(
+            project = Project(
                 title=title,
                 short_description=short_description,
                 description=description,
@@ -325,7 +449,12 @@ def project_list(request):
                 featured=featured,
                 image=image
             )
+            apply_showcase_fields(project, request.POST)
+            project.save()
+            replace_showcase_children(project, request.POST)
             return JsonResponse({'id': project.id, 'message': 'Project created successfully'}, status=201)
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
@@ -347,6 +476,7 @@ def project_detail(request, pk):
             'commit_count': project.commit_count,
             'github_role': project.github_role,
             'readme_content': project.readme_content,
+            **serialize_showcase(project),
         }
         return JsonResponse(data)
 
@@ -364,9 +494,13 @@ def project_detail(request, pk):
             
             if 'image' in request.FILES:
                 project.image = request.FILES['image']
-                
+
+            apply_showcase_fields(project, request.POST)
             project.save()
+            replace_showcase_children(project, request.POST)
             return JsonResponse({'id': project.id, 'message': 'Project updated successfully'})
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
