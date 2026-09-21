@@ -435,3 +435,54 @@ class CatalogueEntry(models.Model):
             float(self.input_price_per_mtok) * prompt_tokens / million
             + float(self.output_price_per_mtok) * completion_tokens / million
         )
+
+
+class AgentHealth(models.Model):
+    """Whether an agent is currently working, and whether anyone was told.
+
+    Alerts fire on a *state change*, not per failure. A dead provider fails
+    every stage of every run, so one message per failure would replace silence
+    with a storm -- and a storm is worse than the silence it replaced, because
+    people filter it.
+
+    So: the first transition from healthy to failing sends; further failures of
+    the same agent with the same error class are counted here and suppressed;
+    recovery sends once. The suppressed count goes into the alert, so nobody
+    has to guess whether they are seeing one blip or four hundred.
+    """
+
+    HEALTHY = 'healthy'
+    FAILING = 'failing'
+    STATUS_CHOICES = [(HEALTHY, 'Healthy'), (FAILING, 'Failing')]
+
+    agent = models.CharField(max_length=60, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=HEALTHY)
+
+    # The class name rather than the message: two ModelUnavailable failures are
+    # the same outage even when their messages differ by a timestamp, while a
+    # ModelUnavailable followed by an AgentOutputInvalid is a new problem worth
+    # a second alert.
+    error_class = models.CharField(max_length=80, blank=True, default='')
+    error_message = models.TextField(blank=True, default='')
+
+    failing_since = models.DateTimeField(null=True, blank=True)
+    last_failure_at = models.DateTimeField(null=True, blank=True)
+    last_alert_at = models.DateTimeField(null=True, blank=True)
+    suppressed_since_alert = models.PositiveIntegerField(default=0)
+
+    # A send that failed is recorded rather than swallowed: an alert nobody
+    # received is silence again by a different route.
+    last_alert_error = models.TextField(blank=True, default='')
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['agent']
+        verbose_name_plural = 'Agent health'
+
+    def __str__(self):
+        return f"{self.agent}: {self.status}"
+
+    @property
+    def is_failing(self):
+        return self.status == self.FAILING

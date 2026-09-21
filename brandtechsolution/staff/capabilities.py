@@ -35,6 +35,12 @@ CAPABILITY_GROUPS = [
             # creating, assigning, approving and sending back.
             ("manage_tasks", "Assign and review tasks"),
             ("manage_staff", "Manage staff and roles"),
+            # Who gets told when an agent stops working. A codename of its own
+            # rather than a reuse of manage_staff: the people who should be
+            # woken by a dead pipeline are not necessarily the people who
+            # administer accounts, and conflating them would make giving up an
+            # unrelated permission the only way to stop being paged.
+            ("receive_alerts", "Receive system health alerts"),
         ],
     ),
 ]

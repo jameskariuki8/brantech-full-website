@@ -105,7 +105,13 @@ ROOT_URLCONF = 'brandtechsolution.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # brandtechsolution/mail/ holds the themed transactional templates. It
+        # is not an app -- it has no models, views or migrations -- so its
+        # templates are registered here rather than found by APP_DIRS. It lives
+        # outside messaging/ deliberately: that app is the bulk campaign system
+        # and an alert must never acquire an unsubscribe link or be dropped by
+        # a suppression list.
+        'DIRS': [BASE_DIR / 'brandtechsolution' / 'mail' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
