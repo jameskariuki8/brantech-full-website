@@ -87,13 +87,49 @@ def about(request):
 
 
 def products(request):
-    """Products showcase view"""
-    return render(request, 'brand/products.html')
+    """The deep product showcase.
 
+    Renders the Project rows flagged `showcase`, grouped into the three phase
+    bands the page has always shown. The six products used to be written into
+    products.html by hand; the template is now a loop over these rows and the
+    per-product theming (accent, badge, headings, chart) travels with the row.
 
-def projects(request):
-    """Projects view (alias for products)"""
-    return render(request, 'brand/products.html')
+    prefetch_related covers gallery, features and notes because the template
+    walks all three for every card -- without it a six-product page costs
+    nineteen queries.
+    """
+    showcase = (
+        Project.objects
+        .filter(showcase=True)
+        .order_by('display_order', 'title')
+        .prefetch_related('gallery', 'features', 'notes')
+    )
+
+    groups = []
+    for key, _label in Project.PHASE_CHOICES:
+        items = [p for p in showcase if p.phase == key]
+        if not items:
+            continue
+        dot_color, dot_animation = Project.PHASE_DOTS[key]
+        groups.append({
+            'key': key,
+            'heading': Project.PHASE_GROUP_HEADINGS[key],
+            'dot': dot_color,
+            'dot_animation': dot_animation,
+            'tab_label': Project.PHASE_TAB_LABELS[key],
+            'items': items,
+            'count': len(items),
+        })
+
+    # One blob for every chart on the page rather than a <script> per card,
+    # so the template holds no executable JSON.
+    charts = {p.slug: p.chart_spec for p in showcase if p.chart_spec}
+
+    return render(request, 'brand/products.html', {
+        'groups': groups,
+        'total': len(showcase),
+        'charts': charts,
+    })
 
 
 def donate(request):
