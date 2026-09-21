@@ -1,0 +1,175 @@
+"""Step 4: the tool registry and per-agent suites.
+
+The move must be exactly a move: the assistant gets the same three tools, in
+the same order, with the user info tool still bound per call and still absent
+for an anonymous caller.
+"""
+from unittest.mock import patch
+
+from django.contrib.auth.models import User
+from django.test import TestCase
+
+from ai_workflows.harness.errors import ToolFailed
+from ai_workflows.harness.tools import (
+    SUITES,
+    ToolContext,
+    ToolRegistry,
+    register_builtin_tools,
+    suite_for,
+)
+
+
+def _fake_tool(name):
+    """Something tool-shaped, without importing the retrievers."""
+    return type("FakeTool", (), {"name": name, "__repr__": lambda s: f"<tool {name}>"})()
+
+
+class RegistryTests(TestCase):
+    def setUp(self):
+        self.registry = ToolRegistry()
+
+    def test_a_static_tool_resolves(self):
+        tool = self.registry.register("search", _fake_tool("search"))
+        self.assertEqual(self.registry.resolve(["search"]), [tool])
+
+    def test_a_bound_tool_is_built_from_the_context(self):
+        seen = {}
+
+        def factory(ctx):
+            seen["user_id"] = ctx.user_id
+            return _fake_tool("user_info")
+
+        self.registry.register_factory("user_info", factory)
+        resolved = self.registry.resolve(["user_info"], ToolContext(user_id=7))
+
+        self.assertEqual(len(resolved), 1)
+        self.assertEqual(seen["user_id"], 7)
+
+    def test_a_factory_returning_none_omits_the_tool(self):
+        """An anonymous caller has no user to describe; an always-failing tool
+        is worse than an absent one."""
+        self.registry.register_factory("user_info", lambda ctx: None)
+        self.assertEqual(self.registry.resolve(["user_info"], ToolContext()), [])
+
+    def test_an_unknown_tool_raises_rather_than_being_skipped(self):
+        """A suite naming a tool that does not exist is a typo.
+
+        Skipping it would surface much later as the model mysteriously
+        declining to look something up.
+        """
+        with self.assertRaises(ToolFailed) as caught:
+            self.registry.resolve(["nope"])
+        self.assertIn("nope", str(caught.exception))
+
+    def test_the_error_lists_what_is_registered(self):
+        self.registry.register("search", _fake_tool("search"))
+        with self.assertRaises(ToolFailed) as caught:
+            self.registry.resolve(["typo"])
+        self.assertIn("search", str(caught.exception))
+
+    def test_a_duplicate_registration_is_refused(self):
+        self.registry.register("search", _fake_tool("search"))
+        with self.assertRaises(ValueError):
+            self.registry.register("search", _fake_tool("other"))
+
+    def test_a_name_cannot_be_both_static_and_bound(self):
+        self.registry.register("search", _fake_tool("search"))
+        with self.assertRaises(ValueError):
+            self.registry.register_factory("search", lambda ctx: None)
+
+    def test_order_follows_the_suite_not_the_registry(self):
+        self.registry.register("b", _fake_tool("b"))
+        self.registry.register("a", _fake_tool("a"))
+        resolved = self.registry.resolve(["a", "b"])
+        self.assertEqual([t.name for t in resolved], ["a", "b"])
+
+
+class SuiteTests(TestCase):
+    def setUp(self):
+        self.registry = ToolRegistry()
+        for name in ("search_blog_posts", "search_projects"):
+            self.registry.register(name, _fake_tool(name))
+        self.registry.register_factory(
+            "user_info", lambda ctx: _fake_tool("user_info") if ctx.user_id else None
+        )
+
+    def test_the_assistant_gets_its_three_tools(self):
+        resolved = suite_for("assistant", ToolContext(user_id=1), registry=self.registry)
+        self.assertEqual(
+            [t.name for t in resolved],
+            ["search_blog_posts", "search_projects", "user_info"],
+        )
+
+    def test_an_anonymous_assistant_gets_two(self):
+        resolved = suite_for("assistant", ToolContext(), registry=self.registry)
+        self.assertEqual([t.name for t in resolved],
+                         ["search_blog_posts", "search_projects"])
+
+    def test_an_agent_with_no_suite_gets_nothing_rather_than_everything(self):
+        """Defaulting to every tool would quietly hand each new tool to agents
+        nobody considered when adding it."""
+        self.assertEqual(suite_for("unlisted", registry=self.registry), [])
+
+    def test_the_newsroom_suites_are_declared_and_empty(self):
+        """Empty on purpose: giving the verifier real sources changes what it
+        can do, and that belongs behind its own review."""
+        for agent in ("fact_verifier", "research", "writer"):
+            self.assertIn(agent, SUITES)
+            self.assertEqual(SUITES[agent], [])
+
+    def test_every_suite_names_only_registered_tools(self):
+        """Guards against a suite drifting ahead of the registry."""
+        registry = register_builtin_tools(ToolRegistry())
+        for agent, names in SUITES.items():
+            for name in names:
+                self.assertIn(name, registry, f"{agent} names an unregistered tool")
+
+
+class BuiltinRegistrationTests(TestCase):
+    def test_the_three_existing_tools_register(self):
+        registry = register_builtin_tools(ToolRegistry())
+        self.assertEqual(
+            registry.names(), ["search_blog_posts", "search_projects", "user_info"]
+        )
+
+    def test_registering_twice_is_harmless(self):
+        """It is called on every ChatAssistant construction."""
+        registry = ToolRegistry()
+        register_builtin_tools(registry)
+        register_builtin_tools(registry)
+        self.assertEqual(len(registry.names()), 3)
+
+    def test_the_user_info_tool_is_bound_to_the_caller(self):
+        user = User.objects.create_user("someone", email="a@example.com")
+        registry = register_builtin_tools(ToolRegistry())
+
+        resolved = registry.resolve(["user_info"], ToolContext(user_id=user.pk))
+        self.assertEqual(len(resolved), 1)
+        self.assertIn("someone", resolved[0].invoke({}))
+
+    def test_an_anonymous_caller_gets_no_user_tool(self):
+        registry = register_builtin_tools(ToolRegistry())
+        self.assertEqual(registry.resolve(["user_info"], ToolContext()), [])
+
+
+class AssistantWiringTests(TestCase):
+    """The assistant's tools must be unchanged by the move."""
+
+    def _assistant(self, **kwargs):
+        from ai_workflows.service import ChatAssistant
+
+        # The constructor builds a real model client; the tools are what is
+        # under test, so the client is stubbed out.
+        with patch("ai_workflows.service.ChatGoogleGenerativeAI"), \
+                patch("ai_workflows.service.create_react_agent"):
+            return ChatAssistant(thread_id="t-1", **kwargs)
+
+    def test_an_authenticated_assistant_still_gets_three_tools(self):
+        user = User.objects.create_user("someone", email="a@example.com")
+        self.assertEqual(len(self._assistant(user_id=user.pk).tools), 3)
+
+    def test_an_anonymous_assistant_still_gets_two(self):
+        self.assertEqual(len(self._assistant().tools), 2)
+
+    def test_tools_can_still_be_switched_off_entirely(self):
+        self.assertEqual(self._assistant(use_tools=False).tools, [])

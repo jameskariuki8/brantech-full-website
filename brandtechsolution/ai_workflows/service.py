@@ -14,7 +14,6 @@ from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, System
 from langchain_core.messages.utils import count_tokens_approximately
 
 from ai_workflows.checkpointer import DjangoCheckpointer
-from ai_workflows.tools import search_blog_posts, search_projects, create_user_info_tool
 from brandtechsolution.config import config
 from datetime import datetime, timezone, timedelta
 from string import Template
@@ -225,14 +224,23 @@ class ChatAssistant:
         )
         logger.debug(f"[ChatAssistant] Model initialized: {config.gemini_chat_model}")
         
-        # Collect tools
+        # Tools come from the harness registry rather than being assembled
+        # here. Same three tools in the same order -- this is a move, not a
+        # change -- but "which agent can reach what" now lives in one table
+        # (harness/tools.py SUITES) instead of being spread across each agent's
+        # constructor. The user info tool is still bound per call, and is still
+        # omitted entirely for an anonymous caller.
         self.tools = []
         if use_tools:
-            self.tools = [search_blog_posts, search_projects]
-            
-            # Add user info tool if user_id is present
-            if self.user_id:
-                self.tools.append(create_user_info_tool(self.user_id))
+            from ai_workflows.harness.tools import (
+                ToolContext, register_builtin_tools, suite_for,
+            )
+
+            register_builtin_tools()
+            self.tools = suite_for(
+                "assistant",
+                ToolContext(user_id=self.user_id, thread_id=self.thread_id),
+            )
         
         logger.info(f"[ChatAssistant] Tools configured: {len(self.tools)} tools")
         
