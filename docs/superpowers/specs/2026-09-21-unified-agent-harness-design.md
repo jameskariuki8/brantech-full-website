@@ -428,6 +428,60 @@ It is not defensible for an alert, where a swallowed send means the failure is
 silent again by a different route. A failed alert is logged at `ERROR` and
 recorded against the `AgentHealth` row.
 
+**Themed HTML, not a wall of text.** The machinery for this already exists and
+is, again, used by exactly one part of the system. `messaging/emailhtml.py`
+inlines `BASE_EMAIL_CSS` because Outlook and Gmail ignore `<style>` blocks;
+`messaging/rendering.py:29` converts HTML to a plain-text alternative; the
+outbox sends both halves with `EmailMultiAlternatives` and
+`attach_alternative(..., "text/html")`
+(`messaging/management/commands/process_email_outbox.py:162`). All of it is
+wired to campaigns only. Every transactional message in the codebase —
+invitations, review-ready, task notices, inquiry and booking confirmations —
+is plain text.
+
+So the alert layer introduces a small shared shell rather than a second email
+stack:
+
+```
+brandtechsolution/mail/
+    shell.py        render(template, context) -> (html, text)
+    templates/mail/
+        _base.html      branded shell: header, content slot, footer
+        alert.html      agent failure / recovery
+```
+
+Three things it must do, each for a reason the existing code already
+documents:
+
+- **Inline the CSS.** Reuse `inline_email_css`. A system email that renders as
+  unstyled text in Outlook is worse than one that was never themed, because
+  it looks broken rather than plain.
+- **Always send a text alternative,** built with the existing `html_to_text`.
+  An alert is the last message that should be unreadable in a client that
+  refuses HTML, and some on-call paths are text-only.
+- **Do not sanitise.** `sanitize_email_html` exists because campaign bodies are
+  *authored by users*. System templates are ours, and running them through nh3
+  would silently strip the table-based layout that email clients actually
+  need. Sanitising is for untrusted input; this is not that.
+
+The shell is deliberately not in `messaging/`. That app is the bulk campaign
+system, with an outbox, suppressions and unsubscribe semantics that have
+nothing to do with a transactional alert — and an alert must never acquire an
+unsubscribe link or be filtered by a suppression list. It borrows
+`emailhtml`'s two functions and owns its own templates.
+
+Theme follows the site: `#050811` header, `#00FF94` for recovery, a red for
+failure, brand blue `#007AFF` for links, which `BASE_EMAIL_CSS` already uses.
+Content stays severe — agent, error class, when it started, how many
+occurrences were suppressed, and a deep link to the run. An alert is read on a
+phone at an awkward hour; it should be scannable in one screen.
+
+**Beyond alerts.** The same shell is what the five existing plain-text notices
+should use, and they would each become a template with no change to their send
+logic. Worth doing, but it is a separate change with its own review — it
+touches mail people already rely on, and bundling it here would put a cosmetic
+refactor inside a reliability one.
+
 **The honest limit.** An email alert cannot report a mail outage. If Mailgun
 is the thing that is down, nothing here fires, and the only signal is the
 dashboard and the logs. Covering that needs a channel that does not share a
@@ -471,9 +525,9 @@ Each step ships and is green before the next starts.
 3. **Tools.** Registry plus suites; the chat assistant switches to the registry
    for its existing three. No new tools yet.
 4. **Alerting, before anything can fail silently.** `receive_alerts`
-   capability, `AgentHealth`, the state-change alert. Ships *ahead* of the
-   fallback removal deliberately: the alarm is wired before the thing it
-   watches can break.
+   capability, `AgentHealth`, the themed HTML shell, the state-change alert.
+   Ships *ahead* of the fallback removal deliberately: the alarm is wired
+   before the thing it watches can break.
 5. **Editorial onto the harness.** Six agents lose their clients, parsers and
    fallbacks; personas declared; schemas declared; dedup becomes semantic.
    This is the step that deletes the most code and changes failure behaviour.
@@ -508,6 +562,9 @@ the fake currently has to know all six module paths.
   identical failure does not; recovery mails once; a send failure is logged
   rather than swallowed. The suite must never send real mail — Django's
   `locmem` backend is already forced under test in `settings.py`.
+- Mail shell: every alert carries both a text and an HTML alternative, the
+  HTML has its CSS inlined (no surviving `<style>` block), and the text
+  alternative is non-empty. A template that renders only one half is a bug.
 - The eighteen editorial tests stay green throughout, unchanged where possible
   — they are the regression net for steps 4-6.
 
@@ -519,6 +576,10 @@ the fake currently has to know all six module paths.
 - Streaming responses.
 - Re-tuning any prompt's content. Personas are relocated verbatim; changing
   what they say is a separate, reviewable change.
+- Migrating the five existing plain-text transactional emails onto the new
+  shell. The shell is built so they can; doing it is its own change.
+- Any alert channel that is not email. The limitation is named above, and
+  `ApprovalNotification.channel` already anticipates more.
 
 ## Open risks
 
