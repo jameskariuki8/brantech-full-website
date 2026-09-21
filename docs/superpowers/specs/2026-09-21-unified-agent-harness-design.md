@@ -198,8 +198,11 @@ Settled with the user on 2026-09-21:
    per tool; each agent declares the suite it is issued.
 7. **One persona per agent, first-class.** A single declared persona per agent,
    composed from a shared brand voice. No second contradicting system message.
-8. **Evals before the harness.** A held-out set and a grader per agent, built
-   first, so every later step can be shown not to have made the output worse.
+8. **Evals before the harness, and owned by us.** A held-out set and a grader
+   per agent, built first, so every later step can be shown not to have made
+   the output worse. In-repo, run by `manage.py`, stored in Postgres — no
+   hosted eval platform. Tracing moves to the same table that records spend,
+   and LangSmith becomes opt-in.
 9. **Context assembly is a module, not an afterthought.** One place owns the
    token budget, the ordering and the eviction policy, and prompts are built
    stable-prefix-first so provider caching can actually hit.
@@ -221,6 +224,7 @@ ai_workflows/harness/
     base.py         Agent contract
     registry.py     name -> agent
     steps.py        content-addressed step results (resume)
+    tracing.py      prompt/response/cost capture, replacing hosted tracing
     errors.py       the failure taxonomy
     alerts.py       health state + capability-addressed alerting
     evals/          held-out sets, graders, the runner
@@ -556,6 +560,80 @@ none:
 The planted-false-claim case deserves to exist on day one, because it is the
 test that `fact_verifier.py` would fail today and that
 `editorial/tests.py:93` pretends to cover.
+
+**No vendor, and no LangSmith.** The eval set, the graders and the runner are
+ordinary Python in this repository, run by `manage.py`, storing results in
+Postgres. Nothing here talks to a hosted eval platform, and nothing should:
+the fixtures are the company's own articles and topics, and the graders are a
+few hundred lines.
+
+Worth separating two things that get conflated. **LangGraph is free** — it is
+an open-source library, and `create_react_agent` plus `DjangoCheckpointer` cost
+nothing. What costs money is **LangSmith**, the hosted tracing and eval
+product: 5k traces a month on the free Developer tier (one seat), $39/seat on
+Plus for 10k, then usage-priced compute and storage on top, with self-hosting
+available only on Enterprise. So none of the orchestration needs to change —
+only the observability does.
+
+The irreducible cost of evals is not the platform, it is the grader's own model
+calls. Self-hosting does not remove that, so the design keeps it small
+deliberately: deterministic graders wherever the answer is checkable, a cheap
+model for the rubric-graded remainder, and sets of tens rather than thousands.
+A full eval run should cost less than a single newsroom pipeline run, or it
+will not be run.
+
+### Replacing LangSmith with a table
+
+Tracing is currently on, and more broadly than intended.
+`ai_workflows/service.py:69` calls `_set_external_environment()` at **module
+import time**, which sets `LANGSMITH_TRACING` and `LANGSMITH_API_KEY` into
+`os.environ` for the whole process. LangChain reads those globally, so
+importing the chat assistant anywhere turns on tracing for *every* LangChain
+call in that worker — including all six newsroom agents, which never asked for
+it. On a 5k-trace free tier, a pipeline making several model calls per run is a
+meaningful share of the month's allowance.
+
+And it cannot be switched off with the setting that exists to switch it off.
+`config.py:184` declares `langsmith_tracing: str = "true"` — a **string**. Both
+`ai_workflows/service.py:47` and `:72` test it for truthiness, and the string
+`"false"` is truthy in Python, so setting `LANGSMITH_TRACING=false` in `.env`
+still resolves to `'true'`. The only way to stop tracing today is to remove the
+API key. That is a bug independent of this design and worth fixing on its own.
+
+What LangSmith actually provides that matters here is narrow: the exact bytes
+sent and returned, when output was bad. That is a table.
+
+```python
+class AgentInvocation(models.Model):
+    agent, provider, model_id, step_name
+    run          = FK(EditorialPipelineRun, null=True)
+    thread_id    = CharField(blank=True)      # chat, when not a pipeline run
+    rendered_prompt, raw_response             # the exact bytes
+    prompt_tokens, completion_tokens, cost
+    latency_ms
+    status       # ok | invalid | unavailable | abstained
+    created_at
+```
+
+This is the same row the cost reporting already needs, so tracing and spend
+accounting are one mechanism rather than two. A panel page listing recent
+invocations, filterable by agent and status, covers the actual debugging
+question — "show me what this agent was sent and what it said" — without a
+subscription or a second service to operate.
+
+Two things to decide rather than inherit:
+
+- **Retention.** Rendered prompts contain user questions and draft articles.
+  A nightly prune alongside `release_stale_pipeline_runs_task` keeps the table
+  bounded and makes the retention window explicit instead of infinite.
+- **LangSmith stays supported, and goes off by default.** The integration is
+  useful for a deep debugging session and its tree view is genuinely better
+  than a table. It becomes opt-in, with the boolean actually parsed as a
+  boolean, so turning it on is a decision with a known cost.
+
+If a UI is wanted later, a self-hosted open-source tracer is the route rather
+than a paid tier — but a table and one panel page answers the question that is
+actually being asked, and costs a migration.
 
 Evals are what make the rest of this design safe to land. Provider fallback,
 persona relocation, native structured output and the two-call writer split are
@@ -1052,6 +1130,10 @@ own:
 - **Moving `datetime.now()` out of the cached prompt prefix**
   (`service.py:143`). A few lines, and it stops every assistant request
   from destroying its own cache.
+- **Making `langsmith_tracing` a real boolean** (`config.py:184`). It is
+  declared as a `str`, so `"false"` is truthy and tracing cannot be turned off
+  by the setting meant to turn it off — while `_set_external_environment()`
+  runs at import and enables it process-wide for agents that never asked.
 
 ## Testing
 
@@ -1072,6 +1154,8 @@ on every commit.
   prompt; eviction drops the least salient item, not simply the oldest.
 - Abstention: a schema returning `insufficient_evidence` stops the pipeline
   and leaves a reviewable reason; it never reaches `publish`.
+- Tracing: every model call writes an invocation row with its rendered prompt;
+  `langsmith_tracing=false` actually disables tracing, and the default is off.
 - Steps: an unchanged input re-uses the stored result; changing the persona or
   the schema invalidates it. That second case is the one that bites — a cache
   that ignores prompt edits makes prompt work look inert.
@@ -1111,6 +1195,9 @@ on every commit.
   and to report internal spend, not to invoice from.
 - Enabling Codex in production. The seam is built; the default is off, for
   the reasons under Providers.
+- A trace UI beyond one panel page. The table holds everything a richer
+  viewer would need later.
+- Removing LangGraph. It is open source and free; only LangSmith is billed.
 - Switching the embedding provider. Chat is multi-provider from day one;
   embeddings stay on Gemini for the reason in the risks below.
 - Making the eight deterministic services agentic.
