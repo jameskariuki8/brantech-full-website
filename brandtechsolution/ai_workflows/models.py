@@ -238,3 +238,55 @@ class StepResult(models.Model):
 
     def __str__(self):
         return f"{self.step} [{self.key[:12]}]"
+
+
+class AgentProfile(models.Model):
+    """How the company speaks, in one place.
+
+    `EditorialMemory` held the brand voice and preferred terminology and was
+    read only by the writer; the chat assistant had its own hardcoded system
+    prompt that never consulted it. So the company had one brand voice and the
+    codebase had two definitions of it, with no way for them to converge.
+
+    A singleton, because "how do we speak" is not a per-row question. Seeded
+    from EditorialMemory's values so adopting it changes nothing about what the
+    writer produces.
+
+    Read it with `load()`. A second `objects.create()` raises on the primary
+    key rather than quietly succeeding -- two rows would reintroduce exactly
+    the drift this replaces, so failing loudly is the desired behaviour.
+    """
+
+    SINGLETON_ID = 1
+
+    brand_voice = models.TextField(
+        default=(
+            "Authoritative, forward-looking, technically grounded, "
+            "African-centric, and accessible."
+        )
+    )
+    preferred_terminology = models.JSONField(
+        default=dict, blank=True,
+        help_text="Mappings such as {'AI': 'Artificial Intelligence'}.",
+    )
+    excluded_topics = models.JSONField(default=list, blank=True)
+    style_rules = models.JSONField(default=list, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Agent profile"
+        verbose_name_plural = "Agent profile"
+
+    def __str__(self):
+        return "Teklora agent profile"
+
+    def save(self, *args, **kwargs):
+        # A second row would reintroduce exactly the ambiguity this replaces.
+        self.pk = self.SINGLETON_ID
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        profile, _ = cls.objects.get_or_create(pk=cls.SINGLETON_ID)
+        return profile
