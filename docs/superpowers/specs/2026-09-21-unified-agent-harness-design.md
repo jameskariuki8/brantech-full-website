@@ -200,9 +200,11 @@ Settled with the user on 2026-09-21:
    composed from a shared brand voice. No second contradicting system message.
 8. **Evals before the harness, and owned by us.** A held-out set and a grader
    per agent, built first, so every later step can be shown not to have made
-   the output worse. In-repo, run by `manage.py`, stored in Postgres — no
-   hosted eval platform. Tracing moves to the same table that records spend,
-   and LangSmith becomes opt-in.
+   the output worse. In-repo, run by `manage.py`, stored in Postgres. Graded by
+   pairwise preference against the step-0 baseline, several samples per input,
+   with deterministic graders where the answer is a fact. LangSmith stays on
+   for investigation, scoped per call and split by surface; `AgentInvocation`
+   remains the system of record for cost and alerting.
 9. **Context assembly is a module, not an afterthought.** One place owns the
    token budget, the ordering and the eviction policy, and prompts are built
    stable-prefix-first so provider caching can actually hit.
@@ -582,58 +584,111 @@ model for the rubric-graded remainder, and sets of tens rather than thousands.
 A full eval run should cost less than a single newsroom pipeline run, or it
 will not be run.
 
-### Replacing LangSmith with a table
+### Focusing LangSmith, and the row underneath it
 
-Tracing is currently on, and more broadly than intended.
-`ai_workflows/service.py:69` calls `_set_external_environment()` at **module
-import time**, which sets `LANGSMITH_TRACING` and `LANGSMITH_API_KEY` into
-`os.environ` for the whole process. LangChain reads those globally, so
-importing the chat assistant anywhere turns on tracing for *every* LangChain
-call in that worker — including all six newsroom agents, which never asked for
-it. On a 5k-trace free tier, a pipeline making several model calls per run is a
-meaningful share of the month's allowance.
+LangSmith stays on. What changes is that tracing becomes a property of a
+*call* rather than an accident of the process.
 
-And it cannot be switched off with the setting that exists to switch it off.
-`config.py:184` declares `langsmith_tracing: str = "true"` — a **string**. Both
-`ai_workflows/service.py:47` and `:72` test it for truthiness, and the string
-`"false"` is truthy in Python, so setting `LANGSMITH_TRACING=false` in `.env`
-still resolves to `'true'`. The only way to stop tracing today is to remove the
-API key. That is a bug independent of this design and worth fixing on its own.
+Today `ai_workflows/service.py:69` calls `_set_external_environment()` at
+**module import time**, writing `LANGSMITH_TRACING` and the API key into
+`os.environ` for the whole worker. LangChain reads those globally, so importing
+the chat assistant traces every LangChain call in that process — all six
+newsroom agents included — into one undifferentiated project, `brantech-ai`.
+Everything is captured and nothing is findable.
 
-What LangSmith actually provides that matters here is narrow: the exact bytes
-sent and returned, when output was bad. That is a table.
+It also cannot be controlled: `config.py:184` declares
+`langsmith_tracing: str = "true"`, and both use sites
+(`ai_workflows/service.py:47` and `:72`) test it for truthiness, so the string
+`"false"` is truthy and resolves to `'true'`. That still needs fixing —
+"always on" should be a decision, not a bug that happens to match the decision.
+
+**Per-call, tagged, and split by surface.** `langchain-core` takes a
+`LangChainTracer(project_name=..., tags=[...])` through `RunnableConfig.callbacks`,
+and `RunnableConfig` carries `tags`, `metadata`, `run_name` and `run_id`. So the
+harness attaches tracing itself:
 
 ```python
-class AgentInvocation(models.Model):
-    agent, provider, model_id, step_name
-    run          = FK(EditorialPipelineRun, null=True)
-    thread_id    = CharField(blank=True)      # chat, when not a pipeline run
-    rendered_prompt, raw_response             # the exact bytes
-    prompt_tokens, completion_tokens, cost
-    latency_ms
-    status       # ok | invalid | unavailable | abstained
-    created_at
+config = {
+    "run_name": agent.name,                     # "fact_verifier", not "RunnableSequence"
+    "tags": [agent.name, provider, model_id],
+    "metadata": {
+        "pipeline_run": run.id,                 # join back to EditorialPipelineRun
+        "step": step_name,
+        "invocation": invocation.id,            # join back to the local row
+    },
+    "callbacks": [LangChainTracer(project_name=project_for(agent))],
+}
 ```
 
-This is the same row the cost reporting already needs, so tracing and spend
-accounting are one mechanism rather than two. A panel page listing recent
-invocations, filterable by agent and status, covers the actual debugging
-question — "show me what this agent was sent and what it said" — without a
-subscription or a second service to operate.
+Three things that buys, none of which cost anything:
 
-Two things to decide rather than inherit:
+- **Separate projects per surface.** The newsroom and the assistant stop
+  sharing a trace stream, so investigating a bad draft is not wading through
+  chat traffic.
+- **Traces are addressable.** A failed `EditorialPipelineRun` links straight to
+  its traces by `pipeline_run` metadata, instead of being found by timestamp.
+- **Sampling becomes possible.** Pipeline runs are low-volume and high-value —
+  trace all of them. Chat is the opposite — sample it. That is a policy in one
+  place rather than an all-or-nothing env var.
 
-- **Retention.** Rendered prompts contain user questions and draft articles.
-  A nightly prune alongside `release_stale_pipeline_runs_task` keeps the table
-  bounded and makes the retention window explicit instead of infinite.
-- **LangSmith stays supported, and goes off by default.** The integration is
-  useful for a deep debugging session and its tree view is genuinely better
-  than a table. It becomes opt-in, with the boolean actually parsed as a
-  boolean, so turning it on is a decision with a known cost.
+**The local row stays, and is the system of record.** `AgentInvocation` records
+the rendered prompt, the response, tokens, cost, latency and status regardless
+of what LangSmith holds, because three things must not depend on a third party:
 
-If a UI is wanted later, a self-hosted open-source tracer is the route rather
-than a paid tier — but a table and one panel page answers the question that is
-actually being asked, and costs a migration.
+- **Spend enforcement.** A budget ceiling that has to query an external API to
+  know what it has spent is not a circuit breaker.
+- **Alerting.** The failure path cannot rely on the service that may be failing.
+- **Cost reporting.** Per-article cost is a business number and belongs in the
+  database that holds the articles.
+
+So the division is: LangSmith is the *investigation* surface — its tree view of
+a nested agent call genuinely beats a table, and that is what it is for.
+`AgentInvocation` is the *accounting and alerting* surface. They are not
+alternatives, and neither is a fallback for the other.
+
+Retention still needs deciding for the local rows: rendered prompts contain
+user questions and draft articles, so a nightly prune alongside
+`release_stale_pipeline_runs_task` bounds the table and makes the window
+explicit rather than infinite.
+
+### How the graders work
+
+The grading model's cost is accepted, which changes the methodology rather than
+just the budget. Cheap eval designs are usually also *worse* eval designs, and
+the money buys its way out of three of those compromises.
+
+**Pairwise preference, not absolute scores.** Asking a judge to rate a draft
+7/10 produces numbers that drift between runs and cannot be compared across
+weeks. Asking "which of these two drafts is better, and why" is markedly more
+stable, and it answers the question actually being asked at every step of this
+migration: *is the new version better than the old one?* The baseline captured
+at step 0 becomes the permanent left-hand side of that comparison.
+
+**Several samples per input.** The writer runs at temperature 0.4 and is
+therefore stochastic; one sample per input measures a noisy process once and
+reports the noise as a result. Three to five samples per input gives a mean and
+a spread, and the spread is itself informative — an agent whose quality varies
+wildly between runs is a problem even when its average is fine.
+
+**Judge hygiene**, because an unvalidated judge is just a confident number:
+
+- Randomise which candidate is presented first; position bias is real and large.
+- Prefer a judge from a different provider than the generator, which the
+  multi-provider catalogue now makes easy — a model asked to grade its own
+  output tends to like it.
+- Keep a small human-labelled set and measure how often the judge agrees with
+  you. If it does not track your judgement, the rubric is wrong and every
+  score built on it is noise.
+
+**Deterministic graders stay** — not as a cost saving, but because they are
+strictly better at what they cover. Did the verifier reject a dossier with a
+planted false claim? Is the JSON-LD valid? Does the draft contain a numeric
+claim absent from its sources? Those are facts, and a rubric is a worse
+instrument for a fact than an assertion is.
+
+The planted-false-claim case deserves to exist on day one, because it is the
+test `fact_verifier.py` fails today and that `editorial/tests.py:93` only
+appears to cover.
 
 Evals are what make the rest of this design safe to land. Provider fallback,
 persona relocation, native structured output and the two-call writer split are
@@ -1131,9 +1186,10 @@ own:
   (`service.py:143`). A few lines, and it stops every assistant request
   from destroying its own cache.
 - **Making `langsmith_tracing` a real boolean** (`config.py:184`). It is
-  declared as a `str`, so `"false"` is truthy and tracing cannot be turned off
-  by the setting meant to turn it off — while `_set_external_environment()`
-  runs at import and enables it process-wide for agents that never asked.
+  declared as a `str`, so `"false"` is truthy and the setting meant to control
+  tracing cannot. Tracing stays on; the point is that it should be on because
+  someone chose it. The per-call scoping that replaces the import-time global
+  belongs with the harness, but the boolean does not need to wait for it.
 
 ## Testing
 
@@ -1154,8 +1210,13 @@ on every commit.
   prompt; eviction drops the least salient item, not simply the oldest.
 - Abstention: a schema returning `insufficient_evidence` stops the pipeline
   and leaves a reviewable reason; it never reaches `publish`.
-- Tracing: every model call writes an invocation row with its rendered prompt;
-  `langsmith_tracing=false` actually disables tracing, and the default is off.
+- Tracing: every model call writes an invocation row with its rendered prompt
+  and its cost, whether or not LangSmith is reachable; the tracer is attached
+  per call with the agent's tags and the run's metadata, not by a global env
+  var; `langsmith_tracing` is parsed as a boolean and actually honoured.
+- Graders: the pairwise judge is order-randomised; a deterministic grader
+  catches the planted false claim; an eval run with the grading model
+  unavailable fails loudly rather than reporting a passing score.
 - Steps: an unchanged input re-uses the stored result; changing the persona or
   the schema invalidates it. That second case is the one that bites — a cache
   that ignores prompt edits makes prompt work look inert.
@@ -1195,8 +1256,7 @@ on every commit.
   and to report internal spend, not to invoice from.
 - Enabling Codex in production. The seam is built; the default is off, for
   the reasons under Providers.
-- A trace UI beyond one panel page. The table holds everything a richer
-  viewer would need later.
+- Removing or replacing LangSmith. It stays on; this only scopes it.
 - Removing LangGraph. It is open source and free; only LangSmith is billed.
 - Switching the embedding provider. Chat is multi-provider from day one;
   embeddings stay on Gemini for the reason in the risks below.
