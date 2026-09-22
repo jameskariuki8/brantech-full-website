@@ -1136,45 +1136,57 @@ a model harness would add cost and failure modes for nothing.
 
 ## Migration order
 
+**Status: all ten steps shipped**, each with the commit that carried it. This
+section is otherwise left as it was written, because the plan and what happened
+are close enough to be worth reading side by side. Where a step turned out
+differently -- step 9 grew a tool loop the plan did not anticipate, and step 7
+finished a clock fix this document had filed as cheap and separate -- the
+commit message says so.
+
 Each step ships and is green before the next starts.
 
-0. **Evals first.** Held-out sets, graders and the runner, measured against
+0. `02e1ea0` **Evals first.** Held-out sets, graders and the runner, measured against
    the *current* agents. This produces the baseline every later step is
    compared to, and it is the only step that gets harder the longer it is
    deferred — once the agents are rewritten there is nothing left to compare
    to. Includes the planted-false-claim case that today's verifier fails.
-1. **Harness, no callers.** `llm`, `contract`, `context`, `steps`, `errors`,
+1. `5a5e679` **Harness, no callers.** `llm`, `contract`, `context`, `steps`, `errors`,
    `persona`, `base`. Unit-tested against the existing fakes. Nothing else
    changes.
-2. **Memory unification.** Facade over the three stores, vectorise-on-write,
+2. `d4b8e6c` **Memory unification.** Facade over the three stores, vectorise-on-write,
    save hooks for `BlogPost`/`Project`. Vectors move out of the three content
    models into `Embedding`, carrying their space, provider and model, and the
    old columns are backfilled and dropped — this has to happen before a model
    switch is possible at all, and it is also what gives `recall()` somewhere to
    record retrieval counts. Behaviour-compatible; the substring dedup stays
    until step 6.
-3. **Providers and the catalogue.** `Provider` and `CatalogueEntry`, the
+3. `598dbf5` **Providers and the catalogue.** `Provider` and `CatalogueEntry`, the
    refresh task, the activation states, the system check, `pricing.toml`.
    Gemini stays the only configured provider until this is proven — adding a
    key is then the whole of turning a second one on.
-4. **Tools.** Registry plus suites; the chat assistant switches to the registry
+4. `a8bb939` **Tools.** Registry plus suites; the chat assistant switches to the registry
    for its existing three. No new tools yet.
-5. **Alerting, before anything can fail silently.** `receive_alerts`
+5. `c5fca49` **Alerting, before anything can fail silently.** `receive_alerts`
    capability, `AgentHealth`, the themed HTML shell, the state-change alert.
    Ships *ahead* of the fallback removal deliberately: the alarm is wired
    before the thing it watches can break.
-6. **Editorial onto the harness.** Six agents lose their clients, parsers and
+6. `a248613` **Editorial onto the harness.** Six agents lose their clients, parsers and
    fallbacks; personas declared; schemas declared; dedup becomes semantic.
    This is the step that deletes the most code and changes failure behaviour.
-7. **Assistant onto the harness.** Persona from shared voice; model from `llm`.
-8. **Orchestrator.** Supervisor, registry, dispatch. Until this lands the
+7. `437abb8` **Assistant onto the harness.** Persona from shared voice; model from `llm`.
+8. `7eed196` **Orchestrator.** Supervisor, registry, dispatch. Until this lands the
    agents are already unified — the orchestrator is the last piece, not the
    first.
-9. **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
+9. `62e7bb5` **New tools for the newsroom** (`fetch_url`, `search_knowledge` for the
    verifier). Separate review; this changes what the agents can do.
 
 Steps 0-5 are additive and safe. Step 6 is the sharp one; step 0 is what makes
 it *checkable* and step 5 is what makes it *survivable*.
+
+All three of the fixes below landed on their own ahead of step 0, as intended.
+The clock fix went in twice: rounded to the hour first, then moved out of the
+prompt entirely in step 7 -- which is what the note there about it "belonging
+with the harness" was pointing at.
 
 Two cheap fixes do not need to wait for any of this, and should land on their
 own:
