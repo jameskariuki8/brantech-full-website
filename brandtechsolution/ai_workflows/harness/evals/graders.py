@@ -308,7 +308,43 @@ def render_for_judging(output, limit=12_000):
         )
     elif isinstance(output, dict):
         rendered = "\n\n".join(f"## {k}\n{v}" for k, v in output.items() if v)
+    elif hasattr(output, "_meta") and hasattr(output._meta, "fields"):
+        rendered = _render_row(output)
     else:
         rendered = str(output)
 
     return rendered[:limit]
+
+
+# Bookkeeping rather than content. A judge reading these is reading the
+# database, not the writing.
+_NOT_CONTENT = {"slug", "status", "is_approved", "author", "created_at",
+                "updated_at", "published_at"}
+
+
+def _render_row(instance):
+    """A model row's own text, field by field.
+
+    The newsroom's pipeline methods save what they produce and return the row,
+    so an eval case's output is a `BlogPost`, not a pydantic object -- and
+    `str()` on one of those is its title. That is what was being stored: a run
+    kept sixty to a hundred characters per case, the pairwise judge compared
+    two titles and called it prose, and "here is what changed" could not be
+    answered from the record because the record was one line.
+    """
+    from django.db.models import CharField, JSONField, TextField
+
+    parts = []
+    for field in instance._meta.fields:
+        if not isinstance(field, (CharField, TextField, JSONField)):
+            continue
+        # A field with choices is a state machine, not writing.
+        if field.name in _NOT_CONTENT or getattr(field, "choices", None):
+            continue
+
+        value = getattr(instance, field.name, None)
+        if value in (None, "", [], {}):
+            continue
+        parts.append(f"## {field.name}\n{value}")
+
+    return "\n\n".join(parts)

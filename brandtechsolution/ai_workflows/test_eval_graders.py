@@ -464,3 +464,56 @@ class HonestReportingTests(TestCase):
 
         self.assertIsInstance(error, CommandError)
         self.assertIn("failed", str(error))
+
+
+class RenderingModelRowsTests(TestCase):
+    """What a run actually stores for a later run to be compared against.
+
+    The newsroom's pipeline methods save what they produce and return the row,
+    so an eval case's output is a `BlogPost`, not a pydantic object. `str()` on
+    one of those is its title, and that is what was being stored: a live run
+    kept sixty to a hundred characters per case. The pairwise judge compared
+    two titles and reported on prose.
+    """
+
+    def test_a_model_row_renders_its_fields_not_its_title(self):
+        from ai_workflows.harness.evals.graders import render_for_judging
+        from brand.models import BlogPost
+
+        post = BlogPost(
+            title="An article",
+            excerpt="A summary of it.",
+            content="The body, which is the part worth judging.",
+        )
+
+        rendered = render_for_judging(post)
+
+        self.assertIn("The body, which is the part worth judging.", rendered)
+        self.assertIn("A summary of it.", rendered)
+        self.assertGreater(len(rendered), len(str(post)))
+
+    def test_bookkeeping_fields_are_left_out(self):
+        """A judge reading these is reading the database, not the writing."""
+        from ai_workflows.harness.evals.graders import render_for_judging
+        from brand.models import BlogPost
+
+        rendered = render_for_judging(
+            BlogPost(title="An article", slug="an-article", content="Body."),
+        )
+
+        self.assertNotIn("an-article", rendered)
+
+    def test_a_pydantic_output_still_renders_as_before(self):
+        from ai_workflows.harness.contract import AgentOutput
+        from ai_workflows.harness.evals.graders import render_for_judging
+
+        class _Out(AgentOutput):
+            sanitized_text: str = ""
+
+        rendered = render_for_judging(_Out(sanitized_text="kept"))
+        self.assertIn("kept", rendered)
+
+    def test_nothing_at_all_renders_as_nothing(self):
+        from ai_workflows.harness.evals.graders import render_for_judging
+
+        self.assertEqual(render_for_judging(None), "")
