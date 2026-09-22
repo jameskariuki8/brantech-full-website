@@ -1,8 +1,15 @@
 """Step 4: the tool registry and per-agent suites.
 
-The move must be exactly a move: the assistant gets the same three tools, in
-the same order, with the user info tool still bound per call and still absent
-for an anonymous caller.
+The move was exactly a move: the assistant kept the same three tools, in the
+same order, with the user info tool still bound per call and still absent for
+an anonymous caller.
+
+Step 7 added a fourth, `current_time`. That is not new capability so much as
+relocated capability -- the clock used to be interpolated into the system
+prompt on every request, at the front of the cached prefix, so the assistant's
+prompt could never get a cache hit. The counts here are pinned so that adding
+a tool stays a deliberate act with a suite placement, rather than something
+that happens to an agent nobody was thinking about.
 """
 from unittest.mock import patch
 
@@ -87,23 +94,24 @@ class RegistryTests(TestCase):
 class SuiteTests(TestCase):
     def setUp(self):
         self.registry = ToolRegistry()
-        for name in ("search_blog_posts", "search_projects"):
+        for name in ("search_blog_posts", "search_projects", "current_time"):
             self.registry.register(name, _fake_tool(name))
         self.registry.register_factory(
             "user_info", lambda ctx: _fake_tool("user_info") if ctx.user_id else None
         )
 
-    def test_the_assistant_gets_its_three_tools(self):
+    def test_the_assistant_gets_its_four_tools(self):
         resolved = suite_for("assistant", ToolContext(user_id=1), registry=self.registry)
         self.assertEqual(
             [t.name for t in resolved],
-            ["search_blog_posts", "search_projects", "user_info"],
+            ["search_blog_posts", "search_projects", "user_info", "current_time"],
         )
 
-    def test_an_anonymous_assistant_gets_two(self):
+    def test_an_anonymous_assistant_gets_three(self):
+        """Still no user tool: there is no user for it to describe."""
         resolved = suite_for("assistant", ToolContext(), registry=self.registry)
         self.assertEqual([t.name for t in resolved],
-                         ["search_blog_posts", "search_projects"])
+                         ["search_blog_posts", "search_projects", "current_time"])
 
     def test_an_agent_with_no_suite_gets_nothing_rather_than_everything(self):
         """Defaulting to every tool would quietly hand each new tool to agents
@@ -126,10 +134,11 @@ class SuiteTests(TestCase):
 
 
 class BuiltinRegistrationTests(TestCase):
-    def test_the_three_existing_tools_register(self):
+    def test_every_builtin_tool_registers(self):
         registry = register_builtin_tools(ToolRegistry())
         self.assertEqual(
-            registry.names(), ["search_blog_posts", "search_projects", "user_info"]
+            registry.names(),
+            ["current_time", "search_blog_posts", "search_projects", "user_info"],
         )
 
     def test_registering_twice_is_harmless(self):
@@ -137,7 +146,14 @@ class BuiltinRegistrationTests(TestCase):
         registry = ToolRegistry()
         register_builtin_tools(registry)
         register_builtin_tools(registry)
-        self.assertEqual(len(registry.names()), 3)
+        self.assertEqual(len(registry.names()), 4)
+
+    def test_the_clock_tool_answers_without_a_caller(self):
+        """Static for every user, so it is registered rather than bound."""
+        registry = register_builtin_tools(ToolRegistry())
+        answer = registry.resolve(["current_time"])[0].invoke({})
+        self.assertIn("UTC", answer)
+        self.assertIn("EAT", answer)
 
     def test_the_user_info_tool_is_bound_to_the_caller(self):
         user = User.objects.create_user("someone", email="a@example.com")
@@ -158,18 +174,20 @@ class AssistantWiringTests(TestCase):
     def _assistant(self, **kwargs):
         from ai_workflows.service import ChatAssistant
 
-        # The constructor builds a real model client; the tools are what is
-        # under test, so the client is stubbed out.
-        with patch("ai_workflows.service.ChatGoogleGenerativeAI"), \
+        # The constructor resolves a real model; the tools are what is under
+        # test, so resolution and the graph are both stubbed. Since step 7 the
+        # model comes from the harness, so this patches one seam rather than
+        # naming a vendor class.
+        with patch("ai_workflows.service.get_model"), \
                 patch("ai_workflows.service.create_react_agent"):
             return ChatAssistant(thread_id="t-1", **kwargs)
 
-    def test_an_authenticated_assistant_still_gets_three_tools(self):
+    def test_an_authenticated_assistant_gets_four_tools(self):
         user = User.objects.create_user("someone", email="a@example.com")
-        self.assertEqual(len(self._assistant(user_id=user.pk).tools), 3)
+        self.assertEqual(len(self._assistant(user_id=user.pk).tools), 4)
 
-    def test_an_anonymous_assistant_still_gets_two(self):
-        self.assertEqual(len(self._assistant().tools), 2)
+    def test_an_anonymous_assistant_gets_three(self):
+        self.assertEqual(len(self._assistant().tools), 3)
 
     def test_tools_can_still_be_switched_off_entirely(self):
         self.assertEqual(self._assistant(use_tools=False).tools, [])

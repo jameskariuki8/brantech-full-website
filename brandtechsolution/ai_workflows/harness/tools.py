@@ -110,8 +110,13 @@ registry = ToolRegistry()
 # behind its own review rather than smuggled in with a refactor.
 
 SUITES = {
-    # The assistant's existing three, unchanged.
-    "assistant": ["search_blog_posts", "search_projects", "user_info"],
+    # The assistant's three, plus the clock. `current_time` is not a new
+    # capability so much as a relocated one: the date and time used to be
+    # interpolated into the system prompt on every request, which is the front
+    # of the cached prefix, so the highest-volume path in the system could
+    # never get a prompt-cache hit. As a tool the assistant looks the time up
+    # when the answer depends on it, and the prompt is static.
+    "assistant": ["search_blog_posts", "search_projects", "user_info", "current_time"],
 
     # The newsroom agents have no tools today, and still have none here. Listed
     # explicitly so the gap is visible rather than looking like an oversight.
@@ -146,6 +151,7 @@ def register_builtin_tools(target=registry):
     """
     from ai_workflows.tools import (
         create_user_info_tool,
+        current_time,
         search_blog_posts,
         search_projects,
     )
@@ -154,6 +160,8 @@ def register_builtin_tools(target=registry):
         target.register("search_blog_posts", search_blog_posts)
     if "search_projects" not in target:
         target.register("search_projects", search_projects)
+    if "current_time" not in target:
+        target.register("current_time", current_time)
 
     if "user_info" not in target:
         target.register_factory(

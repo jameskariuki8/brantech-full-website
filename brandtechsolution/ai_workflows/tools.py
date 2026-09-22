@@ -232,3 +232,25 @@ def create_user_info_tool(user_id: int):
     
     return get_user_info
 
+
+
+@tool
+def current_time() -> str:
+    """Get the current date and time, in Nairobi time (EAT) and UTC.
+
+    Use this when the answer depends on today's date or the time of day --
+    "what's on this week", "how old is that post", anything relative.
+
+    Returns:
+        The current date and time.
+    """
+    from datetime import datetime, timedelta, timezone as dt_timezone
+
+    offset = getattr(config, "timezone_offset", 3)
+    now_utc = datetime.now(dt_timezone.utc)
+    local = now_utc.astimezone(dt_timezone(timedelta(hours=offset)))
+
+    return (
+        f"Nairobi (EAT): {local.strftime('%A %Y-%m-%d %H:%M')}\n"
+        f"UTC: {now_utc.strftime('%A %Y-%m-%d %H:%M')}"
+    )

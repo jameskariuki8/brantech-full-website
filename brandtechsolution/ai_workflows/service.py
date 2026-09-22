@@ -1,6 +1,27 @@
-"""
-ChatAssistant service following LangChain official patterns.
-See: https://docs.langchain.com/oss/python/langchain/quickstart
+"""The chat assistant, on the harness.
+
+Step 7. What changed and why:
+
+**One definition of the brand voice.** The assistant carried its own hardcoded
+identity in a 45-line system prompt while `EditorialMemory.brand_voice` sat in
+the database read only by the writer. The company had one voice and the
+codebase had two. The persona below says what is specific to *this* agent; the
+voice comes from `AgentProfile`, which every other agent now reads too.
+
+**A static system prompt.** The clock has left the prompt for a tool. Provider
+prompt caching matches on an exact prefix and the system message is the front
+of it, so a clock there meant the highest-volume path in the system could never
+get a cache hit. Rounding it to the hour was the conservative half of that fix
+and said so in a comment addressed to this step; this is the rest.
+
+**The metadata block is parsed.** The prompt has asked for one since the
+assistant was written and nothing ever read it, so the JSON went out as part of
+the visible reply and `suggested_questions` left the API hardcoded empty.
+
+**Failures are recorded.** `send_message` still catches -- the edge is the one
+place `errors.py` allows that, because a chat view has to render something --
+but an unreachable model is now recorded against the agent's health and
+alerted on, instead of becoming an apology nobody hears about.
 """
 from typing import Optional, TypedDict, List
 from dataclasses import dataclass
@@ -9,14 +30,17 @@ import os
 import re
 
 from langgraph.prebuilt import create_react_agent
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage, trim_messages
 from langchain_core.messages.utils import count_tokens_approximately
+from pydantic import BaseModel, Field
 
-from ai_workflows.checkpointer import DjangoCheckpointer
+from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
+from ai_workflows.harness.contract import parse_json, strip_fence
+from ai_workflows.harness.errors import AgentError, AgentOutputInvalid, ModelUnavailable
+from ai_workflows.harness.llm import ModelRole, get_model
+from ai_workflows.harness.memory import Memory
+from ai_workflows.harness.persona import Persona
 from brandtechsolution.config import config
-from datetime import datetime, timezone, timedelta
-from string import Template
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +61,7 @@ def _is_sensitive(key: str) -> bool:
 def _set_external_environment():
     """
     Expose select configuration values to libraries that read from os.environ.
-    
+
     Some libraries (like LangChain/LangSmith) read directly from environment variables,
     so we need to set them even though we use config.py as our central source.
     """
@@ -46,15 +70,15 @@ def _set_external_environment():
         'LANGSMITH_TRACING': 'true' if config.langsmith_tracing else 'false',
         'LANGSMITH_PROJECT': config.langsmith_project,
     }
-    
+
     # Only set LANGSMITH_API_KEY if it's provided (it's optional)
     if config.langsmith_api_key:
         env_overrides['LANGSMITH_API_KEY'] = config.langsmith_api_key
-    
+
     # Set LANGSMITH_ENDPOINT if different from default
     if config.langsmith_endpoint != "https://api.smith.langchain.com":
         env_overrides['LANGSMITH_ENDPOINT'] = config.langsmith_endpoint
-    
+
     for key, value in env_overrides.items():
         if value is not None:
             os.environ[key] = str(value)
@@ -71,7 +95,7 @@ _set_external_environment()
 if config.langsmith_tracing:
     # Verify environment variables were set correctly (for external libraries)
     langsmith_tracing_env = os.environ.get('LANGSMITH_TRACING', '').lower()
-    
+
     if langsmith_tracing_env == 'true' and config.langsmith_api_key:
         logger.info(f"[LangSmith] Tracing enabled for project: {config.langsmith_project}")
     else:
@@ -83,87 +107,131 @@ if config.langsmith_tracing:
         )
 
 
-# System prompt following official docs pattern
-SYSTEM_PROMPT_TEMPLATE = Template("""You are the Teklora Solutions assistant: a professional, concise, and helpful technical assistant for web development, digital transformation, and the company's published content.
+# ============================================================
+# Who it is, and what shape its answer takes
+# ============================================================
+#
+# Two blocks, because they are two different things. A persona says who the
+# agent is and how it behaves; the format block says what shape the answer
+# takes. `harness.persona` keeps format out of Persona deliberately -- most of
+# what the old prompts did was beg for JSON, and an identity and a format
+# fighting inside one call produces neither well.
 
-Primary goals:
-- Provide accurate, grounded answers about Teklora's services, blog posts, and projects.
-- Help users discover useful content and ask clarifying questions when requests are ambiguous.
+ASSISTANT_PERSONA = Persona(
+    name="assistant",
+    role=(
+        "the Teklora Solutions assistant: a professional, concise technical "
+        "assistant for web development, digital transformation, and the "
+        "company's published content"
+    ),
+    directives=(
+        "Answer from Teklora's own blog posts and projects, using the search "
+        "tools for anything that depends on current site content.",
+        "Draw on the conversation history where it is relevant, and not otherwise.",
+        "Ask one concise clarifying question when a request is ambiguous or "
+        "missing something critical, rather than guessing.",
+        "Give actionable recommendations with their tradeoffs when asked for "
+        "an opinion.",
+        "Keep replies short: one to five paragraphs, bullets for steps or options.",
+        "Call `current_time` when the answer depends on today's date or the time.",
+    ),
+    constraints=(
+        "Do not invent search results. If you call a tool, use what it returned.",
+        "Do not claim the site covers something you did not find -- say you "
+        "could not find it.",
+        "Do not return raw JSON as the whole reply.",
+        "Refuse anything illegal or unsafe, briefly, and offer a safe alternative.",
+    ),
+)
 
-Conversation memory and context:
-- You may use the conversation history to keep context. Refer to prior messages only when they are relevant and useful.
+RESPONSE_FORMAT = """Reply with a natural, human-readable message. WhatsApp-style
+formatting is fine where it helps.
 
-Tool usage rules:
-- Use the provided tools for factual lookups about site content: `search_blog_posts` and `search_projects`.
-- Do NOT invent or hallucinate search results; if you call a tool, use its output directly.
-- If a factual claim depends on up-to-date site content, prefer calling the relevant tool.
-
-Response behavior and clarifying questions:
-- If the user request is ambiguous or missing critical details, ask one concise clarifying question before answering.
-- If the user asks for opinions or suggestions, provide clear, actionable recommendations and indicate tradeoffs.
-
-Safety and refusal:
-- Refuse to assist with anything illegal, unsafe, or disallowed. If a request is disallowed, respond briefly with a refusal and offer alternative, safe help.
-
-Output guidance (human-first):
-- Primary output returned to the user MUST be a natural, human-readable message suitable for a conversation (short paragraphs, bullets when helpful, WhatsApp-style formatting when applicable).
-- Only include structured metadata when it is strictly required by the caller. When needed, embed the structured metadata as a JSON object inside a fenced code block labeled `METADATA` at the end of your reply.
-- Never return raw JSON as the entire response to the user.
-
-Metadata format (optional):
-If you include metadata, it must be a valid JSON object with keys: `sources` (array) and `follow_up_questions` (array). `sources` items should be objects with: `type` ("blog" or "project"), `id` (numeric id or null), `title` (string), and `excerpt` (short text string, <= 250 chars).
-
-Example (human reply with metadata):
-```
-Sure — Teklora builds responsive websites using Django and React. The Test Project is a case study showing a React + Django webapp.
+When you used a tool, or when there are useful follow-ups, end the reply with a
+metadata block: the literal word METADATA on its own line, then a fenced JSON
+object.
 
 METADATA
 ```json
-{"sources": [{"type":"project","id":1,"title":"Test Project","excerpt":"A React + Django webapp built for..."}], "follow_up_questions": ["Would you like links to the project or a related blog post?"]}
+{"sources": [{"type": "blog", "id": 12, "title": "A post", "excerpt": "Up to 250 characters."}],
+ "follow_up_questions": ["A question the user might ask next"]}
 ```
 
-Style and length:
-- Keep conversational reply concise (1-5 short paragraphs). Use bullet lists for steps or options.
-- Favor clarity and actionable steps over long prose.
-- Today's date: $today_date
-- Current time in Nairobi (EAT), to the hour: $nairobi_time
-
-If you used a tool, include the corresponding items in `sources` within the `METADATA` block. If you could not find relevant content, state that in the human reply and set `sources` to an empty list in metadata.
-""")
+`type` is "blog" or "project"; `id` is the numeric id or null. The block is
+stripped before the reply reaches the user, so never mention it in your prose.
+If you found nothing relevant, say so in the reply and send an empty `sources`."""
 
 
-def _render_system_prompt(tz_offset_hours: Optional[int] = None) -> str:
-    """Render the SYSTEM_PROMPT_TEMPLATE with sensible defaults.
+class Source(BaseModel):
+    """One thing the assistant says it drew on."""
 
-    Uses `safe_substitute` so callers can render without raising KeyError.
-    The Nairobi/timezone offset can be configured via `config.timezone_offset`.
+    type: str = ""
+    id: int | None = None
+    title: str = ""
+    excerpt: str = ""
 
-    The clock is rendered to the hour, not the second. Provider prompt caching
-    matches on an exact prefix, and this string sits in the system prompt --
-    which is the very front of that prefix. At second granularity every single
-    request produced a different prefix, so the cache could never hit on the
-    highest-volume path in the system. Hourly keeps the assistant usefully
-    time-aware while leaving the prefix stable between requests.
 
-    Rounding rather than removal is the conservative half of the fix. Taking
-    the clock out of the prompt entirely and exposing it as a tool is better
-    still -- the model would look the time up when it actually needs it -- but
-    that changes what the assistant knows without being asked, so it belongs
-    with the harness work rather than here.
+class ReplyMetadata(BaseModel):
+    sources: list[Source] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
+
+
+# The literal marker, then a fenced object or a bare one, at the very end.
+# Anchoring on the marker rather than on "a trailing JSON-looking thing" is what
+# makes stripping safe: ordinary prose does not contain a lone METADATA line.
+_METADATA_BLOCK = re.compile(
+    r"\n\s*METADATA\s*\n+(```(?:json)?\s*.*?\s*```|\{.*\})\s*$",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def split_metadata(text):
+    """Separate the user-visible reply from its metadata block.
+
+    The prompt has asked for this block since the assistant was written, the
+    model has been producing it, and nothing ever parsed it -- so the JSON was
+    shown to the user as part of the answer, and `suggested_questions` left the
+    API hardcoded empty. This is the missing half.
+
+    A block that matches the marker but does not parse is still removed, and the
+    failure logged. The marker is unambiguous, so the alternative is showing
+    somebody a broken JSON blob, which is not an improvement on a valid one.
     """
-    offset = tz_offset_hours if tz_offset_hours is not None else getattr(config, "timezone_offset", 3)
-    now_utc = datetime.now(timezone.utc)
-    today = now_utc.strftime("%Y-%m-%d")
-    nairobi = now_utc.astimezone(timezone(timedelta(hours=offset))).strftime("%Y-%m-%d %H:00 %Z")
-    return SYSTEM_PROMPT_TEMPLATE.safe_substitute(today_date=today, nairobi_time=nairobi)
+    text = text or ""
+    match = _METADATA_BLOCK.search(text)
+    if not match:
+        return text.strip(), ReplyMetadata()
+
+    reply = text[: match.start()].strip()
+    try:
+        metadata = parse_json(strip_fence(match.group(1)), ReplyMetadata)
+    except AgentOutputInvalid as exc:
+        logger.warning("[assistant] could not parse the metadata block: %s", exc)
+        metadata = ReplyMetadata()
+
+    return reply, metadata
 
 
+def system_prompt(persona=None):
+    """The assistant's system message: persona and voice, then output contract.
+
+    Static, and that is the point. It used to carry a clock -- at second
+    granularity first, then rounded to the hour -- and provider prompt caching
+    matches on an exact prefix, so every request produced a prefix that could
+    never hit. Rounding was the conservative half of that fix, with a comment
+    saying the rest belonged with the harness work. This is the rest: the
+    assistant has not stopped knowing the time, it looks it up with
+    `current_time` when the answer actually depends on it.
+    """
+    persona = persona or ASSISTANT_PERSONA
+    return f"{persona.render()}\n\n{RESPONSE_FORMAT}"
 
 
 class AssistantResponse(TypedDict):
     """Response structure from the assistant."""
     response: str
     suggested_questions: List[str]
+    sources: List[dict]
 
 
 @dataclass
@@ -173,15 +241,20 @@ class ChatContext:
     is_authenticated: bool = False
 
 
-class ChatAssistant:
-    """
-    ChatAssistant following LangChain official patterns.
-    
+class ChatAssistant(Agent):
+    """The conversational agent.
+
     Usage:
         assistant = ChatAssistant(thread_id="unique_thread_id")
         response = assistant.send_message("Hello!")
         print(response["response"])
     """
+
+    name = "assistant"
+    persona = ASSISTANT_PERSONA
+    model_role = ModelRole.CONVERSATIONAL
+    tool_suite = "assistant"
+    memory_scope = "site"
 
     MAX_TOKENS_FOR_TRIMMING = 2000
 
@@ -192,8 +265,6 @@ class ChatAssistant:
         use_tools: bool = True,
     ):
         """
-        Initialize the ChatAssistant.
-        
         Args:
             thread_id: Required unique identifier for this conversation
             user_id: Optional user ID if authenticated
@@ -201,35 +272,32 @@ class ChatAssistant:
         """
         self.thread_id = thread_id
         self.user_id = user_id
-        
+
         logger.info(f"[ChatAssistant] Initializing with thread_id={thread_id}, user_id={user_id}, use_tools={use_tools}")
-        
-        # Build config following official docs pattern
+
         self.config = {
             "configurable": {"thread_id": thread_id},
             "workflow_type": "chatbot",
         }
         if user_id:
             self.config["user_id"] = user_id
-        
-        logger.debug(f"[ChatAssistant] Config: {self.config}")
-        
-        # Initialize components
-        self.checkpointer = DjangoCheckpointer(thread_id)
-        logger.debug(f"[ChatAssistant] Checkpointer initialized for thread_id={thread_id}")
-        
-        self.model = ChatGoogleGenerativeAI(
-            model=config.gemini_chat_model,
-            google_api_key=config.google_api_key,
-        )
-        logger.debug(f"[ChatAssistant] Model initialized: {config.gemini_chat_model}")
-        
-        # Tools come from the harness registry rather than being assembled
-        # here. Same three tools in the same order -- this is a move, not a
-        # change -- but "which agent can reach what" now lives in one table
-        # (harness/tools.py SUITES) instead of being spread across each agent's
-        # constructor. The user info tool is still bound per call, and is still
-        # omitted entirely for an anonymous caller.
+
+        # Episodic memory through the one facade rather than a direct
+        # DjangoCheckpointer import. Same checkpointer, reached the same way
+        # every other agent reaches its stores.
+        self.memory = Memory(scope=self.memory_scope)
+        self.checkpointer = self.memory.thread(thread_id)
+
+        # Raises ModelUnavailable rather than returning None. The old code
+        # built its own client here and an unbuildable one took the whole
+        # constructor down with a vendor traceback; this is the same failure
+        # with a type the callers can route on.
+        self.model = get_model(self.model_role, agent=self.name)
+
+        # Tools come from the harness registry. "Which agent can reach what"
+        # lives in one table (harness/tools.py SUITES) rather than in each
+        # agent's constructor. The user info tool is still bound per call, and
+        # is still omitted entirely for an anonymous caller.
         self.tools = []
         if use_tools:
             from ai_workflows.harness.tools import (
@@ -238,29 +306,24 @@ class ChatAssistant:
 
             register_builtin_tools()
             self.tools = suite_for(
-                "assistant",
+                self.tool_suite,
                 ToolContext(user_id=self.user_id, thread_id=self.thread_id),
             )
-        
+
         logger.info(f"[ChatAssistant] Tools configured: {len(self.tools)} tools")
-        
-        # Create the agent
+
+        self._system_prompt = system_prompt(self.voiced_persona())
         self._create_agent()
 
     def _create_agent(self):
         """Create the LangChain agent with middleware."""
-        
-        logger.debug(f"[ChatAssistant] Creating agent with checkpointer={type(self.checkpointer).__name__}")
-        
-        # State modifier to handle system prompt and trimming
+
         def _modifier(state):
             messages = state["messages"] if isinstance(state, dict) else state
-            
+
             if not messages:
-                logger.debug("[ChatAssistant] No messages to trim")
                 trimmed = messages
             else:
-                logger.debug(f"[ChatAssistant] Message trimming: {len(messages)} messages before trimming")
                 trimmed = trim_messages(
                     messages=messages,
                     max_tokens=self.MAX_TOKENS_FOR_TRIMMING,
@@ -273,147 +336,129 @@ class ChatAssistant:
                 )
                 if len(trimmed) != len(messages):
                     logger.info(f"[ChatAssistant] Trimmed messages from {len(messages)} to {len(trimmed)}")
-                else:
-                    logger.debug(f"[ChatAssistant] No trimming needed, {len(messages)} messages within limit")
-            
-            # Build dynamic system prompt with current timestamps
-            tz_offset = getattr(config, 'timezone_offset', 3)
-            system_prompt = _render_system_prompt(tz_offset)
-            system_msg = SystemMessage(content=system_prompt)
-            
-            return [system_msg] + trimmed
 
-        # Create agent following official LangGraph pattern
+            # Rendered once in __init__, not per call. It has no per-request
+            # content any more, so re-rendering it would only risk
+            # reintroducing some.
+            return [SystemMessage(content=self._system_prompt)] + trimmed
+
         self.app = create_react_agent(
             model=self.model,
             tools=self.tools,
             prompt=_modifier,
             checkpointer=self.checkpointer,
         )
-        logger.info(f"[ChatAssistant] Agent created successfully with checkpointer")
+        logger.info("[ChatAssistant] Agent created successfully with checkpointer")
+
+    # ------------------------------------------------------------------
+    # harness entry point
+    # ------------------------------------------------------------------
+
+    def run(self, request: AgentRequest) -> AgentResult:
+        """Answer one message. Raises; `send_message` is the edge that catches."""
+        message = request.payload["message"]
+
+        try:
+            output = self.app.invoke(
+                {"messages": [HumanMessage(content=message)]}, self.config,
+            )
+        except AgentError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - re-raised as our own type
+            raise ModelUnavailable(
+                f"the conversation graph failed: {exc}", agent=self.name,
+            ) from exc
+
+        reply, metadata = split_metadata(_content_of(output.get("messages", [])))
+
+        return AgentResult(
+            agent=self.name,
+            output=reply,
+            metadata={
+                "sources": [s.model_dump() for s in metadata.sources],
+                "follow_up_questions": metadata.follow_up_questions,
+                "thread_id": self.thread_id,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # the edge
+    # ------------------------------------------------------------------
 
     def send_message(self, message: str) -> AssistantResponse:
+        """Send a message and get a response.
+
+        This is the edge, and the edge is the one place `errors.py` allows an
+        agent error to be caught and turned into content -- a chat view has to
+        render something. What is new is that the failure is also *recorded*:
+        `execute` marks the agent unhealthy and step 5's alerting pages
+        whoever holds `receive_alerts`, so an apology to one user is no longer
+        the only trace of a dead provider.
         """
-        Send a message to the assistant and get a response.
-        
-        Args:
-            message: The user's message
-            
-        Returns:
-            AssistantResponse with response text and suggested questions
-        """
+        logger.info(f"[ChatAssistant] Sending message to thread_id={self.thread_id}, user_id={self.user_id}")
+
         try:
-            logger.info(f"[ChatAssistant] Sending message to thread_id={self.thread_id}, user_id={self.user_id}")
-            logger.debug(f"[ChatAssistant] Message content: {message[:100]}...")
-            logger.debug(f"[ChatAssistant] Config being used: {self.config}")
-            
-            # Check for existing checkpoint/memory before sending
-            existing_checkpoint = self.checkpointer.get_tuple(self.config)
-            if existing_checkpoint:
-                messages = existing_checkpoint.checkpoint.get("channel_values", {}).get("messages", [])
-                logger.info(f"[ChatAssistant] Found existing checkpoint with {len(messages)} messages in history")
-                for i, msg in enumerate(messages[-5:]):  # Log last 5 messages
-                    msg_type = "unknown"
-                    msg_content = str(msg)[:50]
-                    if isinstance(msg, dict):
-                        msg_type = msg.get("type", "unknown")
-                        msg_content = str(msg.get("content", ""))[:50]
-                    logger.debug(f"[ChatAssistant] History message {i}: type={msg_type}, content={msg_content}...")
-            else:
-                logger.info(f"[ChatAssistant] No existing checkpoint found - starting new conversation")
-            
-            output = self.app.invoke(
-                {"messages": [HumanMessage(content=message)]},
-                self.config,
-            )
-            
-            logger.debug(f"[ChatAssistant] Agent invoke completed, output keys: {output.keys() if isinstance(output, dict) else 'not a dict'}")
-            
-            # Extract response from messages
-            messages = output.get("messages", [])
-            logger.debug(f"[ChatAssistant] Output contains {len(messages)} messages")
-            content = ""
-            if messages:
-                last = messages[-1]
-                logger.debug(f"[ChatAssistant] Last message type: {type(last).__name__}")
-                if hasattr(last, "content"):
-                    content = last.content
-                elif isinstance(last, dict):
-                    content = last.get("content", str(last))
-                else:
-                    content = str(last)
-                logger.debug(f"[ChatAssistant] Extracted content length: {len(str(content))}")
-            
-            # Handle list of content objects (Gemini raw format)
-            if isinstance(content, list):
-                # Extract text from list of dicts if found
-                text_parts = []
-                for part in content:
-                    if isinstance(part, dict) and "text" in part:
-                        text_parts.append(part["text"])
-                    elif isinstance(part, str):
-                        text_parts.append(part)
-                if text_parts:
-                    content = "\n".join(text_parts)
-                else:
-                    # Fallback for unknown list structure
-                    content = str(content)
-            
-            logger.info(f"[ChatAssistant] Successfully generated response (length: {len(str(content))})")
-            
-            # Verify checkpoint was saved
-            saved_checkpoint = self.checkpointer.get_tuple(self.config)
-            if saved_checkpoint:
-                saved_messages = saved_checkpoint.checkpoint.get("channel_values", {}).get("messages", [])
-                logger.info(f"[ChatAssistant] Verified checkpoint saved with {len(saved_messages)} messages")
-            else:
-                logger.warning(f"[ChatAssistant] WARNING: Checkpoint not found after message send!")
-            
+            result = self.execute(AgentRequest(
+                payload={"message": message},
+                thread_id=self.thread_id,
+                user_id=self.user_id,
+            ))
+        except AgentError as exc:
+            logger.error("[ChatAssistant] %s", exc)
             return {
-                "response": content,
+                "response": (
+                    "I can't reach my tools right now, so I'd rather not guess. "
+                    "Please try again shortly."
+                ),
                 "suggested_questions": [],
+                "sources": [],
             }
-            
-        except Exception as e:
-            logger.error(f"[ChatAssistant] Error in send_message: {e}", exc_info=True)
+        except Exception:  # noqa: BLE001
+            logger.exception("[ChatAssistant] unexpected failure in send_message")
             return {
-                "response": "I apologize, but I encountered an error processing your message. Please try again.",
+                "response": (
+                    "I hit an unexpected problem handling that message. "
+                    "Please try again."
+                ),
                 "suggested_questions": [],
+                "sources": [],
             }
+
+        logger.info(f"[ChatAssistant] Generated response (length: {len(result.output)})")
+        return {
+            "response": result.output,
+            "suggested_questions": result.metadata.get("follow_up_questions", []),
+            "sources": result.metadata.get("sources", []),
+        }
 
     def _extract_content_from_stringified(self, msg_str: str) -> Optional[str]:
         """
         Extract content from a stringified LangChain message object.
-        
+
         Handles formats like:
         - content='Hello' additional_kwargs={} ...
         - content=[{'type': 'text', 'text': 'Hello...'}] ...
-        
+
         Returns:
             Extracted content string, or None if parsing fails
         """
-        # Try to extract content from stringified message
-        # Pattern 1: content='simple string'
         match = re.search(r"content='([^']*)'", msg_str)
         if match:
             return match.group(1)
-        
-        # Pattern 2: content=[{'type': 'text', 'text': '...'}]
-        # Look for the text field inside the list
+
         match = re.search(r"'text':\s*'([^']*)'", msg_str)
         if match:
             return match.group(1)
-        
-        # Pattern 3: content="" (empty)
+
         if "content=''" in msg_str or 'content=""' in msg_str:
             return ""
-        
+
         return None
 
     def _get_role_from_stringified(self, msg_str: str) -> str:
         """
         Determine role from a stringified message.
-        
+
         Returns:
             'user' or 'assistant'
         """
@@ -421,43 +466,35 @@ class ChatAssistant:
             return "user"
         if msg_str.startswith("AIMessage") or "AIMessage(" in msg_str:
             return "assistant"
-        # Check for tool calls (AI messages with function_call)
         if "function_call" in msg_str or "tool_calls" in msg_str:
             return "assistant"
-        # Default to user for simple content messages
         return "user"
 
     def get_history(self) -> List[dict]:
         """
         Get conversation history for this thread.
-        
+
         Returns:
             List of message dicts with role and content
         """
         try:
-            logger.info(f"[ChatAssistant] Getting history for thread_id={self.thread_id}, user_id={self.user_id}")
-            logger.debug(f"[ChatAssistant] Using config: {self.config}")
-            
             checkpoint = self.checkpointer.get_tuple(self.config)
             if not checkpoint:
                 logger.info(f"[ChatAssistant] No checkpoint found for thread_id={self.thread_id}")
                 return []
-            
-            logger.debug(f"[ChatAssistant] Checkpoint found, keys: {checkpoint.checkpoint.keys() if isinstance(checkpoint.checkpoint, dict) else 'not a dict'}")
+
             messages = checkpoint.checkpoint.get("channel_values", {}).get("messages", [])
             logger.info(f"[ChatAssistant] Found {len(messages)} messages in checkpoint")
             history = []
-            
+
             for msg in messages:
                 content = None
                 role = "user"
-                
-                # Handle LangChain message objects (shouldn't happen after serialization, but just in case)
+
                 if hasattr(msg, "content"):
                     role = "assistant" if isinstance(msg, AIMessage) else "user"
                     content = msg.content
-                
-                # Handle proper dict format (new format after fix)
+
                 elif isinstance(msg, dict):
                     msg_type = msg.get("type", msg.get("role", "unknown"))
                     if msg_type in ("human", "user"):
@@ -467,33 +504,22 @@ class ChatAssistant:
                     else:
                         role = "user"
                     content = msg.get("content", "")
-                
-                # Handle stringified message objects (legacy data)
+
                 elif isinstance(msg, str):
                     role = self._get_role_from_stringified(msg)
                     content = self._extract_content_from_stringified(msg)
                     if content is None:
-                        # Skip messages we can't parse
                         continue
-                
-                # Skip empty content or tool call messages
+
                 if content is None or content == "":
                     continue
-                
-                # Handle list content (Gemini format)
+
                 if isinstance(content, list):
-                    text_parts = []
-                    for part in content:
-                        if isinstance(part, dict) and "text" in part:
-                            text_parts.append(part["text"])
-                        elif isinstance(part, str):
-                            text_parts.append(part)
-                    content = "\n".join(text_parts) if text_parts else None
+                    content = _flatten_parts(content)
                     if content is None:
                         continue
-                
-                # Skip error messages that shouldn't be in conversation history
-                # These are tool errors that got stored incorrectly
+
+                # Tool errors that got stored as if they were replies.
                 content_str = str(content).lower()
                 if any(indicator in content_str for indicator in [
                     "error searching",
@@ -503,17 +529,51 @@ class ChatAssistant:
                     "quota exceeded",
                     "error:",
                 ]):
-                    # Skip this message - it's a tool error, not a real message
                     continue
-                
-                history.append({"role": role, "content": content})
-            
+
+                # The metadata block is not part of the conversation either.
+                # Without this, replies saved before step 7 read back with
+                # their JSON attached.
+                visible, _ = split_metadata(str(content))
+                if not visible:
+                    continue
+
+                history.append({"role": role, "content": visible})
+
             logger.info(f"[ChatAssistant] Returning {len(history)} messages from history")
             return history
-            
+
         except Exception as e:
             logger.error(f"[ChatAssistant] Error getting history: {e}", exc_info=True)
             return []
+
+
+def _flatten_parts(content):
+    """Gemini returns content as a list of parts; join the text ones."""
+    text_parts = [
+        part["text"] if isinstance(part, dict) and "text" in part else part
+        for part in content
+        if isinstance(part, str) or (isinstance(part, dict) and "text" in part)
+    ]
+    return "\n".join(text_parts) if text_parts else None
+
+
+def _content_of(messages):
+    """The text of the last message in a graph output."""
+    if not messages:
+        return ""
+
+    last = messages[-1]
+    if hasattr(last, "content"):
+        content = last.content
+    elif isinstance(last, dict):
+        content = last.get("content", str(last))
+    else:
+        content = str(last)
+
+    if isinstance(content, list):
+        return _flatten_parts(content) or str(content)
+    return str(content)
 
 
 # Convenience function for simple usage (backwards compatibility)
@@ -524,27 +584,42 @@ def get_chatbot_response(
 ) -> dict:
     """
     Get chatbot response for a message.
-    
-    This is a convenience function that creates a ChatAssistant instance
-    and sends a single message.
-    
+
     Args:
         message: User message
         thread_id: Thread ID for conversation
         user_id: Optional user ID
-        
+
     Returns:
         Dict with response and metadata
     """
     logger.info(f"[get_chatbot_response] Called with thread_id={thread_id}, user_id={user_id}")
-    assistant = ChatAssistant(thread_id=thread_id, user_id=user_id)
+
+    try:
+        assistant = ChatAssistant(thread_id=thread_id, user_id=user_id)
+    except AgentError as exc:
+        # Construction resolves the model, so it can fail before any message is
+        # sent. Recorded here because there is no agent instance to record it.
+        from ai_workflows.harness.alerts import record_failure
+
+        logger.error("[get_chatbot_response] %s", exc)
+        record_failure("assistant", exc, provider=exc.provider or "")
+        return {
+            "response": (
+                "I can't reach my tools right now, so I'd rather not guess. "
+                "Please try again shortly."
+            ),
+            "thread_id": thread_id,
+            "metadata": {"suggested_questions": [], "sources": []},
+        }
+
     result = assistant.send_message(message)
-    
-    logger.info(f"[get_chatbot_response] Response generated successfully")
+
     return {
         "response": result["response"],
         "thread_id": thread_id,
         "metadata": {
             "suggested_questions": result.get("suggested_questions", []),
+            "sources": result.get("sources", []),
         },
     }
