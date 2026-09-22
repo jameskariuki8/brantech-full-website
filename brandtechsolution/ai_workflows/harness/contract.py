@@ -27,7 +27,7 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field, ValidationError
 
 from ai_workflows.harness.errors import AgentOutputInvalid, ModelUnavailable
-from ai_workflows.harness.llm import ModelRole, get_model
+from ai_workflows.harness.llm import ModelRole, iter_models as get_models
 
 logger = logging.getLogger(__name__)
 
@@ -116,28 +116,59 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
         retries=1, agent=None, context=None, allow_fallback=True, provider=None):
     """Ask the model for `schema`, and return it validated.
 
-    On a shape failure the model is asked again with the validation error
-    appended -- it is told what was wrong rather than simply re-rolled. After
-    the retries are spent this raises `AgentOutputInvalid`. It never returns a
-    canned object: a fabricated answer that looks like a real one is worse
-    than a failure, which is the lesson the fallback drafts taught.
-    """
-    if model is None:
-        # `allow_fallback` reaches the resolver from here. An agent whose
-        # output is compared across runs must not drift between providers
-        # mid-comparison, and a flag that never reached the thing it describes
-        # would be a decoration.
-        model = get_model(
-            role, agent=agent, allow_fallback=allow_fallback, provider=provider,
-        )
+    Two different failures, handled two different ways.
 
-    messages = list(context.messages) if context is not None else []
-    if persona is not None and not messages:
+    A **shape** failure is the model's answer being wrong, so it is asked again
+    with the validation error appended -- told what was wrong rather than simply
+    re-rolled. Same model: another provider is no more likely to satisfy a
+    schema the first one misread.
+
+    A **call** failure is the provider not answering at all: a rate limit, a
+    timeout, a revoked key. Retrying the same model is pointless and the next
+    provider is the whole reason there is a preference order. `allow_fallback`
+    is what decides whether that is allowed, so a verifier being compared
+    across runs stays on one model and fails instead.
+
+    After the retries are spent this raises. It never returns a canned object:
+    a fabricated answer that looks like a real one is worse than a failure,
+    which is the lesson the fallback drafts taught.
+    """
+    base_messages = list(context.messages) if context is not None else []
+    if persona is not None and not base_messages:
         from langchain_core.messages import SystemMessage
 
-        messages.append(SystemMessage(content=persona.render()))
-    messages.append(HumanMessage(content=prompt))
+        base_messages.append(SystemMessage(content=persona.render()))
+    base_messages.append(HumanMessage(content=prompt))
 
+    if model is not None:
+        return _ask_one(model, base_messages, schema, retries=retries, agent=agent)
+
+    last_error = None
+    for candidate_provider, client in get_models(
+        role, agent=agent, allow_fallback=allow_fallback, provider=provider,
+    ):
+        try:
+            return _ask_one(client, list(base_messages), schema,
+                            retries=retries, agent=agent)
+        except ModelUnavailable as exc:
+            last_error = exc
+            exc.provider = exc.provider or candidate_provider.value
+            logger.warning(
+                "[contract] %s could not answer for %s: %s",
+                candidate_provider.value, agent or schema.__name__, exc,
+            )
+            # Back to the generator, which offers the next provider or stops.
+            continue
+
+    if last_error is not None:
+        last_error.agent = last_error.agent or agent
+        raise last_error
+
+    raise ModelUnavailable("no provider answered", agent=agent)
+
+
+def _ask_one(model, messages, schema, *, retries, agent):
+    """One model, with the shape-failure retry."""
     structured = _structured(model, schema)
     attempt, last_error = 0, None
 
@@ -176,8 +207,13 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
             raise
 
         except Exception as exc:  # noqa: BLE001
-            raise AgentOutputInvalid(
-                f"model call failed: {exc}", agent=agent
+            # The call did not complete. That is the provider failing, not the
+            # model answering badly -- it used to be reported as an invalid
+            # shape, which sent anyone reading the alert to look for a
+            # malformed response that did not exist, and stopped the caller
+            # from knowing another provider was worth trying.
+            raise ModelUnavailable(
+                f"the call failed: {exc}", agent=agent,
             ) from exc
 
     last_error.agent = last_error.agent or agent

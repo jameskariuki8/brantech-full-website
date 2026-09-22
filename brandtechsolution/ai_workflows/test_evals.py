@@ -98,6 +98,13 @@ class RunnerTests(TestCase):
     """The runner, driven by cases built here rather than the real suite."""
 
     def _runner(self, registry, **kwargs):
+        # `live=True` because these fixtures declare no `model_response`, which
+        # is what marks a case as needing a real call. They do not make one --
+        # their `run` is a plain function -- but the runner cannot know that,
+        # and inferring "live" from "unstubbed" is the conservative way round:
+        # a case that might call a model and was forgotten about should be
+        # skipped by default rather than billed.
+        kwargs.setdefault("live", True)
         runner = EvalRunner(stub=_no_stub, **kwargs)
         # The runner loads the real suite; point it at a built one instead.
         from unittest.mock import patch

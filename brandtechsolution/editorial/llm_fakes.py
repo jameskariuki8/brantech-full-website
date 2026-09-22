@@ -29,13 +29,17 @@ from unittest.mock import patch
 # resolves its own model. A stub covering only `contract` left a live, billed
 # call in the middle of the suite -- the same mistake as the embedder in step 6,
 # in a new place. The guard test written for that one is what caught it.
+# `contract` iterates candidates so a call that fails at invoke time -- a rate
+# limit, a revoked key -- can try the next provider. The fake stands in for the
+# iterator, yielding one provider forever's worth of candidates: one.
+CANDIDATE_TARGET = "ai_workflows.harness.contract.get_models"
+
 TARGETS = (
-    "ai_workflows.harness.contract.get_model",
     "ai_workflows.harness.gather.get_model",
 )
 
 # Kept for anything still importing the old name.
-TARGET = TARGETS[0]
+TARGET = CANDIDATE_TARGET
 
 # `Memory.embedder` imports this lazily inside the property, so the definition
 # site is the right target here.
@@ -259,7 +263,14 @@ def fake_gemini(overrides=None, *, structured=True, embeddings=True):
         payload.update(overrides)
 
     model = FakeChatModel(payload, structured=structured)
+
+    def one_candidate(*args, **kwargs):
+        from ai_workflows.harness.llm import Provider
+
+        yield Provider.GEMINI, model
+
     with ExitStack() as stack:
+        stack.enter_context(patch(CANDIDATE_TARGET, new=one_candidate))
         for target in TARGETS:
             stack.enter_context(patch(target, new=lambda *args, **kwargs: model))
         if embeddings:
@@ -281,6 +292,7 @@ def unavailable_model(message="no API key configured"):
         raise ModelUnavailable(message, provider="gemini")
 
     with ExitStack() as stack:
+        stack.enter_context(patch(CANDIDATE_TARGET, new=explode))
         for target in TARGETS:
             stack.enter_context(patch(target, new=explode))
         yield

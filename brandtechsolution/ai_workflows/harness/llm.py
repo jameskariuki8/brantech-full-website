@@ -193,6 +193,66 @@ _BUILDERS = {
 }
 
 
+def iter_models(role=ModelRole.ANALYTIC, *, tools=None, provider=None, model=None,
+                agent=None, allow_fallback=True, **overrides):
+    """Yield (provider, client) for each candidate, building them lazily.
+
+    `get_model` returns the first one that builds, which covers a provider that
+    is misconfigured. It does not cover one that is *exhausted*: a 429 arrives
+    when the model is invoked, long after it was constructed, so a caller
+    holding a single client has nothing to fall back to.
+
+    A caller that loops over this does. That is the difference between
+    multi-provider meaning "you may choose one" and meaning "an outage does not
+    stop the newsroom", and a rate limit is the most common outage there is.
+    """
+    role = ModelRole(role)
+    candidates = _candidates(
+        provider=provider, model=model, allow_fallback=allow_fallback, agent=agent,
+    )
+    if not candidates:
+        raise ModelUnavailable(
+            "no provider is usable: none has a verified credential and a "
+            "chosen model. Run `manage.py providers` to see why.",
+            agent=agent,
+        )
+
+    failures = []
+    for candidate_provider, candidate_model in candidates:
+        builder = _BUILDERS.get(candidate_provider)
+        if builder is None:
+            failures.append(f"{candidate_provider.value}: no builder")
+            continue
+
+        try:
+            client = builder(role, tools, candidate_model, **overrides)
+        except ModelUnavailable as exc:
+            exc.agent = exc.agent or agent
+            if not allow_fallback:
+                raise
+            failures.append(f"{candidate_provider.value}: {exc}")
+            logger.warning(
+                "[llm] %s unusable for %s, trying the next provider: %s",
+                candidate_provider.value, agent or role.value, exc,
+            )
+            continue
+
+        yield candidate_provider, client
+
+        # Control came back, so the caller rejected that client -- the call
+        # failed at invoke time. Only keep offering alternatives if it is
+        # allowed to drift.
+        if not allow_fallback:
+            return
+
+    if not failures:
+        return
+
+    raise ModelUnavailable(
+        "every candidate provider failed: " + "; ".join(failures), agent=agent,
+    )
+
+
 def get_model(role=ModelRole.ANALYTIC, *, tools=None, provider=None, model=None,
               agent=None, allow_fallback=True, **overrides):
     """A configured chat model for `role`.

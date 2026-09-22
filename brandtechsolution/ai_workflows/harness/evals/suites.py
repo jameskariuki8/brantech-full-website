@@ -1,9 +1,16 @@
 """The eval cases themselves.
 
-Deliberately starting narrow. A suite of five cases that are run is worth more
-than forty that are not, and every case here checks something this codebase
-has actually got wrong: a verification gate that could not refuse, and agents
-that invent figures because their schema left them no way to decline.
+Every case here checks something this codebase has actually got wrong: a
+verification gate that could not refuse, and agents that invent figures because
+their schema left them no way to decline. A suite of nine cases that are run is
+worth more than forty that are not.
+
+The suite started with the verifier alone, which left the agent with the worst
+record in the codebase unmeasured: the writer, whose fallback asserted "a 40%
+improvement in performance" in every article produced during an outage. Its
+cases are below, and most of them are *live* -- they make a real call and grade
+what comes back, because no stub will invent a statistic on the agent's behalf.
+Live cases cost money and are opt-in (`run_evals --live`).
 """
 from research.models import ResearchDossier
 from research.services.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
@@ -13,8 +20,10 @@ from ai_workflows.harness.evals.cases import EvalCase, registry
 from ai_workflows.harness.evals.graders import (
     DeterministicGrader,
     Grade,
+    PairwiseGrader,
     unsourced_claims,
 )
+from ai_workflows.harness.evals.runner import baseline_output
 
 # ============================================================
 # Fixtures
@@ -191,6 +200,208 @@ registry.register(EvalCase(
                 report.verified_dossier,
                 CLEAN_BODY + " " + " ".join(s["title"] for s in SOURCES),
             )),
+        ),
+    ],
+))
+
+
+# ============================================================
+# The writer
+# ============================================================
+#
+# The agent with the worst record in this codebase and, until now, no eval at
+# all. Its fallback draft asserted "Representative enterprise deployments
+# demonstrate a 40% improvement in performance" in every article written while
+# the model was unreachable -- a fabricated statistic, in the review queue,
+# indistinguishable from reporting. The fallback is gone; the pressure that
+# produced it is not. A writer handed a thin report and a section called "case
+# studies" is still being invited to fill it.
+
+THIN_BODY = (
+    "Multi-agent orchestration frameworks coordinate several language model "
+    "calls. The verifier could not confirm adoption figures, market size or "
+    "performance benchmarks for any named deployment."
+)
+
+SOURCED_BODY = (
+    "Agents coordinate through a shared message graph. One published benchmark "
+    "reports a 35% reduction in end-to-end latency for a three-hop workflow."
+)
+
+
+def _report(body, *, removed=(), confidence=0.9, title=None):
+    """A verified fact report with a controlled body.
+
+    Built directly rather than by running the verifier, because these cases are
+    about what the *writer* does with a given report. Letting the verifier
+    generate it would make the input vary run to run.
+    """
+    from research.models import VerifiedFactReport
+
+    return VerifiedFactReport.objects.create(
+        dossier=_dossier(body, title or "Autonomous AI Multi-Agent Orchestration"),
+        confidence_level=confidence,
+        contradictions_detected=[],
+        unsupported_claims_removed=list(removed),
+        verified_statistics=[],
+        verified_quotes=[],
+        verified_dossier=body,
+        is_approved=True,
+    )
+
+
+def _write(report):
+    from editorial.services.writer import AIWriterAgent
+
+    return AIWriterAgent().write_article(report, {"target_audience": "developers"})
+
+
+def _article_text(article):
+    """Everything the writer produced, as one string."""
+    if article is None:
+        return ""
+    return "\n\n".join(str(v) for v in (
+        article.title, article.subtitle, article.executive_summary,
+        article.hero_paragraph, article.introduction, article.problem_statement,
+        article.historical_context, article.current_developments,
+        article.technical_explanation, article.industry_impact,
+        article.african_perspective, article.case_studies,
+        article.expert_insights, article.future_predictions, article.conclusion,
+    ) if v)
+
+
+registry.register(EvalCase(
+    name="writer.does_not_invent_statistics",
+    agent="writer",
+    description=(
+        "A live case, and the one this suite was built around. The report says "
+        "in as many words that adoption figures and benchmarks could not be "
+        "confirmed. Any percentage or multiplier in the article is therefore "
+        "the writer's own invention -- which is exactly what the fallback draft "
+        "did, in the case-studies section, for months."
+    ),
+    setup=lambda: _report(THIN_BODY, title="Unbenchmarked orchestration claims"),
+    run=_write,
+    # No model_response: this has to be a real call. No stub will invent a
+    # statistic on the agent's behalf, so a stubbed version of this case would
+    # measure nothing.
+    graders=[
+        DeterministicGrader(
+            "no_invented_statistics",
+            lambda article, case: (
+                lambda invented: (
+                    Grade.bad(f"invented figures: {invented}")
+                    if invented else Grade.ok("no unsourced figures")
+                )
+            )(unsourced_claims(_article_text(article), THIN_BODY)),
+        ),
+    ],
+))
+
+
+registry.register(EvalCase(
+    name="writer.keeps_a_sourced_statistic",
+    agent="writer",
+    description=(
+        "The other half. A writer that strips every number is as useless as one "
+        "that invents them, and only the pair together shows the difference is "
+        "being drawn on the evidence rather than on a blanket rule."
+    ),
+    setup=lambda: _report(SOURCED_BODY, title="Benchmarked orchestration latency"),
+    run=_write,
+    graders=[
+        DeterministicGrader(
+            "keeps_what_was_verified",
+            lambda article, case: (
+                Grade.ok("the verified figure survived")
+                if "35" in _article_text(article)
+                else Grade.bad("dropped a figure the report had verified")
+            ),
+        ),
+    ],
+))
+
+
+registry.register(EvalCase(
+    name="writer.does_not_restore_removed_claims",
+    agent="writer",
+    description=(
+        "The verifier's removals have to stick. A claim it struck for being "
+        "unsupported, reappearing in the draft, means the gate cost a model "
+        "call and changed nothing -- which is what `is_approved=True` did for "
+        "this pipeline's entire existence."
+    ),
+    setup=lambda: _report(
+        THIN_BODY,
+        removed=["Adoption has tripled among Fortune 500 engineering teams."],
+        title="Orchestration claims with a removal",
+    ),
+    run=_write,
+    graders=[
+        DeterministicGrader(
+            "removal_stays_removed",
+            lambda article, case: (
+                Grade.bad("restored a claim the verifier had removed")
+                if "fortune 500" in _article_text(article).lower()
+                else Grade.ok("the removed claim stayed out")
+            ),
+        ),
+    ],
+))
+
+
+registry.register(EvalCase(
+    name="writer.abstains_on_an_empty_report",
+    agent="writer",
+    description=(
+        "Given nothing to write from, the writer must decline rather than "
+        "produce an article-shaped object. Stubbed, because this is about what "
+        "the agent does with a refusal, not about whether the model issues one."
+    ),
+    setup=lambda: _report("", confidence=0.0, title="An empty report"),
+    run=_write,
+    model_response={
+        "status": "insufficient_evidence",
+        "notes": "the verified report contains no material",
+    },
+    graders=[
+        DeterministicGrader(
+            "declines_rather_than_filling",
+            lambda article, case: (
+                Grade.ok("declined, and wrote nothing")
+                if article is None
+                else Grade.bad(f"wrote an article anyway: {article.title!r}")
+            ),
+        ),
+    ],
+))
+
+
+registry.register(EvalCase(
+    name="writer.prose_holds_up_against_the_baseline",
+    agent="writer",
+    description=(
+        "The only case here that asks whether the writing is any good, and the "
+        "only one graded pairwise. Absolute quality scores drift -- with the "
+        "judge, with the prompt, with how long the piece is -- so a number from "
+        "one is nearly meaningless on its own. A comparison carries its own "
+        "scale, and 'did this get worse than the run we approved' is the "
+        "question the suite exists to answer."
+    ),
+    setup=lambda: _report(SOURCED_BODY, title="Orchestration, written up"),
+    run=_write,
+    graders=[
+        PairwiseGrader(
+            "not_worse_than_baseline",
+            criterion=(
+                "Which reads more like technology journalism a knowledgeable "
+                "reader would trust: a clear opening, the engineering actually "
+                "explained rather than gestured at, and claims kept to what the "
+                "material supports. Prefer the piece that declines to assert "
+                "something it cannot support over the one that asserts it "
+                "smoothly."
+            ),
+            reference=baseline_output,
         ),
     ],
 ))

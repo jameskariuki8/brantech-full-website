@@ -5,6 +5,7 @@
     manage.py run_evals --agent fact_verifier
     manage.py run_evals --samples 5          # measure the spread too
     manage.py run_evals --compare            # against the latest baseline
+    manage.py run_evals --live               # include cases that call a real model
 """
 from django.core.management.base import BaseCommand, CommandError
 
@@ -28,13 +29,24 @@ class Command(BaseCommand):
                             help="Mark this run as the reference others compare against.")
         parser.add_argument('--compare', action='store_true',
                             help="Report the delta against the most recent baseline.")
+        parser.add_argument('--live', action='store_true',
+                            help=("Include cases that call a real model. These cost "
+                                  "money and need a working provider, so they are "
+                                  "off by default."))
 
     def handle(self, *args, **options):
         runner = EvalRunner(
             samples=options['samples'],
             label=options['label'],
             is_baseline=options['baseline'],
+            live=options['live'],
         )
+
+        if options['live']:
+            self.stdout.write(self.style.WARNING(
+                "  Live cases are included: this run will call a real provider "
+                "and cost money."
+            ))
 
         try:
             run = runner.run(agents=options['agents'], cases=options['cases'])
@@ -59,8 +71,20 @@ class Command(BaseCommand):
         # A failing case has to fail the command, or the suite becomes
         # decoration that nobody notices going red.
         failed = run.results.filter(passed=False).count()
+        unmeasured = run.results.filter(passed__isnull=True).count()
+
+        problems = []
         if failed:
-            raise CommandError(f"{failed} eval check(s) failed.")
+            problems.append(f"{failed} check(s) failed")
+        if unmeasured:
+            # Also an error. A run where half the cases could not execute --
+            # a quota limit, a dead provider -- once reported "overall: 1.00"
+            # and exited zero, which is an eval suite lying about the one thing
+            # it exists to tell the truth about.
+            problems.append(f"{unmeasured} check(s) could not be measured")
+
+        if problems:
+            raise CommandError(" and ".join(problems) + ".")
 
     def _report(self, run):
         self.stdout.write(f"\nEval run #{run.pk}  {run.label or '(unlabelled)'}"
@@ -86,9 +110,23 @@ class Command(BaseCommand):
                 ))
 
         overall = run.score
+        total = run.results.count()
+        unmeasured = run.results.filter(passed__isnull=True).count()
+        graded = total - unmeasured
+
         self.stdout.write("\n" + "=" * 64)
-        self.stdout.write(f"  overall: {'n/a' if overall is None else f'{overall:.2f}'}"
-                          f"   ({run.results.count()} checks)")
+        # The count is of what was actually *graded*. Reporting a score over
+        # "9 checks" when four of them raised reads as a complete run that went
+        # well, which is the opposite of what happened.
+        line = (f"  overall: {'n/a' if overall is None else f'{overall:.2f}'}"
+                f"   ({graded} of {total} checks graded)")
+        self.stdout.write(line if not unmeasured else self.style.WARNING(line))
+
+        if unmeasured:
+            self.stdout.write(self.style.ERROR(
+                f"  {unmeasured} check(s) could not be measured at all. "
+                f"The score above covers only the rest of them."
+            ))
 
     def _report_comparison(self, run, baseline):
         self.stdout.write(f"\nvs baseline #{baseline.pk} "

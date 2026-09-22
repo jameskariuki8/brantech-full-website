@@ -34,6 +34,20 @@ class EvalCase:
     # control the model's answer, or it is measuring the weather.
     model_response: dict | None = None
 
+    @property
+    def is_live(self) -> bool:
+        """Does this case need a real model call?
+
+        The two kinds measure different things and neither replaces the other.
+        A *stubbed* case asks what the agent does with a given model response:
+        given a reported contradiction, does the gate refuse? A *live* case
+        asks what the model actually produces, which is the only way to catch
+        the writer inventing a statistic -- no stub will invent one for it.
+
+        Live cases cost money and need a working provider, so they are opt-in.
+        """
+        return self.model_response is None
+
 
 class CaseRegistry:
     """Every registered case, addressable by agent."""

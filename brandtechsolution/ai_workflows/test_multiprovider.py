@@ -9,7 +9,7 @@ multi-provider from day one" was not true of the code.
 These are about the two rules that keep the wiring honest: a provider must have
 a model chosen for it, and failover is opt-out per agent.
 """
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
@@ -307,11 +307,7 @@ class AgentThreadingTests(TestCase):
     def test_an_agents_flag_reaches_the_resolver(self):
         from research.services.fact_verifier import FactVerificationAgent
 
-        with patch("ai_workflows.harness.contract.get_model") as get:
-            get.return_value.with_structured_output.side_effect = NotImplementedError
-            get.return_value.invoke.return_value = type("R", (), {
-                "content": '{"confidence_level": 0.9, "sanitized_text": "x"}',
-            })()
+        with _candidates('{"confidence_level": 0.9, "sanitized_text": "x"}') as get:
             FactVerificationAgent().ask("check this", _FakeSchema)
 
         self.assertIs(get.call_args.kwargs["allow_fallback"], False)
@@ -319,9 +315,7 @@ class AgentThreadingTests(TestCase):
     def test_an_ordinary_agent_may_fall_over(self):
         from editorial.services.writer import AIWriterAgent
 
-        with patch("ai_workflows.harness.contract.get_model") as get:
-            get.return_value.with_structured_output.side_effect = NotImplementedError
-            get.return_value.invoke.return_value = type("R", (), {"content": "{}"})()
+        with _candidates("{}") as get:
             AIWriterAgent().ask("write this", _FakeSchema)
 
         self.assertIs(get.call_args.kwargs["allow_fallback"], True)
@@ -330,18 +324,137 @@ class AgentThreadingTests(TestCase):
         from editorial.services.social import MultiPlatformContentAgent
 
         agent = MultiPlatformContentAgent()
-        with patch("ai_workflows.harness.contract.get_model") as get:
-            get.return_value.with_structured_output.side_effect = NotImplementedError
-            get.return_value.invoke.return_value = type("R", (), {"content": "{}"})()
+        with _candidates("{}") as get:
             agent.ask("adapt this", _FakeSchema)
 
         self.assertEqual(get.call_args.kwargs["agent"], "social")
         self.assertEqual(get.call_args[0][0], agent.model_role)
 
 
+from contextlib import contextmanager  # noqa: E402
+
 from ai_workflows.harness.contract import AgentOutput  # noqa: E402
+
+
+@contextmanager
+def _candidates(content):
+    """Stand in for the candidate iterator with one model returning `content`."""
+    client = MagicMock()
+    client.with_structured_output.side_effect = NotImplementedError
+    client.invoke.return_value = type("R", (), {"content": content})()
+
+    def one(*args, **kwargs):
+        yield Provider.GEMINI, client
+
+    with patch("ai_workflows.harness.contract.get_models",
+               side_effect=one) as get:
+        yield get
 
 
 class _FakeSchema(AgentOutput):
     confidence_level: float = 0.0
     sanitized_text: str = ""
+
+
+class RuntimeFailoverTests(TestCase):
+    """Failover that covers a provider going down mid-call, not just at build.
+
+    The live eval run is what exposed the gap: Gemini's free tier ran out of
+    quota, every case died, and nothing tried the next provider -- because a
+    429 arrives when the model is *invoked*, long after `get_model` handed back
+    a perfectly well-constructed client.
+    """
+
+    def setUp(self):
+        _provider("gemini", preference=10, model="g")
+        _provider("openai", preference=60, model="o")
+
+    def _clients(self, first, second):
+        """Two candidate clients, in preference order."""
+        def iterator(*args, **kwargs):
+            yield Provider.GEMINI, first
+            if kwargs.get("allow_fallback", True):
+                yield Provider.OPENAI, second
+
+        return patch("ai_workflows.harness.contract.get_models", side_effect=iterator)
+
+    @staticmethod
+    def _client(content=None, error=None):
+        client = MagicMock()
+        client.with_structured_output.side_effect = NotImplementedError
+        if error is not None:
+            client.invoke.side_effect = error
+        else:
+            client.invoke.return_value = type("R", (), {"content": content})()
+        return client
+
+    def test_a_rate_limited_provider_falls_over_to_the_next(self):
+        from ai_workflows.harness.contract import ask
+
+        exhausted = self._client(error=RuntimeError("429 RESOURCE_EXHAUSTED"))
+        working = self._client('{"sanitized_text": "written"}')
+
+        with self._clients(exhausted, working):
+            result = ask(None, "do it", _FakeSchema, agent="writer")
+
+        self.assertEqual(result.sanitized_text, "written")
+        self.assertTrue(exhausted.invoke.called)
+
+    def test_an_agent_that_must_not_drift_fails_instead(self):
+        """The verifier's verdicts are compared across runs. Surviving an
+        outage by quietly answering on a different model would make the
+        comparison meaningless, which is worse than the outage."""
+        from ai_workflows.harness.contract import ask
+
+        exhausted = self._client(error=RuntimeError("429 RESOURCE_EXHAUSTED"))
+        working = self._client('{"sanitized_text": "written"}')
+
+        with self._clients(exhausted, working):
+            with self.assertRaises(ModelUnavailable):
+                ask(None, "check it", _FakeSchema,
+                    agent="fact_verifier", allow_fallback=False)
+
+        self.assertFalse(working.invoke.called)
+
+    def test_a_call_failure_is_reported_as_the_provider_failing(self):
+        """It used to be reported as an invalid shape, which sent whoever read
+        the alert looking for a malformed response that did not exist."""
+        from ai_workflows.harness.contract import ask
+
+        exhausted = self._client(error=RuntimeError("429 RESOURCE_EXHAUSTED"))
+
+        def only_one(*args, **kwargs):
+            yield Provider.GEMINI, exhausted
+
+        with patch("ai_workflows.harness.contract.get_models", side_effect=only_one):
+            with self.assertRaises(ModelUnavailable) as caught:
+                ask(None, "do it", _FakeSchema, agent="writer")
+
+        self.assertIn("429", str(caught.exception))
+
+    def test_a_shape_failure_does_not_change_provider(self):
+        """Another provider is no more likely to satisfy a schema the first one
+        misread, and swapping would hide which model produced the bad shape."""
+        from ai_workflows.harness.contract import ask
+        from ai_workflows.harness.errors import AgentOutputInvalid
+
+        malformed = self._client("not json at all")
+        working = self._client('{"sanitized_text": "written"}')
+
+        with self._clients(malformed, working):
+            with self.assertRaises(AgentOutputInvalid):
+                ask(None, "do it", _FakeSchema, agent="writer", retries=0)
+
+        self.assertFalse(working.invoke.called)
+
+    def test_an_explicit_model_is_used_as_given(self):
+        """A caller that passed a model has already chosen; failing over would
+        make the choice meaningless."""
+        from ai_workflows.harness.contract import ask
+
+        given = self._client('{"sanitized_text": "written"}')
+        with patch("ai_workflows.harness.contract.get_models") as candidates:
+            result = ask(None, "do it", _FakeSchema, model=given)
+
+        self.assertEqual(result.sanitized_text, "written")
+        candidates.assert_not_called()
