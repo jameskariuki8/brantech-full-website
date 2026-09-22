@@ -16,7 +16,8 @@ import logging
 from pydantic import Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, require
+from ai_workflows.harness.claims import unsourced_claims
+from ai_workflows.harness.contract import AgentOutput, OutputStatus, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle
@@ -114,11 +115,57 @@ in it may become a claim in this article unless the verified report above also
 supports it.
 """
 
+FIGURES_REJECTED = """That draft used figures the verified report does not
+support: {figures}.
+
+The report is the only source for this article. Write it again without those
+figures. Do not substitute different numbers, and do not soften them into
+"roughly" or "around" -- if the report did not establish a quantity, the
+article does not state one. A section with nothing verified behind it should
+say what is known and stop.
+"""
+
+
 # The sections an article cannot go to review without. The rest may legitimately
 # be thin -- not every topic has case studies, and inventing one to fill the
 # field is exactly the failure this agent is being rebuilt to stop.
 REQUIRED = ("title", "executive_summary", "introduction", "technical_explanation",
             "conclusion")
+
+
+def _draft_text(draft) -> str:
+    """Everything in the draft a reader would see.
+
+    Every string field rather than a named list, so a section added to
+    `ArticleDraft` later is checked without anyone remembering to add it here.
+    A figure invented in a field nobody thought to scan is still in the
+    article.
+    """
+    parts = []
+    for name, value in draft.model_dump().items():
+        if name in ("status", "notes"):
+            continue
+        if isinstance(value, str):
+            parts.append(value)
+        elif isinstance(value, (list, tuple)):
+            parts.extend(str(item) for item in value)
+        elif isinstance(value, dict):
+            parts.extend(str(item) for item in value.values())
+    return "\n\n".join(part for part in parts if part)
+
+
+def _sources_text(report) -> str:
+    """What the article is allowed to have got a number from.
+
+    The verified report and the dossier's regional section, and nothing else.
+    The continuity evidence is deliberately absent: the brief that gathers it
+    says in as many words that it is not source material, and letting a figure
+    from a past article count as support here would be exactly how a claim the
+    verifier removed gets back in.
+    """
+    parts = [report.verified_dossier, report.dossier.african_opportunities]
+    parts.extend(str(item) for item in (report.verified_statistics or []))
+    return "\n\n".join(part for part in parts if part)
 
 
 class AIWriterAgent(Agent):
@@ -138,8 +185,7 @@ class AIWriterAgent(Agent):
             verified_text=report.verified_dossier[:2000],
         ))
 
-        draft = self.ask(
-            ARTICLE_PROMPT.format(
+        prompt = ARTICLE_PROMPT.format(
                 continuity=(
                     CONTINUITY_HEADER.format(continuity=continuity) if continuity else ""
                 ),
@@ -151,16 +197,68 @@ class AIWriterAgent(Agent):
                 length_words=strategy.get('length_words', 1600),
                 reading_difficulty=strategy.get('reading_difficulty', 'Intermediate'),
                 focus_area=strategy.get('focus_area', 'the technology and its adoption'),
-            ),
-            ArticleDraft,
         )
+        draft = self.ask(prompt, ArticleDraft)
         if draft.usable:
             require(draft, *REQUIRED, agent=self.name)
+            draft = self._without_invented_figures(draft, report, prompt)
 
         return AgentResult(
             agent=self.name, output=draft,
             abstained=draft.abstained, notes=draft.notes,
         )
+
+    # ------------------------------------------------------------------
+    # the figures check
+    # ------------------------------------------------------------------
+
+    def _without_invented_figures(self, draft, report, prompt):
+        """Re-ask once if the draft carries figures the report never had.
+
+        The persona has told it not to invent statistics since step 6, and it
+        does anyway -- a live eval run caught "2%" in an article whose report
+        says in as many words that no benchmark could be confirmed. An
+        instruction in a prompt is a request; this is the check.
+
+        Told what was wrong and asked again, exactly as `contract` handles a
+        malformed shape. If the second draft still carries figures the report
+        does not support, the agent declines: a false article is worse than no
+        article, which is the whole lesson of the fallback draft this class
+        replaced.
+        """
+        sources = _sources_text(report)
+
+        invented = unsourced_claims(_draft_text(draft), sources)
+        if not invented:
+            return draft
+
+        logger.warning(
+            "[writer] draft used unsupported figures %s; asking again", invented,
+        )
+        second = self.ask(
+            f"{prompt}\n\n{FIGURES_REJECTED.format(figures=', '.join(invented))}",
+            ArticleDraft,
+        )
+
+        if second.abstained:
+            return second
+
+        require(second, *REQUIRED, agent=self.name)
+        still = unsourced_claims(_draft_text(second), sources)
+        if not still:
+            return second
+
+        logger.error(
+            "[writer] second draft still used unsupported figures %s; declining",
+            still,
+        )
+        second.status = OutputStatus.INSUFFICIENT_EVIDENCE
+        second.notes = (
+            "Declined: the draft kept using figures the verified report does "
+            f"not support ({', '.join(still)}), and asking again did not "
+            "change that. The report established no quantities for this topic."
+        )
+        return second
 
     def write_article(self, report: VerifiedFactReport,
                       strategy: dict) -> EditorialArticle | None:

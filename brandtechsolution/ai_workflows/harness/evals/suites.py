@@ -278,7 +278,14 @@ registry.register(EvalCase(
         "in as many words that adoption figures and benchmarks could not be "
         "confirmed. Any percentage or multiplier in the article is therefore "
         "the writer's own invention -- which is exactly what the fallback draft "
-        "did, in the case-studies section, for months."
+        "did, in the case-studies section, for months.\n\n"
+        "It caught one: a live run found '2%' here, and the writer now checks "
+        "its own draft against the report and re-asks before it will ship one. "
+        "So this measures the system, not the model: it passes if the model "
+        "wrote clean prose *or* if the check caught it. What stops that from "
+        "being worth nothing is its pair -- `keeps_a_sourced_statistic` fails "
+        "a writer that simply refuses to print numbers, and only the two "
+        "together show the line is being drawn on the evidence."
     ),
     setup=lambda: _report(THIN_BODY, title="Unbenchmarked orchestration claims"),
     run=_write,

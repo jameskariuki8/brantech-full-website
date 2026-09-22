@@ -598,3 +598,138 @@ class VerificationEvidenceTests(TestCase):
             sources="[]", evidence="",
         )
         self.assertNotIn("What you found", rendered)
+
+
+THIN = (
+    "Multi-agent orchestration frameworks coordinate several model calls. The "
+    "verifier could not confirm adoption figures or performance benchmarks."
+)
+
+
+def _verified_report(body, *, title="Unbenchmarked orchestration"):
+    """A report with a controlled body, built directly.
+
+    Not by running the verifier: these tests are about what the *writer* does
+    with a given report, and letting the verifier produce it would make the
+    input vary.
+    """
+    dossier = ResearchDossier.objects.create(
+        topic=_topic(title=title),
+        key_concepts=["Orchestration"],
+        timeline=[],
+        technical_explanations=body,
+        advantages_and_limitations={},
+        african_opportunities="Local teams are evaluating the approach.",
+        sources=[],
+        structured_dossier=body,
+    )
+    return VerifiedFactReport.objects.create(
+        dossier=dossier,
+        confidence_level=0.9,
+        contradictions_detected=[],
+        unsupported_claims_removed=[],
+        verified_statistics=[],
+        verified_quotes=[],
+        verified_dossier=body,
+        is_approved=True,
+    )
+
+
+class InventedFiguresTests(TestCase):
+    """The writer is checked against its evidence, not asked nicely.
+
+    Its persona has forbidden inventing statistics since step 6. A live eval
+    run caught it writing "2%" into an article whose verified report says in
+    as many words that no benchmark could be confirmed. An instruction in a
+    prompt is a request, so this is the check that follows it.
+    """
+
+    def _write(self, report):
+        """Draft, with the continuity lookup stubbed out.
+
+        That step has its own tests, and leaving it live here would put the
+        fake's whole payload into the prompt and into the call count.
+        """
+        with patch.object(AIWriterAgent, "gather_evidence", return_value=""):
+            return AIWriterAgent().write_article(
+                report, {"target_audience": "developers"},
+            )
+
+    def test_a_clean_draft_is_left_alone(self):
+        """One call, no second-guessing, when nothing was invented."""
+        report = _verified_report(THIN)
+
+        with fake_gemini({"case_studies": "No deployment has published figures."}) as model:
+            article = self._write(report)
+
+        self.assertIsNotNone(article)
+        self.assertEqual(len(model.calls), 1)
+
+    def test_an_invented_figure_is_sent_back_once(self):
+        report = _verified_report(THIN)
+
+        with fake_gemini({"case_studies": "Deployments report a 40% improvement."}) as model:
+            self._write(report)
+
+        self.assertEqual(len(model.calls), 2)
+        self.assertIn("40%", str(model.calls[1]))
+
+    def test_a_figure_the_report_supports_survives(self):
+        """A writer that strips every number is as useless as one that invents
+        them, and only the pair shows the difference is drawn on the evidence
+        rather than on a blanket rule."""
+        report = _verified_report(
+            "One published benchmark reports a 35% reduction in latency."
+        )
+
+        with fake_gemini({"case_studies": "The benchmark showed a 35% reduction."}) as model:
+            article = self._write(report)
+
+        self.assertIsNotNone(article)
+        self.assertEqual(len(model.calls), 1)
+
+    def test_it_declines_rather_than_shipping_the_figure_twice(self):
+        """A false article is worse than no article -- the whole lesson of the
+        fallback draft this agent replaced.
+
+        The fake answers the same way both times, which is the case that
+        matters: a model that will not stop inventing the figure must not get
+        its article published anyway.
+        """
+        report = _verified_report(THIN)
+
+        with fake_gemini({"case_studies": "Deployments report a 40% improvement."}):
+            article = self._write(report)
+
+        self.assertIsNone(article)
+        self.assertFalse(EditorialArticle.objects.exists())
+
+    def test_a_figure_anywhere_in_the_draft_counts(self):
+        """Not only in the sections somebody remembered to list."""
+        report = _verified_report(THIN)
+
+        with fake_gemini({"meta_description": "Adoption grew 3x last year."}) as model:
+            self._write(report)
+
+        self.assertEqual(len(model.calls), 2)
+
+    def test_the_refusal_says_which_figures_and_why(self):
+        """An editor seeing no article needs to know it was a decision."""
+        report = _verified_report(THIN)
+
+        with fake_gemini({"case_studies": "Deployments report a 40% improvement."}):
+            with patch.object(AIWriterAgent, "gather_evidence", return_value=""):
+                result = AIWriterAgent().execute(AgentRequest(
+                    payload={"report": report, "strategy": {}},
+                ))
+
+        self.assertTrue(result.abstained)
+        self.assertIn("40%", result.notes)
+
+    def test_continuity_evidence_cannot_launder_a_figure(self):
+        """The brief that gathers it says it is not source material. A number
+        from a past article counting as support here is exactly how a claim the
+        verifier removed gets back in."""
+        from editorial.services.writer import _sources_text
+
+        self.assertNotIn("40%", _sources_text(_verified_report(THIN)))

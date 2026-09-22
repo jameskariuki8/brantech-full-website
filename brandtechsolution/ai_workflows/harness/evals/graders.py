@@ -76,34 +76,16 @@ class DeterministicGrader(Grader):
 # Reusable checks
 # ============================================================
 
-# Numbers that read as findings: percentages, multipliers, orders of
-# magnitude. Bare years and small counts are excluded because they are rarely
-# the fabricated kind -- "2024" and "3 modules" are not the problem;
-# "a 40% improvement" is.
-_QUANTITATIVE_CLAIM = re.compile(
-    r"\b\d+(?:\.\d+)?\s*(?:%|percent|x\b|×|million|billion|trillion)",
-    re.IGNORECASE,
+# The claim rules live in the harness, not here: since the writer started
+# enforcing the same rule it is measured against, a copy in the eval package
+# would be a second definition drifting away from the first.
+#
+# Re-exported so the suites and their tests keep importing them from the
+# graders, which is where a reader looking for "how is this scored" goes.
+from ai_workflows.harness.claims import (  # noqa: E402,F401
+    quantitative_claims,
+    unsourced_claims,
 )
-
-
-def quantitative_claims(text: str) -> list[str]:
-    """Every numeric claim in `text` that reads as a statistic."""
-    return [m.group(0).strip() for m in _QUANTITATIVE_CLAIM.finditer(text or "")]
-
-
-def unsourced_claims(text: str, sources_text: str) -> list[str]:
-    """Numeric claims present in `text` but absent from its sources.
-
-    A blunt instrument on purpose: it will not catch a rephrased figure, and
-    it is not meant to. It catches the specific failure this codebase has
-    demonstrated -- an agent with no way to say "I don't know" inventing a
-    number to fill a required field.
-    """
-    haystack = (sources_text or "").lower()
-    return [
-        claim for claim in quantitative_claims(text)
-        if claim.lower() not in haystack
-    ]
 
 
 # ============================================================
