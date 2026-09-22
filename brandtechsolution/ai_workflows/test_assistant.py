@@ -368,3 +368,136 @@ class _RaisingGraph:
     def invoke(self, state, config=None, **kwargs):
         self.calls.append(state)
         raise self.error
+
+
+class _Snapshot:
+    def __init__(self, messages):
+        self.values = {"messages": list(messages)}
+
+
+class _Message:
+    """An AI message carrying token counts, as LangChain normalises them."""
+
+    def __init__(self, content, usage=None):
+        self.content = content
+        self.usage_metadata = usage
+        self.response_metadata = {"model_name": "fake-model"}
+
+
+class _AccountingGraph:
+    """A graph with a history, so the usage watermark can be tested at all."""
+
+    def __init__(self, history=(), produced=()):
+        self.history = list(history)
+        self.produced = list(produced)
+
+    def get_state(self, config=None):
+        return _Snapshot(self.history)
+
+    def invoke(self, state, config=None, **kwargs):
+        self.history = self.history + self.produced
+        return {"messages": self.history}
+
+
+USAGE = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+
+
+class ChatAccountingTests(TestCase):
+    """What a conversation costs.
+
+    The subtle part is the watermark. A thread resumed from the checkpointer
+    arrives with its whole history, so accounting everything in the returned
+    state would bill every earlier turn again on every turn -- a spend report
+    that grows quadratically while the spend does not.
+    """
+
+    def _assistant(self, graph):
+        assistant = ChatAssistant(thread_id="t-cost")
+        assistant._app = graph
+        assistant._candidates = iter(())
+        return assistant
+
+    def _ask(self, assistant):
+        from ai_workflows.harness.base import AgentRequest
+
+        return assistant.run(AgentRequest(payload={"message": "hello"}))
+
+    def test_this_turn_s_reply_is_accounted_for(self):
+        from ai_workflows.harness import usage
+
+        graph = _AccountingGraph(produced=[_Message("hi", USAGE)])
+        with usage.accounting(label="chat") as ledger:
+            self._ask(self._assistant(graph))
+
+        self.assertEqual(ledger.calls, 1)
+        self.assertEqual(ledger.prompt_tokens, 10)
+        self.assertEqual(ledger.completion_tokens, 20)
+
+    def test_a_resumed_thread_is_not_billed_for_its_history(self):
+        from ai_workflows.harness import usage
+
+        history = [_Message(f"turn {i}", USAGE) for i in range(6)]
+        graph = _AccountingGraph(history=history,
+                                 produced=[_Message("new", USAGE)])
+
+        with usage.accounting() as ledger:
+            self._ask(self._assistant(graph))
+
+        # One new message, not seven.
+        self.assertEqual(ledger.calls, 1)
+        self.assertEqual(ledger.prompt_tokens, 10)
+
+    def test_a_second_turn_does_not_re_bill_the_first(self):
+        from ai_workflows.harness import usage
+
+        graph = _AccountingGraph(produced=[_Message("reply", USAGE)])
+        assistant = self._assistant(graph)
+
+        with usage.accounting() as ledger:
+            self._ask(assistant)
+            self._ask(assistant)
+
+        self.assertEqual(ledger.calls, 2)
+
+    def test_an_unknown_history_length_skips_rather_than_guesses(self):
+        """A missing line in a spend report is recoverable. A report that
+        re-bills the whole conversation every turn is not."""
+        from ai_workflows.harness import usage
+
+        graph = _AccountingGraph(produced=[_Message("hi", USAGE)])
+        graph.get_state = lambda config=None: (_ for _ in ()).throw(
+            RuntimeError("checkpointer is unreachable")
+        )
+
+        with usage.accounting() as ledger:
+            self._ask(self._assistant(graph))
+
+        self.assertEqual(ledger.calls, 0)
+
+    def test_a_reply_that_reports_no_tokens_is_not_recorded_as_free(self):
+        from ai_workflows.harness import usage
+        from ai_workflows.models import ModelInvocation
+
+        graph = _AccountingGraph(produced=[_Message("hi", None)])
+        with usage.accounting() as ledger:
+            self._ask(self._assistant(graph))
+
+        self.assertEqual(ledger.unmeasured_calls, 1)
+        self.assertEqual(ModelInvocation.objects.count(), 0)
+
+    def test_accounting_never_breaks_the_reply(self):
+        """_account runs inside _invoke's try block, on the success path.
+
+        An exception escaping it would be read as a provider failure and send
+        a perfectly good reply off to failover -- bookkeeping turning a working
+        conversation into an outage.
+        """
+        from unittest.mock import patch
+
+        graph = _AccountingGraph(produced=[_Message("hi", USAGE)])
+        with patch("ai_workflows.harness.usage.record",
+                   side_effect=RuntimeError("bookkeeping exploded")):
+            result = self._ask(self._assistant(graph))
+
+        self.assertFalse(result.abstained)
+        self.assertIn("hi", str(result.output))

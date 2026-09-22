@@ -120,3 +120,14 @@ class Command(BaseCommand):
                 f"which is what OpenRouter charges to proxy the model rather "
                 f"than what the provider charges directly."
             )
+
+        # Said plainly rather than left for someone to discover from a total
+        # that looks complete. Embeddings are a real cost and none of it is
+        # here: the provider returns no usage for an embedding call, so there
+        # is nothing to measure, and writing an estimate into the same columns
+        # as measured calls would make the whole table untrustworthy.
+        self.stdout.write(
+            "note: embedding calls are not counted above. The provider reports "
+            "no token usage for them, so `manage.py reembed` estimates its own "
+            "cost from character count instead."
+        )

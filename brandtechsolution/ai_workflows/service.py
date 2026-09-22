@@ -463,7 +463,18 @@ class ChatAssistant(Agent):
         each turn would bill the first message once per turn for the life of
         the conversation, which is a spend report that grows quadratically
         while the spend does not.
+
+        Wrapped whole, because this runs inside `_invoke`'s try block on the
+        *success* path. An exception escaping here would be caught as a
+        provider failure and send a perfectly good reply off to failover --
+        bookkeeping turning a working conversation into an outage.
         """
+        try:
+            self._account_messages(state)
+        except Exception as exc:  # noqa: BLE001 - see the docstring
+            logger.warning("[ChatAssistant] could not account for usage: %s", exc)
+
+    def _account_messages(self, state):
         from ai_workflows.harness import usage
 
         if self._accounted_messages is None:
