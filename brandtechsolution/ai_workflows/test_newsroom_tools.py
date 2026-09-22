@@ -328,18 +328,44 @@ def _turn(content="", tool_calls=()):
     return message
 
 
+from ai_workflows.harness.retrying import NEVER
+
+
 class GatherTests(TestCase):
     """The bounded tool loop that sits before `ask`."""
 
     def _gather(self, model, tools, **kwargs):
-        with patch("ai_workflows.harness.gather.get_model", return_value=model):
+        return self._gather_over([model], tools, **kwargs)
+
+    def _gather_over(self, models, tools, **kwargs):
+        """Run the loop over a preference order of `models`.
+
+        The fake stands in for `iter_models`, so a test can hand the loop a
+        second provider and watch it move across -- which is the behaviour a
+        single client could not express.
+        """
+        from ai_workflows.harness.llm import Provider
+
+        names = [Provider.GEMINI, Provider.OPENROUTER, Provider.ANTHROPIC]
+
+        def candidates(*args, **kwargs):
+            for name, model in zip(names, models):
+                yield name, model
+
+        # These tests are about moving between providers, so nothing waits.
+        # A refusal that clears on its own is a different question, answered
+        # in test_retrying -- and left on, the default policy would make the
+        # fixtures below sleep out a real rate-limit window.
+        kwargs.setdefault("policy", NEVER)
+
+        with patch("ai_workflows.harness.gather.iter_models", new=candidates):
             return gather(None, "check this", tools, agent="test", **kwargs)
 
     def test_no_tools_means_no_call_at_all(self):
         """An agent with an empty suite must not pay for a round trip."""
-        with patch("ai_workflows.harness.gather.get_model") as get_model:
+        with patch("ai_workflows.harness.gather.iter_models") as iter_models:
             self.assertEqual(gather(None, "brief", []), "")
-        get_model.assert_not_called()
+        iter_models.assert_not_called()
 
     def test_a_tool_result_reaches_the_transcript(self):
         tool = FakeTool("fetch_url", "The page said X.")
@@ -401,6 +427,99 @@ class GatherTests(TestCase):
 
         with self.assertRaises(ToolFailed):
             self._gather(model, [FakeTool("fetch_url")])
+
+    def test_an_exhausted_provider_moves_to_the_next_one(self):
+        """The defect a live eval run found: a 429 arrives at invoke time.
+
+        The client built fine, so `get_model` had nothing to report and the
+        whole gathering step -- and the writer with it -- died on one spent
+        quota while other providers sat unused.
+        """
+        exhausted = Mock()
+        exhausted.invoke = Mock(side_effect=RuntimeError("429 RESOURCE_EXHAUSTED"))
+        working = _model(_turn("I checked, and it holds up."))
+
+        evidence = self._gather_over([exhausted, working], [FakeTool("fetch_url")])
+
+        self.assertIn("it holds up", evidence)
+        self.assertEqual(working.invoke.call_count, 1)
+
+    def test_a_provider_that_failed_is_not_offered_again(self):
+        """It does not recover in the second between two calls.
+
+        Re-offering it would spend the step budget rediscovering the same
+        outage instead of gathering evidence.
+        """
+        exhausted = Mock()
+        exhausted.invoke = Mock(side_effect=RuntimeError("429"))
+        tool = FakeTool("fetch_url")
+        working = _model(
+            _turn(tool_calls=[{"name": "fetch_url", "args": {}, "id": "1"}]),
+            _turn("Done."),
+        )
+
+        self._gather_over([exhausted, working], [tool], max_steps=3)
+
+        self.assertEqual(exhausted.invoke.call_count, 1)
+
+    def test_a_provider_can_fail_part_way_through_the_loop(self):
+        """A quota runs out mid-gather, not only on the first call.
+
+        The transcript already collected stays: it is evidence that was really
+        gathered, and throwing it away would lose work that cost money.
+        """
+        tool = FakeTool("fetch_url", "The page said X.")
+        first = Mock()
+        first.invoke = Mock(side_effect=[
+            _turn(tool_calls=[{"name": "fetch_url", "args": {}, "id": "1"}]),
+            RuntimeError("429 RESOURCE_EXHAUSTED"),
+        ])
+        second = _model(_turn("The source supports X."))
+
+        evidence = self._gather_over([first, second], [tool], max_steps=4)
+
+        self.assertIn("The page said X.", evidence)
+        self.assertIn("The source supports X.", evidence)
+
+    def test_every_provider_failing_names_all_of_them(self):
+        """An aggregate that says only "it failed" sends nobody anywhere."""
+        from ai_workflows.harness.errors import ToolFailed
+
+        def dead(message):
+            model = Mock()
+            model.invoke = Mock(side_effect=RuntimeError(message))
+            return model
+
+        with self.assertRaises(ToolFailed) as caught:
+            self._gather_over(
+                [dead("429 exhausted"), dead("401 revoked")],
+                [FakeTool("fetch_url")],
+            )
+
+        detail = str(caught.exception)
+        self.assertIn("gemini", detail)
+        self.assertIn("openrouter", detail)
+        self.assertIn("429 exhausted", detail)
+        self.assertIn("401 revoked", detail)
+
+    def test_a_pinned_run_refuses_to_drift(self):
+        """`allow_fallback=False` means this model or nothing.
+
+        An eval comparing runs pins the model on purpose; answering from a
+        different one would compare two different questions.
+        """
+        from ai_workflows.harness.errors import ToolFailed
+
+        exhausted = Mock()
+        exhausted.invoke = Mock(side_effect=RuntimeError("429"))
+        working = _model(_turn("I could have answered."))
+
+        with self.assertRaises(ToolFailed):
+            self._gather_over(
+                [exhausted, working], [FakeTool("fetch_url")], allow_fallback=False,
+            )
+
+        working.invoke.assert_not_called()
 
     def test_tool_output_is_truncated_before_it_reaches_the_context(self):
         from ai_workflows.harness.gather import MAX_RESULT_CHARS

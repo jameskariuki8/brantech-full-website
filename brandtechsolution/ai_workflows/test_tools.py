@@ -186,7 +186,7 @@ class AssistantWiringTests(TestCase):
         # test, so resolution and the graph are both stubbed. Since step 7 the
         # model comes from the harness, so this patches one seam rather than
         # naming a vendor class.
-        with patch("ai_workflows.service.get_model"), \
+        with patch("ai_workflows.service.iter_models"), \
                 patch("ai_workflows.service.create_react_agent"):
             return ChatAssistant(thread_id="t-1", **kwargs)
 

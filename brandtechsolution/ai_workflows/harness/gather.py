@@ -22,8 +22,10 @@ import logging
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
-from ai_workflows.harness.errors import AgentError, ToolFailed
-from ai_workflows.harness.llm import ModelRole, get_model
+from ai_workflows.harness.contract import text_of
+from ai_workflows.harness.errors import AgentError, ModelUnavailable, ToolFailed
+from ai_workflows.harness.llm import ModelRole, iter_models
+from ai_workflows.harness.retrying import BATCH, call_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ MAX_RESULT_CHARS = 8_000
 
 
 def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
-           max_steps=DEFAULT_MAX_STEPS, allow_fallback=True):
+           max_steps=DEFAULT_MAX_STEPS, allow_fallback=True, policy=BATCH):
     """Let the model use `tools` to answer `brief`, and return what it found.
 
     Returns the evidence as text: each tool call and its result, followed by
@@ -51,7 +53,8 @@ def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
     if not tools:
         return ""
 
-    model = get_model(role, tools=tools, agent=agent, allow_fallback=allow_fallback)
+    invoke = _Failover(role, tools, agent=agent, allow_fallback=allow_fallback,
+                       policy=policy)
     by_name = {tool.name: tool for tool in tools}
 
     messages = [
@@ -71,18 +74,13 @@ def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
     transcript = []
 
     for step in range(max_steps):
-        try:
-            response = model.invoke(messages)
-        except AgentError:
-            raise
-        except Exception as exc:  # noqa: BLE001
-            raise ToolFailed(f"the gathering step failed: {exc}", agent=agent) from exc
+        response = invoke(messages)
 
         messages.append(response)
         calls = getattr(response, "tool_calls", None) or []
 
         if not calls:
-            summary = _text_of(response)
+            summary = text_of(response)
             if summary:
                 transcript.append(summary)
             break
@@ -119,15 +117,87 @@ def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
     return "\n\n".join(transcript)
 
 
-def _text_of(response):
-    content = getattr(response, "content", response)
-    if isinstance(content, list):
-        parts = [
-            part.get("text", "") if isinstance(part, dict) else str(part)
-            for part in content
-        ]
-        return "\n".join(p for p in parts if p).strip()
-    return str(content or "").strip()
+class _Failover:
+    """Invokes the model, moving to the next provider when one cannot answer.
+
+    `get_model` returns a client that built successfully, which says nothing
+    about whether it will answer. A rate limit arrives at invoke time, and the
+    live eval run that exposed this lost every writer case to one exhausted
+    quota while four other providers sat unused -- the same defect `ask` had,
+    surviving here because the fix was applied at one call site instead of to
+    the pattern.
+
+    A provider that failed is dropped for the rest of the loop rather than
+    retried on the next step. A 429 or a revoked key does not clear itself in
+    the second between two calls, so re-offering it would spend the step budget
+    rediscovering the same outage. That bounds the whole loop at `max_steps`
+    calls plus one wasted attempt per provider.
+    """
+
+    def __init__(self, role, tools, *, agent, allow_fallback, policy=BATCH):
+        self._agent = agent
+        self._allow_fallback = allow_fallback
+        self._policy = policy
+        self._candidates = iter_models(
+            role, tools=tools, agent=agent, allow_fallback=allow_fallback,
+        )
+        self._current = None
+        self._failures = []
+
+    def __call__(self, messages):
+        while True:
+            provider, client = self._client()
+            try:
+                # Wait out a refusal that clears on its own before deciding
+                # this provider cannot answer. On the free tier a five-per-
+                # minute window is the normal working condition, not an
+                # outage, and failing over on it would abandon a provider
+                # that was about to say yes.
+                return call_with_retries(
+                    lambda: client.invoke(messages),
+                    policy=self._policy, label=provider.value, agent=self._agent,
+                )
+            except AgentError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                label = provider.value if provider is not None else "the model"
+                if not self._allow_fallback:
+                    # Pinned on purpose -- an eval comparing runs, say. Drifting
+                    # to another provider would answer a different question.
+                    raise ToolFailed(
+                        f"the gathering step failed: {exc}", agent=self._agent,
+                    ) from exc
+                self._failures.append(f"{label}: {exc}")
+                logger.warning(
+                    "[gather] %s could not answer for %s, trying the next "
+                    "provider: %s", label, self._agent, exc,
+                )
+                # Hand control back to the generator, which offers the next.
+                self._current = None
+
+    def _client(self):
+        if self._current is not None:
+            return self._current
+
+        try:
+            self._current = next(self._candidates)
+        except StopIteration:
+            raise self._exhausted() from None
+        except ModelUnavailable as exc:
+            # The generator raises this once its own candidates are spent; its
+            # message names the ones that would not build, ours the ones that
+            # would not answer.
+            self._failures.append(str(exc))
+            raise self._exhausted() from exc
+
+        return self._current
+
+    def _exhausted(self):
+        detail = "; ".join(self._failures) or "no provider is usable"
+        return ToolFailed(
+            f"the gathering step failed, and so did every fallback: {detail}",
+            agent=self._agent,
+        )
 
 
 def _brief_args(args):

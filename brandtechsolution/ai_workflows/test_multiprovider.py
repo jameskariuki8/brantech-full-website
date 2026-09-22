@@ -20,6 +20,7 @@ from ai_workflows.harness.catalogue import (
     model_is_serviceable,
     resolve,
 )
+from ai_workflows.harness.retrying import NEVER
 from ai_workflows.harness.errors import ModelUnavailable
 from ai_workflows.harness.llm import (
     OPENAI_COMPATIBLE,
@@ -365,6 +366,9 @@ class RuntimeFailoverTests(TestCase):
     a perfectly well-constructed client.
     """
 
+    # These measure moving between providers. Waiting out a refusal that
+    # clears on its own is a separate question, answered in test_retrying --
+    # and left on, every 429 below would be slept off for real.
     def setUp(self):
         _provider("gemini", preference=10, model="g")
         _provider("openai", preference=60, model="o")
@@ -395,7 +399,7 @@ class RuntimeFailoverTests(TestCase):
         working = self._client('{"sanitized_text": "written"}')
 
         with self._clients(exhausted, working):
-            result = ask(None, "do it", _FakeSchema, agent="writer")
+            result = ask(None, "do it", _FakeSchema, agent="writer", policy=NEVER)
 
         self.assertEqual(result.sanitized_text, "written")
         self.assertTrue(exhausted.invoke.called)
@@ -411,8 +415,8 @@ class RuntimeFailoverTests(TestCase):
 
         with self._clients(exhausted, working):
             with self.assertRaises(ModelUnavailable):
-                ask(None, "check it", _FakeSchema,
-                    agent="fact_verifier", allow_fallback=False)
+                ask(None, "check it", _FakeSchema, agent="fact_verifier",
+                    allow_fallback=False, policy=NEVER)
 
         self.assertFalse(working.invoke.called)
 
@@ -428,7 +432,7 @@ class RuntimeFailoverTests(TestCase):
 
         with patch("ai_workflows.harness.contract.get_models", side_effect=only_one):
             with self.assertRaises(ModelUnavailable) as caught:
-                ask(None, "do it", _FakeSchema, agent="writer")
+                ask(None, "do it", _FakeSchema, agent="writer", policy=NEVER)
 
         self.assertIn("429", str(caught.exception))
 

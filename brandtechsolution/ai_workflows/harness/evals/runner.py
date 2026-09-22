@@ -19,6 +19,25 @@ from ai_workflows.models import EvalResult, EvalRun
 logger = logging.getLogger(__name__)
 
 
+def _provider_order():
+    """The providers and models the suite is about to run against.
+
+    Best-effort: a stubbed-only run does not need a provider at all, and
+    failing the run because the catalogue could not answer would make the
+    bookkeeping more important than the measurement.
+    """
+    try:
+        from ai_workflows.harness.catalogue import resolve
+
+        return [
+            {"provider": name, "model": model_id}
+            for name, model_id in resolve(allow_fallback=True)
+        ]
+    except Exception:  # noqa: BLE001
+        logger.exception("[evals] could not record the provider order")
+        return []
+
+
 def _git_sha():
     """Best-effort commit id, so a score can be traced to the code that got it."""
     try:
@@ -99,6 +118,7 @@ class EvalRunner:
             agents=sorted({c.agent for c in selected}),
             samples_per_case=self.samples,
             git_sha=_git_sha(),
+            provider_order=_provider_order(),
         )
 
         try:

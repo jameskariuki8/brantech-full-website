@@ -149,6 +149,20 @@ class EvalRun(models.Model):
     samples_per_case = models.PositiveSmallIntegerField(default=1)
 
     git_sha = models.CharField(max_length=40, blank=True, default='')
+
+    # Which providers and models the run was configured to use, in preference
+    # order: [{"provider": "gemini", "model": "gemini-3-flash-preview"}, ...].
+    #
+    # Recorded because a score only means something next to another score, and
+    # two runs on two different models are not comparable however similar the
+    # code is. Without this a model switch reads as a code regression, and the
+    # git sha sitting next to it actively points the blame the wrong way.
+    #
+    # "Configured", not "used": a run that fell over to its second provider
+    # mid-way does not amend this, and the per-agent failure detail is where
+    # that shows up.
+    provider_order = models.JSONField(default=list, blank=True)
+
     error = models.TextField(blank=True, default='')
 
     started_at = models.DateTimeField(auto_now_add=True)
@@ -160,6 +174,14 @@ class EvalRun(models.Model):
 
     def __str__(self):
         return f"Eval run #{self.pk} ({self.label or self.status})"
+
+    @property
+    def primary_model(self):
+        """The model this run was expected to answer with, or ""."""
+        if not self.provider_order:
+            return ""
+        first = self.provider_order[0]
+        return f"{first.get('provider', '?')}/{first.get('model', '?')}"
 
     @property
     def score(self):

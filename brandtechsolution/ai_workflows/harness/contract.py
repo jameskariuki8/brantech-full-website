@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from ai_workflows.harness.errors import AgentOutputInvalid, ModelUnavailable
 from ai_workflows.harness.llm import ModelRole, iter_models as get_models
+from ai_workflows.harness.retrying import BATCH, call_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,31 @@ def strip_fence(text: str) -> str:
     return match.group(1) if match else text.strip()
 
 
+def text_of(response):
+    """The text of a model response, whatever shape it arrived in.
+
+    Newer Gemini models return `content` as a list of typed blocks rather than
+    a string -- `[{"type": "text", "text": "ok", "extras": {...}}]`. Code that
+    assumed a string got a list, `strip_fence` raised a TypeError on it, and
+    the broad catch below reported that as the provider being unavailable: an
+    alert sending an operator to look for an outage that never happened, over
+    a response that arrived perfectly well.
+
+    One implementation, used by both `contract` and `gather`, because two
+    copies is how the second one ends up not learning about the third shape.
+    """
+    content = getattr(response, "content", response)
+
+    if isinstance(content, list):
+        parts = [
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in content
+        ]
+        return "\n".join(part for part in parts if part).strip()
+
+    return str(content or "").strip()
+
+
 def parse_json(text, schema):
     """Parse and validate, raising with the offending text attached."""
     cleaned = strip_fence(text)
@@ -113,7 +139,8 @@ def _structured(model, schema):
 
 
 def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
-        retries=1, agent=None, context=None, allow_fallback=True, provider=None):
+        retries=1, agent=None, context=None, allow_fallback=True, provider=None,
+        policy=BATCH):
     """Ask the model for `schema`, and return it validated.
 
     Two different failures, handled two different ways.
@@ -123,9 +150,12 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     re-rolled. Same model: another provider is no more likely to satisfy a
     schema the first one misread.
 
-    A **call** failure is the provider not answering at all: a rate limit, a
-    timeout, a revoked key. Retrying the same model is pointless and the next
-    provider is the whole reason there is a preference order. `allow_fallback`
+    A **call** failure is the provider not answering at all: a timeout, a
+    revoked key, a quota spent for the day. Retrying the same model is
+    pointless and the next provider is the whole reason there is a preference
+    order. The exception is a refusal that clears on its own -- a per-minute
+    rate limit -- which `policy` waits out before any of this applies, because
+    failing over from a provider that said "ask me in a minute" wastes it. `allow_fallback`
     is what decides whether that is allowed, so a verifier being compared
     across runs stays on one model and fails instead.
 
@@ -141,7 +171,8 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     base_messages.append(HumanMessage(content=prompt))
 
     if model is not None:
-        return _ask_one(model, base_messages, schema, retries=retries, agent=agent)
+        return _ask_one(model, base_messages, schema, retries=retries, agent=agent,
+                        policy=policy)
 
     last_error = None
     for candidate_provider, client in get_models(
@@ -149,7 +180,7 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     ):
         try:
             return _ask_one(client, list(base_messages), schema,
-                            retries=retries, agent=agent)
+                            retries=retries, agent=agent, policy=policy)
         except ModelUnavailable as exc:
             last_error = exc
             exc.provider = exc.provider or candidate_provider.value
@@ -167,23 +198,35 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     raise ModelUnavailable("no provider answered", agent=agent)
 
 
-def _ask_one(model, messages, schema, *, retries, agent):
-    """One model, with the shape-failure retry."""
+def _ask_one(model, messages, schema, *, retries, agent, policy=BATCH):
+    """One model, with the shape-failure retry.
+
+    Two retries live here and they are not the same thing. This one answers a
+    model that replied badly. The one inside `call` answers a provider that
+    declined to reply *yet* -- a per-minute rate limit -- and waits it out
+    rather than spending a shape retry on it or failing over to a provider
+    that has no better chance.
+    """
     structured = _structured(model, schema)
     attempt, last_error = 0, None
+
+    def call(invoke):
+        return call_with_retries(
+            invoke, policy=policy, label=getattr(model, "model", ""), agent=agent,
+        )
 
     while attempt <= retries:
         try:
             if structured is not None:
-                result = structured.invoke(messages)
+                result = call(lambda: structured.invoke(messages))
                 # A native binding returns the model already; a loose one may
                 # still hand back text.
                 if isinstance(result, schema):
                     return result
-                return parse_json(getattr(result, "content", result), schema)
+                return parse_json(text_of(result), schema)
 
-            response = model.invoke(messages)
-            return parse_json(getattr(response, "content", response), schema)
+            response = call(lambda: model.invoke(messages))
+            return parse_json(text_of(response), schema)
 
         except AgentOutputInvalid as exc:
             last_error = exc

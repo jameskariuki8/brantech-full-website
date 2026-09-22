@@ -45,6 +45,12 @@ def _assistant(reply="Hello.", **kwargs):
     """
     assistant = ChatAssistant(thread_id="t-1", **kwargs)
     assistant._app = FakeGraph(reply)
+    # One provider and no more. Without this, a test that makes the graph fail
+    # would send the assistant looking for a second provider, resolve one for
+    # real off the environment's key, and make a live billed call in the middle
+    # of the suite. Failover has its own tests, which supply their own
+    # providers; these ones are about what happens when there is nowhere to go.
+    assistant._candidates = iter(())
     return assistant
 
 
@@ -140,7 +146,7 @@ class FailureTests(TestCase):
         user.user_permissions.add(Permission.objects.get(codename=ALERT_CAPABILITY))
 
     def test_an_unreachable_model_pages_somebody(self):
-        with patch("ai_workflows.service.get_model",
+        with patch("ai_workflows.service.iter_models",
                    side_effect=ModelUnavailable("no key", provider="gemini")):
             result = get_chatbot_response("hi", thread_id="t-1")
 
@@ -151,7 +157,7 @@ class FailureTests(TestCase):
     def test_the_user_still_gets_a_usable_reply(self):
         """The edge is the one place errors.py allows a catch: a chat view has
         to render something."""
-        with patch("ai_workflows.service.get_model",
+        with patch("ai_workflows.service.iter_models",
                    side_effect=ModelUnavailable("no key")):
             result = get_chatbot_response("hi", thread_id="t-1")
 
@@ -269,3 +275,96 @@ class NoProviderTests(TestCase):
             assistant = ChatAssistant(thread_id="t-outage")
 
         self.assertEqual(len(assistant.tools), 3)
+
+
+class ChatFailoverTests(TestCase):
+    """A rate limit must not take site chat down.
+
+    The same defect a live eval run found in the newsroom's gathering loop,
+    in the one place a visitor would see it. Resolution picks a provider that
+    *builds*; a 429 arrives later, at invoke time, and the assistant holds its
+    client for the length of a conversation.
+    """
+
+    def _assistant_over(self, graphs, allow_fallback=True):
+        """An assistant whose providers hand back `graphs` in order."""
+        from ai_workflows.harness.llm import Provider
+
+        names = [Provider.GEMINI, Provider.OPENROUTER, Provider.ANTHROPIC]
+        assistant = ChatAssistant(thread_id="t-failover")
+        # A class attribute in production; set here per instance so one test
+        # can pin the assistant without pinning the class for the others.
+        assistant.allow_fallback = allow_fallback
+
+        assistant._candidates = iter(list(zip(names, range(len(graphs)))))
+        remaining = list(graphs)
+
+        def build():
+            # Production resolves the model before compiling the graph, which
+            # is what names the provider a failure gets blamed on.
+            assistant.model
+            return remaining.pop(0)
+
+        assistant._create_agent = build
+        return assistant
+
+    def _ask(self, assistant):
+        from ai_workflows.harness.base import AgentRequest
+
+        return assistant.run(AgentRequest(payload={"message": "hello"}))
+
+    def test_an_exhausted_provider_hands_over_to_the_next(self):
+        exhausted = _RaisingGraph(RuntimeError("429 RESOURCE_EXHAUSTED"))
+        working = FakeGraph("Hello from the second provider.")
+
+        assistant = self._assistant_over([exhausted, working])
+        self.assertIn("second provider", self._ask(assistant).output)
+
+    def test_the_retry_resumes_rather_than_repeats(self):
+        """Or the user sees themselves saying the same thing twice.
+
+        LangGraph checkpoints the input before the model node runs, so the
+        message is already in the thread when the failure arrives. Passing it
+        again would write it a second time.
+        """
+        exhausted = _RaisingGraph(RuntimeError("429"))
+        working = FakeGraph("Answered.")
+
+        self._ask(self._assistant_over([exhausted, working]))
+
+        self.assertEqual(working.calls, [None])
+
+    def test_running_out_of_providers_names_every_one_that_failed(self):
+        first = _RaisingGraph(RuntimeError("429 exhausted"))
+        second = _RaisingGraph(RuntimeError("401 revoked"))
+
+        with self.assertRaises(ModelUnavailable) as caught:
+            self._ask(self._assistant_over([first, second]))
+
+        detail = str(caught.exception)
+        self.assertIn("gemini", detail)
+        self.assertIn("openrouter", detail)
+        self.assertIn("429 exhausted", detail)
+        self.assertIn("401 revoked", detail)
+
+    def test_a_pinned_assistant_refuses_to_drift(self):
+        exhausted = _RaisingGraph(RuntimeError("429"))
+        working = FakeGraph("I could have answered.")
+
+        assistant = self._assistant_over([exhausted, working], allow_fallback=False)
+        with self.assertRaises(ModelUnavailable):
+            self._ask(assistant)
+
+        self.assertEqual(working.calls, [])
+
+
+class _RaisingGraph:
+    """A compiled graph whose model cannot answer."""
+
+    def __init__(self, error):
+        self.error = error
+        self.calls = []
+
+    def invoke(self, state, config=None, **kwargs):
+        self.calls.append(state)
+        raise self.error

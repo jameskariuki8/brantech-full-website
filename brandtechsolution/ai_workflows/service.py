@@ -37,9 +37,10 @@ from pydantic import BaseModel, Field
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
 from ai_workflows.harness.contract import parse_json, strip_fence
 from ai_workflows.harness.errors import AgentError, AgentOutputInvalid, ModelUnavailable
-from ai_workflows.harness.llm import ModelRole, get_model
+from ai_workflows.harness.llm import ModelRole, iter_models
 from ai_workflows.harness.memory import Memory
 from ai_workflows.harness.persona import Persona
+from ai_workflows.harness.retrying import INTERACTIVE, call_with_retries
 from brandtechsolution.config import config
 
 logger = logging.getLogger(__name__)
@@ -295,6 +296,12 @@ class ChatAssistant(Agent):
         # keeps the tool wiring below testable without a credential.
         self._model = None
         self._app = None
+        # The preference order, walked one provider at a time. Held on the
+        # instance rather than rebuilt per call so that a provider which has
+        # already failed this conversation is not offered again.
+        self._candidates = None
+        self._provider = None
+        self._outages = []
 
         # Tools come from the harness registry. "Which agent can reach what"
         # lives in one table (harness/tools.py SUITES) rather than in each
@@ -321,15 +328,41 @@ class ChatAssistant(Agent):
         """The chat model, resolved on first use.
 
         Raises `ModelUnavailable` rather than returning None -- that is the
-        whole point of `get_model` existing. `allow_fallback` is honoured, so
+        whole point of resolution existing. `allow_fallback` is honoured, so
         the assistant survives one provider going down.
         """
         if self._model is None:
-            self._model = get_model(
+            self._next_provider()
+        return self._model
+
+    def _next_provider(self):
+        """Move to the next provider the catalogue offers.
+
+        Resolution that only picks a provider covers one that is misconfigured,
+        not one that is *exhausted*: a rate limit arrives at invoke time, when
+        the client has long since been built. The assistant holds its client
+        for a whole conversation, so the provider chosen at the first message
+        is the one still in use when a quota runs out twenty messages later,
+        and re-resolving from the top would hand back that same provider --
+        it builds perfectly well.
+        """
+        if self._candidates is None:
+            self._candidates = iter_models(
                 self.model_role, agent=self.name,
                 allow_fallback=self.allow_fallback,
             )
-        return self._model
+
+        try:
+            self._provider, self._model = next(self._candidates)
+        except StopIteration:
+            raise ModelUnavailable(
+                "every provider has been tried for this conversation: "
+                + ("; ".join(self._outages) or "none is usable"),
+                agent=self.name,
+            ) from None
+
+        # A different client means the compiled graph is stale.
+        self._app = None
 
     @property
     def app(self):
@@ -381,16 +414,7 @@ class ChatAssistant(Agent):
         """Answer one message. Raises; `send_message` is the edge that catches."""
         message = request.payload["message"]
 
-        try:
-            output = self.app.invoke(
-                {"messages": [HumanMessage(content=message)]}, self.config,
-            )
-        except AgentError:
-            raise
-        except Exception as exc:  # noqa: BLE001 - re-raised as our own type
-            raise ModelUnavailable(
-                f"the conversation graph failed: {exc}", agent=self.name,
-            ) from exc
+        output = self._invoke({"messages": [HumanMessage(content=message)]})
 
         reply, metadata = split_metadata(_content_of(output.get("messages", [])))
 
@@ -403,6 +427,55 @@ class ChatAssistant(Agent):
                 "thread_id": self.thread_id,
             },
         )
+
+    def _invoke(self, payload):
+        """Run the graph, moving to the next provider if one cannot answer.
+
+        The retry resumes rather than repeats. LangGraph checkpoints the input
+        before the model node runs, so a second `invoke` carrying the same
+        payload would write the user's message into the thread twice and they
+        would see themselves saying it twice -- an outage turned into a visible
+        mess in the transcript. Passing `None` resumes the thread from the
+        message that is already there.
+        """
+        first = True
+
+        while True:
+            try:
+                # A short wait covers a momentary spike. Short, because
+                # somebody is watching a chat box: a minute of silence reads
+                # as a broken site, so anything longer belongs to the
+                # failover below rather than to patience.
+                return call_with_retries(
+                    lambda: self.app.invoke(payload if first else None, self.config),
+                    policy=INTERACTIVE,
+                    label=self._provider.value if self._provider else "",
+                    agent=self.name,
+                )
+            except AgentError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - re-raised as our own type
+                label = self._provider.value if self._provider else "the model"
+
+                if not self.allow_fallback:
+                    raise ModelUnavailable(
+                        f"the conversation graph failed: {exc}", agent=self.name,
+                        provider=label,
+                    ) from exc
+
+                self._outages.append(f"{label}: {exc}")
+                logger.warning(
+                    "[ChatAssistant] %s could not answer, trying the next "
+                    "provider: %s", label, exc,
+                )
+
+                # The input is checkpointed, so from here the thread resumes.
+                first = False
+                self._model = None
+                try:
+                    self._next_provider()
+                except ModelUnavailable as spent:
+                    raise spent from exc
 
     # ------------------------------------------------------------------
     # the edge

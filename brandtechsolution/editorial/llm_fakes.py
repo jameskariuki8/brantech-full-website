@@ -29,16 +29,22 @@ from unittest.mock import patch
 # resolves its own model. A stub covering only `contract` left a live, billed
 # call in the middle of the suite -- the same mistake as the embedder in step 6,
 # in a new place. The guard test written for that one is what caught it.
-# `contract` iterates candidates so a call that fails at invoke time -- a rate
+# Both sites iterate candidates so a call that fails at invoke time -- a rate
 # limit, a revoked key -- can try the next provider. The fake stands in for the
 # iterator, yielding one provider forever's worth of candidates: one.
-CANDIDATE_TARGET = "ai_workflows.harness.contract.get_models"
-
-TARGETS = (
-    "ai_workflows.harness.gather.get_model",
+#
+# `gather` joined them after a live eval run lost every writer case to one
+# exhausted quota. Its old single-client target is deliberately gone rather
+# than kept as an alias: a patch of a name a module no longer has raises, so
+# anything still pointing at it fails loudly instead of quietly making a real,
+# billed call.
+CANDIDATE_TARGETS = (
+    "ai_workflows.harness.contract.get_models",
+    "ai_workflows.harness.gather.iter_models",
 )
 
-# Kept for anything still importing the old name.
+# Kept for anything still importing the old names.
+CANDIDATE_TARGET = CANDIDATE_TARGETS[0]
 TARGET = CANDIDATE_TARGET
 
 # `Memory.embedder` imports this lazily inside the property, so the definition
@@ -270,9 +276,8 @@ def fake_gemini(overrides=None, *, structured=True, embeddings=True):
         yield Provider.GEMINI, model
 
     with ExitStack() as stack:
-        stack.enter_context(patch(CANDIDATE_TARGET, new=one_candidate))
-        for target in TARGETS:
-            stack.enter_context(patch(target, new=lambda *args, **kwargs: model))
+        for target in CANDIDATE_TARGETS:
+            stack.enter_context(patch(target, new=one_candidate))
         if embeddings:
             stack.enter_context(fake_embeddings())
         yield model
@@ -292,7 +297,6 @@ def unavailable_model(message="no API key configured"):
         raise ModelUnavailable(message, provider="gemini")
 
     with ExitStack() as stack:
-        stack.enter_context(patch(CANDIDATE_TARGET, new=explode))
-        for target in TARGETS:
+        for target in CANDIDATE_TARGETS:
             stack.enter_context(patch(target, new=explode))
         yield

@@ -240,7 +240,7 @@ class RealAgentTests(TestCase):
     def test_the_assistant_is_built_per_thread(self):
         supervisor = Supervisor(registry=load_agents(AgentRegistry()))
 
-        with patch("ai_workflows.service.get_model"), \
+        with patch("ai_workflows.service.iter_models"), \
                 patch("ai_workflows.service.create_react_agent"):
             first = supervisor.agent_for("chat", thread_id="a")
             second = supervisor.agent_for("chat", thread_id="b")

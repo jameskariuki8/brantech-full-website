@@ -89,6 +89,8 @@ class Command(BaseCommand):
     def _report(self, run):
         self.stdout.write(f"\nEval run #{run.pk}  {run.label or '(unlabelled)'}"
                           f"  samples={run.samples_per_case}")
+        if run.primary_model:
+            self.stdout.write(f"  model: {run.primary_model}")
         self.stdout.write("=" * 64)
 
         for agent in run.agents:
@@ -132,6 +134,17 @@ class Command(BaseCommand):
         self.stdout.write(f"\nvs baseline #{baseline.pk} "
                           f"({baseline.label or 'unlabelled'})")
         self.stdout.write("-" * 64)
+
+        # A different model makes the deltas below measure the model, not the
+        # code. Said out loud, because the git shas sitting either side of a
+        # comparison are an invitation to read it as a code change.
+        if (run.primary_model and baseline.primary_model
+                and run.primary_model != baseline.primary_model):
+            self.stdout.write(self.style.WARNING(
+                f"  these ran on different models -- {baseline.primary_model} "
+                f"then {run.primary_model} -- so the deltas below are not a "
+                f"measurement of the code change"
+            ))
         for agent, row in compare(run, baseline).items():
             if row['delta'] is None:
                 self.stdout.write(f"  {agent}: not comparable "
