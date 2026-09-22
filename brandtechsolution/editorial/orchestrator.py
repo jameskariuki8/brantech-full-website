@@ -7,6 +7,7 @@ SEO -> Visual Media -> Multi-Platform -> Human Approval Notification -> Publishi
 """
 import logging
 from typing import Any, Callable, Dict, List, Optional
+from ai_workflows.harness.errors import AgentError
 from trends.services.discovery import TrendDiscoveryEngine
 from trends.services.intelligence import TrendIntelligenceAgent
 from trends.services.competitor import CompetitorIntelligenceAgent
@@ -47,6 +48,13 @@ class EditorialPipelineOrchestrator:
         self.publisher_agent = PublishingAgent()
         self.analytics_agent = AnalyticsIntelligenceAgent()
         self.memory_agent = EditorialMemoryAgent()
+
+    @staticmethod
+    def _reject(topic, reason):
+        """Mark a topic as not proceeding, and say why in one place."""
+        logger.warning("Skipping '%s': %s.", topic.title, reason)
+        topic.status = 'rejected'
+        topic.save()
 
     def run_full_autonomous_cycle(
         self,
@@ -95,16 +103,28 @@ class EditorialPipelineOrchestrator:
         for topic in prioritized:
             try:
                 # Check memory for duplicates
-                is_dup, reason = self.memory_agent.check_duplicate_coverage(topic.title)
+                is_dup, reason = self.memory_agent.check_duplicate_coverage(
+                    topic.title, topic.summary,
+                )
                 if is_dup:
-                    logger.info(f"Skipping duplicate topic '{topic.title}': {reason}")
+                    logger.info("Skipping duplicate topic '%s': %s", topic.title, reason)
                     topic.status = 'rejected'
                     topic.save()
                     continue
 
                 # Step 5: Perform Deep Research Dossier synthesis
+                #
+                # Every stage below can now decline. Before step 6 none of them
+                # could: each caught its own exception and returned a canned
+                # object, so the pipeline ran to completion whether or not any
+                # work had been done. A None here means the agent said it could
+                # not do the job, and the honest response is to stop this topic
+                # rather than hand the next stage something to pretend with.
                 stage('research')
                 dossier = self.research_agent.conduct_research(topic)
+                if dossier is None:
+                    self._reject(topic, "research produced no dossier")
+                    continue
 
                 # Step 6: Fact Verification
                 stage('verification')
@@ -136,6 +156,9 @@ class EditorialPipelineOrchestrator:
                 # Step 8: AI Article Writing
                 stage('writing')
                 article = self.writer_agent.write_article(fact_report, strategy)
+                if article is None:
+                    self._reject(topic, "the writer declined to draft it")
+                    continue
 
                 # Step 9: SEO Intelligence Optimization
                 stage('seo')
@@ -146,8 +169,17 @@ class EditorialPipelineOrchestrator:
                 self.visual_agent.generate_visual_package(article)
 
                 # Step 11: Multi-Platform Content Generation (LinkedIn, Twitter, Newsletter, etc.)
+                #
+                # The only stage whose failure is not fatal to the topic. The
+                # article is written, verified and reviewable; the package is
+                # downstream of it and can be regenerated on its own, so losing
+                # it should not discard the piece.
                 stage('social')
-                self.social_agent.generate_social_ecosystem(article)
+                if self.social_agent.generate_social_ecosystem(article) is None:
+                    logger.warning(
+                        "No social package for '%s'; the article still goes to review.",
+                        article.title,
+                    )
 
                 # Step 12: Human Approval Notification
                 stage('handoff')
@@ -160,6 +192,13 @@ class EditorialPipelineOrchestrator:
                 processed_articles.append(article)
                 logger.info(f"✅ Successfully processed Article #{article.id}: '{article.title}'")
 
+            except AgentError as e:
+                # An agent failed rather than declined. It has already recorded
+                # its own health and alerted; this is the pipeline deciding
+                # what to do about it, which is to lose the topic and keep the
+                # cycle. Left `discovered`-adjacent rather than `rejected`: the
+                # topic was never judged, and marking it rejected would bury it.
+                logger.error("Agent failure on topic '%s': %s", topic.title, e)
             except Exception as e:
                 logger.error(f"Error processing topic '{topic.title}': {e}", exc_info=True)
 

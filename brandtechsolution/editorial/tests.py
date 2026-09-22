@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 
 from trends.models import TrendTopic
@@ -8,22 +10,27 @@ from editorial.models import EditorialArticle
 from editorial.services.strategy import EditorialStrategyAgent
 from editorial.services.writer import AIWriterAgent
 from editorial.services.social import MultiPlatformContentAgent
-from editorial.llm_fakes import broken_gemini, fake_gemini
+from editorial.services.memory import EditorialMemoryAgent
+from editorial.llm_fakes import fake_gemini, unavailable_model
 from seo.services.seo_engine import SEOIntelligenceAgent
 from media_generation.services.visual_engine import VisualIntelligenceAgent
 from approval.services.workflow import HumanApprovalWorkflow
 from publishing.services.publisher import PublishingAgent
 from brand.models import BlogPost
+from research.models import ResearchDossier
+from ai_workflows.harness.errors import AgentOutputInvalid, ModelUnavailable
 
 
 class NewsroomTestCase(TestCase):
     """Shared fixture for the pipeline tests.
 
-    Every test here runs the real agents against a stubbed model. The agents
-    each swallow their own exceptions and fall back to a canned draft, so
-    without the stub a test passes just as readily when the model is
-    unreachable as when it works -- which is how a title long enough to
-    overflow BlogPost.title reached production unnoticed.
+    Every test here runs the real agents against a stubbed model. That mattered
+    more before step 6 than it does now: each agent used to swallow its own
+    exceptions and fall back to a canned draft, so a test passed just as
+    readily when the model was unreachable as when it worked -- which is how a
+    title long enough to overflow BlogPost.title reached production unnoticed.
+    The agents raise now, so an unstubbed test would fail rather than lie; the
+    stub is still what keeps the suite off the network and off the quota.
     """
 
     def setUp(self):
@@ -67,12 +74,32 @@ class TrendIntelligenceTests(NewsroomTestCase):
 
         self.assertNotEqual(topic.status, "prioritized")
 
-    def test_an_unreachable_model_falls_back_to_the_heuristic(self):
-        with broken_gemini():
-            topic = TrendIntelligenceAgent(priority_threshold=6.0).evaluate_trend(self.topic)
+    def test_an_unreachable_model_raises_rather_than_scoring(self):
+        """The behaviour step 6 deliberately changed.
 
-        # The point is that it scores the topic anyway rather than raising.
-        self.assertGreater(topic.priority_score, 0.0)
+        This agent used to score the topic from `popularity_score` alone when
+        the model was unreachable -- 7.0 business relevance, 7.5 African
+        relevance, on everything -- and the result cleared the promotion
+        threshold. An outage did not stop the newsroom; it filled it with
+        topics nobody had evaluated.
+        """
+        with unavailable_model():
+            with self.assertRaises(ModelUnavailable):
+                TrendIntelligenceAgent(priority_threshold=6.0).evaluate_trend(self.topic)
+
+        self.topic.refresh_from_db()
+        self.assertEqual(self.topic.status, "discovered")
+        self.assertEqual(self.topic.priority_score, 0.0)
+
+    def test_a_declining_agent_leaves_the_topic_for_the_next_cycle(self):
+        """An abstention is not a failure, and must not look like a rejection."""
+        with fake_gemini({"status": "insufficient_evidence",
+                          "notes": "the summary is one sentence"}):
+            scored = TrendIntelligenceAgent(priority_threshold=6.0).evaluate_trend(self.topic)
+
+        self.assertIsNone(scored)
+        self.topic.refresh_from_db()
+        self.assertEqual(self.topic.status, "discovered")
 
 
 class ResearchTests(NewsroomTestCase):
@@ -116,15 +143,59 @@ class WriterTests(NewsroomTestCase):
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(EditorialArticle.objects.count(), 1)
 
-    def test_an_unreachable_model_still_produces_a_reviewable_draft(self):
-        with broken_gemini():
+    def test_an_unreachable_model_produces_no_draft_at_all(self):
+        """The sharpest behaviour change in step 6.
+
+        This used to return a full article assembled from the dossier's own
+        sentences, including the hardcoded case study "Representative
+        enterprise deployments demonstrate a 40% improvement in performance" --
+        a fabricated statistic, in the review queue, indistinguishable from
+        reporting. A blank queue is the better failure, and it is the one an
+        editor can see.
+        """
+        with unavailable_model():
+            with self.assertRaises(ModelUnavailable):
+                ResearchAgent().conduct_research(self.topic)
+
+        self.assertEqual(ResearchDossier.objects.count(), 0)
+        self.assertEqual(EditorialArticle.objects.count(), 0)
+
+    def test_a_declining_writer_writes_nothing(self):
+        with fake_gemini():
             dossier = ResearchAgent().conduct_research(self.topic)
             report = FactVerificationAgent().verify_dossier(dossier)
             strategy = EditorialStrategyAgent().determine_strategy(report)
+
+        with fake_gemini({"status": "insufficient_evidence",
+                          "notes": "the verified report is too thin to write from"}):
             article = AIWriterAgent().write_article(report, strategy)
 
-        self.assertEqual(article.status, "review_pending")
-        self.assertTrue(article.title)
+        self.assertIsNone(article)
+        self.assertEqual(EditorialArticle.objects.count(), 0)
+        # The topic must not be marked approved_for_article when there is none.
+        self.topic.refresh_from_db()
+        self.assertNotEqual(self.topic.status, "approved_for_article")
+
+    def test_an_empty_draft_that_validates_is_still_rejected(self):
+        """Every content field carries a default so abstention is expressible.
+
+        The cost of that is that `{"status": "ok"}` validates cleanly. This is
+        the other half of the guard: an `ok` answer that filled nothing in is a
+        failure, not an empty article.
+        """
+        with fake_gemini():
+            dossier = ResearchAgent().conduct_research(self.topic)
+            report = FactVerificationAgent().verify_dossier(dossier)
+            strategy = EditorialStrategyAgent().determine_strategy(report)
+
+        blanks = {key: "" for key in
+                  ("title", "executive_summary", "introduction",
+                   "technical_explanation", "conclusion")}
+        with fake_gemini(blanks):
+            with self.assertRaises(AgentOutputInvalid):
+                AIWriterAgent().write_article(report, strategy)
+
+        self.assertEqual(EditorialArticle.objects.count(), 0)
 
 
 class PublishingFlowTests(NewsroomTestCase):
@@ -225,7 +296,44 @@ class LongTitleTests(NewsroomTestCase):
 
 class NoNetworkTests(NewsroomTestCase):
     def test_the_stub_is_what_the_agents_actually_call(self):
-        """Guards the stub itself: if a patch target moves, this fails."""
+        """Guards the stub itself: if the patch target moves, this fails."""
         with fake_gemini() as model:
             ResearchAgent().conduct_research(self.topic)
         self.assertTrue(model.calls, "the research agent did not call the stubbed model")
+
+    def test_a_full_run_never_reaches_the_vendor_library(self):
+        """The guard that does not depend on knowing every patch target.
+
+        `fake_gemini` patches one function, which is only correct as long as
+        that function is the single door to the network. This closes the door
+        itself: both Gemini client classes are replaced with something that
+        raises, so any path that slipped past the stub -- chat or, since step 6,
+        embeddings -- fails here instead of quietly billing a live call in the
+        middle of the suite.
+        """
+        import langchain_google_genai
+
+        # Recorded rather than raised. A raise is only as good as the shortest
+        # except clause between here and the call site, and there is one: the
+        # writer catches MemoryUnavailable when remembering a draft, because
+        # losing the duplicate-detection entry should not throw away a finished
+        # article. A first version of this test raised, hit that handler, and
+        # passed while a live embedding call had in fact been made.
+        reached = []
+
+        def recorder(*args, **kwargs):
+            reached.append(kwargs.get("model") or "unknown")
+            raise AssertionError("a test reached the live Gemini client")
+
+        with patch.object(langchain_google_genai, "ChatGoogleGenerativeAI", recorder), \
+                patch.object(langchain_google_genai, "GoogleGenerativeAIEmbeddings", recorder):
+            article = self.draft_article()
+            with fake_gemini():
+                MultiPlatformContentAgent().generate_social_ecosystem(article)
+            with fake_gemini():
+                EditorialMemoryAgent().check_duplicate_coverage(
+                    self.topic.title, self.topic.summary,
+                )
+
+        self.assertEqual(reached, [], f"live clients were built: {reached}")
+        self.assertIsNotNone(article)

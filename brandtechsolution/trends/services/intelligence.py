@@ -1,146 +1,185 @@
 """
 Module 2: Trend Intelligence Agent
 
-Evaluates and scores every discovered trend topic based on Novelty, Business Relevance,
-African Relevance, Developer Interest, Virality, and Future Potential using Gemini API.
-Assigns a Priority Score and promotes high-scoring trends for research.
+Scores every discovered trend topic on six criteria and computes the weighted
+Priority Score that decides whether it is worth researching.
+
+On the harness since step 6. What left with the rewrite was the heuristic
+fallback: when the model was unreachable this agent used to score every topic
+from `popularity_score` alone -- 7.0 for business relevance, 7.5 for African
+relevance, on every topic -- and the resulting priority scores were high enough
+to promote. So an outage did not stop the newsroom; it filled it with topics
+nobody had evaluated. An unscored topic now stays `discovered` and is picked up
+by the next cycle.
 """
 import logging
-import json
-from typing import Optional, Dict, Any
-from django.conf import settings
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import SystemMessage, HumanMessage
-from brandtechsolution.config import config
+
+from pydantic import Field
+
+from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
+from ai_workflows.harness.contract import AgentOutput, ask
+from ai_workflows.harness.llm import ModelRole
+from ai_workflows.harness.persona import Persona
 from trends.models import TrendTopic
 
 logger = logging.getLogger(__name__)
 
-INTELLIGENCE_PROMPT = """You are the Chief Intelligence Officer at Teklora, an African technology media and innovation publication.
-Analyze the following tech trend and score it on a scale of 0.0 to 10.0 across 6 criteria:
 
-1. Novelty: How new or groundbreaking is this topic?
-2. Business Relevance: How significant is the business/enterprise impact?
-3. African Relevance: How applicable, impactful, or interesting is this to the African tech ecosystem, developers, and startups?
-4. Developer Interest: How excited will software engineers, AI developers, and tech builders be?
-5. Virality: How likely is this to drive high social sharing and discussion?
-6. Future Potential: Will this topic remain strategically important over the next 12-36 months?
+class TrendScores(AgentOutput):
+    """Six criteria, each 0-10.
+
+    Defaults are 0.0 rather than a comfortable mid-range: a model that returns
+    a partial object should produce a topic that fails the threshold, not one
+    that drifts through it on filler. `status` is how it declines, and the
+    agent routes on that.
+    """
+
+    novelty_score: float = Field(default=0.0, ge=0.0, le=10.0)
+    business_relevance_score: float = Field(default=0.0, ge=0.0, le=10.0)
+    african_relevance_score: float = Field(default=0.0, ge=0.0, le=10.0)
+    developer_interest_score: float = Field(default=0.0, ge=0.0, le=10.0)
+    virality_score: float = Field(default=0.0, ge=0.0, le=10.0)
+    future_potential: float = Field(default=0.0, ge=0.0, le=10.0)
+    reasoning: str = ""
+
+
+# Weighted: African relevance 20%, developer interest 20%, business 20%,
+# novelty 15%, virality 15%, future potential 10%. Unchanged by the rewrite.
+WEIGHTS = {
+    'african_relevance_score': 0.20,
+    'developer_interest_score': 0.20,
+    'business_relevance_score': 0.20,
+    'novelty_score': 0.15,
+    'virality_score': 0.15,
+    'future_potential': 0.10,
+}
+
+PERSONA = Persona(
+    name="trend_intelligence",
+    role="the Chief Intelligence Officer at Teklora, an African technology media "
+         "and innovation publication",
+    directives=(
+        "Score each trend on novelty, business relevance, African relevance, "
+        "developer interest, virality, and 12-36 month future potential.",
+        "Judge African relevance by what the topic changes for developers, "
+        "startups and enterprises on the continent, not by whether Africa is "
+        "mentioned.",
+        "Explain the scores briefly enough that an editor can disagree with a "
+        "specific number.",
+    ),
+    constraints=(
+        "Do not inflate a score to make a topic publishable.",
+        "If the summary is too thin to judge, say so rather than guessing.",
+    ),
+)
+
+SCORING_PROMPT = """Score this technology trend on each of the six criteria, 0.0 to 10.0.
 
 Trend Title: {title}
 Category: {category}
 Summary: {summary}
 Source: {source}
-
-Return your evaluation ONLY as a valid JSON object matching this structure:
-{{
-  "novelty_score": 8.5,
-  "business_relevance_score": 7.0,
-  "african_relevance_score": 8.0,
-  "developer_interest_score": 9.0,
-  "virality_score": 7.5,
-  "future_potential": 8.5,
-  "reasoning": "Brief explanation of why this topic received these scores."
-}}
 """
 
 
-class TrendIntelligenceAgent:
-    """Evaluates tech trends and computes Priority Score for editorial workflow."""
+class TrendIntelligenceAgent(Agent):
+    """Evaluates tech trends and computes the Priority Score."""
+
+    name = "trend_intelligence"
+    persona = PERSONA
+    model_role = ModelRole.ANALYTIC
+    tool_suite = "trend_intelligence"
 
     def __init__(self, priority_threshold: float = 6.5):
         self.priority_threshold = priority_threshold
-        try:
-            self.model = ChatGoogleGenerativeAI(
-                model=config.gemini_chat_model,
-                google_api_key=config.google_api_key,
-                temperature=0.2
-            )
-        except Exception as e:
-            logger.warning(f"Gemini LLM initialization warning in TrendIntelligenceAgent: {e}")
-            self.model = None
 
-    def evaluate_trend(self, topic: TrendTopic) -> TrendTopic:
-        """Evaluates a single TrendTopic and updates its intelligence metrics."""
-        logger.info(f"[TrendIntelligenceAgent] Scoring topic: '{topic.title}'")
+    # ------------------------------------------------------------------
+    # harness entry point
+    # ------------------------------------------------------------------
 
-        scores = self._call_ai_evaluator(topic)
-        if not scores:
-            scores = self._heuristic_fallback_evaluator(topic)
-
-        topic.novelty_score = scores.get('novelty_score', 6.0)
-        topic.business_relevance_score = scores.get('business_relevance_score', 6.0)
-        topic.african_relevance_score = scores.get('african_relevance_score', 6.0)
-        topic.developer_interest_score = scores.get('developer_interest_score', 6.0)
-        topic.virality_score = scores.get('virality_score', 6.0)
-        topic.future_potential = scores.get('future_potential', 7.0)
-
-        # Weighted calculation for Priority Score:
-        # African relevance (20%), Developer Interest (20%), Business (20%), Novelty (15%), Virality (15%), Future Potential (10%)
-        weighted_score = (
-            topic.african_relevance_score * 0.20 +
-            topic.developer_interest_score * 0.20 +
-            topic.business_relevance_score * 0.20 +
-            topic.novelty_score * 0.15 +
-            topic.virality_score * 0.15 +
-            topic.future_potential * 0.10
+    def run(self, request: AgentRequest) -> AgentResult:
+        topic = request.payload["topic"]
+        scores = ask(
+            self.voiced_persona(),
+            SCORING_PROMPT.format(
+                title=topic.title,
+                category=topic.category,
+                summary=topic.summary,
+                source=topic.source,
+            ),
+            TrendScores,
+            role=self.model_role,
+            agent=self.name,
         )
-        topic.priority_score = round(weighted_score, 2)
+        return AgentResult(
+            agent=self.name, output=scores,
+            abstained=scores.abstained, notes=scores.notes,
+        )
+
+    # ------------------------------------------------------------------
+    # pipeline surface
+    # ------------------------------------------------------------------
+
+    def evaluate_trend(self, topic: TrendTopic) -> TrendTopic | None:
+        """Score one topic and promote it if it clears the threshold.
+
+        Returns None when the agent declined to score it -- the newsroom-wide
+        convention for an abstention, so a caller that ignores the possibility
+        fails on the None rather than proceeding with something invented. The
+        topic keeps `discovered` status, so the next cycle tries again, which
+        is what you want both for a summary too thin to judge and for a model
+        having a bad afternoon.
+        """
+        logger.info("[trend_intelligence] scoring '%s'", topic.title)
+
+        result = self.execute(AgentRequest(payload={"topic": topic}))
+        if result.abstained:
+            logger.warning(
+                "[trend_intelligence] declined to score '%s': %s",
+                topic.title, result.notes or "no reason given",
+            )
+            return None
+
+        scores = result.output
+        for field in WEIGHTS:
+            setattr(topic, field, getattr(scores, field))
+
+        topic.priority_score = round(
+            sum(getattr(scores, field) * weight for field, weight in WEIGHTS.items()), 2
+        )
 
         if topic.priority_score >= self.priority_threshold:
             topic.status = 'prioritized'
-            logger.info(f"[TrendIntelligenceAgent] PROMOTED topic '{topic.title}' -> Priority {topic.priority_score:.1f}")
+            logger.info(
+                "[trend_intelligence] PROMOTED '%s' -> priority %.1f",
+                topic.title, topic.priority_score,
+            )
         else:
-            logger.info(f"[TrendIntelligenceAgent] Topic '{topic.title}' scored {topic.priority_score:.1f} (below threshold {self.priority_threshold})")
+            logger.info(
+                "[trend_intelligence] '%s' scored %.1f (below %.1f)",
+                topic.title, topic.priority_score, self.priority_threshold,
+            )
 
         topic.save()
         return topic
 
     def evaluate_all_discovered(self) -> int:
-        """Evaluates all pending discovered topics."""
-        discovered = TrendTopic.objects.filter(status='discovered')
-        count = 0
-        for topic in discovered:
-            self.evaluate_trend(topic)
-            count += 1
-        return count
+        """Score every pending topic, counting the ones that were actually scored.
 
-    def _call_ai_evaluator(self, topic: TrendTopic) -> Optional[Dict[str, float]]:
-        """Queries Gemini LLM for structured scoring."""
-        if not self.model:
-            return None
+        One topic's failure does not abandon the rest: a malformed summary that
+        the model cannot parse should cost that topic, not the cycle. The count
+        returned is of topics scored, so a run that scored nothing reports zero
+        rather than reporting the queue length.
+        """
+        from ai_workflows.harness.errors import AgentError
 
-        try:
-            prompt = INTELLIGENCE_PROMPT.format(
-                title=topic.title,
-                category=topic.category,
-                summary=topic.summary,
-                source=topic.source
-            )
-            response = self.model.invoke([
-                SystemMessage(content="You are an expert tech journalism evaluation agent. Return ONLY raw JSON."),
-                HumanMessage(content=prompt)
-            ])
-            
-            content = response.content.strip()
-            # Clean markdown codeblocks if wrapped
-            if content.startswith("```"):
-                content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                if content.startswith("json"):
-                    content = content[4:].strip()
-
-            return json.loads(content, strict=False)
-        except Exception as e:
-            logger.error(f"[TrendIntelligenceAgent] LLM scoring error for topic '{topic.title}': {e}")
-            return None
-
-    def _heuristic_fallback_evaluator(self, topic: TrendTopic) -> Dict[str, float]:
-        """Fallback scoring rule when LLM is unavailable."""
-        pop = topic.popularity_score or 5.0
-        return {
-            'novelty_score': min(10.0, pop * 0.9),
-            'business_relevance_score': 7.0,
-            'african_relevance_score': 7.5,
-            'developer_interest_score': min(10.0, pop * 1.1),
-            'virality_score': pop,
-            'future_potential': 7.5,
-        }
+        scored = 0
+        for topic in TrendTopic.objects.filter(status='discovered'):
+            try:
+                evaluated = self.evaluate_trend(topic)
+            except AgentError:
+                logger.exception("[trend_intelligence] failed on '%s'", topic.title)
+                continue
+            if evaluated is not None:
+                scored += 1
+        return scored

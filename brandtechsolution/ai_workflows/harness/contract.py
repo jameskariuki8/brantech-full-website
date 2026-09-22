@@ -176,3 +176,25 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
 
     last_error.agent = last_error.agent or agent
     raise last_error
+
+
+def require(output, *fields, agent=""):
+    """Assert that an `ok` answer actually filled the fields that matter.
+
+    Every content field on these schemas carries a default, because that is
+    what makes abstention expressible: a model handed a mandatory field and no
+    way to decline will fill it, which is where the invented statistics came
+    from. The cost of that choice is that `{}` now validates cleanly.
+
+    This closes it from the other side. The schema says what *may* be absent;
+    the agent says what must be present when it claims to have succeeded. An
+    empty article that passed validation is a failure, and saying so here is
+    the difference between a loud one and a blank page in the review queue.
+    """
+    missing = [name for name in fields if not getattr(output, name, None)]
+    if missing:
+        raise AgentOutputInvalid(
+            f"status was {output.status.value} but {', '.join(missing)} came back empty",
+            agent=agent,
+        )
+    return output

@@ -1,15 +1,25 @@
 """
 Module 4: Fact Verification Agent
 
-Reduces AI hallucinations. Cross-references research statements, detects contradictions,
-removes unsupported claims, assigns confidence levels, and verifies quotes/statistics.
+Audits a research dossier for unsupported claims, contradictions and invented
+figures, and decides whether it may be written up.
+
+On the harness since step 6. This agent's fallback was the worst of the six:
+with the model unreachable it returned 0.90 confidence and no contradictions,
+which `_approves` then reads as a pass. The one gate in the pipeline whose
+entire purpose is to refuse became, on any outage, a gate that approved
+everything -- and did it while reporting a specific, confident-looking number.
+An audit that could not be performed is now a refusal.
 """
-import logging
 import json
-from typing import Dict, Any
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import SystemMessage, HumanMessage
-from brandtechsolution.config import config
+import logging
+
+from pydantic import Field
+
+from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
+from ai_workflows.harness.contract import AgentOutput, ask, require
+from ai_workflows.harness.llm import ModelRole
+from ai_workflows.harness.persona import Persona
 from research.models import ResearchDossier, VerifiedFactReport
 
 logger = logging.getLogger(__name__)
@@ -20,82 +30,158 @@ logger = logging.getLogger(__name__)
 # it is one.
 MIN_CONFIDENCE = 0.6
 
-VERIFICATION_PROMPT = """You are the Lead Fact Verification Editor at Teklora.
-Audit the following research dossier for factual accuracy, hallucinations, and logical consistency.
+
+class FactAudit(AgentOutput):
+    """The audit findings.
+
+    `confidence_level` defaults to 0.0, not to a comfortable number. A partial
+    response should fail the gate. That is the whole asymmetry this agent
+    exists to hold: approving something unread is a published fabrication,
+    refusing something sound is a topic that waits.
+    """
+
+    confidence_level: float = Field(default=0.0, ge=0.0, le=1.0)
+    contradictions_detected: list = Field(default_factory=list)
+    unsupported_claims_removed: list = Field(default_factory=list)
+    verified_statistics: list = Field(default_factory=list)
+    verified_quotes: list = Field(default_factory=list)
+    sanitized_text: str = ""
+
+
+PERSONA = Persona(
+    name="fact_verifier",
+    role="the Lead Fact Verification Editor at Teklora",
+    directives=(
+        "Audit the dossier against its own cited sources and against what is "
+        "established in the field.",
+        "Name every contradiction you find, quoting the two statements that "
+        "disagree.",
+        "Remove claims the dossier does not support rather than softening them.",
+        "Set the confidence score on the evidence, and treat a dossier you "
+        "cannot check as one you are not confident about.",
+    ),
+    constraints=(
+        "Do not add facts, figures or citations during sanitisation. Your "
+        "output may only contain what the dossier already claimed.",
+        "Do not approve a dossier because it reads well.",
+        "If the dossier gives you nothing to verify against, decline rather "
+        "than issuing a confidence score you cannot support.",
+    ),
+)
+
+VERIFICATION_PROMPT = """Audit this research dossier for factual accuracy, unsupported
+claims and internal contradictions.
 
 Topic Title: {title}
 Technical Explanation: {technical_explanations}
 African Opportunities: {african_opportunities}
 Sources Cited: {sources}
 
-Tasks:
-1. Verify if claims are realistic, accurate, and supported by industry standards.
-2. Highlight any potential hallucination or unsupported claim.
-3. Verify cited statistics or quotes.
-4. Calculate an overall Fact Confidence Score (between 0.0 and 1.0).
-
-Return ONLY a JSON object:
-{{
-  "confidence_level": 0.95,
-  "contradictions_detected": [],
-  "unsupported_claims_removed": [],
-  "verified_statistics": [
-    "Verified industry growth rate and technical specs."
-  ],
-  "verified_quotes": [],
-  "sanitized_text": "Sanitized and fact-checked technical overview..."
-}}
+Return the sanitised text with unsupported claims removed, the contradictions
+you found, the statistics and quotes you were able to verify, and an overall
+confidence level between 0.0 and 1.0.
 """
 
 
-class FactVerificationAgent:
+class FactVerificationAgent(Agent):
     """Fact-checks research dossiers before article generation."""
 
-    def __init__(self):
-        try:
-            self.model = ChatGoogleGenerativeAI(
-                model=config.gemini_chat_model,
-                google_api_key=config.google_api_key,
-                temperature=0.1
-            )
-        except Exception as e:
-            logger.warning(f"FactVerificationAgent LLM init failed: {e}")
-            self.model = None
+    name = "fact_verifier"
+    persona = PERSONA
+    model_role = ModelRole.PRECISE
+    tool_suite = "fact_verifier"
+
+    # This agent's verdicts are compared across runs by the eval suite. A
+    # silent failover to another model mid-comparison would make a change in
+    # score unattributable, which is the one thing the suite exists to give.
+    allow_fallback = False
+
+    def run(self, request: AgentRequest) -> AgentResult:
+        dossier = request.payload["dossier"]
+
+        audit = ask(
+            self.voiced_persona(),
+            VERIFICATION_PROMPT.format(
+                title=dossier.topic.title,
+                technical_explanations=dossier.technical_explanations,
+                african_opportunities=dossier.african_opportunities,
+                sources=json.dumps(dossier.sources),
+            ),
+            FactAudit,
+            role=self.model_role,
+            agent=self.name,
+        )
+        if audit.usable:
+            # An audit that sanitised the dossier down to nothing has not
+            # audited it; the writer would be handed an empty body.
+            require(audit, "sanitized_text", agent=self.name)
+
+        return AgentResult(
+            agent=self.name, output=audit,
+            abstained=audit.abstained, notes=audit.notes,
+        )
 
     def verify_dossier(self, dossier: ResearchDossier) -> VerifiedFactReport:
-        """Audits a ResearchDossier and creates a VerifiedFactReport."""
-        logger.info(f"[FactVerificationAgent] Auditing dossier for '{dossier.topic.title}'...")
+        """Audit `dossier` and record the verdict.
+
+        Always returns a report, including when the agent declined -- a
+        refusal is a verdict and belongs in the record, so an editor looking at
+        the topic can see it was considered and why it stopped. The report is
+        simply not approved.
+        """
+        logger.info("[fact_verifier] auditing '%s'", dossier.topic.title)
 
         existing = VerifiedFactReport.objects.filter(dossier=dossier).first()
         if existing:
             return existing
 
-        verification_data = self._audit_dossier(dossier)
+        result = self.execute(AgentRequest(payload={"dossier": dossier}))
+        audit = result.output
 
-        confidence = verification_data.get('confidence_level', 0.92)
-        contradictions = verification_data.get('contradictions_detected', [])
+        if result.abstained:
+            logger.warning(
+                "[fact_verifier] declined to audit '%s': %s",
+                dossier.topic.title, audit.notes or "no reason given",
+            )
+            return VerifiedFactReport.objects.create(
+                dossier=dossier,
+                confidence_level=0.0,
+                contradictions_detected=[],
+                unsupported_claims_removed=[],
+                verified_statistics=[],
+                verified_quotes=[],
+                # The unverified dossier, not a sanitised one -- nothing was
+                # sanitised. Storing the original under `verified_dossier` on
+                # an unapproved report keeps the text available for an editor
+                # without anything downstream being able to mistake it for
+                # audited prose, because `is_approved` is what gates that.
+                verified_dossier=dossier.structured_dossier,
+                is_approved=False,
+            )
 
         report = VerifiedFactReport.objects.create(
             dossier=dossier,
-            confidence_level=confidence,
-            contradictions_detected=contradictions,
-            unsupported_claims_removed=verification_data.get('unsupported_claims_removed', []),
-            verified_statistics=verification_data.get('verified_statistics', []),
-            verified_quotes=verification_data.get('verified_quotes', []),
-            verified_dossier=verification_data.get('sanitized_text', dossier.structured_dossier),
-            is_approved=self._approves(confidence, contradictions),
+            confidence_level=audit.confidence_level,
+            contradictions_detected=audit.contradictions_detected,
+            unsupported_claims_removed=audit.unsupported_claims_removed,
+            verified_statistics=audit.verified_statistics,
+            verified_quotes=audit.verified_quotes,
+            verified_dossier=audit.sanitized_text,
+            is_approved=self._approves(audit.confidence_level,
+                                       audit.contradictions_detected),
         )
 
         if report.is_approved:
             logger.info(
-                "[FactVerificationAgent] Verified '%s' with %.0f%% confidence.",
+                "[fact_verifier] verified '%s' with %.0f%% confidence.",
                 dossier.topic.title, report.confidence_level * 100,
             )
         else:
             logger.warning(
-                "[FactVerificationAgent] REJECTED '%s': %.0f%% confidence, "
+                "[fact_verifier] REJECTED '%s': %.0f%% confidence, "
                 "%d contradiction(s).",
-                dossier.topic.title, report.confidence_level * 100, len(contradictions),
+                dossier.topic.title, report.confidence_level * 100,
+                len(report.contradictions_detected),
             )
         return report
 
@@ -121,39 +207,3 @@ class FactVerificationAgent:
             # A model that returned something non-numeric has not given us
             # grounds to approve.
             return False
-
-    def _audit_dossier(self, dossier: ResearchDossier) -> Dict[str, Any]:
-        if not self.model:
-            return self._fallback_audit(dossier)
-
-        try:
-            prompt = VERIFICATION_PROMPT.format(
-                title=dossier.topic.title,
-                technical_explanations=dossier.technical_explanations,
-                african_opportunities=dossier.african_opportunities,
-                sources=json.dumps(dossier.sources)
-            )
-            res = self.model.invoke([
-                SystemMessage(content="You are a strict fact checker. Return ONLY raw JSON."),
-                HumanMessage(content=prompt)
-            ])
-            content = res.content.strip()
-            if content.startswith("```"):
-                content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                if content.startswith("json"):
-                    content = content[4:].strip()
-
-            return json.loads(content, strict=False)
-        except Exception as e:
-            logger.error(f"[FactVerificationAgent] Error auditing dossier for '{dossier.topic.title}': {e}")
-            return self._fallback_audit(dossier)
-
-    def _fallback_audit(self, dossier: ResearchDossier) -> Dict[str, Any]:
-        return {
-            "confidence_level": 0.90,
-            "contradictions_detected": [],
-            "unsupported_claims_removed": [],
-            "verified_statistics": ["Source references validated"],
-            "verified_quotes": [],
-            "sanitized_text": dossier.structured_dossier
-        }

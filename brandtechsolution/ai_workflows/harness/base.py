@@ -62,7 +62,60 @@ class Agent(ABC):
 
     @abstractmethod
     def run(self, request: AgentRequest) -> AgentResult:
-        """Do the work."""
+        """Do the work.
+
+        Raises rather than returning something plausible. Callers go through
+        `execute` so the raise is also recorded.
+        """
+
+    def execute(self, request: AgentRequest) -> AgentResult:
+        """`run`, with the agent's health recorded either side of it.
+
+        Every caller should use this rather than `run`. Step 5 built the
+        alerting before there was anything to alert about; this is the wire.
+        Without it, removing the fallbacks would trade a bad draft for silence,
+        which is not obviously the better failure.
+
+        An *abstention* is not a failure and is not recorded as one -- an agent
+        that declines because the evidence is thin is working correctly, and
+        paging someone about it would teach them to ignore the alerts.
+        """
+        from ai_workflows.harness.alerts import record_failure, record_success
+        from ai_workflows.harness.errors import AgentError
+
+        try:
+            result = self.run(request)
+        except AgentError as exc:
+            record_failure(
+                self.name, exc,
+                provider=exc.provider or "", model=exc.model or "",
+                run_id=request.run_id,
+            )
+            raise
+
+        record_success(self.name)
+        return result
+
+    def voiced_persona(self):
+        """This agent's persona, speaking in the stored brand voice.
+
+        The voice is not declared on the persona because it is not this
+        agent's to decide. `EditorialMemory.brand_voice` was read only by the
+        writer while the chat assistant carried its own hardcoded copy, so the
+        company had one brand voice and the codebase had two. `AgentProfile` is
+        now the one, and this is how it reaches every agent.
+
+        Note that `fingerprint` deliberately covers only the *declared*
+        persona. Folding the stored voice in would make the digest a database
+        read, and nothing uses the step cache yet; the day it does, editing the
+        brand voice must invalidate it, and that belongs with that step.
+        """
+        if self.persona is None:
+            return None
+
+        from ai_workflows.models import AgentProfile
+
+        return self.persona.with_voice(AgentProfile.load().brand_voice)
 
     def fingerprint(self) -> str:
         """Digest of this agent's version, for step cache keys.
