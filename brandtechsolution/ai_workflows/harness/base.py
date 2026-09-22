@@ -139,32 +139,57 @@ class Agent(ABC):
 
 
 class AgentRegistry:
-    """name -> agent, so the orchestrator can route without importing each one."""
+    """name -> agent, so the supervisor can route without importing each one.
+
+    Two kinds, for the same reason `ToolRegistry` has two. Most agents are
+    stateless and one instance serves every caller. The assistant is not: it is
+    built around a `thread_id`, and a shared instance would answer in whichever
+    conversation called it last -- a data leak rather than a design preference.
+    """
 
     def __init__(self):
         self._agents: dict[str, Agent] = {}
+        self._factories: dict[str, object] = {}
 
     def register(self, agent: Agent) -> Agent:
-        if agent.name in self._agents:
-            raise ValueError(f"an agent named {agent.name!r} is already registered")
+        self._guard(agent.name)
         self._agents[agent.name] = agent
         return agent
 
-    def get(self, name: str) -> Agent:
-        try:
+    def register_factory(self, name: str, factory):
+        """Register an agent that must be built per call."""
+        self._guard(name)
+        self._factories[name] = factory
+        return factory
+
+    def _guard(self, name):
+        if name in self._agents or name in self._factories:
+            raise ValueError(f"an agent named {name!r} is already registered")
+
+    def get(self, name: str, **kwargs) -> Agent:
+        if name in self._agents:
+            if kwargs:
+                raise TypeError(
+                    f"{name!r} is registered as a shared instance and takes no "
+                    f"arguments; got {', '.join(sorted(kwargs))}"
+                )
             return self._agents[name]
-        except KeyError:
-            known = ", ".join(sorted(self._agents)) or "none"
+
+        factory = self._factories.get(name)
+        if factory is None:
+            known = ", ".join(self.names()) or "none"
             raise KeyError(f"no agent named {name!r} (registered: {known})") from None
 
+        return factory(**kwargs)
+
     def names(self):
-        return sorted(self._agents)
+        return sorted({*self._agents, *self._factories})
 
     def __contains__(self, name):
-        return name in self._agents
+        return name in self._agents or name in self._factories
 
     def __len__(self):
-        return len(self._agents)
+        return len(self._agents) + len(self._factories)
 
 
 registry = AgentRegistry()
