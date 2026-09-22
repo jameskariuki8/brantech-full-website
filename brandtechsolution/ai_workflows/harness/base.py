@@ -96,6 +96,32 @@ class Agent(ABC):
         record_success(self.name)
         return result
 
+    def gather_evidence(self, brief, *, context=None, max_steps=None):
+        """Look things up with this agent's tool suite, and return what it found.
+
+        Empty string when the agent has no suite, so a caller can always fold
+        the result into its prompt without branching. An agent with tools that
+        found nothing is different from an agent with no tools, and both are
+        different from a gathering step that *failed* -- which raises, because
+        proceeding on an empty string would be the fallback pattern again.
+        """
+        from ai_workflows.harness.gather import DEFAULT_MAX_STEPS, gather
+        from ai_workflows.harness.tools import ToolContext, register_builtin_tools, suite_for
+
+        if not self.tool_suite:
+            return ""
+
+        register_builtin_tools()
+        tools = suite_for(self.tool_suite, context or ToolContext())
+        if not tools:
+            return ""
+
+        return gather(
+            self.voiced_persona(), brief, tools,
+            role=self.model_role, agent=self.name,
+            max_steps=max_steps or DEFAULT_MAX_STEPS,
+        )
+
     def voiced_persona(self):
         """This agent's persona, speaking in the stored brand voice.
 

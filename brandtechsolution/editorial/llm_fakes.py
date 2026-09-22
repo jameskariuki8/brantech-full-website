@@ -21,9 +21,21 @@ import json
 from contextlib import ExitStack, contextmanager
 from unittest.mock import patch
 
-# Where `ask` looks the model up. Patched at the point of use rather than at
-# the point of definition, because `contract` imports the name directly.
-TARGET = "ai_workflows.harness.contract.get_model"
+# Every place a chat model is resolved. Patched at the point of use rather
+# than the point of definition, because both modules import the name directly.
+#
+# `gather` is here because step 9 gave the newsroom tools: the verifier and the
+# researcher now run a tool loop before they ask for a verdict, and that loop
+# resolves its own model. A stub covering only `contract` left a live, billed
+# call in the middle of the suite -- the same mistake as the embedder in step 6,
+# in a new place. The guard test written for that one is what caught it.
+TARGETS = (
+    "ai_workflows.harness.contract.get_model",
+    "ai_workflows.harness.gather.get_model",
+)
+
+# Kept for anything still importing the old name.
+TARGET = TARGETS[0]
 
 # `Memory.embedder` imports this lazily inside the property, so the definition
 # site is the right target here.
@@ -112,10 +124,17 @@ DEFAULT_PAYLOAD = {
 
 
 class FakeResponse:
-    """Mimics the .content attribute read off a model response."""
+    """Mimics the .content attribute read off a model response.
+
+    `tool_calls` is empty and explicit. The gathering loop reads it to decide
+    whether the model wants to look something up, so a fake without it would
+    work by accident on `getattr`, and a reader would have to know that to
+    understand why the loop exits after one turn.
+    """
 
     def __init__(self, content):
         self.content = content
+        self.tool_calls = []
 
 
 class _FakeStructured:
@@ -241,7 +260,8 @@ def fake_gemini(overrides=None, *, structured=True, embeddings=True):
 
     model = FakeChatModel(payload, structured=structured)
     with ExitStack() as stack:
-        stack.enter_context(patch(TARGET, new=lambda *args, **kwargs: model))
+        for target in TARGETS:
+            stack.enter_context(patch(target, new=lambda *args, **kwargs: model))
         if embeddings:
             stack.enter_context(fake_embeddings())
         yield model
@@ -260,5 +280,7 @@ def unavailable_model(message="no API key configured"):
     def explode(*args, **kwargs):
         raise ModelUnavailable(message, provider="gemini")
 
-    with patch(TARGET, new=explode):
+    with ExitStack() as stack:
+        for target in TARGETS:
+            stack.enter_context(patch(target, new=explode))
         yield

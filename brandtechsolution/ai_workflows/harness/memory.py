@@ -26,6 +26,15 @@ from ai_workflows.harness.errors import MemoryUnavailable
 logger = logging.getLogger(__name__)
 
 
+# The default for `recall(scope=...)`, so that "this memory's own scope" and
+# "every scope" are different things and neither is spelled None by accident.
+OWN_SCOPE = object()
+
+
+def _as_scopes(scope):
+    return [scope] if isinstance(scope, str) else list(scope)
+
+
 def content_hash(text) -> str:
     return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
 
@@ -63,6 +72,12 @@ class Memory:
     def __init__(self, embedder=None, scope="default"):
         self._embedder = embedder
         self._embedder_resolved = embedder is not None
+
+        # What this memory writes to, and what it reads from unless a caller
+        # says otherwise. Two agents with different scopes do not see each
+        # other's documents, which is the difference between the newsroom
+        # searching its own back catalogue and the newsroom searching every
+        # chat transcript the assistant ever saved.
         self.scope = scope
 
     # ------------------------------------------------------------------
@@ -115,12 +130,13 @@ class Memory:
             if obj is not None:
                 document, _ = MemoryDocument.objects.get_or_create(
                     **lookup,
-                    defaults={"kind": kind, "title": title[:300], "text": text,
+                    defaults={"scope": self.scope, "kind": kind,
+                              "title": title[:300], "text": text,
                               "metadata": metadata or {}, "content_hash": digest},
                 )
             else:
                 document = MemoryDocument.objects.create(
-                    kind=kind, title=title[:300], text=text,
+                    scope=self.scope, kind=kind, title=title[:300], text=text,
                     metadata=metadata or {}, content_hash=digest,
                 )
 
@@ -148,12 +164,19 @@ class Memory:
         )
         return MemoryRecord(document, model_id=space.model_id, provider=space.provider)
 
-    def recall(self, query, *, kind=None, limit=5, record_usage=True):
+    def recall(self, query, *, kind=None, limit=5, record_usage=True,
+               scope=OWN_SCOPE):
         """The most similar documents in the active space.
 
         Only ever the active space. A half-built space must not leak into
         results, and merging scores across two spaces is unsound -- they share
         no scale, so the merge would be arbitrary.
+
+        Scoped to this memory's own corpus by default. A caller that genuinely
+        wants everything passes `scope=None` and has to mean it; one that wants
+        several passes a list. Merging *scopes* is sound in a way merging spaces
+        is not -- the vectors are comparable -- so this is a choice about what
+        the caller should see, not about whether the numbers mean anything.
 
         Retrieval is counted here because this is the one chokepoint every
         semantic lookup passes through. After a few weeks that counter says
@@ -175,6 +198,12 @@ class Memory:
             .annotate(distance=CosineDistance("vector", vector))
             .order_by("distance")
         )
+
+        if scope is OWN_SCOPE:
+            scope = self.scope
+        if scope is not None:
+            rows = rows.filter(document__scope__in=_as_scopes(scope))
+
         if kind:
             rows = rows.filter(document__kind=kind)
 

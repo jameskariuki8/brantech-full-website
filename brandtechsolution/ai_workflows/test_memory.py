@@ -367,3 +367,61 @@ class IndexingTests(MemoryTestCase):
 
         result = embed_object_task.run("brand", "blogpost", 999999, "blog_post", "T", "x")
         self.assertEqual(result["status"], "missing")
+
+
+class ScopeTests(TestCase):
+    """`Memory(scope=...)` was accepted, stored, and ignored.
+
+    Every caller that thought it was scoping its reads was reading everything.
+    These are about it being true.
+    """
+
+    def setUp(self):
+        from editorial.llm_fakes import FakeEmbedder
+
+        self.embedder = FakeEmbedder()
+        self.editorial = Memory(embedder=self.embedder, scope="editorial")
+        self.site = Memory(embedder=self.embedder, scope="site")
+
+        self.editorial.remember("Agents coordinate through a message graph.",
+                                title="An article", kind="article")
+        self.site.remember("Agents coordinate through a message graph.",
+                           title="A blog post", kind="blog")
+
+    def test_a_document_records_the_scope_it_was_written_in(self):
+        from knowledge_base.models import MemoryDocument
+
+        self.assertEqual(
+            MemoryDocument.objects.get(title="An article").scope, "editorial"
+        )
+
+    def test_recall_sees_only_its_own_scope_by_default(self):
+        titles = [r.title for r in self.editorial.recall("agents")]
+        self.assertEqual(titles, ["An article"])
+
+    def test_the_other_scope_sees_the_other_document(self):
+        titles = [r.title for r in self.site.recall("agents")]
+        self.assertEqual(titles, ["A blog post"])
+
+    def test_several_scopes_can_be_read_at_once(self):
+        """Merging scopes is sound in a way merging spaces is not: the vectors
+        are comparable, so this is a choice about what the caller should see."""
+        titles = {
+            r.title for r in
+            self.editorial.recall("agents", scope=("editorial", "site"))
+        }
+        self.assertEqual(titles, {"An article", "A blog post"})
+
+    def test_everything_requires_saying_so(self):
+        titles = {r.title for r in self.editorial.recall("agents", scope=None)}
+        self.assertEqual(titles, {"An article", "A blog post"})
+
+    def test_an_unused_scope_finds_nothing(self):
+        other = Memory(embedder=self.embedder, scope="nowhere")
+        self.assertEqual(other.recall("agents"), [])
+
+    def test_the_default_scope_is_still_the_default(self):
+        plain = Memory(embedder=self.embedder)
+        plain.remember("Something else entirely.", title="Unscoped")
+
+        self.assertEqual([r.title for r in plain.recall("something")], ["Unscoped"])

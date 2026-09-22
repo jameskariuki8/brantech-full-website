@@ -47,7 +47,10 @@ def embed_object_task(self, app_label, model_name, pk, kind, title, text):
                     app_label, model_name, pk)
         return {'status': 'missing'}
 
-    Memory().remember(text, title=title, kind=kind, obj=obj)
+    # `site`, matching the backfill migration: this task indexes BlogPost and
+    # Project rows, which is the corpus the assistant answers from. Left in
+    # `default` it would sit in a scope nothing reads.
+    Memory(scope="site").remember(text, title=title, kind=kind, obj=obj)
     return {'status': 'ok', 'pk': pk}
 
 

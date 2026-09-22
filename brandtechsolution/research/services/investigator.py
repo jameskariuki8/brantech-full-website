@@ -84,6 +84,29 @@ Cover:
 8. Sources -- reference citations with titles and URLs.
 
 Also compile the whole thing as a markdown dossier in `structured_dossier`.
+{evidence}"""
+
+# What the agent goes and reads before it writes anything down. Step 9: it
+# cites sources, so it should be able to open them -- and it can now see what
+# the newsroom has already established rather than starting from nothing on a
+# topic it covered last month.
+EVIDENCE_BRIEF = """Research this topic before writing it up.
+
+Topic Title: {title}
+Category: {category}
+Summary Context: {summary}
+Initial Source: {source} ({source_url})
+
+Read the initial source. Search what the newsroom has already established
+about this area. Report what you actually found, with the URLs, and say which
+parts of the topic you could not find material for.
+"""
+
+EVIDENCE_HEADER = """
+What you found when you looked:
+{evidence}
+Build the dossier from this. Cite only sources you actually read, and leave a
+section thin rather than filling it from memory.
 """
 
 # What a dossier must contain to be worth passing to verification. A dossier
@@ -102,15 +125,21 @@ class ResearchAgent(Agent):
 
     def run(self, request: AgentRequest) -> AgentResult:
         topic = request.payload["topic"]
+        fields = {
+            "title": topic.title,
+            "category": topic.category,
+            "summary": topic.summary,
+            "source": topic.source,
+            "source_url": topic.source_url or "",
+        }
+
+        evidence = self.gather_evidence(EVIDENCE_BRIEF.format(**fields))
 
         findings = ask(
             self.voiced_persona(),
             RESEARCH_PROMPT.format(
-                title=topic.title,
-                category=topic.category,
-                summary=topic.summary,
-                source=topic.source,
-                source_url=topic.source_url or "",
+                evidence=EVIDENCE_HEADER.format(evidence=evidence) if evidence else "",
+                **fields,
             ),
             Dossier,
             role=self.model_role,

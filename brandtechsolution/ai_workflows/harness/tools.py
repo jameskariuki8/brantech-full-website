@@ -103,11 +103,30 @@ registry = ToolRegistry()
 # ============================================================
 # Suites
 # ============================================================
-# Which tools each agent is issued. Deliberately only tools that exist today:
-# giving the newsroom agents `search_knowledge` and `fetch_url` changes what
-# they can *do* -- the fact verifier would start checking claims against real
-# sources rather than against the model's own weights -- and that belongs
-# behind its own review rather than smuggled in with a refactor.
+# Which tools each agent is issued.
+#
+# Step 4 left the newsroom suites empty on purpose, with a note saying that
+# giving them `search_knowledge` and `fetch_url` changes what they can *do* --
+# the fact verifier would start checking claims against real sources rather
+# than against the model's own weights -- and that belonged behind its own
+# review rather than smuggled in with a refactor. Step 9 is that review.
+#
+# Who gets what, and why not everyone:
+#
+#   fact_verifier  both. It is the agent whose entire job is checking claims
+#                  against something outside itself, and until now the
+#                  something was the model's own weights.
+#   research       both. It cites sources; it should be able to read them.
+#   writer         search_knowledge only. It writes from the verified report
+#                  and must not acquire new material at the drafting stage --
+#                  that is how an unsupported claim gets back in after the
+#                  verifier removed it. Reading past coverage for continuity
+#                  is different, and useful.
+#   social         nothing. It adapts an article that is already written and
+#                  verified. A tool here could only add something the article
+#                  does not say.
+#   trend_*        nothing yet. Scoring and forecasting from live sources is a
+#                  real idea and a different conversation.
 
 SUITES = {
     # The assistant's three, plus the clock. `current_time` is not a new
@@ -118,14 +137,18 @@ SUITES = {
     # when the answer depends on it, and the prompt is static.
     "assistant": ["search_blog_posts", "search_projects", "user_info", "current_time"],
 
-    # The newsroom agents have no tools today, and still have none here. Listed
-    # explicitly so the gap is visible rather than looking like an oversight.
+    # Listed explicitly even when empty, so a gap is visible rather than
+    # looking like an oversight.
     "trend_intelligence": [],
     "trend_prediction": [],
-    "research": [],
-    "fact_verifier": [],
-    "writer": [],
+    "research": ["search_knowledge", "fetch_url"],
+    "fact_verifier": ["search_knowledge", "fetch_url"],
+    "writer": ["search_knowledge"],
     "social": [],
+
+    # Not an agent that dispatches: the newsroom runs its subagents, each of
+    # which is issued its own suite above.
+    "newsroom": [],
 }
 
 
@@ -152,7 +175,9 @@ def register_builtin_tools(target=registry):
     from ai_workflows.tools import (
         create_user_info_tool,
         current_time,
+        fetch_url,
         search_blog_posts,
+        search_knowledge,
         search_projects,
     )
 
@@ -162,6 +187,10 @@ def register_builtin_tools(target=registry):
         target.register("search_projects", search_projects)
     if "current_time" not in target:
         target.register("current_time", current_time)
+    if "search_knowledge" not in target:
+        target.register("search_knowledge", search_knowledge)
+    if "fetch_url" not in target:
+        target.register("fetch_url", fetch_url)
 
     if "user_info" not in target:
         target.register_factory(

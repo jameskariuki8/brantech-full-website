@@ -525,3 +525,76 @@ class MemoryHealthTests(TestCase):
             EditorialMemoryAgent().check_duplicate_coverage("A story", "")
 
         self.assertEqual(mail.outbox, [])
+
+
+class VerificationEvidenceTests(TestCase):
+    """Step 9: the verifier checks claims against something outside itself.
+
+    Until now it asked a language model whether it believed itself, which is a
+    strange thing for a fact checker to do.
+    """
+
+    def setUp(self):
+        self.topic = _topic()
+
+    def _report(self, evidence="[fetch_url(url='https://example.com/a')]\nThe source says X."):
+        with fake_gemini():
+            dossier = ResearchAgent().conduct_research(self.topic)
+            with patch.object(FactVerificationAgent, "gather_evidence",
+                              return_value=evidence):
+                return FactVerificationAgent().verify_dossier(dossier)
+
+    def test_the_evidence_is_recorded_against_the_verdict(self):
+        """A verdict whose evidence is not recorded is a verdict nobody can
+        review, and being reviewable is this agent's whole purpose."""
+        report = self._report()
+        self.assertIn("The source says X.", report.verification_evidence)
+
+    def test_the_evidence_does_not_reach_the_field_the_writer_drafts_from(self):
+        """The bug this field exists to avoid.
+
+        Appending the transcript to `verified_dossier` would put fetched page
+        text -- and its numbers -- into the article prompt, past the
+        sanitisation that had just removed unsupported claims. It would also
+        reach the eval that looks for invented figures and read as the verifier
+        inventing them.
+        """
+        report = self._report()
+        self.assertNotIn("fetch_url", report.verified_dossier)
+        self.assertNotIn("The source says X.", report.verified_dossier)
+
+    def test_a_refusal_still_records_what_was_checked(self):
+        with fake_gemini():
+            dossier = ResearchAgent().conduct_research(self.topic)
+
+        with patch.object(FactVerificationAgent, "gather_evidence",
+                          return_value="Could not reach the cited source."):
+            with fake_gemini({"status": "insufficient_evidence",
+                              "notes": "sources unreachable"}):
+                report = FactVerificationAgent().verify_dossier(dossier)
+
+        self.assertFalse(report.is_approved)
+        self.assertIn("Could not reach", report.verification_evidence)
+
+    def test_the_verifier_actually_asks_for_its_tools(self):
+        """Guards the wiring: an agent with a suite that never gathers has
+        tools on paper only."""
+        with fake_gemini():
+            dossier = ResearchAgent().conduct_research(self.topic)
+            with patch.object(FactVerificationAgent, "gather_evidence",
+                              return_value="") as gather:
+                FactVerificationAgent().verify_dossier(dossier)
+
+        gather.assert_called_once()
+        self.assertIn(self.topic.title, gather.call_args[0][0])
+
+    def test_no_evidence_leaves_the_prompt_unchanged(self):
+        """An agent with no tools must not be handed an empty evidence header
+        that reads as "you checked and found nothing"."""
+        from research.services.fact_verifier import VERIFICATION_PROMPT
+
+        rendered = VERIFICATION_PROMPT.format(
+            title="T", technical_explanations="E", african_opportunities="A",
+            sources="[]", evidence="",
+        )
+        self.assertNotIn("What you found", rendered)

@@ -108,6 +108,12 @@ class MemoryDocument(models.Model):
     )
     object_id = models.PositiveIntegerField(null=True, blank=True)
 
+    # Which corpus this belongs to. `Memory` took a `scope` argument from the
+    # day it was written, stored it, and never used it -- so a caller writing
+    # `Memory(scope="editorial")` got a parameter that read as a filter and
+    # filtered nothing. This is the column that makes it true.
+    scope = models.CharField(max_length=40, default='default', db_index=True)
+
     kind = models.CharField(max_length=40, default='document', db_index=True)
     title = models.CharField(max_length=300, blank=True, default='')
     text = models.TextField(blank=True, default='')

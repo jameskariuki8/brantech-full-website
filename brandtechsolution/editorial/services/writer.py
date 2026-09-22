@@ -87,6 +87,31 @@ Tone: {tone}
 Target length: about {length_words} words
 Reading difficulty: {reading_difficulty}
 Focus on: {focus_area}
+{continuity}"""
+
+# Step 9. The writer is given `search_knowledge` and not `fetch_url`, and the
+# brief is why: it is looking for what Teklora has already said, so the piece
+# does not repeat a framing or contradict its own back catalogue. It is not
+# looking for material. New facts at the drafting stage are how an unsupported
+# claim gets back in after the verifier removed it, which is the failure the
+# whole of step 6 was about.
+CONTINUITY_BRIEF = """Check what Teklora has already published near this topic.
+
+Topic: {title}
+Summary: {verified_text}
+
+Search the knowledge base. Report which past pieces are adjacent, what framing
+they used, and anything here that would contradict them. Do not go looking for
+new facts about the topic -- that is not your job at this stage.
+"""
+
+CONTINUITY_HEADER = """
+What Teklora has already published nearby:
+{continuity}
+Use this for continuity only: avoid repeating a framing, and flag rather than
+restate anything that disagrees with it. It is not source material, and nothing
+in it may become a claim in this article unless the verified report above also
+supports it.
 """
 
 # The sections an article cannot go to review without. The rest may legitimately
@@ -108,9 +133,17 @@ class AIWriterAgent(Agent):
         report = request.payload["report"]
         strategy = request.payload.get("strategy") or {}
 
+        continuity = self.gather_evidence(CONTINUITY_BRIEF.format(
+            title=report.dossier.topic.title,
+            verified_text=report.verified_dossier[:2000],
+        ))
+
         draft = ask(
             self.voiced_persona(),
             ARTICLE_PROMPT.format(
+                continuity=(
+                    CONTINUITY_HEADER.format(continuity=continuity) if continuity else ""
+                ),
                 title=report.dossier.topic.title,
                 verified_text=report.verified_dossier,
                 african_perspective=report.dossier.african_opportunities,

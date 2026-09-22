@@ -69,6 +69,24 @@ PERSONA = Persona(
     ),
 )
 
+# What the agent is asked to go and check, before it is asked for a verdict.
+# Two calls rather than one: a call asked to research a question *and* emit a
+# schema does neither well, and splitting them means the evidence exists as
+# text between the two, where it can be stored and read by a human wondering
+# why the agent decided what it did.
+EVIDENCE_BRIEF = """Check the claims in this dossier.
+
+Topic Title: {title}
+Technical Explanation: {technical_explanations}
+African Opportunities: {african_opportunities}
+Sources Cited: {sources}
+
+Read the cited sources and see whether they say what the dossier says they
+say. Search what the newsroom has already established and see whether this
+agrees with it. Report what each source actually supports, and say plainly
+which claims you could not check.
+"""
+
 VERIFICATION_PROMPT = """Audit this research dossier for factual accuracy, unsupported
 claims and internal contradictions.
 
@@ -76,10 +94,17 @@ Topic Title: {title}
 Technical Explanation: {technical_explanations}
 African Opportunities: {african_opportunities}
 Sources Cited: {sources}
-
+{evidence}
 Return the sanitised text with unsupported claims removed, the contradictions
 you found, the statistics and quotes you were able to verify, and an overall
 confidence level between 0.0 and 1.0.
+"""
+
+EVIDENCE_HEADER = """
+What you found when you checked:
+{evidence}
+Base your confidence on this. A claim you could not check is not a verified
+claim, however plausible it reads.
 """
 
 
@@ -98,14 +123,24 @@ class FactVerificationAgent(Agent):
 
     def run(self, request: AgentRequest) -> AgentResult:
         dossier = request.payload["dossier"]
+        fields = {
+            "title": dossier.topic.title,
+            "technical_explanations": dossier.technical_explanations,
+            "african_opportunities": dossier.african_opportunities,
+            "sources": json.dumps(dossier.sources),
+        }
+
+        # Step 9. Until now this agent checked claims against the model's own
+        # weights, which is a strange thing for a fact checker to do: asking a
+        # language model whether it believes itself. It now reads the sources
+        # the dossier cites before it forms a view.
+        evidence = self.gather_evidence(EVIDENCE_BRIEF.format(**fields))
 
         audit = ask(
             self.voiced_persona(),
             VERIFICATION_PROMPT.format(
-                title=dossier.topic.title,
-                technical_explanations=dossier.technical_explanations,
-                african_opportunities=dossier.african_opportunities,
-                sources=json.dumps(dossier.sources),
+                evidence=EVIDENCE_HEADER.format(evidence=evidence) if evidence else "",
+                **fields,
             ),
             FactAudit,
             role=self.model_role,
@@ -119,6 +154,7 @@ class FactVerificationAgent(Agent):
         return AgentResult(
             agent=self.name, output=audit,
             abstained=audit.abstained, notes=audit.notes,
+            metadata={"evidence": evidence},
         )
 
     def verify_dossier(self, dossier: ResearchDossier) -> VerifiedFactReport:
@@ -137,6 +173,7 @@ class FactVerificationAgent(Agent):
 
         result = self.execute(AgentRequest(payload={"dossier": dossier}))
         audit = result.output
+        evidence = result.metadata.get("evidence", "")
 
         if result.abstained:
             logger.warning(
@@ -156,6 +193,7 @@ class FactVerificationAgent(Agent):
                 # without anything downstream being able to mistake it for
                 # audited prose, because `is_approved` is what gates that.
                 verified_dossier=dossier.structured_dossier,
+                verification_evidence=evidence,
                 is_approved=False,
             )
 
@@ -167,6 +205,15 @@ class FactVerificationAgent(Agent):
             verified_statistics=audit.verified_statistics,
             verified_quotes=audit.verified_quotes,
             verified_dossier=audit.sanitized_text,
+            # Its own column, deliberately not appended to verified_dossier.
+            # That field is what the writer drafts from, so a checking
+            # transcript in it would put fetched page text -- and its numbers --
+            # into the article prompt, past the sanitisation that had just
+            # removed unsupported claims. It would also reach the eval that
+            # looks for invented figures and read as the verifier inventing
+            # them. A verdict still has to be reviewable, so it is kept; it is
+            # just kept somewhere that only a reviewer looks.
+            verification_evidence=evidence,
             is_approved=self._approves(audit.confidence_level,
                                        audit.contradictions_detected),
         )
