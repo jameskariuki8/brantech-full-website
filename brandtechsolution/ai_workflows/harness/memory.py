@@ -15,7 +15,9 @@ Writing to semantic memory embeds it. There is no `embed=True` flag, because
 an optional embedding is precisely how the current stores drifted apart.
 """
 import hashlib
+import inspect
 import logging
+import math
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -151,7 +153,7 @@ class Memory:
                 document.metadata = metadata
             document.save()
 
-        vector = self._embed(text)
+        vector = self._embed(text, space)
 
         Embedding.objects.update_or_create(
             space=space, document=document,
@@ -190,12 +192,12 @@ class Memory:
         from knowledge_base.models import Embedding, MemoryDocument
 
         space = self._active_space()
-        vector = self._embed(query)
+        vector = self._embed(query, space)
 
         rows = (
             Embedding.objects.filter(space=space)
             .select_related("document")
-            .annotate(distance=CosineDistance("vector", vector))
+            .annotate(distance=CosineDistance(self._vector_column(space), vector))
             .order_by("distance")
         )
 
@@ -239,11 +241,99 @@ class Memory:
             last_retrieved_at=timezone.now(),
         )
 
-    def _embed(self, text):
+    @staticmethod
+    def _vector_column(space):
+        """The expression to compare against, cast when an index expects it.
+
+        `Embedding.vector` is a bare `vector` column with no declared width, so
+        Postgres will not index it -- "column does not have dimensions". The
+        index is built over `vector::vector(N)` instead, and an expression
+        index is only used by a query carrying the *same* expression. So the
+        cast has to be here as well as there; written in one place and not the
+        other, the index is built and never read.
+
+        Left uncast for a space too wide to index, where the cast would be
+        pure overhead. See `knowledge_base/indexes.py`.
+        """
+        from django.db.models.functions import Cast
+        from pgvector.django import VectorField
+
+        from knowledge_base.indexes import can_index
+
+        if not can_index(space):
+            return "vector"
+        return Cast("vector", VectorField(dimensions=space.dimensions))
+
+    @staticmethod
+    def _normalise(vector):
+        """Scale a vector to unit length.
+
+        Cosine distance is scale-invariant, so this changes no ranking today.
+        It is here because `gemini-embedding-001` returns unit vectors only at
+        its native 3072 width -- a narrower space asks for a Matryoshka
+        truncation, and those come back unnormalised. Storing both kinds side
+        by side would mean scores that are comparable within a space and
+        quietly not comparable in magnitude across the migration, and it would
+        block ever using the cheaper inner-product opclass.
+        """
+        length = math.sqrt(sum(value * value for value in vector))
+        if not length:
+            return vector
+        return [value / length for value in vector]
+
+    def _embed(self, text, space=None):
+        """Embed `text` at the width the space expects.
+
+        The width is not optional. A query embedded at 3072 dimensions cannot
+        be compared with vectors stored at 1536 -- pgvector refuses outright --
+        so a space's width has to reach every call that touches it, not just
+        the ones that write.
+        """
         try:
-            return self.embedder.embed_query(text or "")
+            vector = self._embed_call(
+                self.embedder.embed_query, text or "", space,
+            )
+        except MemoryUnavailable:
+            raise
         except Exception as exc:  # noqa: BLE001
             raise MemoryUnavailable(f"could not embed: {exc}") from exc
+
+        return self._normalise(vector)
+
+    def embed_many(self, texts, space):
+        """Embed a batch, for the re-embedding job.
+
+        One request for many documents rather than one each: the provider
+        charges the same for the tokens and the round trips dominate a backfill
+        of any size.
+        """
+        try:
+            vectors = self._embed_call(
+                self.embedder.embed_documents, list(texts), space,
+            )
+        except Exception as exc:  # noqa: BLE001
+            raise MemoryUnavailable(f"could not embed a batch: {exc}") from exc
+
+        return [self._normalise(vector) for vector in vectors]
+
+    @staticmethod
+    def _embed_call(method, payload, space):
+        """Call an embedder, passing the width only if it can take one.
+
+        Not every embedder accepts `output_dimensionality` -- the test doubles
+        do not, and neither would another provider's client. Asked by
+        signature rather than discovered by catching TypeError, which would
+        also swallow a genuine TypeError raised inside the call.
+        """
+        dimensions = getattr(space, "dimensions", None)
+        if dimensions:
+            try:
+                accepts = "output_dimensionality" in inspect.signature(method).parameters
+            except (TypeError, ValueError):
+                accepts = False
+            if accepts:
+                return method(payload, output_dimensionality=dimensions)
+        return method(payload)
 
     def forget(self, obj):
         """Drop what is remembered about `obj`."""

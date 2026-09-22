@@ -166,11 +166,21 @@ class Embedding(models.Model):
     dimensions = models.PositiveIntegerField()
 
     # No fixed dimension: pgvector emits a bare `vector` column, which accepts
-    # any width, so one table holds both spaces during a migration. This costs
-    # nothing today because there is no vector index anywhere in this codebase
-    # -- every similarity query is already a sequential scan. Adding an HNSW or
-    # IVFFlat index later needs a fixed dimension, and the answer then is a
-    # partial index per space, not a schema redesign.
+    # any width, so one table holds both spaces during a migration.
+    #
+    # The cost of that is an index, and the prediction this comment used to
+    # make turned out to be right: Postgres refuses `create index ... using
+    # hnsw` on a column whose width it does not know ("column does not have
+    # dimensions"), and the answer is a partial index per space over a cast
+    # expression, not a schema redesign. See knowledge_base/indexes.py, which
+    # builds it, and Memory._vector_column, which carries the matching cast
+    # into the query so the index is actually used.
+    #
+    # One constraint that only shows up in practice: pgvector caps hnsw at
+    # 2000 dimensions, and gemini-embedding-001's native width is 3072. That
+    # space cannot be indexed at any effort, which is why `manage.py reembed`
+    # exists -- a narrower space is a supported Matryoshka truncation of the
+    # same model, and it is indexable.
     vector = VectorField()
 
     created_at = models.DateTimeField(auto_now_add=True)
