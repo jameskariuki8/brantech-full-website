@@ -147,10 +147,12 @@ class Agent(ABC):
         company had one brand voice and the codebase had two. `AgentProfile` is
         now the one, and this is how it reaches every agent.
 
-        Note that `fingerprint` deliberately covers only the *declared*
-        persona. Folding the stored voice in would make the digest a database
-        read, and nothing uses the step cache yet; the day it does, editing the
-        brand voice must invalidate it, and that belongs with that step.
+        `fingerprint` folds the *voiced* persona in rather than the declared
+        one, which costs it a database read. That is the day this file
+        anticipated: the step cache has callers now, so editing the brand voice
+        has to invalidate what the old voice produced. Otherwise changing how
+        the company speaks would appear to do nothing for a day, which is a
+        genuinely miserable thing to debug.
         """
         if self.persona is None:
             return None
@@ -168,9 +170,10 @@ class Agent(ABC):
         """
         import hashlib
 
+        voiced = self.voiced_persona()
         parts = [
             self.name,
-            self.persona.fingerprint() if self.persona is not None else "",
+            voiced.fingerprint() if voiced is not None else "",
             str(self.model_role),
             self.tool_suite or "",
         ]

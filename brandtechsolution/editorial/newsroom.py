@@ -63,7 +63,12 @@ class NewsroomAgent(Agent):
 
         payload = request.payload
         orchestrator = EditorialPipelineOrchestrator(
-            priority_threshold=payload.get("priority_threshold", self.priority_threshold)
+            priority_threshold=payload.get("priority_threshold", self.priority_threshold),
+            # A re-run of a cycle that died partway reuses the stages that
+            # already succeeded. `resume=False` forces every stage to run
+            # again, which is what an eval wants: measuring an agent whose
+            # answer came from cache measures the cache.
+            resume=payload.get("resume", True),
         )
 
         articles = orchestrator.run_full_autonomous_cycle(

@@ -426,8 +426,28 @@ class AgentContractTests(TestCase):
 
     def test_the_fingerprint_follows_the_persona(self):
         agent, other = Demo(), Demo()
-        other.persona = Demo.persona.with_voice("Terse.")
+        other.persona = Persona(name="demo", role="a rewritten demo agent")
         self.assertNotEqual(agent.fingerprint(), other.fingerprint())
+
+    def test_the_fingerprint_follows_the_stored_brand_voice(self):
+        """The step cache has callers now.
+
+        The voice is not declared on the persona -- it comes from
+        `AgentProfile` -- so a fingerprint covering only the declared persona
+        would serve results produced by the old voice after the voice changed,
+        and editing how the company speaks would appear to do nothing.
+        """
+        from ai_workflows.models import AgentProfile
+
+        agent = Demo()
+        profile = AgentProfile.load()
+        profile.brand_voice = "Terse."
+        profile.save()
+        terse = agent.fingerprint()
+
+        profile.brand_voice = "Expansive, warm, and fond of a digression."
+        profile.save()
+        self.assertNotEqual(terse, agent.fingerprint())
 
     def test_an_agent_cannot_be_instantiated_without_run(self):
         class Incomplete(Agent):
@@ -564,3 +584,164 @@ class StructuredOutputTests(TestCase):
         wanted = Draft(title="t")
         self.assertEqual(_unpack(wanted, Draft), (None, wanted, None))
         self.assertEqual(_unpack(message, Draft), (message, None, None))
+
+
+class StepCacheRowTests(TestCase):
+    """Caching a stage that produces a database row.
+
+    `StepResult.value` is a JSON column and the pipeline's stages return model
+    instances, so the row cannot go in -- but its identity can, and that is the
+    useful half: the work was already done and saved, and a resume needs to
+    find it again rather than pay for it twice.
+    """
+
+    def setUp(self):
+        from ai_workflows.models import AgentProfile
+
+        self.profile = AgentProfile.load()
+
+    def _produce(self, brand_voice="one"):
+        from ai_workflows.models import AgentProfile
+
+        return AgentProfile.load()
+
+    def test_a_row_is_reused_rather_than_produced_again(self):
+        from ai_workflows.harness.steps import StepCache
+        from ai_workflows.models import StepResult
+
+        cache = StepCache(agent="newsroom")
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return self.profile
+
+        first = cache.remember_row("writing", {"report": 1}, produce)
+        second = cache.remember_row("writing", {"report": 1}, produce)
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(first.pk, second.pk)
+        self.assertEqual(StepResult.objects.count(), 1)
+
+    def test_different_inputs_are_different_work(self):
+        from ai_workflows.harness.steps import StepCache
+
+        cache = StepCache()
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return self.profile
+
+        cache.remember_row("writing", {"report": 1}, produce)
+        cache.remember_row("writing", {"report": 2}, produce)
+        self.assertEqual(len(calls), 2)
+
+    def test_a_decline_is_not_cached(self):
+        """A stage returning None is an agent declining -- usually thin
+        evidence or an unlucky roll. Storing it would make one bad answer
+        permanent for the life of the entry."""
+        from ai_workflows.harness.steps import StepCache
+        from ai_workflows.models import StepResult
+
+        cache = StepCache()
+        calls = []
+
+        def declines():
+            calls.append(1)
+            return None
+
+        self.assertIsNone(cache.remember_row("writing", {"r": 1}, declines))
+        self.assertIsNone(cache.remember_row("writing", {"r": 1}, declines))
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(StepResult.objects.count(), 0)
+
+    def test_a_cached_row_that_was_deleted_is_a_miss_not_a_crash(self):
+        """History gets tidied. A resume should not break because it did."""
+        from ai_workflows.harness.steps import StepCache
+        from ai_workflows.models import StepResult
+
+        cache = StepCache()
+        cache.remember_row("writing", {"r": 1}, lambda: self.profile)
+
+        stored = StepResult.objects.get()
+        stored.value = {"model": stored.value["model"], "pk": 9_999_999}
+        stored.save()
+
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return self.profile
+
+        self.assertIsNotNone(cache.remember_row("writing", {"r": 1}, produce))
+        self.assertEqual(len(calls), 1)
+
+    def test_an_entry_older_than_the_window_is_not_served(self):
+        """Without an expiry this is not a resume, it is a dossier from three
+        weeks ago served to today's run as though it were fresh."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from ai_workflows.harness.steps import StepCache
+        from ai_workflows.models import StepResult
+
+        cache = StepCache(max_age=timedelta(hours=1))
+        cache.remember_row("writing", {"r": 1}, lambda: self.profile)
+
+        StepResult.objects.update(created_at=timezone.now() - timedelta(days=2))
+
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return self.profile
+
+        cache.remember_row("writing", {"r": 1}, produce)
+        self.assertEqual(len(calls), 1)
+
+    def test_pruning_drops_what_can_no_longer_be_served(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from ai_workflows.harness.steps import StepCache
+        from ai_workflows.models import StepResult
+
+        cache = StepCache(max_age=timedelta(hours=1))
+        cache.remember_row("writing", {"r": 1}, lambda: self.profile)
+        StepResult.objects.update(created_at=timezone.now() - timedelta(days=2))
+
+        self.assertEqual(cache.prune(), 1)
+        self.assertEqual(StepResult.objects.count(), 0)
+
+    def test_disabled_means_pass_through(self):
+        from ai_workflows.harness.steps import StepCache
+        from ai_workflows.models import StepResult
+
+        cache = StepCache(enabled=False)
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return self.profile
+
+        cache.remember_row("writing", {"r": 1}, produce)
+        cache.remember_row("writing", {"r": 1}, produce)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(StepResult.objects.count(), 0)
+
+    def test_a_changed_fingerprint_is_a_different_key(self):
+        from ai_workflows.harness.steps import StepCache
+
+        cache = StepCache()
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return self.profile
+
+        cache.remember_row("writing", {"r": 1}, produce, fingerprint="v1")
+        cache.remember_row("writing", {"r": 1}, produce, fingerprint="v2")
+        self.assertEqual(len(calls), 2)

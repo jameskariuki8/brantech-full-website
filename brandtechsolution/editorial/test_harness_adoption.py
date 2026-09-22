@@ -733,3 +733,85 @@ class InventedFiguresTests(TestCase):
         from editorial.services.writer import _sources_text
 
         self.assertNotIn("40%", _sources_text(_verified_report(THIN)))
+
+
+class PipelineResumeTests(TestCase):
+    """The step cache, wired to the pipeline it was written for.
+
+    Eleven stages and several model calls over roughly three minutes: a failure
+    at stage nine used to re-run stages one to eight, paid for again, and every
+    iteration on the failing stage cost another three-minute wait.
+    """
+
+    def _orchestrator(self, **kwargs):
+        from editorial.orchestrator import EditorialPipelineOrchestrator
+
+        return EditorialPipelineOrchestrator(**kwargs)
+
+    def test_resuming_is_on_by_default(self):
+        self.assertTrue(self._orchestrator().cache.enabled)
+
+    def test_resume_false_turns_the_cache_off(self):
+        # What an eval wants: measuring an agent whose answer came from cache
+        # measures the cache.
+        self.assertFalse(self._orchestrator(resume=False).cache.enabled)
+
+    def test_a_stage_that_already_succeeded_is_not_run_again(self):
+        from ai_workflows.models import AgentProfile
+
+        orchestrator = self._orchestrator()
+        row = AgentProfile.load()
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return row
+
+        agent = orchestrator.writer_agent
+        first = orchestrator._stage(agent, "writing", {"report": 1}, produce)
+        second = orchestrator._stage(agent, "writing", {"report": 1}, produce)
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(first.pk, second.pk)
+
+    def test_editing_the_brand_voice_invalidates_what_the_old_voice_wrote(self):
+        from ai_workflows.models import AgentProfile
+
+        orchestrator = self._orchestrator()
+        row = AgentProfile.load()
+        calls = []
+
+        def produce():
+            calls.append(1)
+            return AgentProfile.load()
+
+        agent = orchestrator.writer_agent
+        orchestrator._stage(agent, "writing", {"report": 1}, produce)
+
+        profile = AgentProfile.load()
+        profile.brand_voice = "Completely different, and much terser."
+        profile.save()
+
+        orchestrator._stage(agent, "writing", {"report": 1}, produce)
+        self.assertEqual(len(calls), 2)
+
+    def test_the_newsroom_agent_passes_resume_through(self):
+        from unittest.mock import patch
+
+        from ai_workflows.harness.base import AgentRequest
+        from editorial.newsroom import NewsroomAgent
+
+        seen = {}
+
+        class FakeOrchestrator:
+            def __init__(self, **kwargs):
+                seen.update(kwargs)
+
+            def run_full_autonomous_cycle(self, **kwargs):
+                return []
+
+        with patch("editorial.orchestrator.EditorialPipelineOrchestrator",
+                   FakeOrchestrator):
+            NewsroomAgent().run(AgentRequest(payload={"resume": False}))
+
+        self.assertIs(seen["resume"], False)

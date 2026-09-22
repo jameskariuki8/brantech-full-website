@@ -8,6 +8,7 @@ SEO -> Visual Media -> Multi-Platform -> Human Approval Notification -> Publishi
 import logging
 from typing import Any, Callable, Dict, List, Optional
 from ai_workflows.harness.errors import AgentError
+from ai_workflows.harness.steps import StepCache
 from trends.services.discovery import TrendDiscoveryEngine
 from trends.services.intelligence import TrendIntelligenceAgent
 from trends.services.competitor import CompetitorIntelligenceAgent
@@ -32,7 +33,18 @@ logger = logging.getLogger(__name__)
 class EditorialPipelineOrchestrator:
     """End-to-end master controller for Teklora's autonomous newsroom."""
 
-    def __init__(self, priority_threshold: float = 6.5):
+    def __init__(self, priority_threshold: float = 6.5, resume: bool = True):
+        # `resume` wires up harness/steps.py, which was built for exactly this
+        # pipeline and had no callers until now. Eleven stages and several
+        # model calls over roughly three minutes: a failure at stage nine used
+        # to re-run stages one to eight, paid for again, and every iteration on
+        # the failing stage cost another three minutes of waiting.
+        #
+        # Off for a run that is meant to produce fresh work regardless -- an
+        # eval, or a deliberate re-draft. Measuring an agent whose answer came
+        # from cache measures the cache.
+        self.cache = StepCache(enabled=resume, agent="newsroom")
+
         self.discovery_engine = TrendDiscoveryEngine()
         self.intelligence_agent = TrendIntelligenceAgent(priority_threshold=priority_threshold)
         self.competitor_agent = CompetitorIntelligenceAgent()
@@ -48,6 +60,18 @@ class EditorialPipelineOrchestrator:
         self.publisher_agent = PublishingAgent()
         self.analytics_agent = AnalyticsIntelligenceAgent()
         self.memory_agent = EditorialMemoryAgent()
+
+    def _stage(self, agent, step, inputs, produce):
+        """Run a pipeline stage, reusing its row if this is a resume.
+
+        Keyed on the agent's fingerprint as well as the inputs, so editing a
+        persona or the stored brand voice invalidates what the old one
+        produced. Without that, prompt work would appear to do nothing for a
+        day -- which is a genuinely miserable thing to debug.
+        """
+        return self.cache.remember_row(
+            step, inputs, produce, fingerprint=agent.fingerprint(),
+        )
 
     @staticmethod
     def _reject(topic, reason):
@@ -76,6 +100,13 @@ class EditorialPipelineOrchestrator:
         logger.info("================================================================")
         logger.info("🤖 TEKLORA AI EDITORIAL INTELLIGENCE PIPELINE STARTED")
         logger.info("================================================================")
+
+        # Tidied here rather than on a schedule of its own: the work that
+        # writes these rows is the obvious place to drop the expired ones, and
+        # a cleanup task nobody remembers to run is a table that grows forever.
+        dropped = self.cache.prune()
+        if dropped:
+            logger.info("[steps] dropped %d expired cache entries", dropped)
 
         # Step 1: Discover global trends
         stage('discovery')
@@ -121,14 +152,20 @@ class EditorialPipelineOrchestrator:
                 # not do the job, and the honest response is to stop this topic
                 # rather than hand the next stage something to pretend with.
                 stage('research')
-                dossier = self.research_agent.conduct_research(topic)
+                dossier = self._stage(
+                    self.research_agent, 'research', {'topic': topic.id},
+                    lambda: self.research_agent.conduct_research(topic),
+                )
                 if dossier is None:
                     self._reject(topic, "research produced no dossier")
                     continue
 
                 # Step 6: Fact Verification
                 stage('verification')
-                fact_report = self.fact_verifier.verify_dossier(dossier)
+                fact_report = self._stage(
+                    self.fact_verifier, 'verification', {'dossier': dossier.id},
+                    lambda: self.fact_verifier.verify_dossier(dossier),
+                )
 
                 # Honour the verdict. The verifier used to hardcode
                 # is_approved=True and nothing read the flag, so a dossier it
@@ -150,12 +187,21 @@ class EditorialPipelineOrchestrator:
                     continue
 
                 # Step 7: Editorial Strategy & Persona selection
+                #
+                # Not cached, and it is the one stage here that should not be:
+                # it makes no model call at all, just branches on the topic's
+                # category. Caching free work would add a database round trip
+                # to save nothing.
                 stage('strategy')
                 strategy = self.strategy_agent.determine_strategy(fact_report)
 
                 # Step 8: AI Article Writing
                 stage('writing')
-                article = self.writer_agent.write_article(fact_report, strategy)
+                article = self._stage(
+                    self.writer_agent, 'writing',
+                    {'report': fact_report.id, 'strategy': strategy.get('profile_key', '')},
+                    lambda: self.writer_agent.write_article(fact_report, strategy),
+                )
                 if article is None:
                     self._reject(topic, "the writer declined to draft it")
                     continue
