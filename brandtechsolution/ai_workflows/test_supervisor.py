@@ -338,3 +338,97 @@ class AgentsCommandTests(TestCase):
         self.assertEqual(_duration(timedelta(minutes=5)), "5m")
         self.assertEqual(_duration(timedelta(hours=3)), "3h")
         self.assertEqual(_duration(timedelta(days=2)), "2d")
+
+
+class SpendCeilingTests(TestCase):
+    """The half of `BudgetExceeded` that used to be missing.
+
+    The dispatch counter bounds how many *agents* run, which says nothing about
+    what they spend: one agent making forty long calls inside a single dispatch
+    is one dispatch.
+    """
+
+    def setUp(self):
+        self.patcher = patch.dict(ROUTES, {"echo": "echo"}, clear=False)
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+    def test_a_run_stops_once_it_has_spent_its_ceiling(self):
+        supervisor = _supervisor(max_spend_usd=1.0)
+        supervisor.dispatch("echo")
+        supervisor.ledger.add(agent="echo", usage=None, cost=1.50)
+
+        with self.assertRaises(BudgetExceeded) as caught:
+            supervisor.dispatch("echo")
+        self.assertIn("1.5000", str(caught.exception))
+        self.assertIn("echo", str(caught.exception))
+
+    def test_it_stops_between_agents_rather_than_mid_call(self):
+        """An agent killed partway through has been paid for and produced
+        nothing, so the check belongs before the dispatch."""
+        supervisor = _supervisor(max_spend_usd=1.0)
+        supervisor.ledger.add(agent="echo", usage=None, cost=5.0)
+
+        with self.assertRaises(BudgetExceeded):
+            supervisor.dispatch("echo")
+        self.assertEqual(supervisor.dispatches, 0)
+        self.assertEqual(supervisor.trail, [])
+
+    def test_spending_under_the_ceiling_dispatches_normally(self):
+        supervisor = _supervisor(max_spend_usd=10.0)
+        supervisor.ledger.add(agent="echo", usage=None, cost=0.25)
+        self.assertFalse(supervisor.dispatch("echo").abstained)
+
+    def test_a_zero_ceiling_turns_the_check_off(self):
+        # Off has to be asked for, not obtained by leaving an argument out.
+        supervisor = _supervisor(max_spend_usd=0)
+        supervisor.ledger.add(agent="echo", usage=None, cost=9_999.0)
+        self.assertFalse(supervisor.dispatch("echo").abstained)
+
+    def test_the_refusal_admits_what_it_could_not_price(self):
+        """A ceiling that cannot see unpriced calls must say so, or the number
+        beside it reads as the whole bill."""
+        supervisor = _supervisor(max_spend_usd=1.0)
+        supervisor.ledger.add(agent="echo", usage=None, cost=2.0)
+        supervisor.ledger.add(agent="echo", usage=None, cost=None)
+
+        with self.assertRaises(BudgetExceeded) as caught:
+            supervisor.dispatch("echo")
+        self.assertIn("unknown prices", str(caught.exception))
+
+    def test_a_fresh_supervisor_is_a_fresh_ledger(self):
+        first = _supervisor(max_spend_usd=1.0)
+        first.ledger.add(agent="echo", usage=None, cost=5.0)
+
+        second = _supervisor(max_spend_usd=1.0)
+        self.assertEqual(second.ledger.spend_usd, 0.0)
+        self.assertFalse(second.dispatch("echo").abstained)
+
+    def test_calls_made_under_a_dispatch_reach_the_run_ledger(self):
+        """The point of the ContextVar: no `run_id` threaded through four
+        layers of call, each one a chance to forget it."""
+        from ai_workflows.harness import usage
+
+        class Spends(Agent):
+            name = "spends"
+
+            def run(self, request):
+                ledger = usage.active_ledger()
+                if ledger is not None:
+                    ledger.add(agent=self.name, usage=None, cost=0.75)
+                return AgentResult(agent=self.name)
+
+        registry = AgentRegistry()
+        registry.register(Spends())
+        supervisor = Supervisor(registry=registry, max_spend_usd=10.0)
+
+        with patch.dict(ROUTES, {"spends": "spends"}, clear=False):
+            supervisor.dispatch("spends")
+
+        self.assertAlmostEqual(supervisor.spend().spend_usd, 0.75)
+
+    def test_the_configured_ceiling_is_read_when_none_is_given(self):
+        from ai_workflows.harness import supervisor as module
+
+        with patch.object(module, "_default_spend_ceiling", return_value=3.5):
+            self.assertEqual(_supervisor().max_spend_usd, 3.5)

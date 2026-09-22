@@ -14,9 +14,10 @@ the evidence is *visible* between them. It can be logged, stored on the report,
 and read by a human wondering why the agent decided what it did.
 
 Bounded because a tool loop with no ceiling is an unbounded bill. The limit is
-on iterations rather than tokens for the same reason the supervisor's is: real
-spend accounting needs usage off the provider, and a plausible-looking
-approximation of it would be worse than an honest iteration count.
+on iterations rather than tokens: an iteration is knowable before the call,
+which is what a ceiling needs to be. What each iteration actually consumed is
+now recorded as it happens -- see `harness/usage.py` -- so the two answer
+different questions rather than one standing in for the other.
 """
 import logging
 
@@ -153,10 +154,12 @@ class _Failover:
                 # minute window is the normal working condition, not an
                 # outage, and failing over on it would abandon a provider
                 # that was about to say yes.
-                return call_with_retries(
+                response = call_with_retries(
                     lambda: client.invoke(messages),
                     policy=self._policy, label=provider.value, agent=self._agent,
                 )
+                self._account(provider, client, response)
+                return response
             except AgentError:
                 raise
             except Exception as exc:  # noqa: BLE001
@@ -174,6 +177,24 @@ class _Failover:
                 )
                 # Hand control back to the generator, which offers the next.
                 self._current = None
+
+    def _account(self, provider, client, response):
+        """Record what this step consumed.
+
+        Inside the loop rather than around it: a gathering step that fails on
+        its fourth tool call still paid for the first three, and accounting
+        only successful *steps* would under-report exactly the runs worth
+        investigating.
+        """
+        from ai_workflows.harness import usage
+
+        usage.record(
+            response,
+            provider=provider.value if provider is not None else "",
+            model=getattr(client, "model", ""),
+            agent=self._agent or "",
+            role="gather",
+        )
 
     def _client(self):
         if self._current is not None:

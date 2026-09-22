@@ -127,15 +127,46 @@ def _structured(model, schema):
     and because it stops the persona and the format fighting: a single call
     asked to be an award-winning journalist *and* a JSON emitter does neither
     well.
+
+    `include_raw` where the provider supports it, for two reasons that turned
+    out to be the same reason. It keeps the `AIMessage` that carries the token
+    counts -- a plain binding returns the parsed object and drops it, which
+    would leave the most-used call path in the codebase the one path that
+    reported no usage. And it turns a schema violation into a returned
+    `parsing_error` instead of an exception thrown from inside the binding,
+    which the broad catch below used to relabel `ModelUnavailable`: a response
+    that arrived perfectly well, reported as an outage.
     """
     binder = getattr(model, "with_structured_output", None)
     if binder is None:
         return None
     try:
-        return binder(schema)
+        return binder(schema, include_raw=True)
+    except TypeError:
+        # An older or simpler binding that does not take the flag. Usable, but
+        # it cannot report what it consumed.
+        try:
+            return binder(schema)
+        except Exception as exc:  # noqa: BLE001 - fall back, do not fail
+            logger.debug("[contract] native structured output unavailable: %s", exc)
+            return None
     except Exception as exc:  # noqa: BLE001 - fall back, do not fail
         logger.debug("[contract] native structured output unavailable: %s", exc)
         return None
+
+
+def _unpack(result, schema):
+    """(raw message, parsed object, parsing error) from a structured result.
+
+    Three shapes reach this: the `include_raw` dict, a bare schema instance
+    from a binding that did not take the flag, and loose text from a binding
+    that only asked. The caller handles all three the same way afterwards.
+    """
+    if isinstance(result, dict) and {"raw", "parsed"} <= set(result):
+        return result.get("raw"), result.get("parsed"), result.get("parsing_error")
+    if isinstance(result, schema):
+        return None, result, None
+    return result, None, None
 
 
 def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
@@ -172,7 +203,7 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
 
     if model is not None:
         return _ask_one(model, base_messages, schema, retries=retries, agent=agent,
-                        policy=policy)
+                        policy=policy, role=role)
 
     last_error = None
     for candidate_provider, client in get_models(
@@ -180,7 +211,8 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     ):
         try:
             return _ask_one(client, list(base_messages), schema,
-                            retries=retries, agent=agent, policy=policy)
+                            retries=retries, agent=agent, policy=policy,
+                            provider=candidate_provider.value, role=role)
         except ModelUnavailable as exc:
             last_error = exc
             exc.provider = exc.provider or candidate_provider.value
@@ -198,7 +230,8 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     raise ModelUnavailable("no provider answered", agent=agent)
 
 
-def _ask_one(model, messages, schema, *, retries, agent, policy=BATCH):
+def _ask_one(model, messages, schema, *, retries, agent, policy=BATCH,
+             provider="", role=""):
     """One model, with the shape-failure retry.
 
     Two retries live here and they are not the same thing. This one answers a
@@ -209,23 +242,42 @@ def _ask_one(model, messages, schema, *, retries, agent, policy=BATCH):
     """
     structured = _structured(model, schema)
     attempt, last_error = 0, None
+    model_id = getattr(model, "model", "")
 
     def call(invoke):
         return call_with_retries(
-            invoke, policy=policy, label=getattr(model, "model", ""), agent=agent,
+            invoke, policy=policy, label=model_id, agent=agent,
         )
+
+    def account(response):
+        """Record what the call consumed. Never lets bookkeeping raise."""
+        if response is None:
+            return
+        from ai_workflows.harness import usage
+
+        usage.record(response, provider=provider, model=model_id,
+                     agent=agent or "", role=getattr(role, "value", role) or "")
 
     while attempt <= retries:
         try:
             if structured is not None:
                 result = call(lambda: structured.invoke(messages))
-                # A native binding returns the model already; a loose one may
-                # still hand back text.
-                if isinstance(result, schema):
-                    return result
-                return parse_json(text_of(result), schema)
+                raw, parsed, parsing_error = _unpack(result, schema)
+                account(raw)
+
+                if parsing_error is not None:
+                    # A shape failure, which is the retry above this -- not a
+                    # provider failure, which is the fallback below it.
+                    raise AgentOutputInvalid(
+                        f"response did not match {schema.__name__}: {parsing_error}",
+                        raw=text_of(raw),
+                    )
+                if parsed is not None:
+                    return parsed
+                return parse_json(text_of(raw), schema)
 
             response = call(lambda: model.invoke(messages))
+            account(response)
             return parse_json(text_of(response), schema)
 
         except AgentOutputInvalid as exc:

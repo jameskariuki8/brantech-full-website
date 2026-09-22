@@ -54,13 +54,29 @@ ROUTES = {
 }
 
 
-# A run that dispatches more than this has lost track of itself. Not a spend
-# ceiling: real cost accounting needs per-call token usage off the provider,
-# which this does not have and should not pretend to. What it does catch is
-# the failure a supervisor actually introduces -- an agent routing to an agent
-# that routes back -- which without a counter is an unbounded bill discovered
-# at the end of the month.
+# A run that dispatches more than this has lost track of itself. It catches
+# the failure a supervisor introduces -- an agent routing to an agent that
+# routes back -- which without a counter is an unbounded bill discovered at
+# the end of the month.
 DEFAULT_MAX_DISPATCHES = 50
+
+# The other half of that, and the half that was missing. A dispatch count
+# bounds how many *agents* run, which says nothing about what they spend: one
+# agent making forty long calls inside a single dispatch is one dispatch.
+# `harness/usage.py` records what each call consumed, and this is where the
+# number is finally read.
+#
+# Approximate on purpose. Most catalogue prices are borrowed from OpenRouter
+# rather than published by the provider that bills, and a call to an unpriced
+# model cannot be counted at all -- so this is a runaway stop, not an
+# accountant, and `Ledger.complete` is how a caller finds out which it got.
+
+
+def _default_spend_ceiling():
+    """Read at call time, not at import, so a test can override the setting."""
+    from brandtechsolution.config import config
+
+    return getattr(config, "agent_run_spend_ceiling_usd", 0.0) or 0.0
 
 
 def load_agents(target=registry):
@@ -110,12 +126,24 @@ class Supervisor:
     """
 
     def __init__(self, registry=registry, max_dispatches=DEFAULT_MAX_DISPATCHES,
-                 run_id=None):
+                 run_id=None, max_spend_usd=None, label=""):
+        from ai_workflows.harness.usage import Ledger
+
         self.registry = load_agents(registry)
         self.max_dispatches = max_dispatches
         self.run_id = run_id
         self.dispatches = 0
         self.trail = []
+
+        # None means "use the configured ceiling"; 0 means "no ceiling", which
+        # a caller has to ask for rather than get by leaving an argument out.
+        self.max_spend_usd = (
+            _default_spend_ceiling() if max_spend_usd is None else max_spend_usd
+        )
+        # Per supervisor, like the dispatch counter and for the same reason:
+        # one instance is one run, and a shared ledger would trip whichever
+        # run happened to be unlucky.
+        self.ledger = Ledger(label=label, run_id=run_id)
 
     # ------------------------------------------------------------------
     # routing
@@ -163,7 +191,16 @@ class Supervisor:
         )
 
         logger.info("[supervisor] %s -> %s", task, agent.name)
-        result = agent.execute(request)
+
+        # Every model call made anywhere under this agent lands in this run's
+        # ledger. A context variable rather than a `run_id` threaded through
+        # `execute` -> `ask` -> `_ask_one`: four layers of parameter that exist
+        # only for bookkeeping, where each new call site is a chance to forget
+        # it and under-report.
+        from ai_workflows.harness.usage import accounting
+
+        with accounting(self.ledger):
+            result = agent.execute(request)
 
         self.trail.append((task, agent.name, result.abstained))
         if result.abstained:
@@ -174,16 +211,42 @@ class Supervisor:
         return result
 
     def _charge(self, task):
+        """Refuse a dispatch this run cannot afford.
+
+        Checked before dispatching rather than after, so a run stops between
+        agents rather than abandoning one mid-call -- an agent killed partway
+        through has still been paid for and has produced nothing.
+        """
         if self.dispatches >= self.max_dispatches:
             raise BudgetExceeded(
                 f"this run has dispatched {self.dispatches} times "
                 f"(ceiling {self.max_dispatches}); refusing {task!r}"
             )
+
+        if self.max_spend_usd and self.ledger.spend_usd >= self.max_spend_usd:
+            unknown = (
+                "" if self.ledger.complete
+                else f", plus {self.ledger.unpriced_calls} call(s) at unknown prices"
+            )
+            raise BudgetExceeded(
+                f"this run has spent ${self.ledger.spend_usd:.4f} of its "
+                f"${self.max_spend_usd:.2f} ceiling{unknown}; refusing {task!r}"
+            )
+
         self.dispatches += 1
 
     # ------------------------------------------------------------------
     # visibility
     # ------------------------------------------------------------------
+
+    def spend(self):
+        """What this run has cost so far.
+
+        Returns the ledger rather than a float, because the float on its own
+        is not answerable: `complete` says whether it is the whole bill or
+        only the priced part of it.
+        """
+        return self.ledger
 
     def agents(self):
         """Every agent this supervisor can reach."""

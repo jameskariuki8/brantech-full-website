@@ -211,6 +211,17 @@ class AppSettings(BaseSettings):
     # Per-request ceiling for a chat model call, in seconds.
     llm_timeout: int = 60
 
+    # What one supervised run may spend before it refuses to dispatch again,
+    # in USD. Checked between agents, so a run stops cleanly rather than
+    # abandoning an agent mid-call.
+    #
+    # Approximate by construction, and deliberately so. Most prices in the
+    # catalogue are borrowed from OpenRouter's listing rather than published
+    # by the provider that bills, and a call to an unpriced model cannot be
+    # counted against this at all -- see `harness/usage.py`. It is a runaway
+    # stop, not an accountant. Set to 0 to turn it off.
+    agent_run_spend_ceiling_usd: float = 5.0
+
     # ============================================================
     # GitHub Integration Configuration
     # ============================================================

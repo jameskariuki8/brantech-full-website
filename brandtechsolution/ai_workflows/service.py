@@ -302,6 +302,12 @@ class ChatAssistant(Agent):
         self._candidates = None
         self._provider = None
         self._outages = []
+        # How far into this thread's message list usage has already been
+        # recorded. None until the thread's existing length is known: a
+        # conversation resumed from the checkpointer arrives with its whole
+        # history, and starting at zero would bill every earlier turn again on
+        # every turn.
+        self._accounted_messages = None
 
         # Tools come from the harness registry. "Which agent can reach what"
         # lives in one table (harness/tools.py SUITES) rather than in each
@@ -428,6 +434,60 @@ class ChatAssistant(Agent):
             },
         )
 
+    def _mark_history(self):
+        """Note how many messages the thread already had, once per instance.
+
+        Read from the checkpointer rather than counted as we go, because this
+        instance may be the first to touch a conversation that is already
+        twenty turns old -- `_account` cannot tell those apart from the ones
+        this turn produced.
+        """
+        if self._accounted_messages is not None:
+            return
+        try:
+            snapshot = self.app.get_state(self.config)
+            existing = (getattr(snapshot, "values", None) or {}).get("messages") or []
+            self._accounted_messages = len(existing)
+        except Exception as exc:  # noqa: BLE001 - bookkeeping never blocks a reply
+            logger.warning(
+                "[ChatAssistant] could not read the thread length for "
+                "accounting: %s", exc,
+            )
+
+    def _account(self, state):
+        """Record what the graph's model calls consumed.
+
+        The graph returns conversation state rather than a response, so the
+        usage has to be read off the messages it produced. Only the ones this
+        turn added: the thread carries the whole history, and re-reading it
+        each turn would bill the first message once per turn for the life of
+        the conversation, which is a spend report that grows quadratically
+        while the spend does not.
+        """
+        from ai_workflows.harness import usage
+
+        if self._accounted_messages is None:
+            # The baseline was not established, so there is no way to tell this
+            # turn's messages from the history. Skip rather than guess: a
+            # missing line in a spend report is recoverable, and a report that
+            # re-bills the whole conversation on every turn is not.
+            logger.warning(
+                "[ChatAssistant] usage not accounted for this turn: the "
+                "thread's prior length was unknown"
+            )
+            return
+
+        messages = (state or {}).get("messages") or []
+        for message in messages[self._accounted_messages:]:
+            usage.record(
+                message,
+                provider=self._provider.value if self._provider else "",
+                model=getattr(self._model, "model", ""),
+                agent=self.name,
+                role=str(getattr(self.model_role, "value", self.model_role)),
+            )
+        self._accounted_messages = len(messages)
+
     def _invoke(self, payload):
         """Run the graph, moving to the next provider if one cannot answer.
 
@@ -439,6 +499,7 @@ class ChatAssistant(Agent):
         message that is already there.
         """
         first = True
+        self._mark_history()
 
         while True:
             try:
@@ -446,12 +507,14 @@ class ChatAssistant(Agent):
                 # somebody is watching a chat box: a minute of silence reads
                 # as a broken site, so anything longer belongs to the
                 # failover below rather than to patience.
-                return call_with_retries(
+                state = call_with_retries(
                     lambda: self.app.invoke(payload if first else None, self.config),
                     policy=INTERACTIVE,
                     label=self._provider.value if self._provider else "",
                     agent=self.name,
                 )
+                self._account(state)
+                return state
             except AgentError:
                 raise
             except Exception as exc:  # noqa: BLE001 - re-raised as our own type

@@ -456,3 +456,111 @@ class RegistryTests(TestCase):
         with self.assertRaises(KeyError) as caught:
             registry.get("nope")
         self.assertIn("demo", str(caught.exception))
+
+
+# ============================================================
+# The structured-output path, and what it reports
+# ============================================================
+
+
+class RawAwareModel:
+    """A model whose structured binding returns the `include_raw` shape.
+
+    `FakeModel` above deliberately does not take the flag, which exercises the
+    other branch: a binding that cannot report usage still has to work.
+    """
+
+    def __init__(self, *results, usage_metadata=None):
+        self._results = list(results)
+        self.include_raw = None
+        self.model = "fake-model"
+        self._usage = usage_metadata
+
+    def invoke(self, messages, *a, **kw):
+        if not self._results:
+            raise AssertionError("RawAwareModel ran out of queued results")
+        return self._results.pop(0)
+
+    def with_structured_output(self, schema, include_raw=False):
+        self.include_raw = include_raw
+        return self
+
+    def raw(self, content="{}"):
+        message = FakeResponse(content)
+        message.usage_metadata = self._usage
+        message.response_metadata = {"model_name": "fake-model"}
+        return message
+
+
+class StructuredOutputTests(TestCase):
+
+    def test_the_raw_message_is_asked_for_when_the_binding_supports_it(self):
+        """Without it, the most-used call path is the one that reports no usage
+        -- `with_structured_output` returns the parsed object and drops the
+        message carrying the token counts."""
+        from ai_workflows.harness.contract import _structured
+
+        model = RawAwareModel()
+        _structured(model, Draft)
+        self.assertTrue(model.include_raw)
+
+    def test_a_binding_that_cannot_take_the_flag_still_works(self):
+        from ai_workflows.harness.contract import _structured
+
+        model = FakeModel(structured=True)
+        self.assertIsNotNone(_structured(model, Draft))
+
+    def test_a_schema_violation_is_a_shape_failure_not_an_outage(self):
+        """It used to be neither: the binding raised, the broad catch relabelled
+        it `ModelUnavailable`, and an alert sent somebody to look for an outage
+        over a response that had arrived perfectly well."""
+        from ai_workflows.harness.contract import _ask_one
+        from ai_workflows.harness.errors import AgentOutputInvalid
+
+        model = RawAwareModel()
+        broken = {"raw": model.raw("not json"), "parsed": None,
+                  "parsing_error": "title: field required"}
+        model._results = [broken, broken]
+
+        with self.assertRaises(AgentOutputInvalid):
+            _ask_one(model, [], Draft, retries=1, agent="writer")
+
+    def test_the_parsed_object_is_returned_when_there_is_one(self):
+        from ai_workflows.harness.contract import _ask_one
+
+        model = RawAwareModel()
+        wanted = Draft(title="t", body="b")
+        model._results = [{"raw": model.raw(), "parsed": wanted,
+                           "parsing_error": None}]
+
+        self.assertIs(_ask_one(model, [], Draft, retries=0, agent="writer"), wanted)
+
+    def test_the_call_is_accounted_for(self):
+        from ai_workflows.harness import usage
+        from ai_workflows.harness.contract import _ask_one
+
+        model = RawAwareModel(usage_metadata={
+            "input_tokens": 11, "output_tokens": 22, "total_tokens": 33,
+        })
+        model._results = [{"raw": model.raw(), "parsed": Draft(title="t"),
+                           "parsing_error": None}]
+
+        with usage.accounting(label="t") as ledger:
+            _ask_one(model, [], Draft, retries=0, agent="writer",
+                     provider="gemini")
+
+        self.assertEqual(ledger.calls, 1)
+        self.assertEqual(ledger.prompt_tokens, 11)
+        self.assertEqual(ledger.completion_tokens, 22)
+
+    def test_an_unpackable_result_is_read_in_every_shape(self):
+        from ai_workflows.harness.contract import _unpack
+
+        message = FakeResponse("{}")
+        self.assertEqual(
+            _unpack({"raw": message, "parsed": None, "parsing_error": "x"}, Draft),
+            (message, None, "x"),
+        )
+        wanted = Draft(title="t")
+        self.assertEqual(_unpack(wanted, Draft), (None, wanted, None))
+        self.assertEqual(_unpack(message, Draft), (message, None, None))

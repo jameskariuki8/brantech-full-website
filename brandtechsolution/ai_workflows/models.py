@@ -519,3 +519,78 @@ class AgentHealth(models.Model):
     @property
     def is_failing(self):
         return self.status == self.FAILING
+
+
+# ============================================================
+# WHAT THE MODELS ACTUALLY COST
+# ============================================================
+
+
+class ModelInvocation(models.Model):
+    """One call to a provider, with what it consumed.
+
+    Before this, the only ceiling in the harness was `Supervisor`'s dispatch
+    counter, which counts *agents* rather than tokens. That catches a routing
+    loop and nothing else: one agent making forty thousand-token calls inside a
+    single dispatch reads as one dispatch, and the run that discovers it is the
+    invoice.
+
+    Written from the one place every chat response passes through, so an agent
+    cannot opt out by forgetting to report.
+
+    `cost_usd` is null when the price is unknown, never zero. A model nobody
+    has priced has not been established as free, and a zero here would be
+    summed into a total that reads as authoritative -- which is the same
+    mistake the fallback drafts made, in a column instead of a paragraph.
+    `price_source` is copied from the catalogue at the time of the call so a
+    total can say how much of itself it actually knows.
+    """
+
+    provider = models.CharField(max_length=40, db_index=True)
+    model_id = models.CharField(max_length=200)
+
+    agent = models.CharField(max_length=60, blank=True, default='', db_index=True)
+    role = models.CharField(max_length=20, blank=True, default='')
+
+    # Free text rather than a foreign key: the same counter has to serve an
+    # EvalRun, an editorial pipeline run and an ad-hoc management command, and
+    # a nullable FK per caller would be three columns that are almost always
+    # null. Indexed because "what did that run cost" is the whole question.
+    label = models.CharField(max_length=120, blank=True, default='', db_index=True)
+    run_id = models.IntegerField(null=True, blank=True, db_index=True)
+
+    prompt_tokens = models.PositiveIntegerField(default=0)
+    completion_tokens = models.PositiveIntegerField(default=0)
+    total_tokens = models.PositiveIntegerField(default=0)
+
+    # Broken out because they bill differently and the split is the first thing
+    # you want when a cost looks wrong. On the probe that led to this table, 89
+    # of 124 output tokens were reasoning -- a bill dominated by tokens nobody
+    # ever sees. Cached input is usually charged at a discount, which this does
+    # not yet model; recording it now means the day it does, the history is
+    # already there to recompute from.
+    reasoning_tokens = models.PositiveIntegerField(default=0)
+    cached_tokens = models.PositiveIntegerField(default=0)
+
+    cost_usd = models.DecimalField(
+        max_digits=12, decimal_places=6, null=True, blank=True,
+        help_text="Null when the model has no known price. Never zero for an unpriced call.",
+    )
+    price_source = models.CharField(
+        max_length=20, blank=True, default='',
+        help_text="Which authority the price came from, copied at call time.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['agent', '-created_at']),
+            models.Index(fields=['provider', '-created_at']),
+        ]
+
+    def __str__(self):
+        cost = f"${self.cost_usd:.6f}" if self.cost_usd is not None else "unpriced"
+        return f"{self.provider}/{self.model_id} {self.total_tokens}tok {cost}"
