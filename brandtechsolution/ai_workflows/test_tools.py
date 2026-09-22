@@ -4,12 +4,11 @@ The move was exactly a move: the assistant kept the same three tools, in the
 same order, with the user info tool still bound per call and still absent for
 an anonymous caller.
 
-Step 7 added a fourth, `current_time`. That is not new capability so much as
-relocated capability -- the clock used to be interpolated into the system
-prompt on every request, at the front of the cached prefix, so the assistant's
-prompt could never get a cache hit. The counts here are pinned so that adding
-a tool stays a deliberate act with a suite placement, rather than something
-that happens to an agent nobody was thinking about.
+Step 7 added `current_time` and step 9 added `search_knowledge` and
+`fetch_url`. The counts here are pinned so that adding a tool stays a
+deliberate act with a suite placement, rather than something that happens to an
+agent nobody was thinking about -- which has now worked three times, most
+recently by catching step 9 shipping without this file updated.
 """
 from unittest.mock import patch
 
@@ -118,12 +117,19 @@ class SuiteTests(TestCase):
         nobody considered when adding it."""
         self.assertEqual(suite_for("unlisted", registry=self.registry), [])
 
-    def test_the_newsroom_suites_are_declared_and_empty(self):
-        """Empty on purpose: giving the verifier real sources changes what it
-        can do, and that belongs behind its own review."""
-        for agent in ("fact_verifier", "research", "writer"):
-            self.assertIn(agent, SUITES)
-            self.assertEqual(SUITES[agent], [])
+    def test_every_agent_has_a_declared_suite_even_an_empty_one(self):
+        """Step 4's concern, which outlived the empty suites themselves.
+
+        These were all `[]` until step 9 gave the newsroom real tools -- the
+        assertion that they were empty has moved to
+        `test_newsroom_tools.SuiteTests`, where the question is who got what.
+        What survives here is the rule that made that reviewable: a suite is
+        declared for every agent, so a gap reads as a decision rather than as
+        an oversight.
+        """
+        for agent in ("trend_intelligence", "trend_prediction", "research",
+                      "fact_verifier", "writer", "social", "newsroom"):
+            self.assertIn(agent, SUITES, f"{agent} has no declared suite")
 
     def test_every_suite_names_only_registered_tools(self):
         """Guards against a suite drifting ahead of the registry."""
@@ -134,19 +140,21 @@ class SuiteTests(TestCase):
 
 
 class BuiltinRegistrationTests(TestCase):
+    BUILTINS = [
+        "current_time", "fetch_url", "search_blog_posts", "search_knowledge",
+        "search_projects", "user_info",
+    ]
+
     def test_every_builtin_tool_registers(self):
         registry = register_builtin_tools(ToolRegistry())
-        self.assertEqual(
-            registry.names(),
-            ["current_time", "search_blog_posts", "search_projects", "user_info"],
-        )
+        self.assertEqual(registry.names(), self.BUILTINS)
 
     def test_registering_twice_is_harmless(self):
         """It is called on every ChatAssistant construction."""
         registry = ToolRegistry()
         register_builtin_tools(registry)
         register_builtin_tools(registry)
-        self.assertEqual(len(registry.names()), 4)
+        self.assertEqual(len(registry.names()), len(self.BUILTINS))
 
     def test_the_clock_tool_answers_without_a_caller(self):
         """Static for every user, so it is registered rather than bound."""
