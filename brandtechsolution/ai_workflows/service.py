@@ -288,11 +288,13 @@ class ChatAssistant(Agent):
         self.memory = Memory(scope=self.memory_scope)
         self.checkpointer = self.memory.thread(thread_id)
 
-        # Raises ModelUnavailable rather than returning None. The old code
-        # built its own client here and an unbuildable one took the whole
-        # constructor down with a vendor traceback; this is the same failure
-        # with a type the callers can route on.
-        self.model = get_model(self.model_role, agent=self.name)
+        # Resolved on first use, not here. `get_history` only needs the
+        # checkpointer, and making the constructor resolve a model meant that
+        # during a provider outage a user could not even read what they had
+        # already said -- the history endpoint returned 500. Deferring it also
+        # keeps the tool wiring below testable without a credential.
+        self._model = None
+        self._app = None
 
         # Tools come from the harness registry. "Which agent can reach what"
         # lives in one table (harness/tools.py SUITES) rather than in each
@@ -313,7 +315,27 @@ class ChatAssistant(Agent):
         logger.info(f"[ChatAssistant] Tools configured: {len(self.tools)} tools")
 
         self._system_prompt = system_prompt(self.voiced_persona())
-        self._create_agent()
+
+    @property
+    def model(self):
+        """The chat model, resolved on first use.
+
+        Raises `ModelUnavailable` rather than returning None -- that is the
+        whole point of `get_model` existing. `allow_fallback` is honoured, so
+        the assistant survives one provider going down.
+        """
+        if self._model is None:
+            self._model = get_model(
+                self.model_role, agent=self.name,
+                allow_fallback=self.allow_fallback,
+            )
+        return self._model
+
+    @property
+    def app(self):
+        if self._app is None:
+            self._app = self._create_agent()
+        return self._app
 
     def _create_agent(self):
         """Create the LangChain agent with middleware."""
@@ -342,13 +364,14 @@ class ChatAssistant(Agent):
             # reintroducing some.
             return [SystemMessage(content=self._system_prompt)] + trimmed
 
-        self.app = create_react_agent(
+        app = create_react_agent(
             model=self.model,
             tools=self.tools,
             prompt=_modifier,
             checkpointer=self.checkpointer,
         )
         logger.info("[ChatAssistant] Agent created successfully with checkpointer")
+        return app
 
     # ------------------------------------------------------------------
     # harness entry point
@@ -598,8 +621,9 @@ def get_chatbot_response(
     try:
         assistant = ChatAssistant(thread_id=thread_id, user_id=user_id)
     except AgentError as exc:
-        # Construction resolves the model, so it can fail before any message is
-        # sent. Recorded here because there is no agent instance to record it.
+        # Construction no longer resolves a model, so this is rarer than it
+        # was -- but a bad thread_id or a missing checkpointer table still
+        # lands here, and there is no agent instance to record it against.
         from ai_workflows.harness.alerts import record_failure
 
         logger.error("[get_chatbot_response] %s", exc)

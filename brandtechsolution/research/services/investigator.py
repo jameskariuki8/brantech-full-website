@@ -17,7 +17,7 @@ import logging
 from pydantic import Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, ask, require
+from ai_workflows.harness.contract import AgentOutput, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from research.models import ResearchDossier
@@ -135,15 +135,12 @@ class ResearchAgent(Agent):
 
         evidence = self.gather_evidence(EVIDENCE_BRIEF.format(**fields))
 
-        findings = ask(
-            self.voiced_persona(),
+        findings = self.ask(
             RESEARCH_PROMPT.format(
                 evidence=EVIDENCE_HEADER.format(evidence=evidence) if evidence else "",
                 **fields,
             ),
             Dossier,
-            role=self.model_role,
-            agent=self.name,
         )
         if findings.usable:
             require(findings, *REQUIRED, agent=self.name)

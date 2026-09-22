@@ -16,7 +16,7 @@ import logging
 from pydantic import Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, ask, require
+from ai_workflows.harness.contract import AgentOutput, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle
@@ -138,8 +138,7 @@ class AIWriterAgent(Agent):
             verified_text=report.verified_dossier[:2000],
         ))
 
-        draft = ask(
-            self.voiced_persona(),
+        draft = self.ask(
             ARTICLE_PROMPT.format(
                 continuity=(
                     CONTINUITY_HEADER.format(continuity=continuity) if continuity else ""
@@ -154,8 +153,6 @@ class AIWriterAgent(Agent):
                 focus_area=strategy.get('focus_area', 'the technology and its adoption'),
             ),
             ArticleDraft,
-            role=self.model_role,
-            agent=self.name,
         )
         if draft.usable:
             require(draft, *REQUIRED, agent=self.name)

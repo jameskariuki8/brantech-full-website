@@ -334,6 +334,17 @@ class Provider(models.Model):
     # Lower sorts first when resolving a role to a model. An operator reorders
     # preference here rather than in code.
     preference = models.PositiveSmallIntegerField(default=100)
+
+    default_model = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text=(
+            "Which model to send chat requests to for this provider. Required: "
+            "a provider with a working key and no chosen model is skipped, "
+            "because picking one out of a five-hundred-row catalogue by "
+            "heuristic is a guess whose wrong answers look exactly like its "
+            "right ones. Gemini falls back to config.gemini_chat_model."
+        ),
+    )
     enabled = models.BooleanField(
         default=True,
         help_text="Off keeps a provider out of resolution even with a valid key.",

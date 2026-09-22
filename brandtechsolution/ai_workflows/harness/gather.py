@@ -35,7 +35,7 @@ MAX_RESULT_CHARS = 8_000
 
 
 def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
-           max_steps=DEFAULT_MAX_STEPS):
+           max_steps=DEFAULT_MAX_STEPS, allow_fallback=True):
     """Let the model use `tools` to answer `brief`, and return what it found.
 
     Returns the evidence as text: each tool call and its result, followed by
@@ -51,7 +51,7 @@ def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
     if not tools:
         return ""
 
-    model = get_model(role, tools=tools, agent=agent)
+    model = get_model(role, tools=tools, agent=agent, allow_fallback=allow_fallback)
     by_name = {tool.name: tool for tool in tools}
 
     messages = [

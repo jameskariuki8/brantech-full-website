@@ -17,7 +17,7 @@ import logging
 from pydantic import Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, ask, require
+from ai_workflows.harness.contract import AgentOutput, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from research.models import ResearchDossier, VerifiedFactReport
@@ -136,15 +136,12 @@ class FactVerificationAgent(Agent):
         # the dossier cites before it forms a view.
         evidence = self.gather_evidence(EVIDENCE_BRIEF.format(**fields))
 
-        audit = ask(
-            self.voiced_persona(),
+        audit = self.ask(
             VERIFICATION_PROMPT.format(
                 evidence=EVIDENCE_HEADER.format(evidence=evidence) if evidence else "",
                 **fields,
             ),
             FactAudit,
-            role=self.model_role,
-            agent=self.name,
         )
         if audit.usable:
             # An audit that sanitised the dossier down to nothing has not

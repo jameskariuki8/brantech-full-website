@@ -124,20 +124,26 @@ class ModelAccessTests(TestCase):
         self.assertEqual(ROLE_TEMPERATURE[ModelRole.PRECISE], 0.1)   # verifier
         self.assertEqual(ROLE_TEMPERATURE[ModelRole.CREATIVE], 0.4)  # writer, social
 
+    # Patched at the adapter, which is where a credential is defined. It used
+    # to be enough to blank `llm.config`, but the multi-provider work moved
+    # credential lookup into the adapters so there would be exactly one answer
+    # to "where does this provider's key come from" -- and a test that blanks
+    # one of several module-level `config` references would pass or fail on
+    # which import it happened to name.
+    NO_KEY = "ai_workflows.harness.providers.GeminiAdapter.credential"
+
     def test_a_missing_key_raises_rather_than_returning_none(self):
         """The whole reason this function exists.
 
         `self.model = None` is what let a rotated key become published
         fabrications instead of a failed run.
         """
-        with patch("ai_workflows.harness.llm.config") as cfg:
-            cfg.google_api_key = ""
+        with patch(self.NO_KEY, return_value=""):
             with self.assertRaises(ModelUnavailable):
                 get_model(ModelRole.PRECISE, agent="verifier")
 
     def test_the_error_names_the_agent_that_wanted_the_model(self):
-        with patch("ai_workflows.harness.llm.config") as cfg:
-            cfg.google_api_key = ""
+        with patch(self.NO_KEY, return_value=""):
             with self.assertRaises(ModelUnavailable) as caught:
                 get_model(ModelRole.PRECISE, agent="verifier")
         self.assertEqual(caught.exception.agent, "verifier")

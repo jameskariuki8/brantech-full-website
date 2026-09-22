@@ -113,7 +113,7 @@ def _structured(model, schema):
 
 
 def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
-        retries=1, agent=None, context=None):
+        retries=1, agent=None, context=None, allow_fallback=True, provider=None):
     """Ask the model for `schema`, and return it validated.
 
     On a shape failure the model is asked again with the validation error
@@ -123,7 +123,13 @@ def ask(persona, prompt, schema, *, role=ModelRole.ANALYTIC, model=None,
     than a failure, which is the lesson the fallback drafts taught.
     """
     if model is None:
-        model = get_model(role, agent=agent)
+        # `allow_fallback` reaches the resolver from here. An agent whose
+        # output is compared across runs must not drift between providers
+        # mid-comparison, and a flag that never reached the thing it describes
+        # would be a decoration.
+        model = get_model(
+            role, agent=agent, allow_fallback=allow_fallback, provider=provider,
+        )
 
     messages = list(context.messages) if context is not None else []
     if persona is not None and not messages:

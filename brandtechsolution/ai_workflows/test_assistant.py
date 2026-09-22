@@ -36,9 +36,16 @@ class FakeGraph:
 
 
 def _assistant(reply="Hello.", **kwargs):
-    with patch("ai_workflows.service.get_model"), \
-            patch("ai_workflows.service.create_react_agent", return_value=FakeGraph(reply)):
-        return ChatAssistant(thread_id="t-1", **kwargs)
+    """An assistant with its graph injected.
+
+    Injected rather than patched at construction: since the model is resolved
+    lazily -- so that reading history does not require a working provider --
+    the graph is not built until first use, by which point a patch applied
+    around the constructor has long since exited.
+    """
+    assistant = ChatAssistant(thread_id="t-1", **kwargs)
+    assistant._app = FakeGraph(reply)
+    return assistant
 
 
 REPLY_WITH_METADATA = """Teklora builds responsive sites with Django and React.
@@ -223,3 +230,42 @@ class HarnessContractTests(TestCase):
         reintroduce some."""
         assistant = _assistant()
         self.assertEqual(assistant._system_prompt, system_prompt(assistant.voiced_persona()))
+
+
+class NoProviderTests(TestCase):
+    """History has to survive an outage the assistant itself cannot."""
+
+    def test_history_is_readable_with_no_usable_provider(self):
+        """The regression that made this lazy.
+
+        Resolving a model in the constructor meant that during a provider
+        outage a user could not read what they had already said -- the history
+        endpoint returned 500, which is a worse experience than the outage.
+        """
+        from ai_workflows.models import Provider as ProviderRow
+
+        ProviderRow.objects.all().delete()
+        with patch("ai_workflows.harness.catalogue.can_serve", return_value=False):
+            assistant = ChatAssistant(thread_id="t-outage")
+            self.assertEqual(assistant.get_history(), [])
+
+    def test_sending_a_message_during_the_outage_still_fails_loudly(self):
+        """Lazy is not the same as forgiving."""
+        from ai_workflows.models import Provider as ProviderRow
+
+        ProviderRow.objects.all().delete()
+        with patch("ai_workflows.harness.catalogue.can_serve", return_value=False):
+            assistant = ChatAssistant(thread_id="t-outage")
+            result = assistant.send_message("hi")
+
+        self.assertIn("can't reach my tools", result["response"])
+
+    def test_the_tools_are_still_wired_without_a_provider(self):
+        """Tool resolution must not depend on a model being reachable."""
+        from ai_workflows.models import Provider as ProviderRow
+
+        ProviderRow.objects.all().delete()
+        with patch("ai_workflows.harness.catalogue.can_serve", return_value=False):
+            assistant = ChatAssistant(thread_id="t-outage")
+
+        self.assertEqual(len(assistant.tools), 3)

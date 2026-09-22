@@ -297,32 +297,47 @@ class ManualPriceFileTests(TestCase):
 
 
 class ResolutionTests(TestCase):
+    """`resolve` dropped its unused `role` argument when it learned to pick a
+    model: role decides temperature, not which model answers.
+
+    Each provider needs a chosen model and a credential to qualify, so both are
+    supplied here. What each of those conditions does on its own is covered in
+    test_multiprovider.
+    """
+
     def setUp(self):
         for name, preference in (("gemini", 10), ("openrouter", 50)):
-            Provider.objects.create(name=name, status=Provider.ACTIVE, preference=preference)
+            Provider.objects.create(
+                name=name, status=Provider.ACTIVE, preference=preference,
+                default_model=f"{name}-model",
+            )
             CatalogueEntry.objects.create(provider=name, model_id=f"{name}-model")
 
+        serving = patch("ai_workflows.harness.catalogue.can_serve", lambda n: True)
+        serving.start()
+        self.addCleanup(serving.stop)
+
     def test_the_preferred_provider_comes_first(self):
-        self.assertEqual(resolve("analytic")[0][0], "gemini")
+        self.assertEqual(resolve()[0][0], "gemini")
 
     def test_an_explicit_pin_wins(self):
         pinned = ("anthropic", "claude-opus-5")
-        self.assertEqual(resolve("analytic", pinned=pinned), [pinned])
+        self.assertEqual(resolve(pinned=pinned), [pinned])
 
     def test_fallback_offers_every_usable_provider(self):
-        self.assertEqual(len(resolve("analytic")), 2)
+        self.assertEqual(len(resolve()), 2)
 
     def test_refusing_fallback_offers_only_one(self):
         """A verifier compared across runs must not change model silently."""
-        self.assertEqual(len(resolve("analytic", allow_fallback=False)), 1)
+        self.assertEqual(len(resolve(allow_fallback=False)), 1)
 
     def test_an_inactive_provider_is_skipped(self):
         Provider.objects.filter(name="gemini").update(status=Provider.CANDIDATE)
-        self.assertEqual(resolve("analytic")[0][0], "openrouter")
+        self.assertEqual(resolve()[0][0], "openrouter")
 
     def test_a_disabled_provider_is_skipped(self):
         Provider.objects.filter(name="gemini").update(enabled=False)
-        self.assertEqual(resolve("analytic")[0][0], "openrouter")
+        self.assertEqual(resolve()[0][0], "openrouter")
 
 
 class RefreshTests(TestCase):

@@ -15,7 +15,7 @@ import logging
 from pydantic import BaseModel, Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, ask
+from ai_workflows.harness.contract import AgentOutput
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from trends.models import TrendPrediction, TrendTopic
@@ -90,12 +90,9 @@ class TrendPredictionAgent(Agent):
         timeframe = request.payload.get("timeframe", "next_quarter")
         signals = request.payload["signals_text"]
 
-        forecasts = ask(
-            self.voiced_persona(),
+        forecasts = self.ask(
             PREDICTION_PROMPT.format(timeframe=timeframe, signals_text=signals),
             ForecastSet,
-            role=self.model_role,
-            agent=self.name,
         )
         return AgentResult(
             agent=self.name, output=forecasts,

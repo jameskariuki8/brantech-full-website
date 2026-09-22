@@ -96,6 +96,21 @@ class Agent(ABC):
         record_success(self.name)
         return result
 
+    def ask(self, prompt, schema, **kwargs):
+        """Ask this agent's model for `schema`.
+
+        Fills in the persona, the role, the agent name and -- the one that
+        matters -- `allow_fallback`. Six agents calling `contract.ask` directly
+        meant six places to remember a flag, which is how `allow_fallback`
+        spent its first four steps being a field nobody read.
+        """
+        from ai_workflows.harness.contract import ask
+
+        kwargs.setdefault("role", self.model_role)
+        kwargs.setdefault("agent", self.name)
+        kwargs.setdefault("allow_fallback", self.allow_fallback)
+        return ask(self.voiced_persona(), prompt, schema, **kwargs)
+
     def gather_evidence(self, brief, *, context=None, max_steps=None):
         """Look things up with this agent's tool suite, and return what it found.
 
@@ -120,6 +135,7 @@ class Agent(ABC):
             self.voiced_persona(), brief, tools,
             role=self.model_role, agent=self.name,
             max_steps=max_steps or DEFAULT_MAX_STEPS,
+            allow_fallback=self.allow_fallback,
         )
 
     def voiced_persona(self):

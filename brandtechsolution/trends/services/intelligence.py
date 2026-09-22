@@ -17,7 +17,7 @@ import logging
 from pydantic import Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, ask
+from ai_workflows.harness.contract import AgentOutput
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from trends.models import TrendTopic
@@ -99,8 +99,7 @@ class TrendIntelligenceAgent(Agent):
 
     def run(self, request: AgentRequest) -> AgentResult:
         topic = request.payload["topic"]
-        scores = ask(
-            self.voiced_persona(),
+        scores = self.ask(
             SCORING_PROMPT.format(
                 title=topic.title,
                 category=topic.category,
@@ -108,8 +107,6 @@ class TrendIntelligenceAgent(Agent):
                 source=topic.source,
             ),
             TrendScores,
-            role=self.model_role,
-            agent=self.name,
         )
         return AgentResult(
             agent=self.name, output=scores,

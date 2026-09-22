@@ -16,7 +16,7 @@ import logging
 from pydantic import Field
 
 from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
-from ai_workflows.harness.contract import AgentOutput, ask, require
+from ai_workflows.harness.contract import AgentOutput, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle, SocialPackage
@@ -98,8 +98,7 @@ class MultiPlatformContentAgent(Agent):
     def run(self, request: AgentRequest) -> AgentResult:
         article = request.payload["article"]
 
-        package = ask(
-            self.voiced_persona(),
+        package = self.ask(
             SOCIAL_PROMPT.format(
                 title=article.title,
                 executive_summary=article.executive_summary,
@@ -107,8 +106,6 @@ class MultiPlatformContentAgent(Agent):
                 african_perspective=article.african_perspective,
             ),
             SocialEcosystem,
-            role=self.model_role,
-            agent=self.name,
         )
         if package.usable:
             require(package, *REQUIRED, agent=self.name)

@@ -17,6 +17,8 @@ from pathlib import Path
 
 from django.utils import timezone
 
+from brandtechsolution.config import config
+
 from ai_workflows.harness.providers import ADAPTERS, get_adapter
 
 logger = logging.getLogger(__name__)
@@ -250,26 +252,137 @@ def refresh(providers=None):
     return {"providers": results, "borrowed": borrowed, "manual": manual}
 
 
-def resolve(role, *, pinned=None, allow_fallback=True):
-    """Pick a (provider, model_id) for `role`.
+def chosen_model(provider_name):
+    """The model this deployment has chosen for `provider_name`, or "".
 
-    Explicit pin wins; otherwise the first usable provider in preference
-    order. Returns a list so a caller that may fall over to the next candidate
-    has one, and a single-element list when it may not.
+    Gemini falls back to `config.gemini_chat_model`, which is the choice this
+    deployment has always had and the reason adding the other providers changes
+    nothing for it. Every other provider must be told explicitly.
     """
-    from ai_workflows.models import CatalogueEntry, Provider
+    from ai_workflows.models import Provider
+
+    row = Provider.objects.filter(name=provider_name).first()
+    if row is not None and row.default_model:
+        return row.default_model
+
+    if provider_name == "gemini":
+        return config.gemini_chat_model
+    return ""
+
+
+def model_is_serviceable(provider_name, model_id):
+    """Is `model_id` still something we can send a request to?
+
+    Checked against the catalogue rather than assumed, because the catalogue is
+    refreshed from the provider's own listing and is therefore the first place
+    a retirement shows up. A model absent from the catalogue entirely is
+    allowed through: the operator may have chosen it before the first refresh,
+    and refusing would make the catalogue a prerequisite for sending any
+    request at all.
+    """
+    from ai_workflows.models import CatalogueEntry
+
+    entry = CatalogueEntry.objects.filter(
+        provider=provider_name, model_id=model_id,
+    ).first()
+    if entry is None:
+        return True
+    if not entry.available:
+        return False
+    if entry.deprecated_at and entry.deprecated_at <= timezone.now():
+        return False
+    return True
+
+
+def can_serve(provider_name):
+    """Does `provider_name` have what it needs to answer a request?
+
+    Distinct from `Provider.usable`, which is about the catalogue. OpenRouter
+    is the case that forces the distinction: its model listing is public, so it
+    verifies and goes `active` with no key at all -- and then cannot serve a
+    single request. Reporting that as ready would be a green light for
+    something guaranteed to fail on first use, which is the class of misleading
+    signal this harness keeps removing.
+    """
+    from ai_workflows.harness.providers import get_adapter
+
+    try:
+        return bool(get_adapter(provider_name).credential())
+    except KeyError:
+        # A Provider row with no adapter is a leftover from a rename. It cannot
+        # serve anything, and saying so is better than raising here.
+        logger.warning("[catalogue] no adapter for provider %r", provider_name)
+        return False
+
+
+def resolve(*, pinned=None, allow_fallback=True):
+    """(provider, model_id) pairs to try, in preference order.
+
+    A provider qualifies when it is enabled, verified, and has a model chosen
+    for it. That last condition is the one that matters: the catalogue holds
+    five hundred models, and picking one by heuristic is the sort of silent
+    guess this harness exists to remove -- a wrong guess produces answers that
+    look exactly like right ones, at a price nobody chose.
+
+    So a provider with a working key and no chosen model is skipped and said
+    so, once per resolution. That is a configuration gap with an obvious fix,
+    not an outage.
+
+    Returns a list so a caller that may fall over to the next candidate has
+    one, and a single-element list when it may not.
+    """
+    from ai_workflows.models import Provider
 
     if pinned:
         return [pinned]
 
-    usable = [p for p in Provider.objects.all() if p.usable]
+    if not Provider.objects.exists():
+        # The catalogue has never been refreshed. Gemini is the configured
+        # baseline -- `google_api_key` is the one credential `config` requires
+        # -- so it has to work on a fresh install without anyone running a
+        # management command first. Making the catalogue a *prerequisite* for
+        # sending any request would turn a new deployment into a puzzle.
+        #
+        # Deliberately only when there are no rows at all. Once a refresh has
+        # run, an operator disabling every provider means it, and quietly
+        # re-enabling Gemini behind their back would be worse than failing.
+        if can_serve("gemini"):
+            logger.info(
+                "[catalogue] no providers recorded yet; using the configured "
+                "Gemini model. Run refresh_catalogue to enable the rest."
+            )
+            return [("gemini", config.gemini_chat_model)]
+        return []
+
     candidates = []
-    for provider in usable:
-        entry = (
-            CatalogueEntry.objects.filter(provider=provider.name, available=True)
-            .order_by("model_id").first()
-        )
-        if entry is not None:
-            candidates.append((provider.name, entry.model_id))
+    for provider in Provider.objects.order_by("preference", "name"):
+        if not provider.usable:
+            continue
+
+        if not can_serve(provider.name):
+            logger.info(
+                "[catalogue] %s is verified but has no credential to serve "
+                "requests with; skipping.", provider.name,
+            )
+            continue
+
+        model_id = chosen_model(provider.name)
+        if not model_id:
+            logger.info(
+                "[catalogue] %s is verified but has no chosen model; skipping. "
+                "Set one with `manage.py providers --set %s=<model-id>`.",
+                provider.name, provider.name,
+            )
+            continue
+
+        if not model_is_serviceable(provider.name, model_id):
+            logger.warning(
+                "[catalogue] %s is set to %s, which the catalogue reports as "
+                "unavailable or retired; skipping.",
+                provider.name, model_id,
+            )
+            continue
+
+        candidates.append((provider.name, model_id))
 
     return candidates[:1] if not allow_fallback else candidates
