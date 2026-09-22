@@ -341,7 +341,11 @@ def totals(*, since=None, agent=None, label=None, run_id=None):
     """Aggregate recorded spend, and say how much of it is actually known.
 
     Returns the same shape as a `Ledger` so a live run and a historical query
-    read the same way.
+    read the same way -- with one difference worth knowing. A live ledger
+    counts calls that reported no tokens; this cannot, because such a call
+    writes no row by design. So `complete` here means "every recorded call was
+    priced", not "every call that happened is in this total". The gap is
+    visible in the logs, at `[usage] ... reported no token counts`.
     """
     from django.db.models import Count, Q, Sum
 

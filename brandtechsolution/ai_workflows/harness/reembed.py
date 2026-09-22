@@ -125,12 +125,25 @@ def estimate_tokens(documents):
     )
 
 
-def estimate_cost(space, tokens):
-    """(cost, price_source), cost None when the model has no known price."""
+def price_entry(space):
+    """The catalogue row that prices this space's model, or None."""
     from ai_workflows.harness.usage import price_for
 
     entry = price_for(space.provider, space.model_id)
     if entry is None or entry.input_price_per_mtok is None:
+        return None
+    return entry
+
+
+def estimate_cost(space, tokens, entry=None):
+    """(cost, price_source), cost None when the model has no known price.
+
+    `entry` is accepted so a caller pricing document-by-document looks the
+    model up once rather than once per document -- the difference between one
+    query and one per row of the corpus.
+    """
+    entry = entry if entry is not None else price_entry(space)
+    if entry is None:
         return None, ""
     return float(entry.input_price_per_mtok) * tokens / 1_000_000, entry.price_source
 
@@ -152,8 +165,8 @@ def plan(space, *, limit=None, budget_usd=None, scope=None, kind=None):
         ranked = ranked[:limit]
 
     if budget_usd is not None:
-        _, source = estimate_cost(space, 1_000_000)
-        if source == "":
+        entry = price_entry(space)
+        if entry is None:
             raise ValueError(
                 f"{space.provider}/{space.model_id} has no price in the "
                 f"catalogue, so a ${budget_usd:.2f} budget cannot be enforced "
@@ -161,7 +174,7 @@ def plan(space, *, limit=None, budget_usd=None, scope=None, kind=None):
                 f"or add the price to harness/pricing.toml and re-run "
                 f"`manage.py refresh_catalogue`."
             )
-        ranked = _within_budget(space, ranked, budget_usd)
+        ranked = _within_budget(space, ranked, budget_usd, entry)
 
     documents = ranked
     tokens = estimate_tokens([document for document, _ in documents])
@@ -178,15 +191,18 @@ def plan(space, *, limit=None, budget_usd=None, scope=None, kind=None):
     )
 
 
-def _within_budget(space, ranked, budget_usd):
-    """The most important prefix of `ranked` that fits the budget."""
+def _within_budget(space, ranked, budget_usd, entry):
+    """The most important prefix of `ranked` that fits the budget.
+
+    Stops at the first document that would not fit rather than skipping it and
+    carrying on. The list is in importance order, so continuing past it would
+    quietly spend the remaining budget on less important documents than the
+    one it just declined.
+    """
     kept, spent = [], 0.0
     for document, score in ranked:
-        tokens = estimate_tokens([document])
-        cost, _ = estimate_cost(space, tokens)
-        if cost is None:
-            continue
-        if spent + cost > budget_usd:
+        cost, _ = estimate_cost(space, estimate_tokens([document]), entry)
+        if cost is None or spent + cost > budget_usd:
             break
         kept.append((document, score))
         spent += cost
