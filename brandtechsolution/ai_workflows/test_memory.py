@@ -324,8 +324,15 @@ class IndexingTests(MemoryTestCase):
 
     def test_an_unchanged_save_does_not_queue_work(self):
         """Publishing a post or toggling `featured` must not cost an embedding."""
+        from ai_workflows.harness.indexing import text_for
+
         post = BlogPost.objects.create(title="A post", excerpt="e", content="body")
-        self.memory.remember("body", title="A post", kind="blog_post", obj=post)
+        # The text production would have stored, not the bare content field:
+        # indexing embeds `get_embedding_text()`, which folds in the title,
+        # category and tags, and a stored hash of anything else would make
+        # every save look like an edit.
+        self.memory.remember(text_for(post), title="A post", kind="blog_post",
+                             obj=post)
 
         queued = self._index(post, kind="blog_post", text_field="content")
         self.assertFalse(queued)

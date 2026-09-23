@@ -199,3 +199,136 @@ class AssistantWiringTests(TestCase):
 
     def test_tools_can_still_be_switched_off_entirely(self):
         self.assertEqual(self._assistant(use_tools=False).tools, [])
+
+
+class SiteSearchTests(TestCase):
+    """The assistant's two search tools, on the one corpus.
+
+    They used to query `BlogPost.embedding` and `Project.embedding` directly:
+    one vector per row, no record of which model produced it, and a second
+    corpus alongside the one `Memory` maintains. Neither was ever fully
+    populated and neither knew about the other, so which answer the assistant
+    gave depended on which store its tools happened to read.
+    """
+
+    def setUp(self):
+        from knowledge_base.models import EmbeddingSpace
+
+        EmbeddingSpace.objects.filter(status=EmbeddingSpace.ACTIVE).update(
+            status=EmbeddingSpace.RETIRED,
+        )
+        self.space = EmbeddingSpace.objects.create(
+            provider="test", model_id="test-embed", dimensions=8,
+            status=EmbeddingSpace.ACTIVE,
+        )
+
+        from ai_workflows.harness.memory import Memory
+
+        self.memory = Memory(embedder=_StubEmbedder(), scope="site")
+
+    def _remember(self, title, text, kind, scope="site"):
+        from ai_workflows.harness.memory import Memory
+
+        return Memory(embedder=_StubEmbedder(), scope=scope).remember(
+            text, title=title, kind=kind,
+        )
+
+    def _search(self, tool, query):
+        """Run a search tool with the embedder stubbed, as the tools resolve
+        it lazily through `llm.get_embedder`."""
+        with patch("ai_workflows.harness.llm.get_embedder",
+                   return_value=_StubEmbedder()):
+            return tool(query)
+
+    def test_projects_are_found_through_semantic_memory(self):
+        from ai_workflows.tools import search_projects
+
+        self._remember("A school system", "report cards and fees", "project")
+        result = self._search(search_projects.func, "school")
+
+        self.assertIn("A school system", result)
+
+    def test_a_project_search_does_not_return_blog_posts(self):
+        """The kinds are separate tools because they are separate questions.
+        Folding them together would let a post about a project outrank the
+        project."""
+        from ai_workflows.tools import search_projects
+
+        self._remember("A blog post", "about school systems", "blog_post")
+        result = self._search(search_projects.func, "school")
+
+        self.assertNotIn("A blog post", result)
+
+    def test_the_editorial_corpus_stays_out_of_the_assistant_s_answers(self):
+        """`scope` is what keeps the newsroom's working notes out of a
+        visitor's chat window. An unscoped recall would return both."""
+        from ai_workflows.tools import search_projects
+
+        self._remember("Internal dossier", "school systems", "project",
+                       scope="editorial")
+        result = self._search(search_projects.func, "school")
+
+        self.assertNotIn("Internal dossier", result)
+
+    def test_an_unsearchable_memory_says_so_rather_than_nothing(self):
+        """"Nothing found" and "the search is broken" must not read alike: a
+        model told nothing was found will confidently say so."""
+        from ai_workflows.harness.errors import MemoryUnavailable
+        from ai_workflows.tools import search_projects
+
+        with patch("ai_workflows.harness.memory.Memory.recall",
+                   side_effect=MemoryUnavailable("no active space")):
+            result = search_projects.func("school")
+
+        self.assertIn("could not be searched", result)
+        self.assertNotIn("No relevant", result)
+
+
+class EmbeddingTextTests(TestCase):
+    """What gets embedded for a row."""
+
+    def test_the_model_s_own_builder_wins(self):
+        """`get_embedding_text()` folds in the title, category and tags. Using
+        a single field would silently embed less than the command it replaced,
+        and a project would stop matching on its technologies."""
+        from ai_workflows.harness.indexing import text_for
+        from brand.models import Project
+
+        project = Project.objects.create(
+            title="HoloDesk", short_description="Rust, WebGPU",
+            description="a spatial workspace",
+        )
+
+        text = text_for(project, "description")
+        self.assertIn("HoloDesk", text)
+        self.assertIn("Rust, WebGPU", text)
+        self.assertIn("a spatial workspace", text)
+
+    def test_a_broken_builder_falls_back_to_the_field(self):
+        from ai_workflows.harness.indexing import text_for
+        from brand.models import Project
+
+        project = Project.objects.create(title="T", description="the body")
+        with patch.object(Project, "get_embedding_text",
+                          side_effect=ValueError("boom")):
+            self.assertEqual(text_for(project, "description"), "the body")
+
+
+class _StubEmbedder:
+    """Deterministic vectors, so a test asserts on ranking rather than luck."""
+
+    def embed_query(self, text):
+        return self._vector(text)
+
+    def embed_documents(self, texts):
+        return [self._vector(text) for text in texts]
+
+    @staticmethod
+    def _vector(text):
+        lowered = (text or "").lower()
+        return [
+            1.0 if "school" in lowered else 0.0,
+            1.0 if "report" in lowered else 0.0,
+            1.0 if "blog" in lowered else 0.0,
+            1.0, 0.0, 0.0, 0.0, 0.0,
+        ]

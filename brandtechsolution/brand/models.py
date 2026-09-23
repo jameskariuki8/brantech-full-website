@@ -41,7 +41,15 @@ class BlogPost(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    # Vector embedding for semantic search (3072 dimensions for Gemini embedding-001)
+    # DEAD COLUMN. Nothing writes this and nothing reads it. Semantic search
+    # moved to knowledge_base.Embedding, which records which model produced
+    # each vector and so can survive a change of embedding model -- this one
+    # holds a single unlabelled vector and cannot. Whatever is in here is
+    # whatever `init_vector_stores` left the last time it wrote columns.
+    #
+    # Kept rather than dropped so migration 0003_backfill_embeddings stays
+    # reversible: unapplying it copies the vectors back here. It comes out
+    # once that rollback is no longer worth keeping.
     embedding = VectorField(dimensions=3072, null=True, blank=True)
 
     class Meta:
@@ -90,7 +98,15 @@ class Project(models.Model):
     featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    # Vector embedding for semantic search (3072 dimensions for Gemini embedding-001)
+    # DEAD COLUMN. Nothing writes this and nothing reads it. Semantic search
+    # moved to knowledge_base.Embedding, which records which model produced
+    # each vector and so can survive a change of embedding model -- this one
+    # holds a single unlabelled vector and cannot. Whatever is in here is
+    # whatever `init_vector_stores` left the last time it wrote columns.
+    #
+    # Kept rather than dropped so migration 0003_backfill_embeddings stays
+    # reversible: unapplying it copies the vectors back here. It comes out
+    # once that rollback is no longer worth keeping.
     embedding = VectorField(dimensions=3072, null=True, blank=True)
     
     # GitHub Integration Fields

@@ -5,8 +5,6 @@ from langchain.tools import tool
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from django.contrib.auth.models import User
 from brandtechsolution.config import config
-from brand.models import BlogPost, Project
-from pgvector.django import L2Distance
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,79 +49,64 @@ def get_embeddings():
     return _embeddings
 
 
-class BlogRetrieverTool:
-    """Tool for retrieving relevant blog posts using pgvector."""
-    
-    def __init__(self):
-        self.embeddings = get_embeddings()
-    
-    def search(self, query: str, k: int = 3) -> str:
-        """Search blog posts and return relevant content using vector similarity."""
-        try:
-            # Generate embedding for the query
-            query_embedding = self.embeddings.embed_query(query)
-            
-            # Query Django ORM using L2Distance for vector similarity
-            # Only search posts that have embeddings
-            # Use only() to fetch only required fields for better performance
-            results = (
-                BlogPost.objects
-                .filter(status='published')
-                .exclude(embedding__isnull=True)
-                .only('title', 'category', 'content')
-                .order_by(L2Distance('embedding', query_embedding))[:k]
-            )
-            
-            if not results:
-                return "No relevant blog posts found. The blog posts may not have been indexed yet."
-            
-            # Use list comprehension for better performance
-            output = [
-                f"Title: {post.title}\nCategory: {post.category}\n{post.content[:500]}..."
-                for post in results
-            ]
-            
-            return "\n\n---\n\n".join(output)
-            
-        except Exception as e:
-            return _handle_search_error(e, "blog posts")
+class _SiteSearch:
+    """Semantic search over one kind of site content.
 
+    Replaces two near-identical retrievers that queried `BlogPost.embedding`
+    and `Project.embedding` directly. Those columns hold one vector per row
+    with no record of which model produced it, so they could not survive a
+    change of embedding model -- and they were a second corpus alongside the
+    one `Memory` maintains, each half-populated, neither aware of the other.
 
-class ProjectRetrieverTool:
-    """Tool for retrieving relevant projects using pgvector."""
-    
-    def __init__(self):
-        self.embeddings = get_embeddings()
-    
+    Everything now reads the active embedding space, which means these tools
+    get the provenance, the re-embedding and the vector index for free.
+
+    `status='published'` used to be applied here, at query time. It is applied
+    at write time now -- see `ai_workflows/signals.py` -- because a
+    `MemoryDocument` has no status to filter on. That is the stricter of the
+    two: an unpublished draft is not in the corpus at all.
+    """
+
+    def __init__(self, kind, label):
+        self.kind = kind
+        self.label = label
+
     def search(self, query: str, k: int = 3) -> str:
-        """Search projects and return relevant content using vector similarity."""
+        from ai_workflows.harness.errors import AgentError
+        from ai_workflows.harness.memory import Memory
+
         try:
-            # Generate embedding for the query
-            query_embedding = self.embeddings.embed_query(query)
-            
-            # Query Django ORM using L2Distance for vector similarity
-            # Only search projects that have embeddings
-            # Use only() to fetch only required fields for better performance
-            results = (
-                Project.objects
-                .exclude(embedding__isnull=True)
-                .only('title', 'description')
-                .order_by(L2Distance('embedding', query_embedding))[:k]
+            records = Memory(scope="site").recall(
+                query, kind=self.kind, limit=k, scope="site",
             )
-            
-            if not results:
-                return "No relevant projects found. The projects may not have been indexed yet."
-            
-            # Use list comprehension for better performance
-            output = [
-                f"Project: {project.title}\n{project.description[:500]}..."
-                for project in results
-            ]
-            
-            return "\n\n---\n\n".join(output)
-            
-        except Exception as e:
-            return _handle_search_error(e, "projects")
+        except AgentError as exc:
+            # Distinguished from "nothing found" on purpose. A model told
+            # nothing was found will say so confidently; one told the search
+            # is down will not.
+            logger.warning("[search_%s] memory unavailable: %s", self.kind, exc)
+            return (
+                f"The {self.label} could not be searched right now. Treat this "
+                f"as no information rather than as an absence of {self.label}."
+            )
+        except Exception as exc:  # noqa: BLE001
+            return _handle_search_error(exc, self.label)
+
+        if not records:
+            return (
+                f"No relevant {self.label} found. Nothing matching that is "
+                f"indexed yet."
+            )
+
+        # The id is in the output because the assistant is asked for a
+        # `sources` block carrying one, and until now had no way to know it --
+        # every source it cited came back with `id: null`, so nothing could be
+        # linked to the thing it came from. A MemoryDocument knows which row
+        # it was built from, so this costs nothing to say.
+        return "\n\n---\n\n".join(
+            f"{record.title} (id {record.document.object_id}, "
+            f"similarity {record.score:.2f})\n{record.text[:500]}"
+            for record in records
+        )
 
 
 # Singleton instances
@@ -135,7 +118,7 @@ def get_blog_retriever():
     """Get or create blog retriever instance."""
     global _blog_retriever
     if _blog_retriever is None:
-        _blog_retriever = BlogRetrieverTool()
+        _blog_retriever = _SiteSearch("blog_post", "blog posts")
     return _blog_retriever
 
 
@@ -143,7 +126,7 @@ def get_project_retriever():
     """Get or create project retriever instance."""
     global _project_retriever
     if _project_retriever is None:
-        _project_retriever = ProjectRetrieverTool()
+        _project_retriever = _SiteSearch("project", "projects")
     return _project_retriever
 
 

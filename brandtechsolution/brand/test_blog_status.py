@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
@@ -162,23 +162,76 @@ class DraftLeakPathsTest(TestCase):
 
     # --- Leak 3: ai_workflows/tools.py BlogRetrieverTool.search ---
 
-    def test_blog_retriever_tool_excludes_drafts(self):
-        self.draft.embedding = [0.1] * 3072
-        self.draft.save(update_fields=["embedding"])
-        self.live.embedding = [0.1] * 3072
-        self.live.save(update_fields=["embedding"])
+    def test_the_chat_corpus_never_contains_a_draft(self):
+        """The retriever used to embed every post and filter drafts at query
+        time. Semantic memory has no status column, so that filter moved to
+        write time -- which is the stricter half of the trade: a draft is not
+        in the corpus at all, rather than one forgotten `.filter()` away from
+        being quoted to a visitor.
 
-        # Patch the embeddings seam (ai_workflows.tools.get_embeddings) so
-        # BlogRetrieverTool.__init__ never touches the real Gemini API.
-        mock_embeddings = MagicMock()
-        mock_embeddings.embed_query.return_value = [0.1] * 3072
-        with patch("ai_workflows.tools.get_embeddings", return_value=mock_embeddings):
-            from ai_workflows.tools import BlogRetrieverTool
-            tool = BlogRetrieverTool()
-            result = tool.search("anything", k=5)
+        Asserted against the store rather than against a search result,
+        because "the draft did not come back in the top 5" is also what a
+        leaking corpus looks like on a good day.
+        """
+        from django.contrib.contenttypes.models import ContentType
 
-        self.assertIn("Live published post", result)
-        self.assertNotIn("Secret draft post", result)
+        from knowledge_base.models import MemoryDocument
+
+        def indexed(post):
+            return MemoryDocument.objects.filter(
+                content_type=ContentType.objects.get_for_model(BlogPost),
+                object_id=post.pk,
+            ).exists()
+
+        with patch("ai_workflows.harness.indexing.queue_embedding") as queued:
+            self.draft.save()
+        self.assertFalse(queued.called, "a draft must not be queued for embedding")
+        self.assertFalse(indexed(self.draft))
+
+        with patch("ai_workflows.harness.indexing.queue_embedding") as queued:
+            self.live.save()
+        self.assertTrue(queued.called, "a published post must be indexed")
+
+    def test_unpublishing_withdraws_a_post_from_the_chat_corpus(self):
+        """Taking a post down has to remove it, not merely stop refreshing it.
+
+        `MemoryDocument` addresses its object through a content type and an id
+        rather than a foreign key, so nothing cascades and nothing expires.
+        Without an explicit withdrawal the assistant would keep answering from
+        content that was deliberately retracted.
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        from knowledge_base.models import MemoryDocument
+
+        document = MemoryDocument.objects.create(
+            content_type=ContentType.objects.get_for_model(BlogPost),
+            object_id=self.live.pk, scope="site", kind="blog_post",
+            title=self.live.title, text="c",
+        )
+
+        self.live.status = "draft"
+        self.live.save()
+
+        self.assertFalse(
+            MemoryDocument.objects.filter(pk=document.pk).exists(),
+            "an unpublished post is still answerable from the chat corpus",
+        )
+
+    def test_deleting_a_post_withdraws_it_from_the_chat_corpus(self):
+        from django.contrib.contenttypes.models import ContentType
+
+        from knowledge_base.models import MemoryDocument
+
+        document = MemoryDocument.objects.create(
+            content_type=ContentType.objects.get_for_model(BlogPost),
+            object_id=self.live.pk, scope="site", kind="blog_post",
+            title=self.live.title, text="c",
+        )
+
+        self.live.delete()
+
+        self.assertFalse(MemoryDocument.objects.filter(pk=document.pk).exists())
 
 
 class PanelFormStatusTest(TestCase):
