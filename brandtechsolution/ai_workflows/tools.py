@@ -232,3 +232,99 @@ def create_user_info_tool(user_id: int):
     
     return get_user_info
 
+
+
+@tool
+def current_time() -> str:
+    """Get the current date and time, in Nairobi time (EAT) and UTC.
+
+    Use this when the answer depends on today's date or the time of day --
+    "what's on this week", "how old is that post", anything relative.
+
+    Returns:
+        The current date and time.
+    """
+    from datetime import datetime, timedelta, timezone as dt_timezone
+
+    offset = getattr(config, "timezone_offset", 3)
+    now_utc = datetime.now(dt_timezone.utc)
+    local = now_utc.astimezone(dt_timezone(timedelta(hours=offset)))
+
+    return (
+        f"Nairobi (EAT): {local.strftime('%A %Y-%m-%d %H:%M')}\n"
+        f"UTC: {now_utc.strftime('%A %Y-%m-%d %H:%M')}"
+    )
+
+
+@tool
+def fetch_url(url: str) -> str:
+    """Fetch a web page and return its readable text.
+
+    Use this to check a claim against the source it cites, or to read an
+    article you have a link to. Only public http and https pages can be
+    fetched.
+
+    Args:
+        url: The full URL of the page to read.
+    """
+    from ai_workflows.harness.fetching import UnsafeURL, fetch
+
+    try:
+        final_url, text = fetch(url)
+    except UnsafeURL as exc:
+        # Returned rather than raised: the model chose this URL and can choose
+        # another, and saying why is more useful than a failed run. A refusal
+        # is not an outage.
+        logger.info("[fetch_url] refused %s: %s", url, exc)
+        return f"That URL could not be fetched: {exc}"
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[fetch_url] %s failed: %s", url, exc)
+        return f"Could not reach that URL: {exc}"
+
+    if not text.strip():
+        return f"{final_url} returned no readable text."
+
+    header = f"Fetched: {final_url}" if final_url != url else f"Fetched: {url}"
+    return f"{header}\n\n{text}"
+
+
+@tool
+def search_knowledge(query: str) -> str:
+    """Search everything the newsroom has already researched and published.
+
+    Use this before asserting something new, to see what has already been
+    established and whether it agrees with you. Covers past articles and
+    indexed site content.
+
+    Args:
+        query: What to look for.
+    """
+    from ai_workflows.harness.errors import AgentError
+    from ai_workflows.harness.memory import Memory
+
+    try:
+        # Both corpora, explicitly. The newsroom's own back catalogue is the
+        # obvious one; the site content matters too, because a claim already
+        # made in a published blog post is a claim this organisation has
+        # already stood behind. Naming them beats `scope=None`, which would
+        # also pull in anything a future agent happened to store.
+        records = Memory(scope="editorial").recall(
+            query, limit=5, scope=("editorial", "site"),
+        )
+    except AgentError as exc:
+        # The searchable half of the newsroom being down is worth saying out
+        # loud rather than answering "nothing found", which the model would
+        # reasonably read as "this is novel".
+        logger.warning("[search_knowledge] memory unavailable: %s", exc)
+        return (
+            "The knowledge base could not be searched right now, so treat this "
+            "as no information rather than as an absence of coverage."
+        )
+
+    if not records:
+        return "Nothing relevant found in the knowledge base."
+
+    return "\n\n---\n\n".join(
+        f"{record.title} (similarity {record.score:.2f})\n{record.text[:800]}"
+        for record in records
+    )

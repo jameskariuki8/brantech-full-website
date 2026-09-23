@@ -190,3 +190,75 @@ class StageCallbackTest(TestCase):
 
         self.assertEqual(seen, [1, len(EditorialPipelineRun.STAGES)])
         self.assertEqual(run.status, "running")
+
+
+class NewsroomHealthTests(TestCase):
+    """Step 8/9: the scheduled run reports its health like any other agent.
+
+    Before this, a nightly Beat cycle that started failing left a `failed` run
+    row on a dashboard nobody was watching. The point of routing the task
+    through the supervisor is that the failure now reaches somebody.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import Permission, User
+
+        from ai_workflows.harness.alerts import ALERT_CAPABILITY
+
+        user = User.objects.create_user("ops", email="ops@example.com", is_staff=True)
+        user.user_permissions.add(Permission.objects.get(codename=ALERT_CAPABILITY))
+
+    def test_a_cycle_that_fails_with_an_agent_error_pages_somebody(self):
+        from django.core import mail
+
+        from ai_workflows.harness.errors import ModelUnavailable
+        from ai_workflows.models import AgentHealth
+        from editorial.tasks import run_editorial_pipeline_task
+
+        run = EditorialPipelineRun.objects.create()
+
+        with mock.patch("editorial.orchestrator.EditorialPipelineOrchestrator") as orch:
+            orch.return_value.run_full_autonomous_cycle.side_effect = ModelUnavailable(
+                "no key", provider="gemini"
+            )
+            with self.assertRaises(ModelUnavailable):
+                run_editorial_pipeline_task(run.pk)
+
+        self.assertTrue(AgentHealth.objects.get(agent="newsroom").is_failing)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("newsroom is failing", mail.outbox[0].subject)
+
+        # And the run row is still recorded, which is what the dashboard reads.
+        run.refresh_from_db()
+        self.assertEqual(run.status, "failed")
+
+    def test_an_empty_cycle_is_a_success_not_a_failure(self):
+        """Nothing prioritised this week is an ordinary Tuesday. Paging about
+        it would teach the recipients to ignore the alerts."""
+        from django.core import mail
+
+        from ai_workflows.models import AgentHealth
+        from editorial.tasks import run_editorial_pipeline_task
+
+        run = EditorialPipelineRun.objects.create()
+
+        with mock.patch("editorial.orchestrator.EditorialPipelineOrchestrator") as orch:
+            orch.return_value.run_full_autonomous_cycle.return_value = []
+            run_editorial_pipeline_task(run.pk)
+
+        run.refresh_from_db()
+        self.assertEqual(run.status, "success")
+        self.assertEqual(mail.outbox, [])
+        self.assertFalse(AgentHealth.objects.get(agent="newsroom").is_failing)
+
+    def test_the_run_id_reaches_the_agents(self):
+        """So an alert can name the run somebody should open."""
+        from editorial.tasks import run_editorial_pipeline_task
+
+        run = EditorialPipelineRun.objects.create()
+
+        with mock.patch("ai_workflows.harness.supervisor.Supervisor") as supervisor:
+            supervisor.return_value.dispatch.return_value = mock.Mock(output=[])
+            run_editorial_pipeline_task(run.pk)
+
+        supervisor.assert_called_once_with(run_id=run.pk)

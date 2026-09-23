@@ -101,6 +101,12 @@ def chat_endpoint(request):
         return JsonResponse({
             "response": result['response'],
             "thread_id": thread_id,
+            # Additive since step 7. The prompt has always asked the model for
+            # these and nothing parsed them, so they went out as part of the
+            # visible reply text; now they are separated and the caller can use
+            # them or ignore them.
+            "sources": result['metadata'].get('sources', []),
+            "suggested_questions": result['metadata'].get('suggested_questions', []),
         })
         
     except Exception as e:

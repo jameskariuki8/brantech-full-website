@@ -1,174 +1,359 @@
 """
 Module 6: AI Writer Agent
 
-Generates professional, human-grade, structured long-form articles for Teklora.
-Ensures storytelling, SEO optimization, technical accuracy, and African ecosystem perspective.
+Turns a verified fact report into a full-length article awaiting human review.
+
+On the harness since step 6. The fallback draft this replaces is the one that
+asserted *"Representative enterprise deployments demonstrate a 40% improvement
+in performance"* -- a fabricated statistic, hardcoded, in the case-studies
+section of every article written while the model was unreachable. It is quoted
+in the eval suite and in `errors.py` because it is the clearest example in this
+codebase of what a fallback actually costs: not a worse article, a false one,
+delivered to an editor with no sign that anything had gone wrong.
 """
 import logging
-import json
-from typing import Dict, Any, Optional
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import SystemMessage, HumanMessage
-from brandtechsolution.config import config
-from research.models import VerifiedFactReport
+
+from pydantic import Field
+
+from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
+from ai_workflows.harness.claims import unsourced_claims
+from ai_workflows.harness.contract import AgentOutput, OutputStatus, require
+from ai_workflows.harness.llm import ModelRole
+from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle
+from research.models import VerifiedFactReport
 
 logger = logging.getLogger(__name__)
 
-ARTICLE_WRITER_PROMPT = """You are the Senior Editor-in-Chief at Teklora Media (Africa's premier technology innovation publication).
-Write a masterpiece, long-form, highly readable technology article based on this verified research dossier.
+
+class ArticleDraft(AgentOutput):
+    """The article, section by section."""
+
+    title: str = ""
+    subtitle: str = ""
+    executive_summary: str = ""
+    hero_paragraph: str = ""
+    introduction: str = ""
+    problem_statement: str = ""
+    historical_context: str = ""
+    current_developments: str = ""
+    technical_explanation: str = ""
+    industry_impact: str = ""
+    african_perspective: str = ""
+    case_studies: str = ""
+    expert_insights: str = ""
+    future_predictions: str = ""
+    conclusion: str = ""
+    call_to_action: str = ""
+    faqs: list = Field(default_factory=list)
+    meta_description: str = ""
+    keywords: list = Field(default_factory=list)
+    estimated_reading_time: int = Field(default=6, ge=1, le=120)
+
+
+PERSONA = Persona(
+    name="writer",
+    role="the Senior Editor-in-Chief at Teklora Media, Africa's technology "
+         "innovation publication",
+    directives=(
+        "Write long-form, structured, readable journalism with a real opening "
+        "and a real argument.",
+        "Explain the engineering rather than gesturing at it.",
+        "Ground the piece in the African ecosystem -- the developers, the "
+        "startups, the enterprise buyers -- as reporting, not as a closing "
+        "paragraph.",
+        "Write for search without writing for a crawler.",
+    ),
+    constraints=(
+        "Write only from the verified report you are given. It has already had "
+        "unsupported claims removed, and you may not put them back.",
+        "Do not invent statistics, benchmarks, customer names or quotes. If a "
+        "section has no verified material behind it, leave it thin or leave it "
+        "empty.",
+        "Do not describe a hypothetical deployment as though it happened.",
+    ),
+)
+
+ARTICLE_PROMPT = """Write the article for this verified research report.
 
 Topic Title: {title}
-Verified Facts & Technical Overview:
+Verified Facts and Technical Overview:
 {verified_text}
 
 African Ecosystem Perspective:
 {african_perspective}
 
-Target Audience Strategy: {target_audience} ({tone})
+Audience: {target_audience}
+Tone: {tone}
+Target length: about {length_words} words
+Reading difficulty: {reading_difficulty}
+Focus on: {focus_area}
+{continuity}"""
 
-Requirements:
-- Journalistic quality, human-like voice, clear explanations, compelling storytelling.
-- Highly structured with distinct sections.
-- SEO optimized, clear headings, engaging hook.
-- Strong focus on African technological context, opportunities, and enterprise impact.
+# Step 9. The writer is given `search_knowledge` and not `fetch_url`, and the
+# brief is why: it is looking for what Teklora has already said, so the piece
+# does not repeat a framing or contradict its own back catalogue. It is not
+# looking for material. New facts at the drafting stage are how an unsupported
+# claim gets back in after the verifier removed it, which is the failure the
+# whole of step 6 was about.
+CONTINUITY_BRIEF = """Check what Teklora has already published near this topic.
 
-Return your complete article ONLY as a valid JSON object matching this schema:
-{{
-  "title": "Compelling Title",
-  "subtitle": "Engaging Subtitle summarizing the core breakthrough",
-  "executive_summary": "High-impact 2-sentence summary...",
-  "hero_paragraph": "Atmospheric opening paragraph...",
-  "introduction": "Comprehensive introduction setting up the technology...",
-  "problem_statement": "What bottleneck or challenge does this solve?",
-  "historical_context": "Background leading to this breakthrough...",
-  "current_developments": "What is happening right now in the industry...",
-  "technical_explanation": "In-depth engineering and architectural deep dive...",
-  "industry_impact": "Global enterprise and market impact...",
-  "african_perspective": "Deep analysis of impact on African tech, developers, and startups...",
-  "case_studies": "Real or representative enterprise implementation examples...",
-  "expert_insights": "Key architectural quotes and strategic lessons...",
-  "future_predictions": "Where this technology will be in 2-5 years...",
-  "conclusion": "Final memorable synthesis and takeaways...",
-  "call_to_action": "Subscribe to Teklora Innovation Dispatch...",
-  "faqs": [
-    {{"question": "FAQ 1?", "answer": "Clear answer..."}},
-    {{"question": "FAQ 2?", "answer": "Clear answer..."}}
-  ],
-  "meta_description": "Compelling meta description under 160 characters",
-  "keywords": ["keyword1", "keyword2", "keyword3"],
-  "estimated_reading_time": 7
-}}
+Topic: {title}
+Summary: {verified_text}
+
+Search the knowledge base. Report which past pieces are adjacent, what framing
+they used, and anything here that would contradict them. Do not go looking for
+new facts about the topic -- that is not your job at this stage.
+"""
+
+CONTINUITY_HEADER = """
+What Teklora has already published nearby:
+{continuity}
+Use this for continuity only: avoid repeating a framing, and flag rather than
+restate anything that disagrees with it. It is not source material, and nothing
+in it may become a claim in this article unless the verified report above also
+supports it.
+"""
+
+FIGURES_REJECTED = """That draft used figures the verified report does not
+support: {figures}.
+
+The report is the only source for this article. Write it again without those
+figures. Do not substitute different numbers, and do not soften them into
+"roughly" or "around" -- if the report did not establish a quantity, the
+article does not state one. A section with nothing verified behind it should
+say what is known and stop.
 """
 
 
-class AIWriterAgent:
-    """Generates long-form, SEO-optimized tech articles from verified research reports."""
+# The sections an article cannot go to review without. The rest may legitimately
+# be thin -- not every topic has case studies, and inventing one to fill the
+# field is exactly the failure this agent is being rebuilt to stop.
+REQUIRED = ("title", "executive_summary", "introduction", "technical_explanation",
+            "conclusion")
 
-    def __init__(self):
-        try:
-            self.model = ChatGoogleGenerativeAI(
-                model=config.gemini_chat_model,
-                google_api_key=config.google_api_key,
-                temperature=0.4
-            )
-        except Exception as e:
-            logger.warning(f"AIWriterAgent LLM init failed: {e}")
-            self.model = None
 
-    def write_article(self, report: VerifiedFactReport, strategy: Dict[str, Any]) -> EditorialArticle:
-        """Generates complete EditorialArticle object."""
-        logger.info(f"[AIWriterAgent] Drafting article for '{report.dossier.topic.title}'...")
+def _draft_text(draft) -> str:
+    """Everything in the draft a reader would see.
+
+    Every string field rather than a named list, so a section added to
+    `ArticleDraft` later is checked without anyone remembering to add it here.
+    A figure invented in a field nobody thought to scan is still in the
+    article.
+    """
+    parts = []
+    for name, value in draft.model_dump().items():
+        if name in ("status", "notes"):
+            continue
+        if isinstance(value, str):
+            parts.append(value)
+        elif isinstance(value, (list, tuple)):
+            parts.extend(str(item) for item in value)
+        elif isinstance(value, dict):
+            parts.extend(str(item) for item in value.values())
+    return "\n\n".join(part for part in parts if part)
+
+
+def _sources_text(report) -> str:
+    """What the article is allowed to have got a number from.
+
+    The verified report and the dossier's regional section, and nothing else.
+    The continuity evidence is deliberately absent: the brief that gathers it
+    says in as many words that it is not source material, and letting a figure
+    from a past article count as support here would be exactly how a claim the
+    verifier removed gets back in.
+    """
+    parts = [report.verified_dossier, report.dossier.african_opportunities]
+    parts.extend(str(item) for item in (report.verified_statistics or []))
+    return "\n\n".join(part for part in parts if part)
+
+
+class AIWriterAgent(Agent):
+    """Generates long-form articles from verified research reports."""
+
+    name = "writer"
+    persona = PERSONA
+    model_role = ModelRole.CREATIVE
+    tool_suite = "writer"
+
+    def run(self, request: AgentRequest) -> AgentResult:
+        report = request.payload["report"]
+        strategy = request.payload.get("strategy") or {}
+
+        continuity = self.gather_evidence(CONTINUITY_BRIEF.format(
+            title=report.dossier.topic.title,
+            verified_text=report.verified_dossier[:2000],
+        ))
+
+        prompt = ARTICLE_PROMPT.format(
+                continuity=(
+                    CONTINUITY_HEADER.format(continuity=continuity) if continuity else ""
+                ),
+                title=report.dossier.topic.title,
+                verified_text=report.verified_dossier,
+                african_perspective=report.dossier.african_opportunities,
+                target_audience=strategy.get('target_audience', 'developers'),
+                tone=strategy.get('tone', 'Analytical & Authoritative'),
+                length_words=strategy.get('length_words', 1600),
+                reading_difficulty=strategy.get('reading_difficulty', 'Intermediate'),
+                focus_area=strategy.get('focus_area', 'the technology and its adoption'),
+        )
+        draft = self.ask(prompt, ArticleDraft)
+        if draft.usable:
+            require(draft, *REQUIRED, agent=self.name)
+            draft = self._without_invented_figures(draft, report, prompt)
+
+        return AgentResult(
+            agent=self.name, output=draft,
+            abstained=draft.abstained, notes=draft.notes,
+        )
+
+    # ------------------------------------------------------------------
+    # the figures check
+    # ------------------------------------------------------------------
+
+    def _without_invented_figures(self, draft, report, prompt):
+        """Re-ask once if the draft carries figures the report never had.
+
+        The persona has told it not to invent statistics since step 6, and it
+        does anyway -- a live eval run caught "2%" in an article whose report
+        says in as many words that no benchmark could be confirmed. An
+        instruction in a prompt is a request; this is the check.
+
+        Told what was wrong and asked again, exactly as `contract` handles a
+        malformed shape. If the second draft still carries figures the report
+        does not support, the agent declines: a false article is worse than no
+        article, which is the whole lesson of the fallback draft this class
+        replaced.
+        """
+        sources = _sources_text(report)
+
+        invented = unsourced_claims(_draft_text(draft), sources)
+        if not invented:
+            return draft
+
+        logger.warning(
+            "[writer] draft used unsupported figures %s; asking again", invented,
+        )
+        second = self.ask(
+            f"{prompt}\n\n{FIGURES_REJECTED.format(figures=', '.join(invented))}",
+            ArticleDraft,
+        )
+
+        if second.abstained:
+            return second
+
+        require(second, *REQUIRED, agent=self.name)
+        still = unsourced_claims(_draft_text(second), sources)
+        if not still:
+            return second
+
+        logger.error(
+            "[writer] second draft still used unsupported figures %s; declining",
+            still,
+        )
+        second.status = OutputStatus.INSUFFICIENT_EVIDENCE
+        second.notes = (
+            "Declined: the draft kept using figures the verified report does "
+            f"not support ({', '.join(still)}), and asking again did not "
+            "change that. The report established no quantities for this topic."
+        )
+        return second
+
+    def write_article(self, report: VerifiedFactReport,
+                      strategy: dict) -> EditorialArticle | None:
+        """Draft the article and queue it for human review.
+
+        Returns None when the agent declined, and writes no article row. A
+        topic with no article is visible as a topic with no article; an article
+        stitched from the dossier's own sentences is visible as nothing at all,
+        which is how the fabricated case study survived to be quoted here.
+        """
+        logger.info("[writer] drafting '%s'", report.dossier.topic.title)
 
         existing = EditorialArticle.objects.filter(verification_report=report).first()
         if existing:
             return existing
 
-        article_data = self._generate_draft(report, strategy)
+        result = self.execute(AgentRequest(
+            payload={"report": report, "strategy": strategy}
+        ))
+        if result.abstained:
+            logger.warning(
+                "[writer] declined to draft '%s': %s",
+                report.dossier.topic.title, result.notes or "no reason given",
+            )
+            return None
+
+        draft = result.output
+        topic = report.dossier.topic
 
         article = EditorialArticle.objects.create(
-            topic=report.dossier.topic,
+            topic=topic,
             verification_report=report,
-            title=article_data.get('title', report.dossier.topic.title),
-            subtitle=article_data.get('subtitle', 'Emerging Tech Insight'),
-            executive_summary=article_data.get('executive_summary', report.dossier.topic.summary),
-            hero_paragraph=article_data.get('hero_paragraph', ''),
-            introduction=article_data.get('introduction', ''),
-            problem_statement=article_data.get('problem_statement', ''),
-            historical_context=article_data.get('historical_context', ''),
-            current_developments=article_data.get('current_developments', ''),
-            technical_explanation=article_data.get('technical_explanation', report.dossier.technical_explanations),
-            industry_impact=article_data.get('industry_impact', report.dossier.industry_applications),
-            african_perspective=article_data.get('african_perspective', report.dossier.african_opportunities),
-            case_studies=article_data.get('case_studies', ''),
-            expert_insights=article_data.get('expert_insights', ''),
-            future_predictions=article_data.get('future_predictions', report.dossier.future_outlook),
-            conclusion=article_data.get('conclusion', ''),
-            call_to_action=article_data.get('call_to_action', 'Subscribe to Teklora Innovation Dispatch.'),
-            faqs=article_data.get('faqs', []),
+            title=draft.title,
+            subtitle=draft.subtitle,
+            executive_summary=draft.executive_summary,
+            hero_paragraph=draft.hero_paragraph,
+            introduction=draft.introduction,
+            problem_statement=draft.problem_statement,
+            historical_context=draft.historical_context,
+            current_developments=draft.current_developments,
+            technical_explanation=draft.technical_explanation,
+            industry_impact=draft.industry_impact,
+            african_perspective=draft.african_perspective,
+            case_studies=draft.case_studies,
+            expert_insights=draft.expert_insights,
+            future_predictions=draft.future_predictions,
+            conclusion=draft.conclusion,
+            call_to_action=(
+                draft.call_to_action
+                or EditorialArticle._meta.get_field('call_to_action').default
+            ),
+            faqs=draft.faqs,
+            # References come from the dossier, not from the draft. The writer
+            # is not asked for sources precisely so that it cannot mint one.
             references=report.dossier.sources,
-            meta_description=article_data.get('meta_description', report.dossier.topic.summary[:150]),
-            keywords=article_data.get('keywords', report.dossier.topic.keywords),
+            meta_description=draft.meta_description or draft.executive_summary[:150],
+            keywords=draft.keywords or topic.keywords,
             target_audience=strategy.get('target_audience', 'developers'),
             tone=strategy.get('tone', 'Analytical & Authoritative'),
-            reading_time_minutes=article_data.get('estimated_reading_time', 6),
-            status='review_pending'
+            reading_time_minutes=draft.estimated_reading_time,
+            estimated_reading_difficulty=strategy.get('reading_difficulty', 'Intermediate'),
+            status='review_pending',
         )
 
-        report.dossier.topic.status = 'approved_for_article'
-        report.dossier.topic.save()
+        # Remember it, so the duplicate check has something to compare against.
+        # Done here rather than at publish because a draft already in the review
+        # queue should stop the newsroom researching the same story again.
+        self._remember(article)
 
-        logger.info(f"[AIWriterAgent] Draft complete: '{article.title}' (#{article.id}). Status set to review_pending.")
+        topic.status = 'approved_for_article'
+        topic.save()
+
+        logger.info(
+            "[writer] draft #%d complete: '%s' (awaiting review)",
+            article.id, article.title,
+        )
         return article
 
-    def _generate_draft(self, report: VerifiedFactReport, strategy: Dict[str, Any]) -> Dict[str, Any]:
-        if not self.model:
-            return self._fallback_draft(report)
+    @staticmethod
+    def _remember(article: EditorialArticle):
+        """Add the draft to semantic memory for duplicate detection."""
+        from ai_workflows.harness.errors import MemoryUnavailable
+        from ai_workflows.harness.memory import Memory
 
+        text = f"{article.title}\n\n{article.subtitle}\n\n{article.executive_summary}"
         try:
-            prompt = ARTICLE_WRITER_PROMPT.format(
-                title=report.dossier.topic.title,
-                verified_text=report.verified_dossier,
-                african_perspective=report.dossier.african_opportunities,
-                target_audience=strategy.get('target_audience', 'developers'),
-                tone=strategy.get('tone', 'Authoritative')
+            Memory(scope="editorial").remember(
+                text, title=article.title, kind="article", obj=article,
             )
-            res = self.model.invoke([
-                SystemMessage(content="You are an award-winning tech journalist. Return ONLY raw JSON."),
-                HumanMessage(content=prompt)
-            ])
-            content = res.content.strip()
-            if content.startswith("```"):
-                content = content.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                if content.startswith("json"):
-                    content = content[4:].strip()
-
-            return json.loads(content, strict=False)
-        except Exception as e:
-            logger.error(f"[AIWriterAgent] LLM generation error for '{report.dossier.topic.title}': {e}")
-            return self._fallback_draft(report)
-
-    def _fallback_draft(self, report: VerifiedFactReport) -> Dict[str, Any]:
-        d = report.dossier
-        return {
-            "title": f"Understanding {d.topic.title}: Architecture, Impact, and African Opportunities",
-            "subtitle": f"A deep dive into how {d.topic.title} is shaping modern technology ecosystems.",
-            "executive_summary": f"{d.topic.title} represents a significant advancement in software and AI infrastructure.",
-            "hero_paragraph": f"As technology continues to accelerate, {d.topic.title} has emerged as a key area of focus for engineers and businesses.",
-            "introduction": f"In this comprehensive analysis, we explore the rise of {d.topic.title} and its implications for global tech.",
-            "problem_statement": f"Traditional approaches faced limitations in scalability and efficiency, which {d.topic.title} directly addresses.",
-            "historical_context": "Developed through iterative research across distributed systems and AI advancement.",
-            "current_developments": f"Leading organizations are rapidly adopting {d.topic.title} into their production workflows.",
-            "technical_explanation": d.technical_explanations,
-            "industry_impact": d.industry_applications or "Transforms operational speed and system reliability.",
-            "african_perspective": d.african_opportunities or "Presents high strategic value for tech hubs in Kenya, Nigeria, and across Africa.",
-            "case_studies": "Representative enterprise deployments demonstrate a 40% improvement in performance.",
-            "expert_insights": "Industry leaders highlight modularity and developer experience as primary drivers.",
-            "future_predictions": d.future_outlook or "Expected to become a standard component in modern tech stacks over the coming years.",
-            "conclusion": f"Teklora will continue to monitor developments in {d.topic.title} as adoption grows.",
-            "call_to_action": "Join the Teklora community for more technology insights and deep dives.",
-            "faqs": [{"question": f"What is {d.topic.title}?", "answer": d.topic.summary}],
-            "meta_description": f"Explore {d.topic.title}: technical analysis, global impact, and African ecosystem opportunities.",
-            "keywords": d.topic.keywords,
-            "estimated_reading_time": 6
-        }
+        except MemoryUnavailable:
+            # Not fatal, and deliberately not silent. The article is written
+            # and correct; what is lost is that the *next* cycle may not
+            # recognise this topic as covered. Failing the draft over it would
+            # throw away good work to protect against a duplicate.
+            logger.exception(
+                "[writer] could not remember article #%d; duplicate detection "
+                "will not see it until it is re-indexed", article.id,
+            )

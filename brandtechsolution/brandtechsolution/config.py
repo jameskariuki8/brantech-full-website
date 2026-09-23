@@ -192,6 +192,37 @@ class AppSettings(BaseSettings):
     langsmith_endpoint: str = "https://api.smith.langchain.com"
 
     # ============================================================
+    # Model providers
+    # ============================================================
+    # One key per provider. Presence makes a provider a *candidate*; it only
+    # becomes active once it has answered its own model-list endpoint, because
+    # "a key is present" and "a key works" are different things and conflating
+    # them turns a typo into a silent outage. Gemini's key is google_api_key
+    # above -- it predates this block and everything currently runs on it.
+    openrouter_api_key: str = ""
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    deepseek_api_key: str = ""
+
+    # ChatGPT OAuth for Codex. Subscription-billed rather than usage-billed,
+    # and off unless deliberately enabled -- see harness/providers.py for why.
+    codex_oauth_token: str = ""
+
+    # Per-request ceiling for a chat model call, in seconds.
+    llm_timeout: int = 60
+
+    # What one supervised run may spend before it refuses to dispatch again,
+    # in USD. Checked between agents, so a run stops cleanly rather than
+    # abandoning an agent mid-call.
+    #
+    # Approximate by construction, and deliberately so. Most prices in the
+    # catalogue are borrowed from OpenRouter's listing rather than published
+    # by the provider that bills, and a call to an unpriced model cannot be
+    # counted against this at all -- see `harness/usage.py`. It is a runaway
+    # stop, not an accountant. Set to 0 to turn it off.
+    agent_run_spend_ceiling_usd: float = 5.0
+
+    # ============================================================
     # GitHub Integration Configuration
     # ============================================================
     github_access_token: Optional[str] = None
@@ -217,3 +248,119 @@ class AppSettings(BaseSettings):
 
 # Create global config instance
 config = AppSettings()
+
+
+# ============================================================
+# Which .env actually took effect
+# ============================================================
+# There are two .env files in this project and they are not the same file.
+#
+#   brandtechsolution/.env   what `env_file` above points at, so what a local
+#                            `manage.py` reads.
+#   <repo root>/.env         what docker-compose's `env_file:` injects, so what
+#                            the containers read.
+#
+# pydantic-settings reads real environment variables at higher priority than
+# any env_file, so inside Docker the root file wins and the path above is
+# irrelevant. Outside Docker the root file is never read at all.
+#
+# That asymmetry is invisible and it cost a full day: a key was rotated in the
+# root file, the local process kept reading a months-old key from the other
+# one, and every symptom pointed at the API rather than at the file. Nothing
+# raised, because nothing was wrong -- both files were valid, and the wrong one
+# was being read perfectly.
+#
+# So: report it. Not merge the files, which would hand a local `manage.py` the
+# container's database credentials, and not refuse to start, because the two
+# files differing is the *normal* state for everything else in them.
+
+ROOT_ENV_FILE = BASE_DIR.parent / ".env"
+
+# Only credentials, and deliberately not the whole file. `database_host`,
+# `debug` and `allowed_hosts` differ between these two files *on purpose* --
+# they describe two environments -- and a warning that fires on every run for
+# an expected difference is one people learn to scroll past. An API key is not
+# environment-specific: the same key works in both, so the two disagreeing
+# means one of them is stale.
+SHARED_CREDENTIALS = (
+    "GOOGLE_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "DEEPSEEK_API_KEY",
+    "OPENROUTER_API_KEY",
+    "CODEX_OAUTH_TOKEN",
+    "LANGSMITH_API_KEY",
+)
+
+
+def fingerprint(secret: str) -> str:
+    """Eight hex characters identifying a secret, without disclosing it.
+
+    Enough to answer "is this the same key I just pasted?", and useless to
+    anyone who reads it out of a log.
+    """
+    import hashlib
+
+    if not secret:
+        return "unset"
+    return hashlib.sha256(secret.encode("utf-8")).hexdigest()[:8]
+
+
+def read_env_file(path) -> dict:
+    """KEY=VALUE pairs from a .env file, or {} if it is not readable.
+
+    A deliberately small parser rather than a dependency: this runs during
+    settings import, it only ever needs to answer a comparison, and an
+    unreadable or malformed file must degrade to "cannot tell" rather than
+    stopping Django from starting.
+    """
+    values = {}
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return values
+
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        value = value.strip().strip('"').strip("'")
+        values[key.strip().upper()] = value
+    return values
+
+
+def credential_drift(settings=None, root_env_file=ROOT_ENV_FILE):
+    """Credentials the root .env sets to something other than what is live.
+
+    Compares against the *loaded* value rather than against the other file, so
+    it answers the question that actually matters -- "is the file I just edited
+    the one in effect?" -- and stays quiet under Docker, where the root file is
+    what loaded and there is nothing to report.
+
+    Returns a list of (key, live_fingerprint, file_fingerprint). Empty when the
+    root file does not exist, which is the normal case in a container built
+    from it.
+    """
+    if settings is None:
+        settings = config
+
+    if not root_env_file.exists():
+        return []
+
+    on_disk = read_env_file(root_env_file)
+    drifted = []
+
+    for key in SHARED_CREDENTIALS:
+        if key not in on_disk:
+            continue
+        stated = on_disk[key]
+        live = getattr(settings, key.lower(), "") or ""
+        # A key present in one file and absent from the other is a gap, not a
+        # conflict; only report two values that disagree.
+        if not stated or not live:
+            continue
+        if stated != live:
+            drifted.append((key, fingerprint(live), fingerprint(stated)))
+
+    return drifted

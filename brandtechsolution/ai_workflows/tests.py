@@ -176,7 +176,15 @@ class AIWorkflowsViewsTest(TestCase):
     @patch('ai_workflows.views.get_chatbot_response')
     def test_chat_endpoint_anonymous_user(self, mock_get_response):
         """Test chat endpoint for anonymous user (uses session)"""
-        mock_get_response.return_value = {'response': 'Mocked response'}
+        # The full shape `get_chatbot_response` actually returns. A mock that
+        # returns less than the real function is how a view bug hides: this
+        # one returned only `response`, so the view reading `metadata` 500'd
+        # in production terms while the test went on passing.
+        mock_get_response.return_value = {
+            'response': 'Mocked response',
+            'thread_id': 'mocked-thread',
+            'metadata': {'suggested_questions': [], 'sources': []},
+        }
         # Note: This test may require mocking the AI service
         # For now, we'll test the basic structure
         response = self.client.post(
@@ -192,7 +200,15 @@ class AIWorkflowsViewsTest(TestCase):
     @patch('ai_workflows.views.get_chatbot_response')
     def test_chat_endpoint_authenticated_user(self, mock_get_response):
         """Test chat endpoint for authenticated user"""
-        mock_get_response.return_value = {'response': 'Mocked response'}
+        # The full shape `get_chatbot_response` actually returns. A mock that
+        # returns less than the real function is how a view bug hides: this
+        # one returned only `response`, so the view reading `metadata` 500'd
+        # in production terms while the test went on passing.
+        mock_get_response.return_value = {
+            'response': 'Mocked response',
+            'thread_id': 'mocked-thread',
+            'metadata': {'suggested_questions': [], 'sources': []},
+        }
         self.client.login(username='testuser', password='testpass123')
         response = self.client.post(
             reverse('ai_workflows:chat'),
@@ -207,7 +223,15 @@ class AIWorkflowsViewsTest(TestCase):
     @patch('ai_workflows.views.get_chatbot_response')
     def test_chat_endpoint_creates_thread(self, mock_get_response):
         """Test that chat endpoint creates thread if it doesn't exist"""
-        mock_get_response.return_value = {'response': 'Mocked response'}
+        # The full shape `get_chatbot_response` actually returns. A mock that
+        # returns less than the real function is how a view bug hides: this
+        # one returned only `response`, so the view reading `metadata` 500'd
+        # in production terms while the test went on passing.
+        mock_get_response.return_value = {
+            'response': 'Mocked response',
+            'thread_id': 'mocked-thread',
+            'metadata': {'suggested_questions': [], 'sources': []},
+        }
         self.client.login(username='testuser', password='testpass123')
         new_thread_id = f"new_thread_{uuid.uuid4().hex[:8]}"
         response = self.client.post(
@@ -328,7 +352,15 @@ class AIWorkflowsIntegrationTest(TestCase):
     @patch('ai_workflows.views.get_chatbot_response')
     def test_thread_lifecycle(self, mock_get_response):
         """Test complete thread lifecycle: create, use, clear"""
-        mock_get_response.return_value = {'response': 'Mocked response'}
+        # The full shape `get_chatbot_response` actually returns. A mock that
+        # returns less than the real function is how a view bug hides: this
+        # one returned only `response`, so the view reading `metadata` 500'd
+        # in production terms while the test went on passing.
+        mock_get_response.return_value = {
+            'response': 'Mocked response',
+            'thread_id': 'mocked-thread',
+            'metadata': {'suggested_questions': [], 'sources': []},
+        }
         self.client.login(username='testuser', password='testpass123')
         thread_id = f"lifecycle_test_{uuid.uuid4().hex[:8]}"
         

@@ -6,6 +6,13 @@ langchain
 langgraph
 langchain-community
 langchain-google-genai
+
+# Chat providers beyond Gemini. Two packages cover five: DeepSeek, OpenRouter
+# and Codex all document OpenAI-compatible endpoints, so ChatOpenAI serves them
+# with a different base_url rather than each needing its own client.
+langchain-openai
+langchain-anthropic
+
 langchain-text-splitters
 pydantic-settings
 psycopg2-binary

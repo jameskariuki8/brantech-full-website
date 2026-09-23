@@ -38,6 +38,15 @@ class VerifiedFactReport(models.Model):
     verified_quotes = models.JSONField(default=list, help_text="Attributed expert quotes")
     
     verified_dossier = models.TextField(help_text="Final sanitized and verified research text")
+    verification_evidence = models.TextField(
+        blank=True, default="",
+        help_text=(
+            "What the agent found when it checked the dossier's sources: the "
+            "tool calls it made and what came back. Separate from "
+            "verified_dossier because that field is what the writer drafts "
+            "from, and fetched source text must not reach the article prompt."
+        ),
+    )
     is_approved = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
 

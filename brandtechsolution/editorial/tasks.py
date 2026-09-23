@@ -16,8 +16,8 @@ def run_editorial_pipeline_task(self, run_id: int):
     article drafts as it goes, so a blind replay would duplicate content and
     spend model quota twice. A failed run is left failed for a human to look at.
     """
+    from ai_workflows.harness.supervisor import Supervisor
     from editorial.models import EditorialPipelineRun
-    from editorial.orchestrator import EditorialPipelineOrchestrator
 
     try:
         run = EditorialPipelineRun.objects.get(pk=run_id)
@@ -30,14 +30,21 @@ def run_editorial_pipeline_task(self, run_id: int):
     run.started_at = timezone.now()
     run.save(update_fields=['status', 'task_id', 'started_at'])
 
-    orchestrator = EditorialPipelineOrchestrator()
+    # Dispatched through the supervisor rather than by building the
+    # orchestrator here. The cycle is the same cycle; what the routing adds is
+    # that the newsroom's health is recorded like every other agent's, so a
+    # nightly Beat run that starts failing pages whoever holds `receive_alerts`
+    # instead of going unnoticed until somebody wonders why the queue is empty.
+    # One supervisor per run, because the dispatch ceiling is per run.
+    supervisor = Supervisor(run_id=run.pk)
 
     try:
-        articles = orchestrator.run_full_autonomous_cycle(
-            limit=run.limit,
-            auto_publish=run.auto_publish,
-            on_stage=run.mark_stage,
-        )
+        result = supervisor.dispatch("newsroom", {
+            "limit": run.limit,
+            "auto_publish": run.auto_publish,
+            "on_stage": run.mark_stage,
+        })
+        articles = result.output or []
     except SoftTimeLimitExceeded:
         # The soft limit lands here as an exception, which leaves just enough
         # time to record the failure before the hard limit kills the process.
