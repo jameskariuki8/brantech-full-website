@@ -270,12 +270,18 @@ class Supervisor:
             health = rows.get(name)
             if health is None:
                 report[name] = {"status": "unknown", "error_class": "",
-                                "failing_since": None, "suppressed": 0}
+                                "error_message": "", "failing_since": None,
+                                "suppressed": 0}
                 continue
 
             report[name] = {
                 "status": health.status,
                 "error_class": health.error_class,
+                # Recorded since step 5 and, until now, shown by nothing. A
+                # report that says an agent is failing but not why sends the
+                # reader to a Django shell to find out, which is the point at
+                # which an operator stops running the report.
+                "error_message": health.error_message,
                 "failing_since": health.failing_since,
                 "suppressed": health.suppressed_since_alert,
             }

@@ -65,6 +65,17 @@ class Command(BaseCommand):
                     detail += f", {row['suppressed']} further failure(s) suppressed"
                 self.stdout.write(self.style.ERROR(detail))
 
+                message = (row.get("error_message") or "").strip()
+                if message:
+                    # The class says what kind of failure; only the message
+                    # says which provider, which tool, or which field. One
+                    # line, because a wrapped stack trace in a status report
+                    # is how a status report stops being read.
+                    first = message.splitlines()[0]
+                    if len(first) > 160:
+                        first = first[:157] + "..."
+                    self.stdout.write(f"           {first}")
+
         self.stdout.write("")
         failing = sum(1 for _, row in rows if row["status"] == "failing")
         unknown = sum(1 for _, row in rows if row["status"] == "unknown")
