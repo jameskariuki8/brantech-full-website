@@ -490,6 +490,15 @@ class ChatAssistant(Agent):
 
         messages = (state or {}).get("messages") or []
         for message in messages[self._accounted_messages:]:
+            # Only a model response can carry token counts. The human turn and
+            # every tool result are new messages too, and recording them meant
+            # `usage.record` logged "reported no token counts" for each one --
+            # so a perfectly healthy turn wrote a line that reads exactly like
+            # an accounting gap. A tool-calling turn produced two of them, and
+            # the first thing that log did in production was send someone
+            # hunting a bug that was not there.
+            if not isinstance(message, AIMessage):
+                continue
             usage.record(
                 message,
                 provider=self._provider.value if self._provider else "",

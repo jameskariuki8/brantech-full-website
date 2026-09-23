@@ -10,6 +10,8 @@ from unittest.mock import patch
 from django.contrib.auth.models import Permission, User
 from django.core import mail
 from django.test import TestCase
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
 
 from ai_workflows.harness.alerts import ALERT_CAPABILITY
 from ai_workflows.harness.errors import ModelUnavailable
@@ -375,13 +377,20 @@ class _Snapshot:
         self.values = {"messages": list(messages)}
 
 
-class _Message:
-    """An AI message carrying token counts, as LangChain normalises them."""
+def _Message(content, usage=None):
+    """An AI message carrying token counts, as LangChain normalises them.
 
-    def __init__(self, content, usage=None):
-        self.content = content
-        self.usage_metadata = usage
-        self.response_metadata = {"model_name": "fake-model"}
+    A real `AIMessage` rather than a stand-in with the right attributes. The
+    assistant now accounts only for model replies -- a human turn and a tool
+    result are new messages too, and recording them logged an accounting gap
+    on every healthy turn -- so a double that merely *looked* like a reply
+    would be testing a path production no longer takes.
+    """
+    return AIMessage(
+        content=content,
+        usage_metadata=usage,
+        response_metadata={"model_name": "fake-model"},
+    )
 
 
 class _AccountingGraph:
@@ -446,6 +455,37 @@ class ChatAccountingTests(TestCase):
         # One new message, not seven.
         self.assertEqual(ledger.calls, 1)
         self.assertEqual(ledger.prompt_tokens, 10)
+
+    def test_the_human_turn_and_tool_results_are_not_counted_as_calls(self):
+        """A tool-calling turn adds four messages and bills one.
+
+        The other three are the human's question and the tool's answer, which
+        carry no token counts because they are not model replies. Recording
+        them logged "reported no token counts" once per message, so the
+        healthiest possible turn wrote two lines that read exactly like an
+        accounting gap -- and the first thing that log did in production was
+        send someone hunting a bug that was not there.
+        """
+        from ai_workflows.harness import usage
+
+        turn = [
+            HumanMessage(content="what have you built?"),
+            AIMessage(content="", usage_metadata=USAGE,
+                      tool_calls=[{"name": "search_projects",
+                                   "args": {"query": "projects"},
+                                   "id": "call-1"}]),
+            ToolMessage(content="a project", tool_call_id="call-1"),
+            _Message("here is what we have built", USAGE),
+        ]
+        graph = _AccountingGraph(produced=turn)
+
+        with usage.accounting() as ledger:
+            self._ask(self._assistant(graph))
+
+        # Two model replies, not four messages.
+        self.assertEqual(ledger.calls, 2)
+        self.assertEqual(ledger.prompt_tokens, 20)
+        self.assertEqual(ledger.unmeasured_calls, 0)
 
     def test_a_second_turn_does_not_re_bill_the_first(self):
         from ai_workflows.harness import usage
