@@ -23,8 +23,10 @@ import logging
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
+from ai_workflows.harness.context import truncate_tool_result
 from ai_workflows.harness.contract import text_of
 from ai_workflows.harness.errors import AgentError, ModelUnavailable, ToolFailed
+from ai_workflows.harness.fetching import MAX_CHARS
 from ai_workflows.harness.llm import ModelRole, iter_models
 from ai_workflows.harness.retrying import BATCH, call_with_retries
 
@@ -34,7 +36,12 @@ DEFAULT_MAX_STEPS = 4
 
 # Tool output is untrusted text from somewhere else -- a fetched page, a stored
 # document -- and the single largest thing in a context window if left alone.
-MAX_RESULT_CHARS = 8_000
+#
+# The fetcher's own cap, not a tighter one. At 8,000 this cut pages the fetcher
+# had deliberately kept, and did it silently: the verifier read a Wikipedia
+# page whose spec table sat past the cut, reported a correct processor claim as
+# unsupported, and rejected a sound dossier on the confidence that cost it.
+MAX_RESULT_CHARS = MAX_CHARS
 
 
 def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
@@ -105,7 +112,7 @@ def gather(persona, brief, tools, *, role=ModelRole.ANALYTIC, agent=None,
                     logger.warning("[gather] %s raised: %s", name, exc)
                     result = f"That lookup failed: {exc}"
 
-            result = result[:MAX_RESULT_CHARS]
+            result = truncate_tool_result(result, MAX_RESULT_CHARS)
             transcript.append(f"[{name}({_brief_args(args)})]\n{result}")
             messages.append(ToolMessage(
                 content=result, tool_call_id=call.get("id", name),
