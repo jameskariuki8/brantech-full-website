@@ -781,6 +781,47 @@ class InventedFiguresTests(TestCase):
         self.assertNotIn("40%", _sources_text(_verified_report(THIN)))
 
 
+class OverlongMetadataTests(TestCase):
+    """A production run lost a finished draft to DataError: one of the article's
+    300-character columns got more than that from the model, and the draft was
+    thrown away after it had been written and paid for."""
+
+    LONG = ("An exceptionally thorough meta description that goes on " * 8).strip()
+
+    def _write(self, payload):
+        with patch.object(AIWriterAgent, "gather_evidence", return_value=""):
+            with fake_gemini(payload):
+                return AIWriterAgent().write_article(
+                    _verified_report(THIN), {"target_audience": "developers"},
+                )
+
+    def test_an_overlong_meta_description_is_cut_not_fatal(self):
+        article = self._write({"meta_description": self.LONG})
+
+        self.assertIsNotNone(article)
+        self.assertLessEqual(len(article.meta_description), 300)
+        self.assertTrue(self.LONG.startswith(article.meta_description))
+
+    def test_an_overlong_title_is_cut_not_fatal(self):
+        article = self._write({"title": self.LONG})
+
+        self.assertIsNotNone(article)
+        self.assertLessEqual(len(article.title), 300)
+
+    def test_the_visuals_fit_a_title_at_its_limit(self):
+        """Alt text and captions wrap the title in fixed text, so a title that
+        just fits its own column overflows theirs."""
+        from media_generation.services.visual_engine import VisualIntelligenceAgent
+
+        article = self._write({"title": "x" * 300})
+        VisualIntelligenceAgent().generate_visual_package(article)
+
+        self.assertEqual(article.media_assets.count(), 2)
+        for asset in article.media_assets.all():
+            self.assertLessEqual(len(asset.alt_text), 300)
+            self.assertLessEqual(len(asset.caption), 300)
+
+
 class PipelineResumeTests(TestCase):
     """The step cache, wired to the pipeline it was written for.
 

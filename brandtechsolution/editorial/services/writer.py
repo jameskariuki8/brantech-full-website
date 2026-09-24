@@ -21,6 +21,7 @@ from ai_workflows.harness.contract import AgentOutput, OutputStatus, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle
+from editorial.text import fit_to_column
 from research.models import VerifiedFactReport
 
 logger = logging.getLogger(__name__)
@@ -91,6 +92,9 @@ Tone: {tone}
 Target length: about {length_words} words
 Reading difficulty: {reading_difficulty}
 Focus on: {focus_area}
+
+Keep the headline under 100 characters, the subtitle under 200 and the meta
+description under 160.
 {continuity}"""
 
 # Step 9. The writer is given `search_knowledge` and not `fetch_url`, and the
@@ -296,8 +300,10 @@ class AIWriterAgent(Agent):
         article = EditorialArticle.objects.create(
             topic=topic,
             verification_report=report,
-            title=draft.title,
-            subtitle=draft.subtitle,
+            # The three columns with a width. The prompt asks for the budget;
+            # this is what happens when the model ignores it.
+            title=fit_to_column(EditorialArticle, 'title', draft.title),
+            subtitle=fit_to_column(EditorialArticle, 'subtitle', draft.subtitle),
             executive_summary=draft.executive_summary,
             hero_paragraph=draft.hero_paragraph,
             introduction=draft.introduction,
@@ -319,7 +325,10 @@ class AIWriterAgent(Agent):
             # References come from the dossier, not from the draft. The writer
             # is not asked for sources precisely so that it cannot mint one.
             references=report.dossier.sources,
-            meta_description=draft.meta_description or draft.executive_summary[:150],
+            meta_description=fit_to_column(
+                EditorialArticle, 'meta_description',
+                draft.meta_description or draft.executive_summary[:150],
+            ),
             keywords=draft.keywords or topic.keywords,
             target_audience=strategy.get('target_audience', 'developers'),
             tone=strategy.get('tone', 'Analytical & Authoritative'),
