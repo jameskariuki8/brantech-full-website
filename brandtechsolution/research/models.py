@@ -38,6 +38,15 @@ class VerifiedFactReport(models.Model):
     verified_quotes = models.JSONField(default=list, help_text="Attributed expert quotes")
     
     verified_dossier = models.TextField(help_text="Final sanitized and verified research text")
+    verified_opportunities = models.TextField(
+        blank=True, default="",
+        help_text=(
+            "The dossier's African opportunities section after audit. The "
+            "writer drafts that section from this, never from the dossier's "
+            "raw field, or a claim the verifier removed would go straight back "
+            "into the article."
+        ),
+    )
     verification_evidence = models.TextField(
         blank=True, default="",
         help_text=(

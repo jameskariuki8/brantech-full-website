@@ -62,6 +62,9 @@ PERSONA = Persona(
         "Ground the piece in the African ecosystem -- the developers, the "
         "startups, the enterprise buyers -- as reporting, not as a closing "
         "paragraph.",
+        "The African perspective you are given is mostly analysis. Write it as "
+        "Teklora's view -- what could follow, and why -- not as something that "
+        "has already happened.",
         "Write for search without writing for a crawler.",
     ),
     constraints=(
@@ -157,13 +160,15 @@ def _draft_text(draft) -> str:
 def _sources_text(report) -> str:
     """What the article is allowed to have got a number from.
 
-    The verified report and the dossier's regional section, and nothing else.
+    The verified report and its audited regional section, and nothing else.
+    Not the dossier's raw regional section: counting that as support would let
+    a figure the verifier removed from it back in, unchallenged.
     The continuity evidence is deliberately absent: the brief that gathers it
     says in as many words that it is not source material, and letting a figure
     from a past article count as support here would be exactly how a claim the
     verifier removed gets back in.
     """
-    parts = [report.verified_dossier, report.dossier.african_opportunities]
+    parts = [report.verified_dossier, report.verified_opportunities]
     parts.extend(str(item) for item in (report.verified_statistics or []))
     return "\n\n".join(part for part in parts if part)
 
@@ -191,7 +196,7 @@ class AIWriterAgent(Agent):
                 ),
                 title=report.dossier.topic.title,
                 verified_text=report.verified_dossier,
-                african_perspective=report.dossier.african_opportunities,
+                african_perspective=report.verified_opportunities,
                 target_audience=strategy.get('target_audience', 'developers'),
                 tone=strategy.get('tone', 'Analytical & Authoritative'),
                 length_words=strategy.get('length_words', 1600),

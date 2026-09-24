@@ -47,6 +47,12 @@ class FactAudit(AgentOutput):
     verified_quotes: list = Field(default_factory=list)
     sanitized_text: str = ""
 
+    # The African opportunities section, audited on its own. It is the one part
+    # of a dossier that is mostly analysis by design -- "this could suit..." --
+    # and it used to be handed to the writer raw, so nothing removed from it
+    # ever stayed removed.
+    sanitized_opportunities: str = ""
+
 
 PERSONA = Persona(
     name="fact_verifier",
@@ -57,15 +63,30 @@ PERSONA = Persona(
         "Name every contradiction you find, quoting the two statements that "
         "disagree.",
         "Remove claims the dossier does not support rather than softening them.",
-        "Set the confidence score on the evidence, and treat a dossier you "
-        "cannot check as one you are not confident about.",
+        "Tell facts from analysis. A statement about what exists, happened or "
+        "was measured is a fact and needs support. A forward-looking judgement "
+        "worded as one -- 'could', 'may', 'is well placed to' -- is analysis: "
+        "keep it. If it rests on a premise nobody supported, remove or soften "
+        "that premise and keep the rest of the analysis.",
+        "A premise that is common knowledge in the field needs no citation. "
+        "One that is specific -- a price, a wattage, a market share, a named "
+        "deployment -- does.",
+        "An opportunity asserted as a current reality -- adoption, deployments, "
+        "market share that nobody cited -- is a fact, and unsupported. Remove "
+        "it, or keep it only reworded as the analysis it actually is.",
+        "Set the confidence score on the text you return, not the dossier you "
+        "were given: it answers whether what survived your audit is sound "
+        "enough to write up. A claim you removed no longer counts against it, "
+        "and neither does analysis you kept. Treat text you could not check as "
+        "text you are not confident about.",
     ),
     constraints=(
         "Do not add facts, figures or citations during sanitisation. Your "
         "output may only contain what the dossier already claimed.",
         "Do not approve a dossier because it reads well.",
-        "If the dossier gives you nothing to verify against, decline rather "
-        "than issuing a confidence score you cannot support.",
+        "Decline only if you could check nothing at all -- no source to read, "
+        "nothing established to compare against. Removing some claims is an "
+        "audit, not a reason to decline: return what survived.",
     ),
 )
 
@@ -95,9 +116,11 @@ Technical Explanation: {technical_explanations}
 African Opportunities: {african_opportunities}
 Sources Cited: {sources}
 {evidence}
-Return the sanitised text with unsupported claims removed, the contradictions
-you found, the statistics and quotes you were able to verify, and an overall
-confidence level between 0.0 and 1.0.
+Return the sanitised text with unsupported claims removed, the African
+Opportunities section audited on its own in `sanitized_opportunities` (analysis
+kept as analysis, unsupported facts removed), the contradictions you found, the
+statistics and quotes you were able to verify, and an overall confidence level
+between 0.0 and 1.0.
 """
 
 EVIDENCE_HEADER = """
@@ -191,6 +214,9 @@ class FactVerificationAgent(Agent):
                 # audited prose, because `is_approved` is what gates that.
                 verified_dossier=dossier.structured_dossier,
                 verification_evidence=evidence,
+                # Left empty rather than copied: an unapproved report is never
+                # drafted from, and an empty section cannot leak.
+                verified_opportunities="",
                 is_approved=False,
             )
 
@@ -202,6 +228,7 @@ class FactVerificationAgent(Agent):
             verified_statistics=audit.verified_statistics,
             verified_quotes=audit.verified_quotes,
             verified_dossier=audit.sanitized_text,
+            verified_opportunities=audit.sanitized_opportunities,
             # Its own column, deliberately not appended to verified_dossier.
             # That field is what the writer drafts from, so a checking
             # transcript in it would put fetched page text -- and its numbers --

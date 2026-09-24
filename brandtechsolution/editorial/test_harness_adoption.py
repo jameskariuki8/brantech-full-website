@@ -576,6 +576,23 @@ class VerificationEvidenceTests(TestCase):
         self.assertFalse(report.is_approved)
         self.assertIn("Could not reach", report.verification_evidence)
 
+    def test_the_audited_regional_section_is_stored(self):
+        report = self._report()
+        self.assertEqual(report.verified_opportunities,
+                         "Local-language agent tooling could suit Kenyan fintech.")
+
+    def test_a_refusal_stores_no_regional_section(self):
+        """An unapproved report is never drafted from, but an empty section is
+        the one that cannot leak if something downstream forgets that."""
+        with fake_gemini():
+            dossier = ResearchAgent().conduct_research(self.topic)
+
+        with patch.object(FactVerificationAgent, "gather_evidence", return_value=""):
+            with fake_gemini({"status": "insufficient_evidence", "notes": "nothing"}):
+                report = FactVerificationAgent().verify_dossier(dossier)
+
+        self.assertEqual(report.verified_opportunities, "")
+
     def test_the_verifier_actually_asks_for_its_tools(self):
         """Guards the wiring: an agent with a suite that never gathers has
         tools on paper only."""
@@ -606,7 +623,9 @@ THIN = (
 )
 
 
-def _verified_report(body, *, title="Unbenchmarked orchestration"):
+def _verified_report(body, *, title="Unbenchmarked orchestration",
+                     raw_opportunities="Local teams are evaluating the approach.",
+                     opportunities="Local teams could evaluate the approach."):
     """A report with a controlled body, built directly.
 
     Not by running the verifier: these tests are about what the *writer* does
@@ -619,7 +638,7 @@ def _verified_report(body, *, title="Unbenchmarked orchestration"):
         timeline=[],
         technical_explanations=body,
         advantages_and_limitations={},
-        african_opportunities="Local teams are evaluating the approach.",
+        african_opportunities=raw_opportunities,
         sources=[],
         structured_dossier=body,
     )
@@ -631,6 +650,7 @@ def _verified_report(body, *, title="Unbenchmarked orchestration"):
         verified_statistics=[],
         verified_quotes=[],
         verified_dossier=body,
+        verified_opportunities=opportunities,
         is_approved=True,
     )
 
@@ -725,6 +745,32 @@ class InventedFiguresTests(TestCase):
 
         self.assertTrue(result.abstained)
         self.assertIn("40%", result.notes)
+
+    def test_the_regional_section_is_drafted_from_the_audit(self):
+        """The hole this closes: the writer used to read the dossier's raw
+        section, so nothing the verifier removed from it stayed removed."""
+        report = _verified_report(
+            THIN,
+            raw_opportunities="Pi already runs in 40% of Kenyan schools.",
+            opportunities="Pi's low footprint could suit school deployments.",
+        )
+
+        with fake_gemini() as model:
+            self._write(report)
+
+        prompt = str(model.calls[0])
+        self.assertIn("could suit school deployments", prompt)
+        self.assertNotIn("Kenyan schools", prompt)
+
+    def test_the_raw_regional_section_cannot_launder_a_figure(self):
+        """A figure the verifier struck from the regional section must not
+        count as support for the same figure turning up in the draft."""
+        from editorial.services.writer import _sources_text
+
+        report = _verified_report(
+            THIN, raw_opportunities="Pi already runs in 40% of Kenyan schools.",
+        )
+        self.assertNotIn("40%", _sources_text(report))
 
     def test_continuity_evidence_cannot_launder_a_figure(self):
         """The brief that gathers it says it is not source material. A number
