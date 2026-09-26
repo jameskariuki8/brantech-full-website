@@ -21,6 +21,7 @@ from ai_workflows.harness.contract import AgentOutput, OutputStatus, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle
+from editorial.text import fit_to_column
 from research.models import VerifiedFactReport
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,9 @@ PERSONA = Persona(
         "Ground the piece in the African ecosystem -- the developers, the "
         "startups, the enterprise buyers -- as reporting, not as a closing "
         "paragraph.",
+        "The African perspective you are given is mostly analysis. Write it as "
+        "Teklora's view -- what could follow, and why -- not as something that "
+        "has already happened.",
         "Write for search without writing for a crawler.",
     ),
     constraints=(
@@ -88,6 +92,9 @@ Tone: {tone}
 Target length: about {length_words} words
 Reading difficulty: {reading_difficulty}
 Focus on: {focus_area}
+
+Keep the headline under 100 characters, the subtitle under 200 and the meta
+description under 160.
 {continuity}"""
 
 # Step 9. The writer is given `search_knowledge` and not `fetch_url`, and the
@@ -157,13 +164,15 @@ def _draft_text(draft) -> str:
 def _sources_text(report) -> str:
     """What the article is allowed to have got a number from.
 
-    The verified report and the dossier's regional section, and nothing else.
+    The verified report and its audited regional section, and nothing else.
+    Not the dossier's raw regional section: counting that as support would let
+    a figure the verifier removed from it back in, unchallenged.
     The continuity evidence is deliberately absent: the brief that gathers it
     says in as many words that it is not source material, and letting a figure
     from a past article count as support here would be exactly how a claim the
     verifier removed gets back in.
     """
-    parts = [report.verified_dossier, report.dossier.african_opportunities]
+    parts = [report.verified_dossier, report.verified_opportunities]
     parts.extend(str(item) for item in (report.verified_statistics or []))
     return "\n\n".join(part for part in parts if part)
 
@@ -191,7 +200,7 @@ class AIWriterAgent(Agent):
                 ),
                 title=report.dossier.topic.title,
                 verified_text=report.verified_dossier,
-                african_perspective=report.dossier.african_opportunities,
+                african_perspective=report.verified_opportunities,
                 target_audience=strategy.get('target_audience', 'developers'),
                 tone=strategy.get('tone', 'Analytical & Authoritative'),
                 length_words=strategy.get('length_words', 1600),
@@ -291,8 +300,10 @@ class AIWriterAgent(Agent):
         article = EditorialArticle.objects.create(
             topic=topic,
             verification_report=report,
-            title=draft.title,
-            subtitle=draft.subtitle,
+            # The three columns with a width. The prompt asks for the budget;
+            # this is what happens when the model ignores it.
+            title=fit_to_column(EditorialArticle, 'title', draft.title),
+            subtitle=fit_to_column(EditorialArticle, 'subtitle', draft.subtitle),
             executive_summary=draft.executive_summary,
             hero_paragraph=draft.hero_paragraph,
             introduction=draft.introduction,
@@ -314,7 +325,10 @@ class AIWriterAgent(Agent):
             # References come from the dossier, not from the draft. The writer
             # is not asked for sources precisely so that it cannot mint one.
             references=report.dossier.sources,
-            meta_description=draft.meta_description or draft.executive_summary[:150],
+            meta_description=fit_to_column(
+                EditorialArticle, 'meta_description',
+                draft.meta_description or draft.executive_summary[:150],
+            ),
             keywords=draft.keywords or topic.keywords,
             target_audience=strategy.get('target_audience', 'developers'),
             tone=strategy.get('tone', 'Analytical & Authoritative'),

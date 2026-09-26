@@ -533,6 +533,28 @@ class GatherTests(TestCase):
 
         self.assertLess(len(evidence), MAX_RESULT_CHARS * 1.5)
 
+    def test_a_truncated_result_says_so(self):
+        """A model handed a silently cut page reads what it never saw as
+        absent: the verifier called a correct spec unsupported because the
+        table sat past the cut."""
+        from ai_workflows.harness.gather import MAX_RESULT_CHARS
+
+        tool = FakeTool("fetch_url", "x" * (MAX_RESULT_CHARS * 2))
+        model = _model(
+            _turn(tool_calls=[{"name": "fetch_url", "args": {}, "id": "1"}]),
+            _turn("Done."),
+        )
+        evidence = self._gather(model, [tool])
+
+        self.assertIn("this result was truncated", evidence)
+
+    def test_the_gather_cap_does_not_undercut_the_fetcher(self):
+        """Two limits on one page is one limit nobody chose."""
+        from ai_workflows.harness.fetching import MAX_CHARS
+        from ai_workflows.harness.gather import MAX_RESULT_CHARS
+
+        self.assertGreaterEqual(MAX_RESULT_CHARS, MAX_CHARS)
+
 
 class WiringTests(TestCase):
     """A suite an agent never resolves is a tool on paper only."""

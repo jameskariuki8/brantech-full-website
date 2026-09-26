@@ -96,6 +96,7 @@ DEFAULT_PAYLOAD = {
     "verified_statistics": [{"claim": "Adoption doubled", "source": "https://example.com/a"}],
     "verified_quotes": [],
     "sanitized_text": "# Verified dossier\n\nBody text with claims removed.",
+    "sanitized_opportunities": "Local-language agent tooling could suit Kenyan fintech.",
     # --- editorial.writer ---
     "title": "Multi-Agent Orchestration in Production",
     "subtitle": "What changes when agents coordinate themselves",

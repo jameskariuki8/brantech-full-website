@@ -7,6 +7,7 @@ social graphics, YouTube thumbnails, image captions, and accessibility alt text 
 import logging
 from typing import Dict, Any
 from editorial.models import EditorialArticle
+from editorial.text import fit_to_column
 from media_generation.models import MediaAsset
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,12 @@ class VisualIntelligenceAgent:
             f"vibrant teal and golden orange highlights on deep obsidian background. 8k resolution."
         )
 
-        alt_text = f"Conceptual technical visualization of {article.title} featuring glowing network architecture."
+        # Every string below wraps the title in fixed text, so a title near its
+        # own 300-character limit overflows each of these 300-character columns.
+        alt_text = fit_to_column(
+            MediaAsset, 'alt_text',
+            f"Conceptual technical visualization of {article.title} featuring glowing network architecture.",
+        )
 
         article.hero_image_prompt = prompt
         article.image_alt_text = alt_text
@@ -39,7 +45,10 @@ class VisualIntelligenceAgent:
             defaults={
                 'prompt': prompt,
                 'alt_text': alt_text,
-                'caption': f"Figure 1: High-level architectural landscape of {article.title}."
+                'caption': fit_to_column(
+                    MediaAsset, 'caption',
+                    f"Figure 1: High-level architectural landscape of {article.title}.",
+                ),
             }
         )
 
@@ -51,8 +60,14 @@ class VisualIntelligenceAgent:
             defaults={
                 'prompt': f"Infographic for {article.title}",
                 'svg_content': svg_code,
-                'alt_text': f"Infographic diagram mapping key layers of {article.title}",
-                'caption': f"System Architecture & Workflow Diagram: {article.title}"
+                'alt_text': fit_to_column(
+                    MediaAsset, 'alt_text',
+                    f"Infographic diagram mapping key layers of {article.title}",
+                ),
+                'caption': fit_to_column(
+                    MediaAsset, 'caption',
+                    f"System Architecture & Workflow Diagram: {article.title}",
+                ),
             }
         )
 

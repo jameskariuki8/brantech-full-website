@@ -49,7 +49,8 @@ def _topic(title="Autonomous AI Multi-Agent Orchestration"):
     )
 
 
-def _dossier(body, topic_title=None):
+def _dossier(body, topic_title=None, *, opportunities="Local-language agent tooling.",
+             sources=None):
     """A dossier with a controlled body, bypassing the research agent.
 
     Built directly rather than by running ResearchAgent, because these cases
@@ -64,9 +65,9 @@ def _dossier(body, topic_title=None):
         technical_explanations=body,
         advantages_and_limitations={},
         industry_applications="Support triage and research synthesis.",
-        african_opportunities="Local-language agent tooling.",
+        african_opportunities=opportunities,
         future_outlook="Convergence on a few orchestration standards.",
-        sources=SOURCES,
+        sources=SOURCES if sources is None else sources,
         structured_dossier=body,
     )
 
@@ -205,6 +206,115 @@ registry.register(EvalCase(
 ))
 
 
+# The analysis line. A live run on production declined to audit a Raspberry Pi
+# dossier outright: it confirmed the technical claims, removed the African
+# opportunities as "forward-looking projections rather than verifiable facts",
+# and then reported the whole thing as a refusal -- 0.0 confidence, rejected,
+# its sanitised text thrown away. Opportunities are analysis by design, so that
+# would have stopped nearly every dossier. These two cases hold the line from
+# both sides: analysis worded as analysis survives, a fact nobody cited does not.
+# Live, because the failure was the model's own choice to decline, and no stub
+# makes that choice for it.
+
+# Wikipedia rather than the vendor's page: raspberrypi.com refuses every
+# automated client, so a case citing it measures a 403 -- and declining is the
+# right answer to a source nobody can read.
+PI_SOURCES = [{
+    "title": "Raspberry Pi 5 -- Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Raspberry_Pi_5",
+}]
+
+PI_BODY = (
+    "The Raspberry Pi 5 is a single-board computer built around a quad-core "
+    "Arm Cortex-A76 processor. It runs a Debian-based operating system and "
+    "exposes general-purpose I/O pins for hardware projects."
+)
+
+PI_ANALYSIS = (
+    "Its low cost and low power draw could make it a practical base for "
+    "computing labs in schools with unreliable grid power, and local hardware "
+    "startups may find it a cheaper route to prototyping than imported "
+    "industrial boards."
+)
+
+PI_INVENTED_FACT = (
+    "Raspberry Pi boards already power 40% of secondary-school computer labs "
+    "in Kenya. " + PI_ANALYSIS
+)
+
+
+registry.register(EvalCase(
+    name="verifier.keeps_analysis_worded_as_analysis",
+    agent="fact_verifier",
+    description=(
+        "Sound technical claims and an opportunities section worded as "
+        "analysis. The verifier must audit it and approve it, not decline "
+        "because the analysis cannot be sourced -- analysis never can be."
+    ),
+    setup=lambda: _dossier(PI_BODY, "Raspberry Pi 5 for African classrooms",
+                           opportunities=PI_ANALYSIS, sources=PI_SOURCES),
+    run=_run_verifier,
+    graders=[
+        DeterministicGrader(
+            "audits_rather_than_declines",
+            lambda report, case: (
+                Grade.ok(f"approved at {report.confidence_level:.2f}")
+                if report.is_approved
+                else Grade.bad(
+                    f"rejected at {report.confidence_level:.2f}; "
+                    "analysis was treated as an unsupported fact"
+                )
+            ),
+        ),
+        DeterministicGrader(
+            "analysis_survives",
+            lambda report, case: (
+                Grade.ok("the regional section survived")
+                if report.verified_opportunities.strip()
+                else Grade.bad("the regional section was emptied")
+            ),
+        ),
+    ],
+))
+
+
+registry.register(EvalCase(
+    name="verifier.removes_an_uncited_regional_fact",
+    agent="fact_verifier",
+    description=(
+        "The other half. The same analysis, prefixed with an adoption figure "
+        "no source gives. The figure has to go, and its removal must not sink "
+        "an otherwise sound dossier -- removing a claim is an audit, not a "
+        "reason to decline."
+    ),
+    setup=lambda: _dossier(PI_BODY, "Raspberry Pi 5 in Kenyan schools",
+                           opportunities=PI_INVENTED_FACT, sources=PI_SOURCES),
+    run=_run_verifier,
+    graders=[
+        DeterministicGrader(
+            "uncited_figure_removed",
+            lambda report, case: (
+                Grade.bad("kept the uncited 40% adoption figure")
+                if "40%" in report.verified_opportunities
+                or ("40%" in report.verified_dossier and report.is_approved)
+                else Grade.ok("the uncited figure is gone")
+            ),
+        ),
+        DeterministicGrader(
+            "removal_does_not_sink_the_dossier",
+            lambda report, case: (
+                Grade.ok("approved with the figure removed")
+                if report.is_approved
+                else Grade.bad(
+                    f"rejected at {report.confidence_level:.2f} over one "
+                    "removable claim"
+                )
+            ),
+        ),
+    ],
+))
+
+
 # ============================================================
 # The writer
 # ============================================================
@@ -246,6 +356,7 @@ def _report(body, *, removed=(), confidence=0.9, title=None):
         verified_statistics=[],
         verified_quotes=[],
         verified_dossier=body,
+        verified_opportunities="Local-language agent tooling could suit regional teams.",
         is_approved=True,
     )
 
