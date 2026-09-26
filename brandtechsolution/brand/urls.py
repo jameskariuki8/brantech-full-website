@@ -5,6 +5,7 @@ urlpatterns = [
     path('donate/', views.donate, name='donate'),
     path('', views.index, name='index'),
     path('about/', views.about, name='about'),
+    path('careers/', views.careers, name='careers'),
 
     # API Endpoints
     path('api/posts/', api_views.post_list, name='api_post_list'),

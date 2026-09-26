@@ -12,7 +12,7 @@
 <style>
     .ql-toolbar.ql-snow,
     .ql-container.ql-snow {
-        border-color: rgba(255, 255, 255, 0.08);
+        border-color: #E4E4E7;
     }
 
     .ql-toolbar.ql-snow .ql-stroke {
@@ -45,7 +45,7 @@
     <!-- Dashboard Section -->
     <div id="dashboard" class="section animate-fade-in">
         <header class="mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
+            <h1 class="text-3xl font-bold text-primaryText mb-2">Overview</h1>
             <p class="text-gray-500">Welcome back, here's what's happening across your platform.</p>
         </header>
 
@@ -59,7 +59,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
-                    <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="blogCount">0</h3>
                 </div>
             </div>
 
@@ -72,7 +72,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Blog Views</p>
-                    <h3 class="text-3xl font-bold text-white" id="blogViewsCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="blogViewsCount">0</h3>
                 </div>
             </div>
 
@@ -85,7 +85,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
-                    <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="projectCount">0</h3>
                 </div>
             </div>
 
@@ -98,7 +98,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Total Events</p>
-                    <h3 class="text-3xl font-bold text-white" id="eventCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="eventCount">0</h3>
                 </div>
             </div>
 
@@ -111,7 +111,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Email Templates</p>
-                    <h3 class="text-3xl font-bold text-white" id="templateCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="templateCount">0</h3>
                 </div>
             </div>
 
@@ -124,7 +124,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Campaigns</p>
-                    <h3 class="text-3xl font-bold text-white" id="campaignCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="campaignCount">0</h3>
                 </div>
             </div>
 
@@ -137,7 +137,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Inquiries</p>
-                    <h3 class="text-3xl font-bold text-white" id="inquiryCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="inquiryCount">0</h3>
                 </div>
             </div>
 
@@ -150,7 +150,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Appointments</p>
-                    <h3 class="text-3xl font-bold text-white" id="appointmentCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="appointmentCount">0</h3>
                 </div>
             </div>
 
@@ -163,7 +163,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Total Likes</p>
-                    <h3 class="text-3xl font-bold text-white" id="likesCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="likesCount">0</h3>
                 </div>
             </div>
 
@@ -176,7 +176,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-400 mb-1">Total Comments</p>
-                    <h3 class="text-3xl font-bold text-white" id="commentsCount">0</h3>
+                    <h3 class="text-3xl font-bold text-primaryText" id="commentsCount">0</h3>
                 </div>
             </div>
         </div>
@@ -186,7 +186,7 @@
             <!-- Chart 1: Top Blogs by View Count -->
             <div
                 class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-blue/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
+                <h3 class="text-lg font-bold text-primaryText mb-4"><i
                         class="fas fa-chart-bar text-brand-blue mr-2"></i>Top Performing Blog Posts</h3>
                 <div class="relative h-64 w-full">
                     <canvas id="topBlogsChart"></canvas>
@@ -196,7 +196,7 @@
             <!-- Chart 2: Appointments by Status -->
             <div
                 class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-green/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
+                <h3 class="text-lg font-bold text-primaryText mb-4"><i
                         class="fas fa-chart-pie text-brand-green mr-2"></i>Appointments Breakdown</h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="appointmentsChart"></canvas>
@@ -206,7 +206,7 @@
             <!-- Chart 3: Inquiries by Status -->
             <div
                 class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-orange-500/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
+                <h3 class="text-lg font-bold text-primaryText mb-4"><i
                         class="fas fa-chart-line text-orange-500 mr-2"></i>Inquiries by Status</h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="inquiriesChart"></canvas>
@@ -216,7 +216,7 @@
             <!-- Chart 4: Campaigns Overview -->
             <div
                 class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-purple-500/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
+                <h3 class="text-lg font-bold text-primaryText mb-4"><i
                         class="fas fa-envelope text-purple-500 mr-2"></i>Campaigns Overview</h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="campaignsChart"></canvas>
@@ -244,11 +244,11 @@
     <div id="githubSync" class="section hidden">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-white">GitHub Manager</h2>
+                <h2 class="text-2xl font-bold text-primaryText">GitHub Manager</h2>
                 <p class="text-gray-500 text-sm">Sync your repositories as projects</p>
             </div>
             <button onclick="syncSelectedRepos()" id="syncBtn"
-                class="bg-brand-blue hover:bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
+                class="bg-brand-blue hover:bg-blue-600 text-primaryText font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
                 <i class="fas fa-sync-alt mr-2"></i>Sync Selected
             </button>
         </div>

@@ -86,6 +86,11 @@ def about(request):
     return render(request, 'brand/about.html')
 
 
+def careers(request):
+    """Careers page view"""
+    return render(request, 'brand/careers.html')
+
+
 def products(request):
     """The deep product showcase.
 

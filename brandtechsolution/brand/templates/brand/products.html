@@ -29,19 +29,28 @@
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         heading: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#FAFAFA',
+                        surface: '#FFFFFF',
+                        primaryText: '#18181B',
+                        secondaryText: '#52525B',
+                        brandBlue: '#33348E',
+                        brandWarm: '#10B981',
+                        borderLight: '#E4E4E7'
                     }
                 }
             }
         }
     </script>
 
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
     <style>
         html { scroll-behavior: smooth; }
         .product-hero-title {
-            color: #FFFFFF !important;
+            color: var(--text-primary) !important;
             font-family: var(--font-heading) !important;
         }
 
@@ -72,7 +81,7 @@
             transition: all 0.2s ease;
         }
         .phase-tab:hover, .phase-tab.active {
-            color: #FFFFFF !important;
+            color: var(--text-primary) !important;
             border-color: #00FF94 !important;
             background: rgba(0, 255, 148, 0.15);
         }
@@ -94,7 +103,7 @@
         }
     </style>
 </head>
-<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased selection:bg-[#00FF94]/30 selection:text-white relative overflow-x-hidden">
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-[#00FF94]/30 selection:text-primaryText relative overflow-x-hidden">
 
     <!-- Header Inheritance -->
     {% include 'brand/header.html' %}
@@ -105,7 +114,7 @@
 
         <!-- Hero Section -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-            <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md max-w-[90vw]">
+            <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-gray-100 border border-borderLight backdrop-blur-md max-w-[90vw]">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#00FF94] animate-pulse shrink-0"></span>
                 <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00FF94] truncate">Teklora Product Ecosystem & Roadmap</span>
             </div>
@@ -115,16 +124,16 @@
                 <span class="text-[#00FF94]">Deployed Platforms & Spatial Vision.</span>
             </h1>
 
-            <p class="text-base sm:text-lg text-[#94A3B8] leading-relaxed max-w-3xl mx-auto font-medium">
+            <p class="text-base sm:text-lg text-secondaryText leading-relaxed max-w-3xl mx-auto font-medium">
                 Explore our live SaaS solutions, active conversational commerce engines, and futuristic 3D spatial operating systems.
             </p>
 
             <!-- Quick Filter Bar -->
             <div class="flex flex-wrap justify-center gap-2 pt-2">
-                <button type="button" onclick="filterPhase('all')" id="btn-all" class="phase-tab active px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white">
+                <button type="button" onclick="filterPhase('all')" id="btn-all" class="phase-tab active px-4 py-2 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-primaryText">
                     ✦ All Products ({{ total }})
                 </button>
-{% for group in groups %}                <button type="button" onclick="filterPhase('{{ group.key }}')" id="btn-{{ group.key }}" class="phase-tab px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+{% for group in groups %}                <button type="button" onclick="filterPhase('{{ group.key }}')" id="btn-{{ group.key }}" class="phase-tab px-4 py-2 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
                     {{ group.tab_label }} ({{ group.count }})
                 </button>
 {% endfor %}
@@ -139,26 +148,26 @@
             <!-- {{ group.heading|upper }} -->
             <!-- ============================================================ -->
             <div class="space-y-12 phase-group" data-phase="{{ group.key }}">
-                <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3 border-b border-borderLight pb-4">
                     <span class="w-3 h-3 rounded-full bg-[{{ group.dot }}]{% if group.dot_animation %} {{ group.dot_animation }}{% endif %}"></span>
-                    <h2 class="text-xl sm:text-2xl font-bold text-white font-heading uppercase tracking-wider">
+                    <h2 class="text-xl sm:text-2xl font-bold text-primaryText font-heading uppercase tracking-wider">
                         {{ group.heading }}
                     </h2>
                 </div>
 {% for product in group.items %}{% if product.is_spotlight %}
-                <article id="{{ product.slug }}" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-[{{ product.fill }}]/30 bg-gradient-to-br from-[#050811] via-[#0A1224] to-[#050811] space-y-8 shadow-[0_0_50px_rgba({{ product.glow }},0.1)]">
+                <article id="{{ product.slug }}" class="product-card clean-card p-6 sm:p-10 rounded-3xl border border-[{{ product.fill }}]/30 bg-gradient-to-br from-[#050811] via-[#0A1224] to-[#050811] space-y-8 shadow-[0_0_50px_rgba({{ product.glow }},0.1)]">
 {% else %}
-                <article id="{{ product.slug }}" class="product-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
+                <article id="{{ product.slug }}" class="product-card clean-card p-6 sm:p-10 rounded-3xl border border-borderLight space-y-8">
 {% endif %}
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/{% if product.is_spotlight %}10{% else %}5{% endif %}">
                         <div class="space-y-2">
                             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[{{ product.fill }}]/10 text-[{{ product.accent }}] border border-[{{ product.fill }}]/20 text-xs font-bold uppercase tracking-wider">
                                 <i class="{{ product.badge_icon }}"></i> {{ product.badge_label }}
                             </div>
-                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                            <h3 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                                 {{ product.title }}
                             </h3>
-                            <p class="text-xs sm:text-sm {% if product.is_spotlight %}text-[#BAE6FD]/80{% else %}text-[#94A3B8]{% endif %} max-w-3xl">
+                            <p class="text-xs sm:text-sm {% if product.is_spotlight %}text-[#BAE6FD]/80{% else %}text-secondaryText{% endif %} max-w-3xl">
                                 {{ product.short_description }}
                             </p>
                         </div>
@@ -175,11 +184,11 @@
                     <!-- Vision & Problem/Solution Specs Grid -->
                     <div class="grid md:grid-cols-2 gap-6">
 {% for note in product.notes.all %}
-                        <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+                        <div class="p-5 rounded-2xl bg-gray-50 border border-borderLight space-y-2">
                             <h4 class="text-xs font-bold text-[{{ note.color|default:product.accent }}] uppercase tracking-wider flex items-center gap-2">
                                 <i class="{{ note.icon }}"></i> {{ note.heading }}
                             </h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 {{ note.body }}
                             </p>
                         </div>
@@ -189,14 +198,14 @@
 {% if product.gallery.all %}
                     <!-- Dual Image Preview Lightbox Row -->
                     <div class="space-y-3">
-                        <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <div class="text-xs font-bold text-primaryText uppercase tracking-wider flex items-center gap-2">
                             <i class="fas fa-images text-[{{ product.accent }}]"></i> {{ product.gallery_heading }} (Click image to expand)
                         </div>
                         <div class="grid sm:grid-cols-2 gap-4">
 {% for image in product.gallery.all %}
-                            <div class="relative group rounded-2xl overflow-hidden border border-{% if product.is_spotlight %}[{{ product.fill }}]/30{% else %}white/10{% endif %} bg-[#0A0F1D] {% if product.is_spotlight %}h-60 sm:h-72{% else %}h-56 sm:h-64{% endif %}" onclick="openLightbox('{{ image.expanded_src|escapejs }}', '{{ image.lightbox_title|escapejs }}')">
+                            <div class="relative group rounded-2xl overflow-hidden border border-{% if product.is_spotlight %}[{{ product.fill }}]/30{% else %}white/10{% endif %} bg-surface {% if product.is_spotlight %}h-60 sm:h-72{% else %}h-56 sm:h-64{% endif %}" onclick="openLightbox('{{ image.expanded_src|escapejs }}', '{{ image.lightbox_title|escapejs }}')">
                                 <img src="{{ image.src }}" alt="{{ image.alt }}" class="w-full h-full object-cover mockup-img" />
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-primaryText text-xs font-bold gap-2">
                                     <i class="fas fa-search-plus"></i> {{ image.caption }}
                                 </div>
                             </div>
@@ -207,7 +216,7 @@
                     <!-- Capabilities Grid + Data Story Chart -->
                     <div class="grid lg:grid-cols-12 gap-8 items-start">
                         <div class="lg:col-span-6 space-y-{% if product.chip_features %}4{% else %}3{% endif %}">
-                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">{{ product.features_heading }}</h4>
+                            <h4 class="text-xs font-bold text-primaryText uppercase tracking-wider">{{ product.features_heading }}</h4>
 {% if product.chip_features %}
                             <div class="flex flex-wrap gap-2">
 {% for feature in product.chip_features %}
@@ -216,9 +225,9 @@
                             </div>
 {% endif %}
 {% if product.card_features %}
-                            <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                            <ul class="space-y-2.5 text-xs text-secondaryText">
 {% for feature in product.card_features %}
-                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-gray-200">
                                     <i class="{{ feature.icon }} text-[{{ product.accent }}] mt-0.5"></i>
                                     <span><strong>{{ feature.label }}:</strong> {{ feature.text }}</span>
                                 </li>
@@ -226,7 +235,7 @@
                             </ul>
 {% endif %}
 {% if product.check_features %}
-                            <ul class="space-y-2 text-xs text-[#94A3B8]">
+                            <ul class="space-y-2 text-xs text-secondaryText">
 {% for feature in product.check_features %}
                                 <li class="flex items-center gap-2"><i class="{{ feature.icon }} text-[{{ product.accent }}]"></i> {{ feature.text }}</li>
 {% endfor %}
@@ -235,10 +244,10 @@
                         </div>
 {% if product.chart_spec %}
                         <div class="lg:col-span-6 space-y-3">
-                            <h4 class="text-xs font-bold {% if product.style_overrides.chart_heading_accent %}text-[{{ product.accent }}]{% else %}text-white{% endif %} uppercase tracking-wider flex items-center gap-2">
+                            <h4 class="text-xs font-bold {% if product.style_overrides.chart_heading_accent %}text-[{{ product.accent }}]{% else %}text-primaryText{% endif %} uppercase tracking-wider flex items-center gap-2">
                                 <i class="{{ product.chart_icon }}{% if not product.style_overrides.chart_heading_accent %} text-[{{ product.accent }}]{% endif %}"></i> {{ product.chart_heading }}
                             </h4>
-                            <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                            <div class="p-4 rounded-2xl bg-surface border border-gray-200 flex items-center justify-center">
                                 <canvas id="chart-{{ product.slug }}" class="max-h-[200px]"></canvas>
                             </div>
                         </div>
@@ -250,11 +259,11 @@
 {% endfor %}
 
             <!-- Bottom CTA Banner -->
-            <section class="glass-card p-8 sm:p-12 rounded-3xl border border-white/10 text-center space-y-6">
-                <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading max-w-2xl mx-auto">
+            <section class="clean-card p-8 sm:p-12 rounded-3xl border border-borderLight text-center space-y-6">
+                <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading max-w-2xl mx-auto">
                     Partner With Teklora on Custom Engineering Projects
                 </h2>
-                <p class="text-xs sm:text-sm text-[#94A3B8] max-w-xl mx-auto">
+                <p class="text-xs sm:text-sm text-secondaryText max-w-xl mx-auto">
                     Whether you need a full-scale SaaS platform, custom WhatsApp automation, or spatial software, our team delivers.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4 pt-2">
@@ -272,10 +281,10 @@
 
     <!-- Lightbox Modal Viewer -->
     <div id="imgLightbox" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md items-center justify-center p-4">
-        <div class="relative max-w-5xl w-full bg-[#0A0F1D] border border-white/10 rounded-3xl overflow-hidden p-4 space-y-4">
+        <div class="relative max-w-5xl w-full bg-surface border border-borderLight rounded-3xl overflow-hidden p-4 space-y-4">
             <div class="flex justify-between items-center px-2">
-                <h4 id="lightboxTitle" class="text-sm font-bold text-white font-heading">Product Mockup Viewer</h4>
-                <button type="button" onclick="closeLightbox()" class="text-gray-400 hover:text-white p-2 text-lg">
+                <h4 id="lightboxTitle" class="text-sm font-bold text-primaryText font-heading">Product Mockup Viewer</h4>
+                <button type="button" onclick="closeLightbox()" class="text-gray-400 hover:text-primaryText p-2 text-lg">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -291,7 +300,7 @@
     {{ charts|json_script:"product-charts" }}
 
     <script>
-        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.color = '#52525B';
         Chart.defaults.font.family = 'Inter';
 
         // Each product carries its own Chart.js config, so the page builds
@@ -311,13 +320,13 @@
         // --- FILTERING & LIGHTBOX ---
         function filterPhase(phase) {
             document.querySelectorAll('.phase-tab').forEach(b => {
-                b.classList.remove('active', 'text-white');
-                b.classList.add('text-[#94A3B8]');
+                b.classList.remove('active', 'text-primaryText');
+                b.classList.add('text-secondaryText');
             });
             const activeBtn = document.getElementById(`btn-${phase}`);
             if (activeBtn) {
-                activeBtn.classList.add('active', 'text-white');
-                activeBtn.classList.remove('text-[#94A3B8]');
+                activeBtn.classList.add('active', 'text-primaryText');
+                activeBtn.classList.remove('text-secondaryText');
             }
 
             document.querySelectorAll('.phase-group').forEach(el => {

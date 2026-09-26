@@ -26,19 +26,28 @@
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         heading: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#FAFAFA',
+                        surface: '#FFFFFF',
+                        primaryText: '#18181B',
+                        secondaryText: '#52525B',
+                        brandBlue: '#33348E',
+                        brandWarm: '#10B981',
+                        borderLight: '#E4E4E7'
                     }
                 }
             }
         }
     </script>
 
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
     <style>
         html { scroll-behavior: smooth; }
         .about-hero-title {
-            color: #FFFFFF !important;
+            color: var(--text-primary) !important;
             font-family: var(--font-heading) !important;
         }
 
@@ -86,7 +95,7 @@
         }
     </style>
 </head>
-<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased selection:bg-[#00FF94]/30 selection:text-white relative overflow-x-hidden">
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-brandWarm/30 selection:text-primaryText relative overflow-x-hidden">
 
     <!-- Header Inheritance -->
     {% include 'brand/header.html' %}
@@ -98,32 +107,32 @@
         <!-- HERO SECTION WITH RICH VIBRANT IMAGERY -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             <div class="text-center space-y-6">
-                <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md max-w-[90vw]">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#00FF94] animate-pulse shrink-0"></span>
-                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00FF94] truncate">Teklora Company & Engineering Culture</span>
+                <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-gray-100 border border-borderLight backdrop-blur-md max-w-[90vw]">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brandWarm animate-pulse shrink-0"></span>
+                    <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-brandWarm truncate">Teklora Company & Engineering Culture</span>
                 </div>
 
                 <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight about-hero-title max-w-4xl mx-auto">
                     Building High-Impact <br class="hidden sm:inline" />
-                    <span class="text-[#00FF94]">Digital Utilities for Africa & Beyond.</span>
+                    <span class="text-brandWarm">Digital Utilities for Africa & Beyond.</span>
                 </h1>
 
-                <p class="text-base sm:text-lg text-[#94A3B8] leading-relaxed max-w-3xl mx-auto font-medium">
+                <p class="text-base sm:text-lg text-secondaryText leading-relaxed max-w-3xl mx-auto font-medium">
                     We are a dynamic team of software engineers, systems architects, and innovators passionate about solving real-world challenges in Education, Commerce, Healthcare & Spatial Computing.
                 </p>
             </div>
 
             <!-- Hero Image Showcase Grid (4-Photo Gallery) -->
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
-                <div class="img-zoom-container border border-white/10 h-64 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-64 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=900&auto=format&fit=crop&q=80" alt="Teklora Engineering Team" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
-                        <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">ENGINEERING CULTURE</span>
+                        <span class="text-[10px] font-bold text-brandWarm uppercase tracking-wider">ENGINEERING CULTURE</span>
                         <h3 class="text-base font-bold text-white font-heading">Collaborative Team</h3>
                     </div>
                 </div>
 
-                <div class="img-zoom-container border border-white/10 h-64 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-64 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=900&auto=format&fit=crop&q=80" alt="Tech Innovation Lab" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">VOLUNTEER & LEARN</span>
@@ -131,7 +140,7 @@
                     </div>
                 </div>
 
-                <div class="img-zoom-container border border-white/10 h-64 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-64 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=900&auto=format&fit=crop&q=80" alt="Global Digital Systems" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">PARTNERSHIPS</span>
@@ -139,11 +148,11 @@
                     </div>
                 </div>
 
-                <div class="img-zoom-container border border-white/10 h-64 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-64 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=900&auto=format&fit=crop&q=80" alt="Software Architecture Workshop" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">SYSTEM RIGOR</span>
-                        <h3 class="text-base font-bold text-white font-heading">Architecture Design</h3>
+                        <h3 class="text-base font-bold text-primaryText font-heading">Architecture Design</h3>
                     </div>
                 </div>
             </div>
@@ -152,43 +161,43 @@
             <div class="grid lg:grid-cols-12 gap-8 items-center pt-4">
                 
                 <!-- Left: Audio / Video Media Player Card -->
-                <div class="lg:col-span-7 glass-card p-6 rounded-3xl border border-white/10 space-y-6 relative overflow-hidden">
-                    <div class="flex items-center justify-between pb-4 border-b border-white/5">
+                <div class="lg:col-span-7 clean-card p-6 rounded-3xl border border-borderLight space-y-6 relative overflow-hidden">
+                    <div class="flex items-center justify-between pb-4 border-b border-gray-200">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-lg border border-[#00FF94]/20">
+                            <div class="w-10 h-10 rounded-full bg-brandWarm/10 text-brandWarm flex items-center justify-center text-lg border border-brandWarm/20">
                                 <i class="fas fa-play"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm font-bold text-white font-heading">The Teklora Story</h3>
-                                <p class="text-xs text-[#94A3B8]">Strategy & Engineering Briefing</p>
+                                <h3 class="text-sm font-bold text-primaryText font-heading">The Teklora Story</h3>
+                                <p class="text-xs text-secondaryText">Strategy & Engineering Briefing</p>
                             </div>
                         </div>
 
                         <!-- Media Toggle Switcher -->
-                        <div class="bg-white/5 p-1 rounded-xl border border-white/10 inline-flex text-xs font-bold">
+                        <div class="bg-gray-100 p-1 rounded-xl border border-borderLight inline-flex text-xs font-bold">
                             <button id="btn-audio" onclick="toggleAboutMedia('audio')" class="px-3.5 py-1.5 rounded-lg bg-[#007AFF] text-white shadow-md transition-all">
                                 <i class="fas fa-headphones mr-1"></i> Audio
                             </button>
-                            <button id="btn-video" onclick="toggleAboutMedia('video')" class="px-3.5 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all">
+                            <button id="btn-video" onclick="toggleAboutMedia('video')" class="px-3.5 py-1.5 rounded-lg text-gray-500 hover:text-brandBlue transition-all">
                                 <i class="fas fa-video mr-1"></i> Video
                             </button>
                         </div>
                     </div>
 
                     <!-- Audio Player Box -->
-                    <div id="media-audio" class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 space-y-3">
+                    <div id="media-audio" class="p-4 rounded-2xl bg-surface border border-gray-200 space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-white">Audio Briefing: Strategy & Tech Alignment</span>
-                            <span class="text-[11px] font-mono text-[#00FF94]">MP4 AUDIO</span>
+                            <span class="text-xs font-semibold text-primaryText">Audio Briefing: Strategy & Tech Alignment</span>
+                            <span class="text-[11px] font-mono text-brandWarm">MP4 AUDIO</span>
                         </div>
-                        <audio id="storyAudio" controls class="w-full h-10 rounded-xl accent-[#00FF94]">
+                        <audio id="storyAudio" controls class="w-full h-10 rounded-xl accent-brandWarm">
                             <source src="{% static 'brand/images/TekLora_Strategy_Tech_and_Branding_Alignment.m4a' %}" type="audio/mp4">
                             Your browser does not support the audio player.
                         </audio>
                     </div>
 
                     <!-- Video Player Box -->
-                    <div id="media-video" class="hidden rounded-2xl overflow-hidden border border-white/10 bg-black aspect-video">
+                    <div id="media-video" class="hidden rounded-2xl overflow-hidden border border-borderLight bg-black aspect-video">
                         <video controls class="w-full h-full object-cover">
                             <source src="{% static 'brand/images/TekLora__From_Idea_to_Impact.mp4' %}" type="video/mp4">
                             Your browser does not support video playback.
@@ -198,28 +207,28 @@
 
                 <!-- Right: Company Metrics Bar -->
                 <div class="lg:col-span-5 grid grid-cols-2 gap-4">
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-1 shadow-lg">
-                        <div class="text-2xl sm:text-3xl font-bold text-white font-heading">8+</div>
-                        <div class="text-xs text-[#00FF94] font-semibold">Enterprise Systems Deployed</div>
-                        <p class="text-[11px] text-[#64748B]">SaaS, SMS & WhatsApp Commerce</p>
+                    <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-1 shadow-lg">
+                        <div class="text-2xl sm:text-3xl font-bold text-primaryText font-heading">8+</div>
+                        <div class="text-xs text-brandWarm font-semibold">Enterprise Systems Deployed</div>
+                        <p class="text-[11px] text-gray-500">SaaS, SMS & WhatsApp Commerce</p>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-1 shadow-lg">
-                        <div class="text-2xl sm:text-3xl font-bold text-white font-heading">99.999%</div>
+                    <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-1 shadow-lg">
+                        <div class="text-2xl sm:text-3xl font-bold text-primaryText font-heading">99.999%</div>
                         <div class="text-xs text-[#007AFF] font-semibold">Uptime SLA Target</div>
-                        <p class="text-[11px] text-[#64748B]">High-concurrency infrastructure</p>
+                        <p class="text-[11px] text-gray-500">High-concurrency infrastructure</p>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-1 shadow-lg">
-                        <div class="text-2xl sm:text-3xl font-bold text-white font-heading">100%</div>
+                    <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-1 shadow-lg">
+                        <div class="text-2xl sm:text-3xl font-bold text-primaryText font-heading">100%</div>
                         <div class="text-xs text-purple-400 font-semibold">Hands-on Mentorship</div>
-                        <p class="text-[11px] text-[#64748B]">Volunteer learning program</p>
+                        <p class="text-[11px] text-gray-500">Volunteer learning program</p>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-1 shadow-lg">
-                        <div class="text-2xl sm:text-3xl font-bold text-white font-heading">Open</div>
+                    <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-1 shadow-lg">
+                        <div class="text-2xl sm:text-3xl font-bold text-primaryText font-heading">Open</div>
                         <div class="text-xs text-emerald-400 font-semibold">Strategic Partnerships</div>
-                        <p class="text-[11px] text-[#64748B]">Enterprise & institutional co-dev</p>
+                        <p class="text-[11px] text-gray-500">Enterprise & institutional co-dev</p>
                     </div>
                 </div>
 
@@ -230,59 +239,59 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
 
             <!-- SECTION 1: OUR ORIGIN & HERITAGE (#story) WITH PICTURE GALLERY -->
-            <section id="story" class="about-section-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
-                <div class="space-y-2 pb-6 border-b border-white/5">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20 text-xs font-bold uppercase tracking-wider">
+            <section id="story" class="about-section-card clean-card p-6 sm:p-10 rounded-3xl border border-borderLight space-y-8">
+                <div class="space-y-2 pb-6 border-b border-gray-200">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brandWarm/10 text-brandWarm border border-brandWarm/20 text-xs font-bold uppercase tracking-wider">
                         <i class="fas fa-compass"></i> Company Origins
                     </div>
-                    <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                    <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                         Our Evolution & Journey
                     </h2>
-                    <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                    <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                         Established in 2025, Teklora began as a collective of ambitious software engineers driven to build clarity, high-speed performance, and digital accessibility across core industries.
                     </p>
                 </div>
 
                 <!-- Story Photo Gallery Row -->
                 <div class="grid sm:grid-cols-2 gap-6">
-                    <div class="img-zoom-container border border-white/10 h-64 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-64 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=900&auto=format&fit=crop&q=80" alt="Early Inception Coding Session" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
-                            <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">HERITAGE PHOTO</span>
-                            <h4 class="text-sm font-bold text-white font-heading">Origin Coding & Brainstorming Sessions</h4>
+                            <span class="text-[10px] font-bold text-brandWarm uppercase tracking-wider">HERITAGE PHOTO</span>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">Origin Coding & Brainstorming Sessions</h4>
                         </div>
                     </div>
 
-                    <div class="img-zoom-container border border-white/10 h-64 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-64 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=900&auto=format&fit=crop&q=80" alt="Scaling Deployed Systems" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
                             <span class="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">PLATFORM SCALING</span>
-                            <h4 class="text-sm font-bold text-white font-heading">Deploying Real-World Systems</h4>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">Deploying Real-World Systems</h4>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-6 pt-2">
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3">
                         <div class="w-10 h-10 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center font-bold text-sm">01</div>
-                        <h3 class="text-lg font-bold text-white font-heading">The Spark & Origin</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-lg font-bold text-primaryText font-heading">The Spark & Origin</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Formed to solve complex system challenges in African institutions, replacing fragmented manual workflows with fast, mobile-friendly digital utilities.
                         </p>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center font-bold text-sm">02</div>
-                        <h3 class="text-lg font-bold text-white font-heading">Platform Deployments</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-brandWarm/10 text-brandWarm flex items-center justify-center font-bold text-sm">02</div>
+                        <h3 class="text-lg font-bold text-primaryText font-heading">Platform Deployments</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Architected flagship platforms like EduShare Africa, DOMMaterdei SMS, and Kiamiko WhatsApp Commerce, proving that high-concurrency systems can run seamlessly.
                         </p>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3">
                         <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-sm">03</div>
-                        <h3 class="text-lg font-bold text-white font-heading">Spatial & AI Frontier</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-lg font-bold text-primaryText font-heading">Spatial & AI Frontier</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Pioneering HoloDesk Workspace OS — bringing 3D persistent virtual campuses, AI teaching assistants, and collaborative labs directly to web browsers.
                         </p>
                     </div>
@@ -291,75 +300,75 @@
 
 
             <!-- SECTION 2: MISSION, VISION & CORE VALUES (#mission) WITH PICTURE ACCENTS -->
-            <section id="mission" class="about-section-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
-                <div class="space-y-2 pb-6 border-b border-white/5">
+            <section id="mission" class="about-section-card clean-card p-6 sm:p-10 rounded-3xl border border-borderLight space-y-8">
+                <div class="space-y-2 pb-6 border-b border-gray-200">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/20 text-xs font-bold uppercase tracking-wider">
                         <i class="fas fa-bullseye"></i> Core Pillars
                     </div>
-                    <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                    <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                         Mission, Vision & Engineering Values
                     </h2>
-                    <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                    <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                         Combining modern web technologies, AI multi-agent workflows, and intuitive design to build software that is robust, practical, and accessible.
                     </p>
                 </div>
 
                 <!-- Mission Photo Accent Gallery -->
                 <div class="grid sm:grid-cols-2 gap-6">
-                    <div class="img-zoom-container border border-white/10 h-56 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-56 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=900&auto=format&fit=crop&q=80" alt="High-Security Server Infrastructure" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
                             <span class="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">INFRASTRUCTURE RIGOR</span>
-                            <h4 class="text-sm font-bold text-white font-heading">High-Availability Cloud Infrastructure</h4>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">High-Availability Cloud Infrastructure</h4>
                         </div>
                     </div>
 
-                    <div class="img-zoom-container border border-white/10 h-56 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-56 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=900&auto=format&fit=crop&q=80" alt="Human-Centric UX Design" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
-                            <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">HUMAN-CENTRIC UX</span>
-                            <h4 class="text-sm font-bold text-white font-heading">Intuitive Product Interface Design</h4>
+                            <span class="text-[10px] font-bold text-brandWarm uppercase tracking-wider">HUMAN-CENTRIC UX</span>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">Intuitive Product Interface Design</h4>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/5 space-y-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-lg">
+                    <div class="p-5 rounded-2xl bg-surface border border-gray-200 space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-brandWarm/10 text-brandWarm flex items-center justify-center text-lg">
                             <i class="fas fa-lightbulb"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">Continuous Innovation</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">Continuous Innovation</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             We thrive on turning fresh ideas into impactful solutions that shape the future. Improvement is in our DNA.
                         </p>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/5 space-y-3">
+                    <div class="p-5 rounded-2xl bg-surface border border-gray-200 space-y-3">
                         <div class="w-10 h-10 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center text-lg">
                             <i class="fas fa-shield-alt"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">Uncompromising Integrity</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">Uncompromising Integrity</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Transparency, honesty, and data security in all our software contracts and client relationships.
                         </p>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/5 space-y-3">
+                    <div class="p-5 rounded-2xl bg-surface border border-gray-200 space-y-3">
                         <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
                             <i class="fas fa-users-gear"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">Open Collaboration</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">Open Collaboration</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Working closely with clients, partner institutions, and volunteers to achieve extraordinary digital results.
                         </p>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/5 space-y-3">
+                    <div class="p-5 rounded-2xl bg-surface border border-gray-200 space-y-3">
                         <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
                             <i class="fas fa-bolt"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">Practical Performance</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">Practical Performance</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Sub-second load times, mobile responsiveness, and zero unnecessary fluff.
                         </p>
                     </div>
@@ -370,17 +379,17 @@
             <!-- ============================================================ -->
             <!-- SECTION 3: STRATEGIC PARTNERSHIPS (#partnerships) -->
             <!-- ============================================================ -->
-            <section id="partnerships" class="about-section-card glass-card p-6 sm:p-10 rounded-3xl border border-[#00FF94]/30 bg-gradient-to-br from-[#050811] via-[#091522] to-[#050811] space-y-10 shadow-[0_0_50px_rgba(0,255,148,0.08)]">
+            <section id="partnerships" class="about-section-card clean-card p-6 sm:p-10 rounded-3xl border border-borderLight bg-surface space-y-10 shadow-2xl shadow-brandBlue/5">
                 
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-borderLight">
                     <div class="space-y-2">
-                        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#00FF94]/15 text-[#00FF94] border border-[#00FF94]/30 text-xs font-bold uppercase tracking-wider">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-brandWarm/15 text-brandWarm border border-borderLight text-xs font-bold uppercase tracking-wider">
                             <i class="fas fa-handshake"></i> Strategic Partnerships & Growth
                         </div>
-                        <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                        <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                             We Are Open to Strategic Partnerships!
                         </h2>
-                        <p class="text-xs sm:text-sm text-emerald-200/80 max-w-3xl">
+                        <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                             Teklora actively collaborates with enterprises, universities, technology distributors, and state utilities to co-develop, integrate, and scale innovative software.
                         </p>
                     </div>
@@ -394,71 +403,71 @@
 
                 <!-- Partnership Visual Photo Row -->
                 <div class="grid sm:grid-cols-2 gap-6">
-                    <div class="img-zoom-container border border-white/10 h-56 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-56 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=900&auto=format&fit=crop&q=80" alt="Enterprise Partnership Strategy" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
-                            <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">ENTERPRISE ALLIANCES</span>
-                            <h4 class="text-sm font-bold text-white font-heading">Co-Developing Custom Enterprise Software</h4>
+                            <span class="text-[10px] font-bold text-brandWarm uppercase tracking-wider">ENTERPRISE ALLIANCES</span>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">Co-Developing Custom Enterprise Software</h4>
                         </div>
                     </div>
 
-                    <div class="img-zoom-container border border-white/10 h-56 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-56 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&auto=format&fit=crop&q=80" alt="Academic & University Collaboration" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
                             <span class="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider">ACADEMIC & ODEL ALLIANCES</span>
-                            <h4 class="text-sm font-bold text-white font-heading">University Spatial Learning Deployments</h4>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">University Spatial Learning Deployments</h4>
                         </div>
                     </div>
                 </div>
 
                 <!-- 4 Ways to Partner Cards Grid -->
                 <div class="space-y-4">
-                    <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fas fa-network-wired text-[#00FF94]"></i> 4 Avenues for Collaboration
+                    <h3 class="text-sm font-bold text-primaryText uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-network-wired text-brandWarm"></i> 4 Avenues for Collaboration
                     </h3>
 
                     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                         
                         <!-- Way 1 -->
-                        <div class="partner-card-vibrant p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
-                            <div class="w-10 h-10 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-lg border border-[#00FF94]/20">
+                        <div class="partner-card-vibrant p-5 rounded-2xl bg-surface border border-borderLight space-y-3">
+                            <div class="w-10 h-10 rounded-xl bg-brandWarm/10 text-brandWarm flex items-center justify-center text-lg border border-brandWarm/20">
                                 <i class="fas fa-building-user"></i>
                             </div>
-                            <h4 class="text-base font-bold text-white font-heading">Enterprise Co-Development</h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <h4 class="text-base font-bold text-primaryText font-heading">Enterprise Co-Development</h4>
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 Joint R&D and custom software platform development. We co-engineer tailored ERPs, microservices, and AI workflow automation for business partners.
                             </p>
                         </div>
 
                         <!-- Way 2 -->
-                        <div class="partner-card-vibrant p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                        <div class="partner-card-vibrant p-5 rounded-2xl bg-surface border border-borderLight space-y-3">
                             <div class="w-10 h-10 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center text-lg border border-[#007AFF]/20">
                                 <i class="fas fa-graduation-cap"></i>
                             </div>
-                            <h4 class="text-base font-bold text-white font-heading">Academic & ODEL Alliances</h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <h4 class="text-base font-bold text-primaryText font-heading">Academic & ODEL Alliances</h4>
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 Universities & distance learning institutions partnering on 3D spatial campuses (HoloDesk OS), research grants, and EdTech deployments (EduShare).
                             </p>
                         </div>
 
                         <!-- Way 3 -->
-                        <div class="partner-card-vibrant p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                        <div class="partner-card-vibrant p-5 rounded-2xl bg-surface border border-borderLight space-y-3">
                             <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg border border-purple-500/20">
                                 <i class="fas fa-store"></i>
                             </div>
-                            <h4 class="text-base font-bold text-white font-heading">Channel & SaaS Distribution</h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <h4 class="text-base font-bold text-primaryText font-heading">Channel & SaaS Distribution</h4>
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 Regional technology integrators, VARs, and resellers deploying Teklora SaaS products (School SMS, WhatsApp Commerce, EdTech) to local markets.
                             </p>
                         </div>
 
                         <!-- Way 4 -->
-                        <div class="partner-card-vibrant p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                        <div class="partner-card-vibrant p-5 rounded-2xl bg-surface border border-borderLight space-y-3">
                             <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg border border-amber-500/20">
                                 <i class="fas fa-landmark"></i>
                             </div>
-                            <h4 class="text-base font-bold text-white font-heading">GovTech & State Utilities</h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <h4 class="text-base font-bold text-primaryText font-heading">GovTech & State Utilities</h4>
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 Public sector & municipal partnerships for public registry digitization, air-gapped sovereign cloud deployments, and citizen service automation.
                             </p>
                         </div>
@@ -467,10 +476,10 @@
                 </div>
 
                 <!-- Prominent Partnership Callout Banner -->
-                <div class="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-[#0A182E] to-[#0A0F1D] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="p-6 sm:p-8 rounded-2xl bg-gray-50 border border-borderLight flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div class="space-y-1 text-left">
-                        <h4 class="text-lg font-bold text-white font-heading">Ready to Explore a Strategic Alliance?</h4>
-                        <p class="text-xs text-[#94A3B8]">Reach out directly via our Contact page to start the conversation with our partnership directors.</p>
+                        <h4 class="text-lg font-bold text-primaryText font-heading">Ready to Explore a Strategic Alliance?</h4>
+                        <p class="text-xs text-secondaryText">Reach out directly via our Contact page to start the conversation with our partnership directors.</p>
                     </div>
 
                     <a href="{% url 'contacts' %}" class="btn-premium btn-premium-primary py-3 px-6 text-xs font-bold shrink-0">
@@ -479,20 +488,62 @@
                 </div>
             </section>
 
+            <!-- ============================================================ -->
+            <!-- SECTION 4: COMMUNITY & CSR (#csr) -->
+            <!-- ============================================================ -->
+            <section id="csr" class="about-section-card clean-card p-6 sm:p-10 rounded-3xl border border-amber-500/30 space-y-8 bg-surface mb-16 shadow-lg shadow-amber-500/5">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-borderLight">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold uppercase tracking-wider">
+                            <i class="fas fa-hand-holding-heart"></i> Corporate Social Responsibility
+                        </div>
+                        <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
+                            Tech for Community Development
+                        </h2>
+                        <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
+                            We believe that technology should be an equalizer. Through our CSR initiatives, we deploy engineering resources and provide technical aid to communities, NGOs, and under-resourced schools.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid sm:grid-cols-2 gap-5">
+                    <!-- Initiative 1 -->
+                    <div class="p-5 rounded-2xl bg-gray-50 border border-borderLight space-y-3 hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-primaryText font-heading">EdTech Accessibility</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
+                            Deploying free instances of EduShare and DOMMaterdei SMS to public schools in rural areas to bridge the digital learning gap.
+                        </p>
+                    </div>
+
+                    <!-- Initiative 2 -->
+                    <div class="p-5 rounded-2xl bg-gray-50 border border-borderLight space-y-3 hover:shadow-md transition-shadow">
+                        <div class="w-10 h-10 rounded-xl bg-brandWarm/10 text-brandWarm flex items-center justify-center text-lg">
+                            <i class="fas fa-laptop-medical"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-primaryText font-heading">NGO Tech Support</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
+                            Providing pro-bono systems architecture, database management, and technical training to local non-profits working in healthcare and agriculture.
+                        </p>
+                    </div>
+                </div>
+            </section>
 
             <!-- ============================================================ -->
             <!-- SECTION 4: VOLUNTEER & LEARN FELLOWSHIP PROGRAM (#careers) -->
             <!-- ============================================================ -->
-            <section id="careers" class="about-section-card glass-card p-6 sm:p-10 rounded-3xl border border-sky-500/30 space-y-8">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+            <section id="careers" class="about-section-card clean-card p-6 sm:p-10 rounded-3xl border border-sky-500/30 space-y-8">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                     <div class="space-y-2">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-bold uppercase tracking-wider">
                             <i class="fas fa-hands-helping"></i> Volunteer & Learn Fellowship
                         </div>
-                        <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                        <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                             Volunteer & Learn With Teklora
                         </h2>
-                        <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                        <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                             We are actively looking for passionate individuals who want to <strong>volunteer, gain hands-on experience, and learn</strong> alongside our software engineers and AI researchers on real-world production projects!
                         </p>
                     </div>
@@ -504,7 +555,7 @@
 
                 <!-- Volunteer Photo Gallery Row -->
                 <div class="grid sm:grid-cols-2 gap-6">
-                    <div class="img-zoom-container border border-white/10 h-56 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-56 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1531498860502-7c67cf02f657?w=900&auto=format&fit=crop&q=80" alt="Mentorship Coding Session" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
                             <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">HANDS-ON MENTORSHIP</span>
@@ -512,10 +563,10 @@
                         </div>
                     </div>
 
-                    <div class="img-zoom-container border border-white/10 h-56 relative group shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-56 relative group shadow-xl">
                         <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&auto=format&fit=crop&q=80" alt="Real-World Product Learning" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 flex flex-col justify-end">
-                            <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">REAL-WORLD IMPACT</span>
+                            <span class="text-[10px] font-bold text-brandWarm uppercase tracking-wider">REAL-WORLD IMPACT</span>
                             <h4 class="text-sm font-bold text-white font-heading">Building Production Software Solutions</h4>
                         </div>
                     </div>
@@ -523,32 +574,32 @@
 
                 <!-- Volunteer Focus Areas Grid -->
                 <div class="grid sm:grid-cols-3 gap-6 pt-2">
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3 text-left">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3 text-left">
                         <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-xl border border-sky-500/20">
                             <i class="fas fa-laptop-code"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">Full-Stack Web Development</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">Full-Stack Web Development</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Learn Python, Django, HTML5, JavaScript, and Tailwind CSS by contributing to active web applications, REST APIs, and database models.
                         </p>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3 text-left">
-                        <div class="w-12 h-12 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-xl border border-[#00FF94]/20">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3 text-left">
+                        <div class="w-12 h-12 rounded-xl bg-brandWarm/10 text-brandWarm flex items-center justify-center text-xl border border-brandWarm/20">
                             <i class="fas fa-brain"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">AI & Multi-Agent Systems</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">AI & Multi-Agent Systems</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Gain practical experience with AI vector databases, LLM prompt engineering, multi-agent workflow orchestration, and spatial computing.
                         </p>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3 text-left">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3 text-left">
                         <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl border border-purple-500/20">
                             <i class="fas fa-palette"></i>
                         </div>
-                        <h3 class="text-base font-bold text-white font-heading">UI/UX & Brand Design</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-base font-bold text-primaryText font-heading">UI/UX & Brand Design</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Master modern glassmorphic web aesthetics, responsive layout design, micro-animations, and visual storytelling for digital products.
                         </p>
                     </div>
@@ -571,12 +622,12 @@
 
             if (type === 'audio') {
                 audioBtn.className = 'px-3.5 py-1.5 rounded-lg bg-[#007AFF] text-white shadow-md transition-all';
-                videoBtn.className = 'px-3.5 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+                videoBtn.className = 'px-3.5 py-1.5 rounded-lg text-gray-500 hover:text-brandBlue transition-all';
                 audioCard.classList.remove('hidden');
                 videoCard.classList.add('hidden');
             } else {
                 videoBtn.className = 'px-3.5 py-1.5 rounded-lg bg-[#007AFF] text-white shadow-md transition-all';
-                audioBtn.className = 'px-3.5 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+                audioBtn.className = 'px-3.5 py-1.5 rounded-lg text-gray-500 hover:text-brandBlue transition-all';
                 videoCard.classList.remove('hidden');
                 audioCard.classList.add('hidden');
                 if (audio) audio.pause();

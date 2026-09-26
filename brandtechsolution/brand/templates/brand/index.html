@@ -1,27 +1,15 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teklora - Building Technology That Leaves a Lasting Legacy Across Africa</title>
-    <meta name="description"
-        content="Teklora is a Kenyan technology company engineering custom software, cloud engines, and AI platforms built to transform businesses, universities, NGOs, and institutions across Africa.">
+    <title>Teklora - Digital Growth Partner</title>
+    <meta name="description" content="We engineer digital systems that help businesses operate smarter, grow faster, and scale across Africa and beyond.">
 
-    <!-- Favicon -->
     <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-
-    <!-- Fonts: Space Grotesk & Inter -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,121 +18,214 @@
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         heading: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+                    },
+                    colors: {
+                        background: '#FAFAFA',
+                        surface: '#FFFFFF',
+                        primaryText: '#18181B',
+                        secondaryText: '#52525B',
+                        brandBlue: '#33348E',
+                        brandWarm: '#10B981',
+                        borderLight: '#E4E4E7'
+                    },
+                    letterSpacing: {
+                        tightest: '-.06em',
                     }
                 }
             }
         }
     </script>
 
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.2.0" />
-    <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.5" />
+
+    <style>
+        /* Enterprise Layout Background */
+        .enterprise-bg {
+            background-color: #FAFAFA;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(51, 52, 142, 0.04) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+        }
+
+        .hero-img-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Seamless Edge Fade */
+        .hero-fade-shape {
+            width: 100%;
+            height: 550px;
+            object-fit: cover;
+            position: relative;
+            z-index: 10;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
+        }
+
+        .floating-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(228, 228, 231, 0.8);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .badge-pulse {
+            position: relative;
+            display: inline-flex;
+            height: 10px;
+            width: 10px;
+        }
+        
+        .badge-pulse span:first-child {
+            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+            position: absolute;
+            display: inline-flex;
+            height: 100%;
+            width: 100%;
+            border-radius: 9999px;
+            background-color: var(--brandWarm);
+            opacity: 0.75;
+        }
+        
+        .badge-pulse span:last-child {
+            position: relative;
+            display: inline-flex;
+            border-radius: 9999px;
+            height: 10px;
+            width: 10px;
+            background-color: var(--brandWarm);
+        }
+    </style>
 </head>
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-brandBlue selection:text-white">
 
-<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased selection:bg-[#00FF94] selection:text-[#050811]">
-
-    <!-- Global Navigation Header -->
     {% include 'brand/header.html' %}
 
-    <!-- SECTION 1: HERO SECTION (Cinematic Legacy & Vision) -->
-    <section class="relative min-h-screen flex items-center justify-center pt-28 pb-20 overflow-hidden bg-[#050811]">
-        <!-- Dynamic Animated Ambient Blobs -->
-        <div class="blob-bg blob-1"></div>
-        <div class="blob-bg blob-2"></div>
+    <!-- ENTERPRISE 2-COLUMN HERO (Datatron Style) -->
+    <section class="relative pt-24 pb-24 lg:pt-32 lg:pb-32 overflow-hidden lg:enterprise-bg min-h-[80vh] flex items-center">
+        
+        <!-- Mobile Background Image (Light Overlay) -->
+        <div class="absolute inset-0 z-0 lg:hidden">
+            <img src="{% static 'brand/images/local_business_planning.jpg' %}" alt="Background" class="w-full h-full object-cover object-center opacity-30">
+            <div class="absolute inset-0 bg-white/80 backdrop-blur-[4px]"></div>
+        </div>
 
-        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center relative z-10 w-full">
-
-            <!-- Left Hero Narrative Content -->
-            <div class="lg:col-span-7 space-y-6">
-
-                <!-- Main Cinematic Headline -->
-                <h1 class="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-white tracking-tight leading-[1.08]"
-                    style="font-family: var(--font-heading);">
-                    Building Technology That Leaves a <span
-                        class="text-transparent bg-clip-text bg-gradient-to-r from-[#007AFF] via-[#00FF94] to-[#38BDF8]">Lasting
-                        Legacy</span> Across Africa
-                </h1>
-
-                <!-- Inspiring Supporting Paragraph -->
-                <p class="text-base sm:text-lg text-[#94A3B8] max-w-2xl leading-relaxed">
-                    We don't just build websites. We engineer scalable software products, cloud platforms, and
-                    intelligent systems that solve real African challenges and empower institutions to lead.
-                </p>
-
-                <!-- Core Philosophy Quote Banner -->
-                <div
-                    class="p-4 rounded-xl bg-white/[0.03] border border-white/10 border-l-4 border-l-[#00FF94] max-w-xl">
-                    <p class="text-xs sm:text-sm italic text-white font-medium">
-                        "Building technology that leaves a lasting legacy across Africa."
-                    </p>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex flex-wrap gap-4 pt-2">
-                    <a href="{% url 'contacts' %}#book"
-                        class="btn-premium btn-premium-primary gap-2.5 shadow-xl shadow-blue-600/30 text-sm">
-                        <i class="fas fa-calendar-check text-[#00FF94]"></i> Book an Appointment
-                    </a>
-                    <a href="#flagship-edushare" class="btn-premium btn-premium-secondary gap-2 text-sm">
-                        <i class="fas fa-graduation-cap text-[#007AFF]"></i> Explore EduShare Flagship
-                    </a>
-                </div>
-            </div>
-
-            <!-- Right Hero Visual Frame -->
-            <div class="lg:col-span-5 relative flex items-center justify-center">
-                <div class="relative w-full max-w-[520px]">
-                    <!-- Main Hero Image Visual -->
-                    <div
-                        class="relative rounded-2xl overflow-hidden border border-white/15 shadow-2xl shadow-blue-900/40 group">
-                        <img src="{% static 'brand/images/HEROO.png' %}" alt="Teklora African Technology Engineering"
-                            class="w-full h-[420px] sm:h-[460px] object-cover transform group-hover:scale-105 transition-transform duration-700">
-                        <div
-                            class="absolute inset-0 bg-gradient-to-t from-[#050811] via-transparent to-transparent opacity-60">
+        <div class="container-wide px-6 mx-auto relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+                
+                <!-- Left Column: Content -->
+                <div class="space-y-8 z-10">
+                    
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-borderLight shadow-sm">
+                        <div class="badge-pulse">
+                            <span></span><span></span>
                         </div>
+                        <span class="text-xs font-bold tracking-wide text-brandBlue uppercase">Digital Innovation Partner</span>
+                    </div>
+
+                    <h1 class="font-heading font-bold text-5xl md:text-6xl lg:text-[4.5rem] leading-[1.1] tracking-tightest text-primaryText">
+                        Build. <br/>
+                        <span class="text-brandWarm">Grow.</span> <br/>
+                        Go <span class="text-brandBlue">Beyond.</span>
+                    </h1>
+
+                    <p class="text-lg md:text-xl text-secondaryText leading-relaxed max-w-lg">
+                        We architect intelligent digital systems that empower African businesses to operate smarter, accelerate growth, and scale beyond borders.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                        <a href="{% url 'contacts' %}" class="btn-glass-blue px-8 py-4">
+                            Build With Us <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                        <a href="{% url 'products' %}" class="btn-glass-white px-8 py-4">
+                            Explore Platform
+                        </a>
+                    </div>
+                    
+                    <div class="pt-8 flex flex-wrap items-center gap-6 text-sm font-medium text-gray-300 lg:text-gray-400 drop-shadow-sm lg:drop-shadow-none">
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brandWarm"></i> Enterprise Scale</div>
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brandWarm"></i> Intelligent Automation</div>
                     </div>
                 </div>
+
+                <!-- Right Column: Visual -->
+                <div class="relative z-10 lg:pl-10 mt-12 lg:mt-0 hidden lg:block">
+                    
+                    <div class="hero-img-wrapper">
+                        <!-- Main Image in Fade Shape -->
+                        <img src="{% static 'brand/images/local_business_planning.jpg' %}" alt="Local Business Innovation" class="hero-fade-shape">
+                        
+                        <!-- Floating Tech Card 1 -->
+                        <div class="floating-card absolute -left-8 md:-left-12 top-12 p-4 rounded-xl z-20 flex items-center gap-4 w-48">
+                            <div class="w-10 h-10 rounded-full bg-brandBlue/10 flex items-center justify-center text-brandBlue">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-gray-500 uppercase font-bold">Growth Metrics</div>
+                                <div class="text-lg font-bold text-primaryText">+127.4%</div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Tech Card 2 -->
+                        <div class="floating-card absolute -right-6 bottom-12 p-5 rounded-xl z-20" style="animation-delay: 1.5s;">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-[10px] text-gray-500 uppercase font-bold">System Optimization</div>
+                                <div class="text-brandWarm text-xs"><i class="fas fa-arrow-up"></i></div>
+                            </div>
+                            <div class="w-32 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-brandBlue to-brandWarm w-[85%] rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
             </div>
-
         </div>
-
-        <!-- Scroll Cue -->
-        <div
-            class="absolute bottom-4 left-1/2 -translate-x-1/2 text-gray-500 text-center flex flex-col items-center gap-1">
-            <span class="text-[10px] uppercase tracking-widest text-gray-400">Discover Our Vision</span>
-            <i class="fas fa-chevron-down animate-bounce text-xs text-[#00FF94]"></i>
-        </div>
+        
     </section>
 
+    <!-- Metrics Section Removed as requested -->
+
     <!-- SECTION 2: OUR STORY & PURPOSE (Interactive Pitch-Style Showcase) -->
-    <section class="py-24 bg-[#0A0F1D] border-y border-white/5 relative overflow-hidden">
+    <section class="py-24 bg-surface border-y border-borderLight relative overflow-hidden" style="margin-top: 3rem;">
         <div class="max-w-7xl mx-auto px-6 space-y-12">
 
             <div class="text-center max-w-3xl mx-auto space-y-3">
-                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest inline-flex items-center gap-2">
+                <span class="text-xs font-bold text-brandBlue uppercase tracking-widest inline-flex items-center gap-2">
                     <i class="fas fa-heart"></i> Our Story & Purpose
                 </span>
-                <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-                    Africa Deserves Technology Built for African Challenges
+                <h2 class="text-3xl sm:text-5xl font-extrabold text-primaryText tracking-tight">
+                    Technology Built for African Challenges
                 </h2>
             </div>
 
-            <!-- Top Navigation Tabs Bar (Pitch.com Style) -->
-            <div class="flex justify-center border-b border-white/10 overflow-x-auto no-scrollbar">
+            <!-- Top Navigation Tabs Bar -->
+            <div class="flex justify-center border-b border-borderLight overflow-x-auto no-scrollbar">
                 <div class="flex gap-2 sm:gap-8 min-w-max pb-3 font-heading text-sm font-semibold">
                     <button onclick="switchStoryTab('purpose', this)"
-                        class="story-tab-btn active text-[#00FF94] border-b-2 border-[#00FF94] pb-3 px-3 transition-all flex items-center gap-2">
+                        class="story-tab-btn active text-brandBlue border-b-2 border-brandBlue pb-3 px-3 transition-all flex items-center gap-2">
                         <i class="fas fa-hand-holding-heart"></i> Purpose Before Profit
                     </button>
                     <button onclick="switchStoryTab('innovation', this)"
-                        class="story-tab-btn text-gray-400 hover:text-white border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
+                        class="story-tab-btn text-secondaryText hover:text-primaryText border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
                         <i class="fas fa-globe-africa"></i> African-First Innovation
                     </button>
                     <button onclick="switchStoryTab('craftsmanship', this)"
-                        class="story-tab-btn text-gray-400 hover:text-white border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
+                        class="story-tab-btn text-secondaryText hover:text-primaryText border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
                         <i class="fas fa-user-shield"></i> Human-Centered Tech
                     </button>
                     <button onclick="switchStoryTab('legacy', this)"
-                        class="story-tab-btn text-gray-400 hover:text-white border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
+                        class="story-tab-btn text-secondaryText hover:text-primaryText border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
                         <i class="fas fa-award"></i> Enduring Legacy
                     </button>
                 </div>
@@ -155,12 +236,10 @@
 
                 <!-- Left Visual Image Frame -->
                 <div class="lg:col-span-6 relative">
-                    <div class="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl group">
-                        <img id="storyTabImage" src="{% static 'brand/images/story_purpose_impact.png' %}"
-                            alt="Teklora Story Visual"
-                            class="w-full h-[380px] sm:h-[440px] object-cover transition-all duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-[#0A0F1D]/80 via-transparent to-transparent">
-                        </div>
+                    <div class="relative rounded-3xl overflow-hidden shadow-2xl group border border-borderLight bg-bgBody">
+                        <img id="storyTabImage" src="{% static 'brand/images/human_centered_tech.jpg' %}"
+                            alt="Story Visual"
+                            class="w-full h-[380px] sm:h-[440px] object-cover transition-all duration-500 opacity-90">
                     </div>
                 </div>
 
@@ -168,34 +247,29 @@
                 <div class="lg:col-span-6 space-y-6">
 
                     <div class="space-y-3">
-                        <h3 id="storyTabTitle" class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        <h3 id="storyTabTitle" class="text-2xl sm:text-4xl font-extrabold text-primaryText tracking-tight">
                             Technology Built for Lasting Impact
                         </h3>
-                        <p id="storyTabDesc" class="text-sm sm:text-base text-[#94A3B8] leading-relaxed">
-                            Teklora exists because off-the-shelf software doesn't fit the realities of African
-                            infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep,
-                            enduring impact over quick turnarounds, engineering custom platforms that empower African
-                            institutions to lead.
+                        <p id="storyTabDesc" class="text-sm sm:text-base text-secondaryText leading-relaxed">
+                            We exist because off-the-shelf software doesn't fit the realities of our infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep, enduring impact over quick turnarounds, engineering custom platforms that empower institutions to lead.
                         </p>
                     </div>
 
-                    <!-- Highlighted Interactive Quote Box (High-Contrast Pitch.com Style Card) -->
+                    <!-- Highlighted Interactive Quote Box -->
                     <div id="storyTabQuoteBox"
-                        class="p-6 sm:p-7 rounded-2xl bg-[#050811] border border-[#00FF94]/40 text-white shadow-2xl space-y-3 relative overflow-hidden transition-all duration-500">
+                        class="p-6 sm:p-7 rounded-2xl bg-bgBody border border-brandBlue/30 text-primaryText shadow-lg space-y-3 relative overflow-hidden transition-all duration-500">
                         <i id="storyTabQuoteIcon"
-                            class="fas fa-quote-left text-[#00FF94]/15 text-6xl absolute top-2 right-4 pointer-events-none transition-colors duration-500"></i>
+                            class="fas fa-quote-left text-brandBlue/10 text-6xl absolute top-2 right-4 pointer-events-none transition-colors duration-500"></i>
                         <p id="storyTabQuote"
-                            class="text-sm sm:text-base font-bold text-white leading-relaxed relative z-10">
-                            "Every application we engineer must deliver tangible, measurable value to African
-                            communities and enterprises."
+                            class="text-sm sm:text-base font-bold leading-relaxed relative z-10 text-primaryText">
+                            "Every application we engineer must deliver tangible, measurable value to communities and enterprises."
                         </p>
                         <div
-                            class="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold uppercase tracking-wider relative z-10">
-                            <span id="storyTabAuthor" class="text-[#94A3B8]"><i
-                                    class="fas fa-shield-alt mr-1 text-[#00FF94]"></i> Teklora Philosophy</span>
+                            class="pt-3 border-t border-borderLight flex items-center justify-between text-xs font-bold uppercase tracking-wider relative z-10">
+                            <span id="storyTabAuthor" class="text-secondaryText"><i
+                                    class="fas fa-shield-alt mr-1 text-brandBlue"></i> Core Philosophy</span>
                             <span id="storyTabBadge"
-                                class="px-3 py-1 rounded-full bg-[#00FF94]/20 border border-[#00FF94]/40 text-[#00FF94] font-mono text-[10px] font-bold">OUR
-                                CORE</span>
+                                class="px-3 py-1 rounded-full bg-brandBlue/10 border border-brandBlue/20 text-brandBlue font-mono text-[10px] font-bold">OUR CORE</span>
                         </div>
                     </div>
 
@@ -206,712 +280,50 @@
         </div>
     </section>
 
-    <!-- SECTION 3: FLAGSHIP PROJECT SPOTLIGHT (EduShare Africa ONLY) -->
-    <section id="flagship-edushare" class="py-24 bg-[#050811] relative overflow-hidden border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6 space-y-12">
-
-            <div class="text-center max-w-3xl mx-auto space-y-3">
-                <span
-                    class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#00FF94]/15 border border-[#00FF94]/30 text-[#00FF94] text-xs font-bold tracking-wider uppercase">
-                    <i class="fas fa-star"></i> FLAGSHIP INNOVATION SPOTLIGHT
-                </span>
-                <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">EduShare Africa</h2>
-                <p class="text-sm sm:text-base text-[#94A3B8]">
-                    Proof of Teklora's capability to build scalable, high-impact technology products that transform
-                    African education.
-                </p>
-            </div>
-
-            <!-- EduShare Showcase Hero Card -->
-            <div class="edushare-flagship-card p-8 sm:p-12 space-y-10">
-                <div class="grid lg:grid-cols-12 gap-10 items-center">
-
-                    <!-- Left EduShare Mockup Visual -->
-                    <div class="lg:col-span-7 relative group">
-                        <div class="relative rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
-                            <img src="{% static 'brand/images/edushare.png' %}" alt="EduShare Africa Interface Mockup"
-                                class="w-full h-[360px] sm:h-[420px] object-cover group-hover:scale-105 transition-transform duration-700">
-                            <div
-                                class="absolute inset-0 bg-gradient-to-t from-[#0A0F1D] via-transparent to-transparent opacity-60">
-                            </div>
-                        </div>
-                        <!-- Floating Badge -->
-                        <div
-                            class="absolute top-4 left-4 px-3 py-1.5 bg-black/70 backdrop-blur-md rounded-full border border-[#00FF94]/40 text-[#00FF94] text-xs font-mono font-bold flex items-center gap-2">
-                            <i class="fas fa-bolt"></i> ZERO-RATED SYLLABUS CDN
-                        </div>
-                    </div>
-
-                    <!-- Right EduShare Details Narrative -->
-                    <div class="lg:col-span-5 space-y-6">
-                        <div class="space-y-2">
-                            <span class="text-xs font-mono text-[#007AFF] uppercase tracking-wider font-bold">EdTech
-                                SaaS Engine</span>
-                            <h3 class="text-2xl sm:text-3xl font-extrabold text-white">Decentralized Syllabus Access for
-                                African Students</h3>
-                        </div>
-
-                        <!-- Problem Statement -->
-                        <div class="space-y-1">
-                            <h4 class="text-xs font-bold text-white uppercase tracking-wider text-[#00FF94]"><i
-                                    class="fas fa-exclamation-triangle mr-1"></i> The Problem:</h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                Students in African universities face prohibitive data costs and slow server
-                                connections, causing syllabus access bottlenecks during exam study cycles.
-                            </p>
-                        </div>
-
-                        <!-- Solution & Impact -->
-                        <div class="space-y-1">
-                            <h4 class="text-xs font-bold text-white uppercase tracking-wider text-[#007AFF]"><i
-                                    class="fas fa-check-circle mr-1"></i> The Solution & Impact:</h4>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                EduShare compresses and caches university study materials, reducing latency by **74%**
-                                and serving over **50,000 active learners** with zero offline interruptions.
-                            </p>
-                        </div>
-
-                        <!-- Tech Arsenal Badges -->
-                        <div class="space-y-2 pt-2">
-                            <span
-                                class="text-[11px] font-bold text-gray-400 uppercase tracking-widest block">Technologies
-                                Powering EduShare:</span>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="tech-pill"><i class="fab fa-react text-blue-400"></i> React</span>
-                                <span class="tech-pill"><i class="fab fa-python text-blue-500"></i> Python</span>
-                                <span class="tech-pill"><i class="fas fa-server text-green-400"></i> Django Core</span>
-                                <span class="tech-pill"><i class="fas fa-database text-cyan-400"></i> PostgreSQL</span>
-                                <span class="tech-pill"><i class="fas fa-bolt text-yellow-400"></i> Cloudflare
-                                    Edge</span>
-                            </div>
-                        </div>
-
-                        <!-- CTA -->
-                        <div class="pt-4 flex gap-4">
-                            <a href="{% url 'products' %}#edushare"
-                                class="btn-premium btn-premium-primary gap-2 text-xs">
-                                <i class="fas fa-rocket text-[#00FF94]"></i> Explore EduShare Africa
-                            </a>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Measurable Impact Highlights Row -->
-                <div class="border-t border-white/10 pt-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center font-mono">
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <span class="block text-2xl font-bold text-[#00FF94]">1,000+</span>
-                        <span class="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Active
-                            Learners</span>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <span class="block text-2xl font-bold text-[#007AFF]">74%</span>
-                        <span class="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Query Latency
-                            Drop</span>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <span class="block text-2xl font-bold text-purple-400">99.98%</span>
-                        <span class="text-[10px] text-gray-400 uppercase tracking-widest font-sans">System Uptime</span>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <span class="block text-2xl font-bold text-amber-400">Zero</span>
-                        <span class="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Offline Data
-                            Loss</span>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION 4: TECHNICAL CAPABILITIES (Elastic Accordion Gallery) -->
-    <section class="py-24 bg-[#0A0F1D] border-b border-white/5 relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-6 space-y-16">
-
-            <div class="text-center max-w-3xl mx-auto space-y-3">
-                <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest inline-flex items-center gap-2">
-                    <i class="fas fa-cogs"></i> Technical Capabilities
-                </span>
-                <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">Services Delivered as Scalable
-                    Solutions</h2>
-                <p class="text-sm sm:text-base text-[#94A3B8]">
-                    Explore our specialized technology solutions engineered for maximum performance, security, and
-                    continental scale.
-                </p>
-            </div>
-
-            <!-- 5 Elastic Expanding Cards Aligned in One Line -->
-            <div class="elastic-gallery-container">
-
-                <!-- Panel 1: Software Development (Active Default) -->
-                <div class="elastic-card active">
-                    <img src="{% static 'brand/images/cap_software_dev.png' %}" alt="Software Development">
-                    <div class="elastic-card-content">
-                        <div
-                            class="flex items-center gap-2 text-xs font-mono font-bold text-[#007AFF] uppercase tracking-wider">
-                            <i class="fas fa-code"></i> BACKEND & APIS
-                        </div>
-                        <h3 class="text-2xl font-bold text-white">Software Development</h3>
-                        <div class="elastic-card-desc space-y-3">
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                Custom Python, Django, and React backbones engineered for maximum maintainability,
-                                security, and high user concurrency across enterprise systems.
-                            </p>
-                            <div class="flex flex-wrap gap-2 pt-1">
-                                <span class="tech-pill"><i class="fab fa-python text-amber-400"></i> Python</span>
-                                <span class="tech-pill"><i class="fas fa-server text-green-400"></i> Django Core</span>
-                                <span class="tech-pill"><i class="fab fa-react text-blue-400"></i> React.js</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Panel 2: AI & Autonomous Systems -->
-                <div class="elastic-card">
-                    <img src="{% static 'brand/images/cap_ai_solutions.png' %}" alt="AI & Autonomous Systems">
-                    <div class="elastic-card-content">
-                        <div
-                            class="flex items-center gap-2 text-xs font-mono font-bold text-[#00FF94] uppercase tracking-wider">
-                            <i class="fas fa-brain"></i> AUTONOMOUS MESH
-                        </div>
-                        <h3 class="text-2xl font-bold text-white">AI Solutions & Agentic Mesh</h3>
-                        <div class="elastic-card-desc space-y-3">
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                Multi-agent network orchestration, pgvector similarity search, and automated research
-                                compilation engines that accelerate operations 10x.
-                            </p>
-                            <div class="flex flex-wrap gap-2 pt-1">
-                                <span class="tech-pill"><i class="fas fa-robot text-[#00FF94]"></i> Gemini 3.6</span>
-                                <span class="tech-pill"><i class="fas fa-database text-cyan-400"></i> pgvector</span>
-                                <span class="tech-pill"><i class="fas fa-project-diagram text-purple-400"></i>
-                                    LangGraph</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Panel 3: Cloud & Edge OS -->
-                <div class="elastic-card">
-                    <img src="{% static 'brand/images/cap_cloud_edge.png' %}" alt="Cloud & Edge OS">
-                    <div class="elastic-card-content">
-                        <div
-                            class="flex items-center gap-2 text-xs font-mono font-bold text-purple-400 uppercase tracking-wider">
-                            <i class="fas fa-cloud"></i> EDGE ARCHITECTURE
-                        </div>
-                        <h3 class="text-2xl font-bold text-white">Cloud Applications & Edge</h3>
-                        <div class="elastic-card-desc space-y-3">
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                Micro-kernel edge caching structures and high-availability cloud infrastructure running
-                                across AWS & DigitalOcean backbones with 99.98% uptime.
-                            </p>
-                            <div class="flex flex-wrap gap-2 pt-1">
-                                <span class="tech-pill"><i class="fab fa-docker text-blue-400"></i> Docker</span>
-                                <span class="tech-pill"><i class="fab fa-aws text-orange-400"></i> AWS</span>
-                                <span class="tech-pill"><i class="fas fa-network-wired text-green-400"></i> Nginx</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Panel 4: Web & Mobile Platforms -->
-                <div class="elastic-card">
-                    <img src="{% static 'brand/images/cap_web_mobile.png' %}" alt="Web & Mobile Ecosystems">
-                    <div class="elastic-card-content">
-                        <div
-                            class="flex items-center gap-2 text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
-                            <i class="fas fa-desktop"></i> LUXURY DESIGN
-                        </div>
-                        <h3 class="text-2xl font-bold text-white">Web & Mobile Ecosystems</h3>
-                        <div class="elastic-card-desc space-y-3">
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                Awwwards-grade web platforms and cross-platform native mobile applications designed with
-                                Apple and Stripe design language, smooth animations, and top speed.
-                            </p>
-                            <div class="flex flex-wrap gap-2 pt-1">
-                                <span class="tech-pill"><i class="fab fa-react text-blue-400"></i> React Native</span>
-                                <span class="tech-pill"><i class="fab fa-js text-yellow-400"></i> TypeScript</span>
-                                <span class="tech-pill"><i class="fab fa-css3-alt text-sky-400"></i> Tailwind CSS</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Panel 5: Digital Transformation -->
-                <div class="elastic-card">
-                    <img src="{% static 'brand/images/cap_digital_trans.png' %}" alt="Digital Transformation">
-                    <div class="elastic-card-content">
-                        <div
-                            class="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider">
-                            <i class="fas fa-sync-alt"></i> ENTERPRISE MODERNIZATION
-                        </div>
-                        <h3 class="text-2xl font-bold text-white">Digital Transformation</h3>
-                        <div class="elastic-card-desc space-y-3">
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
-                                Modernizing manual institutional workflows for universities, NGOs, state entities, and
-                                high-growth African enterprises.
-                            </p>
-                            <div class="flex flex-wrap gap-2 pt-1">
-                                <span class="tech-pill"><i class="fas fa-building text-amber-400"></i> Institutional
-                                    SaaS</span>
-                                <span class="tech-pill"><i class="fas fa-shield-alt text-[#00FF94]"></i> Security
-                                    Audits</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    </section>
-
-    <!-- SECTION 5: TECHNOLOGY WE BUILD WITH (Cosmos.so Inspired Tech Orbit) -->
-    <section class="py-24 bg-[#050811] relative overflow-hidden border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6 space-y-16">
-
-            <div class="text-center max-w-3xl mx-auto space-y-3">
-                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest inline-flex items-center gap-2">
-                    <i class="fas fa-cubes"></i> Core Tech Stack
-                </span>
-                <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">Technology We Build With</h2>
-                <p class="text-sm sm:text-base text-[#94A3B8]">
-                    We rely on a battle-tested Python and React stack engineered for security, speed, and massive scale.
-                </p>
-            </div>
-
-            <!-- Cosmos.so Inspired Orbit Container with Floating Arsenal Badges -->
-            <div class="cosmos-orbit-wrapper min-h-[460px] relative">
-
-                <!-- Rotating Orbit Rings -->
-                <div class="cosmos-orbit-ring cosmos-orbit-ring-1"></div>
-                <div class="cosmos-orbit-ring cosmos-orbit-ring-2"></div>
-                <div class="cosmos-orbit-ring cosmos-orbit-ring-3"></div>
-
-                <!-- Center Core Badge -->
-                <div
-                    class="relative z-20 text-center p-8 glass-card rounded-full border border-[#00FF94]/40 shadow-2xl max-w-xs space-y-2">
-                    <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Core"
-                        class="w-12 h-12 mx-auto rounded-xl">
-                    <h3 class="text-lg font-extrabold text-white">Teklora Arsenal</h3>
-                    <p class="text-[10px] text-[#00FF94] font-mono font-bold">PYTHON & REACT CENTERED</p>
-                </div>
-
-                <!-- Orbiting Technology Pills -->
-                <!-- Ring 1 Inner Orbit Pills -->
-                <div class="cosmos-orbit-pill" style="top: 15%; left: 25%;"><i class="fab fa-python text-amber-400"></i>
-                    Python</div>
-                <div class="cosmos-orbit-pill" style="top: 20%; right: 25%;"><i class="fab fa-react text-blue-400"></i>
-                    React</div>
-                <div class="cosmos-orbit-pill" style="bottom: 20%; left: 30%;"><i
-                        class="fas fa-server text-green-400"></i> Django</div>
-                <div class="cosmos-orbit-pill" style="bottom: 15%; right: 30%;"><i
-                        class="fas fa-database text-cyan-400"></i> PostgreSQL</div>
-
-                <!-- Ring 2 Outer Orbit Pills -->
-                <div class="cosmos-orbit-pill" style="top: 5%; left: 10%;"><i class="fas fa-bolt text-teal-400"></i>
-                    FastAPI</div>
-                <div class="cosmos-orbit-pill" style="top: 8%; right: 12%;"><i class="fab fa-js text-yellow-400"></i>
-                    TypeScript</div>
-                <div class="cosmos-orbit-pill" style="top: 48%; left: 5%;"><i class="fab fa-docker text-blue-500"></i>
-                    Docker</div>
-                <div class="cosmos-orbit-pill" style="top: 50%; right: 5%;"><i class="fab fa-linux text-gray-300"></i>
-                    Linux OS</div>
-                <div class="cosmos-orbit-pill" style="bottom: 8%; left: 12%;"><i
-                        class="fas fa-network-wired text-green-500"></i> Nginx</div>
-                <div class="cosmos-orbit-pill" style="bottom: 5%; right: 10%;"><i
-                        class="fab fa-git-alt text-orange-500"></i> Git & GitHub</div>
-
-            </div>
-
-            <!-- Categorized Stack Inventory Grid -->
-            <div class="grid md:grid-cols-3 lg:grid-cols-5 gap-4 pt-8">
-
-                <div class="bg-[#0A0F1D] p-5 rounded-2xl border border-white/5 space-y-2">
-                    <h4 class="text-xs font-bold text-white uppercase tracking-wider text-[#007AFF]"><i
-                            class="fab fa-python mr-1"></i> Backend</h4>
-                    <div class="text-xs text-gray-300 space-y-1">
-                        <div>Python 3.13</div>
-                        <div>Django Core</div>
-                        <div>FastAPI</div>
-                        <div>Flask</div>
-                    </div>
-                </div>
-
-                <div class="bg-[#0A0F1D] p-5 rounded-2xl border border-white/5 space-y-2">
-                    <h4 class="text-xs font-bold text-white uppercase tracking-wider text-[#00FF94]"><i
-                            class="fab fa-react mr-1"></i> Frontend</h4>
-                    <div class="text-xs text-gray-300 space-y-1">
-                        <div>React.js</div>
-                        <div>TypeScript</div>
-                        <div>JavaScript (ES6+)</div>
-                        <div>Tailwind CSS</div>
-                    </div>
-                </div>
-
-                <div class="bg-[#0A0F1D] p-5 rounded-2xl border border-white/5 space-y-2">
-                    <h4 class="text-xs font-bold text-white uppercase tracking-wider text-purple-400"><i
-                            class="fas fa-database mr-1"></i> Databases</h4>
-                    <div class="text-xs text-gray-300 space-y-1">
-                        <div>PostgreSQL</div>
-                        <div>pgvector (AI)</div>
-                        <div>MySQL</div>
-                        <div>SQLite</div>
-                    </div>
-                </div>
-
-                <div class="bg-[#0A0F1D] p-5 rounded-2xl border border-white/5 space-y-2">
-                    <h4 class="text-xs font-bold text-white uppercase tracking-wider text-amber-400"><i
-                            class="fab fa-docker mr-1"></i> DevOps</h4>
-                    <div class="text-xs text-gray-300 space-y-1">
-                        <div>Docker Containers</div>
-                        <div>Git / GitHub</div>
-                        <div>Linux Kernels</div>
-                        <div>Nginx Server</div>
-                    </div>
-                </div>
-
-                <div class="bg-[#0A0F1D] p-5 rounded-2xl border border-white/5 space-y-2 md:col-span-3 lg:col-span-1">
-                    <h4 class="text-xs font-bold text-white uppercase tracking-wider text-cyan-300"><i
-                            class="fas fa-cloud-upload-alt mr-1"></i> Platforms</h4>
-                    <div class="text-xs text-gray-300 space-y-1">
-                        <div>Render Cloud</div>
-                        <div>DigitalOcean</div>
-                        <div>Vercel Platform</div>
-                        <div>AWS Infra</div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    </section>
-
-    <!-- SECTION 6: WHY TEKLORA (Picture Overlay Advantage Cards) -->
-    <section class="py-14 bg-[#0A0F1D] border-b border-white/5 relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-6 space-y-8">
-
-            <!-- Single Sentence Section Header -->
-            <div class="text-center max-w-3xl mx-auto space-y-2">
-                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest inline-flex items-center gap-2">
-                    <i class="fas fa-building"></i> Why Teklora
-                </span>
-                <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-snug">
-                    We engineer long-term, scalable technology products built for continental impact, not short-term dev
-                    hand-offs.
-                </h2>
-            </div>
-
-            <!-- 4 Picture Overlay Feature Cards (Matching Attached Screenshot) -->
-            <div class="grid sm:grid-cols-2 gap-6">
-
-                <!-- Photo Card 1 -->
-                <div
-                    class="relative rounded-3xl overflow-hidden group border border-white/15 shadow-2xl h-[320px] sm:h-[360px]">
-                    <img src="{% static 'brand/images/story_purpose_impact.png' %}" alt="Product-Led Engineering"
-                        class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#050811] via-[#050811]/70 to-transparent"></div>
-                    <div class="absolute inset-0 p-7 flex flex-col justify-end gap-2 z-10">
-                        <span
-                            class="px-3 py-1 rounded-full bg-[#00FF94]/20 border border-[#00FF94]/40 text-[#00FF94] text-[10px] font-mono font-bold uppercase tracking-wider w-max">
-                            PRODUCT COMPANY
-                        </span>
-                        <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
-                            Product-Led Engineering
-                        </h3>
-                        <p class="text-xs sm:text-sm text-gray-200 leading-relaxed drop-shadow max-w-lg">
-                            We build and operate enduring technology platforms like EduShare Africa with 99.98%
-                            reliability.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Photo Card 2 -->
-                <div
-                    class="relative rounded-3xl overflow-hidden group border border-white/15 shadow-2xl h-[320px] sm:h-[360px]">
-                    <img src="{% static 'brand/images/story_african_innovation.png' %}"
-                        alt="African-First Infrastructure"
-                        class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#050811] via-[#050811]/70 to-transparent"></div>
-                    <div class="absolute inset-0 p-7 flex flex-col justify-end gap-2 z-10">
-                        <span
-                            class="px-3 py-1 rounded-full bg-[#007AFF]/20 border border-[#007AFF]/40 text-[#007AFF] text-[10px] font-mono font-bold uppercase tracking-wider w-max">
-                            PAN-AFRICAN SCALE
-                        </span>
-                        <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
-                            African-First Infrastructure
-                        </h3>
-                        <p class="text-xs sm:text-sm text-gray-200 leading-relaxed drop-shadow max-w-lg">
-                            Engineered specifically for zero-rated edge caching and low-bandwidth regional network
-                            conditions.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Photo Card 3 -->
-                <div
-                    class="relative rounded-3xl overflow-hidden group border border-white/15 shadow-2xl h-[320px] sm:h-[360px]">
-                    <img src="{% static 'brand/images/story_human_centered_ui.png' %}"
-                        alt="Apple & Stripe Craftsmanship"
-                        class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#050811] via-[#050811]/70 to-transparent"></div>
-                    <div class="absolute inset-0 p-7 flex flex-col justify-end gap-2 z-10">
-                        <span
-                            class="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-mono font-bold uppercase tracking-wider w-max">
-                            ZERO DEV BLOAT
-                        </span>
-                        <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
-                            Apple & Stripe Craftsmanship
-                        </h3>
-                        <p class="text-xs sm:text-sm text-gray-200 leading-relaxed drop-shadow max-w-lg">
-                            Hand-crafted Python, React, and PostgreSQL backbones built with sub-100ms response times.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Photo Card 4 -->
-                <div
-                    class="relative rounded-3xl overflow-hidden group border border-white/15 shadow-2xl h-[320px] sm:h-[360px]">
-                    <img src="{% static 'brand/images/story_enduring_legacy.png' %}" alt="24/7 Strategic Partnership"
-                        class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#050811] via-[#050811]/70 to-transparent"></div>
-                    <div class="absolute inset-0 p-7 flex flex-col justify-end gap-2 z-10">
-                        <span
-                            class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold uppercase tracking-wider w-max">
-                            LONG-TERM PARTNER
-                        </span>
-                        <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
-                            24/7 Strategic Partnership
-                        </h3>
-                        <p class="text-xs sm:text-sm text-gray-200 leading-relaxed drop-shadow max-w-lg">
-                            Continuous active infrastructure monitoring, security patch management, and long-term
-                            feature growth.
-                        </p>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    </section>
-
-    <!-- SECTION 7: THE ENGINEERING EXECUTION METHOD (Apple/VanMoof Style Showcase) -->
-    <section class="py-20 bg-[#050811] border-b border-white/5 relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-6 space-y-12">
-
-            <div class="text-center max-w-3xl mx-auto space-y-3">
-                <span class="text-xs font-bold text-[#007AFF] uppercase tracking-widest inline-flex items-center gap-2">
-                    <i class="fas fa-route"></i> Execution Method
-                </span>
-                <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">Our Engineering Journey</h2>
-                <p class="text-sm sm:text-base text-[#94A3B8]">
-                    Hover over any stage below to explore our structured execution framework.
-                </p>
-            </div>
-
-            <!-- Apple/VanMoof Style Split Interactive Showcase -->
-            <div class="grid lg:grid-cols-12 gap-10 items-center">
-
-                <!-- Left Column: Vertical Heading List (Apple Style) -->
-                <div class="lg:col-span-5 flex flex-col gap-2 py-4">
-
-                    <div onmouseenter="switchExecStep('step1', this)" onclick="switchExecStep('step1', this)"
-                        class="exec-heading-btn active py-3 pl-4 border-l-4 border-[#00FF94] text-white text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>01. Discovery & Audit</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-[#00FF94]"></i>
-                    </div>
-
-                    <div onmouseenter="switchExecStep('step2', this)" onclick="switchExecStep('step2', this)"
-                        class="exec-heading-btn py-3 pl-4 border-l-4 border-transparent text-gray-500 hover:text-gray-200 text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>02. System Strategy</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-[#007AFF]"></i>
-                    </div>
-
-                    <div onmouseenter="switchExecStep('step3', this)" onclick="switchExecStep('step3', this)"
-                        class="exec-heading-btn py-3 pl-4 border-l-4 border-transparent text-gray-500 hover:text-gray-200 text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>03. UI/UX Design</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-purple-400"></i>
-                    </div>
-
-                    <div onmouseenter="switchExecStep('step4', this)" onclick="switchExecStep('step4', this)"
-                        class="exec-heading-btn py-3 pl-4 border-l-4 border-transparent text-gray-500 hover:text-gray-200 text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>04. Production Build</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-amber-400"></i>
-                    </div>
-
-                    <div onmouseenter="switchExecStep('step5', this)" onclick="switchExecStep('step5', this)"
-                        class="exec-heading-btn py-3 pl-4 border-l-4 border-transparent text-gray-500 hover:text-gray-200 text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>05. Security & QA Audit</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-rose-400"></i>
-                    </div>
-
-                    <div onmouseenter="switchExecStep('step6', this)" onclick="switchExecStep('step6', this)"
-                        class="exec-heading-btn py-3 pl-4 border-l-4 border-transparent text-gray-500 hover:text-gray-200 text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>06. Cloud Deployment</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-cyan-300"></i>
-                    </div>
-
-                    <div onmouseenter="switchExecStep('step7', this)" onclick="switchExecStep('step7', this)"
-                        class="exec-heading-btn py-3 pl-4 border-l-4 border-transparent text-gray-500 hover:text-gray-200 text-2xl sm:text-3xl font-extrabold cursor-pointer transition-all duration-300 flex items-center justify-between group">
-                        <span>07. 24/7 Legacy Support</span>
-                        <i
-                            class="fas fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity text-green-400"></i>
-                    </div>
-
-                </div>
-
-                <!-- Right Column: Interactive Detail & Visual Display Card -->
-                <div class="lg:col-span-7 relative">
-                    <div class="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl h-[420px] sm:h-[480px] group transition-opacity duration-300"
-                        id="execStepDisplayContainer">
-
-                        <!-- Dynamic Background Visual Image -->
-                        <img id="execStepImage" src="{% static 'brand/images/cap_digital_trans.png' %}"
-                            alt="Execution Step Visual"
-                            class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700">
-                        <div class="absolute inset-0 bg-gradient-to-t from-[#050811] via-[#050811]/65 to-transparent">
-                        </div>
-
-                        <!-- Overlaid Glassmorphic Notification/Summary Card (VanMoof Style) -->
-                        <div class="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end gap-4 z-10">
-
-                            <div
-                                class="glass-card p-6 sm:p-7 rounded-2xl border border-white/15 space-y-3 bg-black/60 backdrop-blur-md">
-                                <div class="flex items-center justify-between">
-                                    <span id="execStepTagline"
-                                        class="px-3 py-1 rounded-full bg-[#00FF94]/20 border border-[#00FF94]/40 text-[#00FF94] text-[10px] font-mono font-bold uppercase tracking-wider">
-                                        STAGE 01 • INITIATION
-                                    </span>
-                                    <span class="text-xs font-mono text-gray-400 font-bold">100% TRANSPARENT</span>
-                                </div>
-
-                                <h3 id="execStepTitle"
-                                    class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                                    Discovery & Architecture Audit
-                                </h3>
-
-                                <p id="execStepSummary" class="text-xs sm:text-sm text-gray-200 leading-relaxed">
-                                    We analyze institutional stakeholders, data flow parameters, legacy codebase
-                                    vulnerabilities, and African network bandwidth constraints before designing your
-                                    software architecture.
-                                </p>
-
-                                <div class="pt-2 border-t border-white/10 flex flex-wrap items-center gap-2 text-[11px] font-mono text-gray-300 font-bold"
-                                    id="execStepDeliverables">
-                                    <span class="px-2.5 py-1 rounded-md bg-white/10 text-white"><i
-                                            class="fas fa-check text-[#00FF94] mr-1"></i> Workflow Audits</span>
-                                    <span class="px-2.5 py-1 rounded-md bg-white/10 text-white"><i
-                                            class="fas fa-check text-[#00FF94] mr-1"></i> Data Flow Mapping</span>
-                                    <span class="px-2.5 py-1 rounded-md bg-white/10 text-white"><i
-                                            class="fas fa-check text-[#00FF94] mr-1"></i> Bandwidth Specs</span>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    </section>
-
-    <!-- SECTION 8: ANIMATED IMPACT STATISTICS -->
-    <section class="py-20 bg-[#0A0F1D] border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6 space-y-12">
-
-            <div class="text-center max-w-2xl mx-auto space-y-2">
-                <span class="text-xs font-bold text-[#00FF94] uppercase tracking-widest">Impact in Numbers</span>
-                <h2 class="text-3xl font-extrabold text-white tracking-tight">Our Track Record Across Africa</h2>
-            </div>
-
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center max-w-4xl mx-auto" id="metricsSection">
-
-                <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span class="block text-3xl sm:text-5xl font-extrabold text-[#00FF94]" id="metricProjects">0</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest font-mono">Projects
-                        Delivered</span>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span class="block text-3xl sm:text-5xl font-extrabold text-[#007AFF]" id="metricClients">0</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest font-mono">Satisfied
-                        Clients</span>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span class="block text-3xl sm:text-5xl font-extrabold text-purple-400" id="metricTech">0</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest font-mono">Tech
-                        Mastered</span>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span class="block text-3xl sm:text-5xl font-extrabold text-emerald-400"
-                        id="metricSatisfaction">0</span>
-                    <span class="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest font-mono">Satisfaction
-                        %</span>
-                </div>
-
-            </div>
-
-        </div>
-    </section>
-
-    <!-- SECTION 9: COMPREHENSIVE MODERN FOOTER -->
-    {% include 'brand/footer.html' %}
-
-    <!-- Magic Scripts: Animated Counters, Interactive Story Tabs & Intersection Observers -->
     <script>
-        // Story & Purpose Tab Switcher Data
         const storyTabs = {
             purpose: {
                 title: "Technology Built for Lasting Impact",
-                desc: "Teklora exists because off-the-shelf software doesn't fit the realities of African infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep, enduring impact over quick turnarounds, engineering custom platforms that empower African institutions to lead.",
-                quote: "\"Every application we engineer must deliver tangible, measurable value to African communities and enterprises.\"",
-                author: "Teklora Philosophy",
-                color: "#00FF94",
+                desc: "We exist because off-the-shelf software doesn't fit the realities of our infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep, enduring impact over quick turnarounds, engineering custom platforms that empower institutions to lead.",
+                quote: "\"Every application we engineer must deliver tangible, measurable value to communities and enterprises.\"",
+                author: "Core Philosophy",
+                color: "var(--brand-blue)",
                 badgeText: "OUR CORE",
-                image: "{% static 'brand/images/story_purpose_impact.png' %}"
+                image: "{% static 'brand/images/human_centered_tech.jpg' %}"
             },
             innovation: {
                 title: "Tailored for African Infrastructure",
-                desc: "We design systems from the ground up to thrive in low-bandwidth, high-concurrency, and mobile-first African environments. Our zero-rated edge caching and offline-first architectures guarantee 99.98% reliability anywhere.",
+                desc: "We design systems from the ground up to thrive in low-bandwidth, high-concurrency, and mobile-first environments. Our zero-rated edge caching and offline-first architectures guarantee 99.98% reliability anywhere.",
                 quote: "\"Resilient infrastructure engineered to perform under extreme regional and bandwidth constraints.\"",
                 author: "Technical Architecture Core",
-                color: "#007AFF",
+                color: "var(--brand-warm)",
                 badgeText: "INFRASTRUCTURE",
-                image: "{% static 'brand/images/story_african_innovation.png' %}"
+                image: "{% static 'brand/images/local_business_planning_1790266519966.jpg' %}"
             },
             craftsmanship: {
-                title: "Apple-Grade UI with Technical Rigor",
-                desc: "Great technology must be intuitive. We merge modern design aesthetics—dark mode elegance, crisp typography, micro-interactions—with deep Python and React engineering to make complex institutional software effortless to use.",
+                title: "Premium UI with Technical Rigor",
+                desc: "Great technology must be intuitive. We merge modern design aesthetics with deep engineering to make complex institutional software effortless to use.",
                 quote: "\"Craftsmanship means making high-powered software feel clean, fast, and human-centered.\"",
                 author: "UI/UX Design Principle",
-                color: "#A855F7",
+                color: "var(--brand-blue)",
                 badgeText: "CRAFTSMANSHIP",
-                image: "{% static 'brand/images/story_human_centered_ui.png' %}"
+                image: "{% static 'brand/images/human_centered_tech.jpg' %}"
             },
             legacy: {
-                title: "Long-Term Support & Continental Scale",
+                title: "Long-Term Support & Scale",
                 desc: "We are not chasing short-lived tech trends. We forge long-term partnerships with universities, NGOs, government agencies, and enterprises to continuously audit, scale, and maintain mission-critical software for decades.",
-                quote: "\"Building technology today that powers Africa's leaders tomorrow.\"",
+                quote: "\"Building technology today that powers leaders tomorrow.\"",
                 author: "Pan-African Mission",
-                color: "#F59E0B",
-                badgeText: "CONTINENTAL LEGACY",
-                image: "{% static 'brand/images/story_enduring_legacy.png' %}"
+                color: "var(--brand-warm)",
+                badgeText: "LEGACY",
+                image: "{% static 'brand/images/local_business_planning_1790266519966.jpg' %}"
             }
         };
 
         function switchStoryTab(key, btnEl) {
             document.querySelectorAll('.story-tab-btn').forEach(btn => {
                 btn.classList.remove('active');
-                btn.style.color = '#94A3B8';
+                btn.style.color = 'var(--text-secondary)';
                 btn.style.borderColor = 'transparent';
             });
 
@@ -930,195 +342,24 @@
                     document.getElementById('storyTabTitle').textContent = data.title;
                     document.getElementById('storyTabDesc').textContent = data.desc;
                     document.getElementById('storyTabQuote').textContent = data.quote;
-
-                    const quoteBox = document.getElementById('storyTabQuoteBox');
-                    const quoteIcon = document.getElementById('storyTabQuoteIcon');
-                    const badge = document.getElementById('storyTabBadge');
-
-                    if (quoteBox) quoteBox.style.borderColor = data.color + '60';
-                    if (quoteIcon) quoteIcon.style.color = data.color + '25';
-
-                    if (badge) {
-                        badge.textContent = data.badgeText;
-                        badge.style.color = data.color;
-                        badge.style.backgroundColor = data.color + '20';
-                        badge.style.borderColor = data.color + '50';
-                    }
-
                     document.getElementById('storyTabAuthor').innerHTML = `<i class="fas fa-shield-alt mr-1" style="color: ${data.color}"></i> ${data.author}`;
-                    document.getElementById('storyTabImage').src = data.image;
+                    document.getElementById('storyTabBadge').textContent = data.badgeText;
+                    document.getElementById('storyTabBadge').style.color = data.color;
+                    document.getElementById('storyTabBadge').style.borderColor = data.color;
+                    document.getElementById('storyTabQuoteIcon').style.color = data.color;
+                    
+                    const img = document.getElementById('storyTabImage');
+                    if (img && data.image) {
+                        img.src = data.image;
+                    }
+
                     contentContainer.style.opacity = '1';
-                }, 150);
+                }, 200);
             }
         }
-
-        // Execution Method Stage Switcher Data
-        const execSteps = {
-            step1: {
-                tagline: "STAGE 01 • INITIATION",
-                title: "Discovery & Architecture Audit",
-                summary: "We analyze institutional stakeholders, data flow parameters, legacy codebase vulnerabilities, and African network bandwidth constraints before designing your software architecture.",
-                deliverables: ["Workflow Audits", "Data Flow Mapping", "Bandwidth Specs"],
-                color: "#00FF94",
-                image: "{% static 'brand/images/cap_digital_trans.png' %}"
-            },
-            step2: {
-                tagline: "STAGE 02 • STRATEGY",
-                title: "System Strategy & Schema Design",
-                summary: "Architecting relational database schemas, RESTful & GraphQL API contracts, and zero-rated edge caching routes tailored for your exact operational requirements.",
-                deliverables: ["Database Schemas", "API Contracts", "Cloud Blueprints"],
-                color: "#007AFF",
-                image: "{% static 'brand/images/cap_software_dev.png' %}"
-            },
-            step3: {
-                tagline: "STAGE 03 • DESIGN",
-                title: "Human-Centered UI/UX Design",
-                summary: "Crafting modern Apple and Stripe-grade user interfaces with dark-mode elegance, micro-interaction fluidity, and intuitive navigation for enterprise software.",
-                deliverables: ["Figma Prototypes", "Design System Tokens", "Micro-Animations"],
-                color: "#A855F7",
-                image: "{% static 'brand/images/story_human_centered_ui.png' %}"
-            },
-            step4: {
-                tagline: "STAGE 04 • ENGINEERING",
-                title: "Python, React & PostgreSQL Build",
-                summary: "Writing clean, maintainable Python and Django backend services alongside high-performance React component trees capable of sub-100ms response times.",
-                deliverables: ["Django Core", "React UI Components", "pgvector Search"],
-                color: "#F59E0B",
-                image: "{% static 'brand/images/hero.png' %}"
-            },
-            step5: {
-                tagline: "STAGE 05 • VALIDATION",
-                title: "Security & Automated QA Audits",
-                summary: "Rigorous automated unit testing, SQL injection vulnerabilities scanning, CSRF protection validation, and simulated low-bandwidth network stress tests.",
-                deliverables: ["Automated Unit Tests", "Penetration Scans", "Load Testing Reports"],
-                color: "#F43F5E",
-                image: "{% static 'brand/images/cap_ai_solutions.png' %}"
-            },
-            step6: {
-                tagline: "STAGE 06 • DEPLOYMENT",
-                title: "Zero-Downtime Cloud Deployment",
-                summary: "Containerizing services with Docker and deploying to AWS & DigitalOcean backbones with Nginx edge routing and SSL firewall security.",
-                deliverables: ["Docker Containers", "Nginx Caching", "Zero-Downtime Migration"],
-                color: "#06B6D4",
-                image: "{% static 'brand/images/cap_cloud_edge.png' %}"
-            },
-            step7: {
-                tagline: "STAGE 07 • STEWARDSHIP",
-                title: "24/7 Continuous Legacy Support",
-                summary: "Providing continuous 24/7 infrastructure uptime monitoring, security patch management, automated backups, and long-term feature expansion for decades.",
-                deliverables: ["24/7 Monitoring Alerting", "Continuous Backups", "Quarterly Audits"],
-                color: "#10B981",
-                image: "{% static 'brand/images/story_enduring_legacy.png' %}"
-            }
-        };
-
-        function switchExecStep(key, btnEl) {
-            document.querySelectorAll('.exec-heading-btn').forEach(btn => {
-                btn.classList.remove('active', 'text-white');
-                btn.classList.add('text-gray-500');
-                btn.style.borderColor = 'transparent';
-            });
-
-            const data = execSteps[key];
-            if (btnEl && data) {
-                btnEl.classList.add('active', 'text-white');
-                btnEl.classList.remove('text-gray-500');
-                btnEl.style.borderColor = data.color;
-            }
-
-            if (data) {
-                const container = document.getElementById('execStepDisplayContainer');
-                container.style.opacity = '0.4';
-
-                setTimeout(() => {
-                    document.getElementById('execStepTitle').textContent = data.title;
-                    document.getElementById('execStepSummary').textContent = data.summary;
-                    document.getElementById('execStepImage').src = data.image;
-
-                    const tagline = document.getElementById('execStepTagline');
-                    if (tagline) {
-                        tagline.textContent = data.tagline;
-                        tagline.style.color = data.color;
-                        tagline.style.borderColor = data.color + '60';
-                        tagline.style.backgroundColor = data.color + '20';
-                    }
-
-                    const delivEl = document.getElementById('execStepDeliverables');
-                    if (delivEl) {
-                        delivEl.innerHTML = data.deliverables.map(item =>
-                            `<span class="px-2.5 py-1 rounded-md bg-white/10 text-white"><i class="fas fa-check mr-1" style="color: ${data.color}"></i> ${item}</span>`
-                        ).join('');
-                    }
-
-                    container.style.opacity = '1';
-                }, 150);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Elastic Accordion Gallery Active Handler
-            const elasticCards = document.querySelectorAll('.elastic-card');
-            elasticCards.forEach(card => {
-                card.addEventListener('mouseenter', () => {
-                    elasticCards.forEach(c => c.classList.remove('active'));
-                    card.classList.add('active');
-                });
-            });
-
-            const metrics = {
-                metricProjects: 5,
-                metricClients: 13,
-                metricTech: 18,
-                metricSatisfaction: 99
-            };
-
-            const countUp = (elementId, targetValue) => {
-                const el = document.getElementById(elementId);
-                if (!el) return;
-
-                let start = 0;
-                const duration = 1600;
-                const startTime = performance.now();
-
-                const updateCounter = (currentTime) => {
-                    const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    const easeProgress = progress * (2 - progress);
-                    const currentValue = Math.floor(easeProgress * targetValue);
-
-                    if (elementId === 'metricSatisfaction') {
-                        el.textContent = currentValue.toString() + '%';
-                    } else if (targetValue >= 10) {
-                        el.textContent = currentValue.toString() + '+';
-                    } else {
-                        el.textContent = currentValue.toString();
-                    }
-
-                    if (progress < 1) {
-                        requestAnimationFrame(updateCounter);
-                    }
-                };
-
-                requestAnimationFrame(updateCounter);
-            };
-
-            const metricsSection = document.getElementById('metricsSection');
-            if (metricsSection) {
-                const metricsObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            Object.keys(metrics).forEach(key => {
-                                countUp(key, metrics[key]);
-                            });
-                            metricsObserver.unobserve(metricsSection);
-                        }
-                    });
-                }, { threshold: 0.2 });
-
-                metricsObserver.observe(metricsSection);
-            }
-        });
     </script>
-</body>
 
+    {% include 'brand/footer.html' %}
+
+</body>
 </html>
