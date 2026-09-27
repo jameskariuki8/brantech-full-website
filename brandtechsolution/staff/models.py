@@ -107,3 +107,27 @@ class StaffInvitation(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class StaffProfile(models.Model):
+    """What a staff member keeps about themselves beyond auth.User.
+
+    Created lazily by the /me endpoint rather than by a post_save signal, so
+    accounts that predate this model need no backfill. `phone` is stored in
+    E.164 (+254712345678) so it can be dropped straight into a wa.me link.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="staff_profile"
+    )
+    phone = models.CharField(
+        max_length=16, blank=True,
+        help_text="E.164, e.g. +254712345678. A WhatsApp number is preferred.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+
+    def __str__(self):
+        return f"Profile of {self.user}"

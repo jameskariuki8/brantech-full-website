@@ -1,9 +1,12 @@
 from django.contrib.auth.models import Group, Permission, User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count
 from rest_framework import serializers
 
 from .capabilities import CODENAMES
 from .models import AuditEntry, StaffInvitation
+from .phone import normalize_phone
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -83,6 +86,7 @@ class PersonSerializer(serializers.ModelSerializer):
     # instance when rendering a response - that attribute doesn't exist and
     # would raise AttributeError on read otherwise.
     roles = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
     role_ids = serializers.PrimaryKeyRelatedField(
         source="groups", queryset=Group.objects.all(), many=True, write_only=True,
         required=False,
@@ -93,11 +97,18 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = [
             "id", "username", "email", "first_name", "last_name",
             "is_active", "is_superuser", "roles", "role_ids", "date_joined",
+            "phone",
         ]
         read_only_fields = ["username", "is_superuser", "date_joined"]
 
     def get_roles(self, obj):
         return sorted(g.name for g in obj.groups.all())
+
+    def get_phone(self, obj):
+        # Set by its owner through /me. Accounts that never opened their
+        # profile have no row yet.
+        profile = getattr(obj, "staff_profile", None)
+        return profile.phone if profile else ""
 
 
 class AuditEntrySerializer(serializers.ModelSerializer):
@@ -138,3 +149,50 @@ class InvitationSerializer(serializers.ModelSerializer):
                 "Edit that person's roles instead."
             )
         return email
+
+
+class MeSerializer(serializers.ModelSerializer):
+    """The signed-in user's own profile. Email and username are read-only:
+    invited accounts use the email as the username, and both are how they
+    sign in, so changing either belongs to whoever manages staff."""
+
+    phone = serializers.CharField(
+        source="staff_profile.phone", required=False, allow_blank=True, max_length=32
+    )
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "first_name", "last_name", "phone"]
+        read_only_fields = ["id", "username", "email"]
+
+    def validate_phone(self, value):
+        try:
+            return normalize_phone(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop("staff_profile", None)
+        instance = super().update(instance, validated_data)
+        if profile_data is not None:
+            profile = instance.staff_profile
+            profile.phone = profile_data.get("phone", profile.phone)
+            profile.save()
+        return instance
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(trim_whitespace=False)
+    new_password = serializers.CharField(trim_whitespace=False)
+
+    def validate_current_password(self, value):
+        if not self.context["request"].user.check_password(value):
+            raise serializers.ValidationError("That is not your current password.")
+        return value
+
+    def validate_new_password(self, value):
+        try:
+            validate_password(value, user=self.context["request"].user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+        return value

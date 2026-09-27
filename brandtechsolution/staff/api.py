@@ -1,3 +1,4 @@
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.db.models import Count, Q
@@ -5,16 +6,19 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from .audit import record
 from .capabilities import CAPABILITY_GROUPS
 from .emails import send_invitation
-from .models import AuditEntry, StaffInvitation
+from .models import AuditEntry, StaffInvitation, StaffProfile
 from .permissions import enforce_grantable_roles, has_capability
 from .serializers import (
     AuditEntrySerializer,
     InvitationSerializer,
+    MeSerializer,
+    PasswordChangeSerializer,
     PersonSerializer,
     RoleSerializer,
 )
@@ -126,7 +130,9 @@ class PersonViewSet(
     pagination_class = StaffPagination
 
     def get_queryset(self):
-        return User.objects.filter(is_staff=True).prefetch_related("groups").order_by(
+        return User.objects.filter(is_staff=True).select_related(
+            "staff_profile"
+        ).prefetch_related("groups").order_by(
             "username"
         )
 
@@ -310,3 +316,32 @@ class InvitationViewSet(
                 detail={"email": instance.email},
             )
             instance.delete()
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAdminUser])
+def me(request):
+    """The signed-in staff member's own profile. Needs no capability: anyone
+    who can open the panel can maintain their own name and phone number."""
+    user = request.user
+    StaffProfile.objects.get_or_create(user=user)
+    user = User.objects.select_related("staff_profile").get(pk=user.pk)
+    if request.method == "GET":
+        return Response(MeSerializer(user).data)
+    serializer = MeSerializer(user, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def change_password(request):
+    serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
+    serializer.is_valid(raise_exception=True)
+    request.user.set_password(serializer.validated_data["new_password"])
+    request.user.save(update_fields=["password"])
+    # Without this the session hash no longer matches and the next request
+    # signs them out of the tab they just changed it from.
+    update_session_auth_hash(request._request, request.user)
+    return Response({"ok": True})

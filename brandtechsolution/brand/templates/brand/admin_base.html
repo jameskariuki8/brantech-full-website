@@ -254,7 +254,7 @@
                     <div class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-sm">
                         {{ request.user.username|slice:":1"|upper }}
                     </div>
-                    <span class="hidden md:inline text-sm font-medium text-gray-300">{{ request.user.get_full_name|default:request.user.username }}</span>
+                    <span id="headerUserName" class="hidden md:inline text-sm font-medium text-gray-300">{{ request.user.get_full_name|default:request.user.username }}</span>
                     <i class="fas fa-chevron-down text-xs text-gray-500"></i>
                 </button>
                 
@@ -267,6 +267,9 @@
                         <p class="text-xs text-gray-400 truncate">{{ request.user.email }}</p>
                         {% endif %}
                     </div>
+                    <button type="button" id="myProfileBtn" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                        <i class="fas fa-user-pen w-4 text-center text-gray-500"></i>My profile
+                    </button>
                     <a href="/admin/" target="_blank" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
                         <i class="fas fa-shield-halved w-4 text-center text-gray-500"></i>Django Admin
                     </a>
@@ -280,6 +283,60 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    {% comment %}
+    Lives in the base template, not a panel section, because the header it
+    opens from is on every admin page. profile.js fills and submits it.
+    {% endcomment %}
+    <div id="profileModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+        <div class="bg-dark-card border border-dark-border rounded-xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-white">My profile</h3>
+                <button type="button" data-profile-close class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="profileForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
+                    <p id="profileEmail" class="text-sm text-gray-300"></p>
+                    <p class="text-xs text-gray-500 mt-1">You sign in with this. Ask whoever manages staff to change it.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="profileFirstName" class="block text-sm font-medium text-gray-400 mb-2">First name</label>
+                        <input id="profileFirstName" name="first_name" type="text" maxlength="150" autocomplete="given-name"
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label for="profileLastName" class="block text-sm font-medium text-gray-400 mb-2">Last name</label>
+                        <input id="profileLastName" name="last_name" type="text" maxlength="150" autocomplete="family-name"
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    </div>
+                </div>
+                <div>
+                    <label for="profilePhone" class="block text-sm font-medium text-gray-400 mb-2">Phone number</label>
+                    <input id="profilePhone" name="phone" type="tel" autocomplete="tel" placeholder="+254 712 345 678"
+                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    <p class="text-xs text-gray-500 mt-1"><i class="fab fa-whatsapp text-green-400 mr-1"></i>Use your WhatsApp number if you have one. That's how the team will reach you quickly.</p>
+                </div>
+                <button type="submit"
+                    class="w-full bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-3 rounded-lg disabled:opacity-50">Save profile</button>
+            </form>
+
+            <form id="passwordForm" class="space-y-4 mt-8 pt-6 border-t border-dark-border">
+                <h4 class="text-sm font-semibold text-white">Change password</h4>
+                <input id="currentPassword" name="current_password" type="password" autocomplete="current-password" placeholder="Current password" required
+                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                <input id="newPassword" name="new_password" type="password" autocomplete="new-password" placeholder="New password" required
+                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                <button type="submit"
+                    class="w-full px-5 py-3 text-sm rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50">Change password</button>
+            </form>
+        </div>
+    </div>
+    <script src="{% static 'brand/js/admin/profile.js' %}" defer></script>
 
     <!-- Sidebar Collapse and Dropdown Toggle -->
     <script>

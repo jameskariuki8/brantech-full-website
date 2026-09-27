@@ -12,4 +12,6 @@ router.register(r"activity", api.AuditViewSet, basename="activity")
 urlpatterns = [
     path("", include(router.urls)),
     path("capabilities/", api.capabilities, name="capabilities"),
+    path("me/", api.me, name="me"),
+    path("me/password/", api.change_password, name="me-password"),
 ]

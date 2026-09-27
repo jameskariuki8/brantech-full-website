@@ -98,7 +98,14 @@ const STAFF_LISTS = {
         row: p => `
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex justify-between items-center gap-4">
             <div>
-                <div class="text-white font-medium">${escapeHtml(p.username)}</div>
+                <div class="text-white font-medium">${escapeHtml(
+                    `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username)}</div>
+                <div class="text-xs text-gray-400">
+                    ${escapeHtml(p.email || p.username)}
+                    ${p.phone ? `&middot; <a href="https://wa.me/${escapeHtml(p.phone.replace('+', ''))}"
+                        target="_blank" rel="noopener" class="text-green-400 hover:text-green-300">
+                        <i class="fab fa-whatsapp"></i> ${escapeHtml(p.phone)}</a>` : ''}
+                </div>
                 <div class="text-xs text-gray-500">${p.is_superuser
                     ? 'All capabilities &middot; superusers bypass every check'
                     : escapeHtml(p.roles.join(', ') || 'no roles')}</div>
