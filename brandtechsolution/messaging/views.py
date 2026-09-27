@@ -20,7 +20,7 @@ from brandtechsolution import turnstile
 from staff.emails import capability_holder_emails
 from staff.handles import mailbox_address
 from .mailbox import deliver_inbound, local_parts, resolve_mailbox
-from .models import InboundEmail, Inquiry, Suppression
+from .models import BlockedSender, InboundEmail, Inquiry, Suppression
 from .tokens import read_unsubscribe_token
 
 logger = logging.getLogger(__name__)
@@ -103,6 +103,14 @@ def contact_submit(request):
                 status=400,
             )
         messages.error(request, "Please fill in your name, email, and message.")
+        return redirect("contacts")
+
+    # A sender marked as spam gets the same answer a real one does, so the
+    # bot learns nothing, but nothing is stored and nobody is notified.
+    if BlockedSender.is_blocked(email):
+        if ajax:
+            return JsonResponse({"ok": True})
+        messages.success(request, "Thanks! Your message has been sent.")
         return redirect("contacts")
 
     inquiry = Inquiry.objects.create(
@@ -423,7 +431,8 @@ def mailgun_inbound_webhook(request):
         )
         if message is not None:
             delivered += 1
-            shared_hit = shared_hit or owner is None
+            # Spam from a blocked sender is filed, but raises nothing.
+            shared_hit = shared_hit or (owner is None and not message.thread.spam)
 
     inquiry = None
     if shared_hit:

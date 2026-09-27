@@ -30,6 +30,7 @@ the reader replaces the list while a conversation is open.
                     <button type="button" data-filter="inbox" class="mail-filter px-3 py-1 rounded-md text-xs font-medium">Inbox</button>
                     <button type="button" data-filter="unread" class="mail-filter px-3 py-1 rounded-md text-xs font-medium">Unread</button>
                     <button type="button" data-filter="archived" class="mail-filter px-3 py-1 rounded-md text-xs font-medium">Archived</button>
+                    <button type="button" data-filter="spam" class="mail-filter px-3 py-1 rounded-md text-xs font-medium">Spam</button>
                     <select id="mailPerson" class="hidden ml-auto bg-[#06090F] border border-white/10 rounded-md px-2 py-1 text-xs text-gray-300 max-w-[9rem]" aria-label="Staff member"></select>
                     <button type="button" id="mailRefresh" class="ml-auto text-gray-500 hover:text-white p-1" title="Refresh" aria-label="Refresh">
                         <i class="fas fa-rotate-right text-xs"></i>
@@ -61,6 +62,12 @@ the reader replaces the list while a conversation is open.
                         </button>
                         <button type="button" id="mailArchiveBtn" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" title="Archive" aria-label="Archive">
                             <i class="fas fa-box-archive"></i>
+                        </button>
+                        <button type="button" id="mailSpamBtn" class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5" title="Mark as spam" aria-label="Mark as spam">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                        <button type="button" id="mailDeleteBtn" class="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10" title="Delete" aria-label="Delete">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </header>

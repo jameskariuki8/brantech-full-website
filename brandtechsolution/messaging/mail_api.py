@@ -9,6 +9,7 @@ from django.core.validators import validate_email
 from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
@@ -37,6 +38,8 @@ def _thread_json(thread):
         "snippet": thread.snippet,
         "unread": thread.unread,
         "archived": thread.archived,
+        "spam": thread.spam,
+        "deleted": thread.deleted_at is not None,
         "last_message_at": thread.last_message_at,
         "message_count": getattr(thread, "message_count", None),
         "has_sent": getattr(thread, "has_sent", None),
@@ -77,7 +80,7 @@ def mailboxes(request):
     user = request.user
     own = mb.own_mailbox(user)
     unread = dict(
-        _visible(user).filter(unread=True, archived=False)
+        _visible(user).filter(unread=True, archived=False, spam=False, deleted_at__isnull=True)
         .values_list("mailbox").annotate(n=Count("id")).values_list("mailbox", "n")
     )
     data = {
@@ -135,8 +138,15 @@ def threads(request):
     else:
         raise ValidationError({"box": "Unknown mailbox."})
 
-    if box != "sent":
-        qs = qs.filter(archived=request.query_params.get("archived") == "1")
+    if box != "all":
+        # Deleted mail is gone from mailboxes; only oversight still lists it.
+        qs = qs.filter(deleted_at__isnull=True)
+    if request.query_params.get("spam") == "1":
+        qs = qs.filter(spam=True)
+    else:
+        qs = qs.filter(spam=False)
+        if box != "sent":
+            qs = qs.filter(archived=request.query_params.get("archived") == "1")
     if request.query_params.get("unread") == "1":
         qs = qs.filter(unread=True)
 
@@ -162,6 +172,8 @@ def _get_thread(request, pk):
     thread = get_object_or_404(MailThread.objects.select_related("owner"), pk=pk)
     if not mb.can_read(request.user, thread):
         # 404 rather than 403: whether a colleague has a thread is itself private.
+        raise Http404
+    if thread.deleted_at and not request.user.has_perm("staff.view_all_mail"):
         raise Http404
     return thread
 
@@ -193,7 +205,21 @@ def thread_state(request, pk):
             fields.append(field)
     if fields:
         thread.save(update_fields=fields)
+    if "spam" in request.data:
+        mb.set_spam(request.user, thread, bool(request.data["spam"]))
     return Response(_thread_json(thread))
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def delete_thread(request, pk):
+    thread = _get_thread(request, pk)
+    if not mb.can_act(request.user, thread):
+        raise PermissionDenied("Only the mailbox's owner can delete from it.")
+    thread.deleted_at = timezone.now()
+    thread.deleted_by = request.user
+    thread.save(update_fields=["deleted_at", "deleted_by"])
+    return Response(status=204)
 
 
 def _recipients(raw, field, required=False):
@@ -293,6 +319,8 @@ def unread_count(request):
     q = Q(owner=user)
     if user.has_perm("staff.view_inbox"):
         q |= Q(owner__isnull=True)
-    count = MailThread.objects.filter(q, unread=True, archived=False).count()
+    count = MailThread.objects.filter(
+        q, unread=True, archived=False, spam=False, deleted_at__isnull=True
+    ).count()
     return Response({"unread": count})
 

@@ -19,5 +19,6 @@ urlpatterns = [
     path("mail/threads/<int:pk>/", mail_api.thread_detail, name="mail-thread"),
     path("mail/threads/<int:pk>/state/", mail_api.thread_state, name="mail-thread-state"),
     path("mail/threads/<int:pk>/reply/", mail_api.reply, name="mail-reply"),
+    path("mail/threads/<int:pk>/delete/", mail_api.delete_thread, name="mail-delete"),
     path("mail/compose/", mail_api.compose, name="mail-compose"),
 ]

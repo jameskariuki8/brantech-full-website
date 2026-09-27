@@ -5,7 +5,7 @@ from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from messaging.models import Inquiry, MailMessage, MailThread
+from messaging.models import BlockedSender, Inquiry, MailMessage, MailThread
 
 WEBHOOK = "/messaging/inbound-webhook/"
 
@@ -237,3 +237,92 @@ class SendingTest(TestCase):
             )
         self.assertEqual(resp.status_code, 502)
         self.assertFalse(self.thread.messages.filter(direction="out").exists())
+
+
+@override_settings(MAILBOX_DOMAIN="teklora.co.ke")
+class SpamAndDeleteTest(TestCase):
+    def setUp(self):
+        self.ann = staff("ann")
+        self.support = staff("sue", "view_inbox", "handle_inquiries")
+        self.boss = staff("boss", "view_all_mail")
+        inbound(self.client, "ann@teklora.co.ke")
+        self.thread = MailThread.objects.get()
+
+    def act(self, user, path, data=None):
+        self.client.force_login(user)
+        return self.client.post(
+            f"/api/messaging/mail/threads/{self.thread.id}/{path}/",
+            data or {}, content_type="application/json",
+        )
+
+    def listing(self, user, query):
+        self.client.force_login(user)
+        return [t["id"] for t in self.client.get(
+            f"/api/messaging/mail/threads/?{query}").json()["results"]]
+
+    def test_spam_moves_the_thread_and_blocks_the_sender(self):
+        self.assertEqual(self.act(self.ann, "state", {"spam": True}).status_code, 200)
+        self.assertEqual(self.listing(self.ann, "box=me"), [])
+        self.assertEqual(self.listing(self.ann, "box=me&spam=1"), [self.thread.id])
+        self.assertTrue(BlockedSender.is_blocked("CLIENT@example.com"))
+
+        # The next email from them is filed as spam and raises nothing.
+        self.client.logout()
+        inbound(self.client, "info@teklora.co.ke", subject="Buy now")
+        info = MailThread.objects.get(mailbox="info")
+        self.assertTrue(info.spam)
+        self.assertFalse(Inquiry.objects.exists())
+
+    def test_not_spam_unblocks(self):
+        self.act(self.ann, "state", {"spam": True})
+        self.act(self.ann, "state", {"spam": False})
+        self.assertFalse(BlockedSender.objects.exists())
+        self.assertEqual(self.listing(self.ann, "box=me"), [self.thread.id])
+
+    def test_blocked_contact_form_submissions_are_dropped_quietly(self):
+        BlockedSender.objects.create(email="spammer@example.com")
+        with mock.patch("brandtechsolution.turnstile.passed", return_value=True):
+            resp = self.client.post(reverse("contact_submit"), {
+                "name": "Web Master", "email": "Spammer@example.com", "message": "Monetag!",
+            }, HTTP_ACCEPT="application/json")
+        self.assertEqual(resp.json(), {"ok": True})
+        self.assertFalse(Inquiry.objects.exists())
+        self.assertFalse(MailThread.objects.filter(mailbox="info").exists())
+
+    def test_colleagues_are_never_blocked(self):
+        self.thread.counterpart_email = "bob@teklora.co.ke"
+        self.thread.save()
+        self.act(self.ann, "state", {"spam": True})
+        self.assertFalse(BlockedSender.objects.exists())
+
+    def test_delete_hides_it_from_the_owner_but_not_oversight(self):
+        self.assertEqual(self.act(self.ann, "delete").status_code, 204)
+        self.assertEqual(self.listing(self.ann, "box=me"), [])
+        self.assertEqual(self.listing(self.ann, "box=me&archived=1"), [])
+        self.client.force_login(self.ann)
+        self.assertEqual(
+            self.client.get(f"/api/messaging/mail/threads/{self.thread.id}/").status_code, 404
+        )
+        self.client.force_login(self.ann)
+        self.assertEqual(self.client.get("/api/messaging/mail/mailboxes/").json()["me"]["unread"], 0)
+
+        self.assertEqual(self.listing(self.boss, "box=all"), [self.thread.id])
+        self.client.force_login(self.boss)
+        detail = self.client.get(f"/api/messaging/mail/threads/{self.thread.id}/").json()
+        self.assertTrue(detail["deleted"])
+        self.assertFalse(detail["can_act"])
+
+    def test_only_the_owner_can_delete_or_mark_spam(self):
+        self.assertEqual(self.act(self.boss, "delete").status_code, 403)
+        self.assertEqual(self.act(self.boss, "state", {"spam": True}).status_code, 403)
+        self.thread.refresh_from_db()
+        self.assertIsNone(self.thread.deleted_at)
+        self.assertFalse(self.thread.spam)
+
+    def test_a_new_reply_brings_a_deleted_thread_back(self):
+        MailMessage.objects.filter(thread=self.thread).update(message_id="first@example.com")
+        self.act(self.ann, "delete")
+        self.client.logout()
+        inbound(self.client, "ann@teklora.co.ke", subject="Re: Hello",
+                **{"Message-Id": "<second@example.com>", "In-Reply-To": "<first@example.com>"})
+        self.assertEqual(self.listing(self.ann, "box=me"), [self.thread.id])

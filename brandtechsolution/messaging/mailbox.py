@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from staff.handles import SHARED_MAILBOXES, mailbox_address
 
-from .models import MailMessage, MailThread
+from .models import BlockedSender, MailMessage, MailThread
 
 OTHER = "other"
 SHARED = (*SHARED_MAILBOXES, OTHER)
@@ -116,6 +116,11 @@ def deliver_inbound(
         thread.snippet = snippet_of(snippet_text or body_text)
         thread.unread = True
         thread.archived = False
+        # A new message is new mail, so a deleted conversation comes back.
+        thread.deleted_at = None
+        thread.deleted_by = None
+        if BlockedSender.is_blocked(from_email):
+            thread.spam = True
         thread.last_message_at = now
         thread.save()
 
@@ -171,9 +176,27 @@ def can_read(user, thread):
 def can_act(user, thread):
     """Reply, archive, mark unread. Oversight is read-only: an administrator
     reading a colleague's mailbox cannot answer as them or move their mail."""
+    if thread.deleted_at is not None:
+        return False
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
     return user.has_perm("staff.handle_inquiries")
+
+
+def set_spam(user, thread, spam):
+    """Flag or clear a thread as spam, blocking or unblocking its sender."""
+    thread.spam = spam
+    if spam:
+        thread.unread = False
+    thread.save(update_fields=["spam", "unread"])
+    sender = thread.counterpart_email.strip().lower()
+    if not sender or sender.endswith("@" + settings.MAILBOX_DOMAIN.lower()):
+        # Never block our own addresses; a colleague is not spam.
+        return
+    if spam:
+        BlockedSender.objects.get_or_create(email=sender, defaults={"blocked_by": user})
+    else:
+        BlockedSender.objects.filter(email__iexact=sender).delete()
 
 
 def marks_read_on_open(user, thread):

@@ -171,6 +171,7 @@
         const who = t.counterpart_name || t.counterpart_email || '(unknown)';
         const mailboxChip = state.box === 'all'
             ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 truncate max-w-[9rem]">${escapeHtml(t.owner ? t.owner : `${t.mailbox}@`)}</span>`
+                + (t.deleted ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">Deleted</span>' : '')
             : '';
         return `
             <li>
@@ -203,6 +204,7 @@
             const empty = state.q ? 'Nothing matches your search.'
                 : state.filter === 'archived' ? 'Nothing archived.'
                 : state.filter === 'unread' ? 'You are all caught up.'
+                : state.filter === 'spam' ? 'No spam.'
                 : state.box === 'sent' ? 'Nothing sent yet.'
                 : 'No mail here yet.';
             list.innerHTML = `<li class="px-6 py-16 text-center text-sm text-gray-600">${escapeHtml(empty)}</li>`;
@@ -220,6 +222,7 @@
         const params = new URLSearchParams({ box: state.box, page: state.page });
         if (state.filter === 'archived') params.set('archived', '1');
         if (state.filter === 'unread') params.set('unread', '1');
+        if (state.filter === 'spam') params.set('spam', '1');
         if (state.q) params.set('q', state.q);
         if (state.box === 'all' && state.person) params.set('person', state.person);
         try {
@@ -352,6 +355,11 @@
         archiveBtn.title = t.archived ? 'Move to inbox' : 'Archive';
         archiveBtn.setAttribute('aria-label', archiveBtn.title);
         archiveBtn.innerHTML = `<i class="fas ${t.archived ? 'fa-inbox' : 'fa-box-archive'}"></i>`;
+        const spamBtn = $('mailSpamBtn');
+        spamBtn.title = t.spam ? 'Not spam' : 'Mark as spam';
+        spamBtn.setAttribute('aria-label', spamBtn.title);
+        spamBtn.innerHTML = `<i class="fas ${t.spam ? 'fa-circle-check' : 'fa-ban'}"></i>`;
+        archiveBtn.classList.toggle('hidden', t.spam);
 
         const container = $('mailMessages');
         container.innerHTML = t.messages.map((m, i) => messageCard(m, i, t.messages.length)).join('');
@@ -370,6 +378,8 @@
             const to = lastIn ? lastIn.from_email : t.counterpart_email;
             $('mailReplyTo').textContent = `Reply to ${to}`;
             $('mailReplyFrom').textContent = `From ${t.address}`;
+        } else if (t.deleted) {
+            $('mailReadOnly').textContent = 'Deleted from its mailbox. Kept here for oversight.';
         } else {
             $('mailReadOnly').textContent = t.owner
                 ? `Read-only: this is ${t.owner}'s mailbox. Only they can reply or file it.`
@@ -405,6 +415,45 @@
             if ('archived' in changes) {
                 toast.success(changes.archived ? 'Archived.' : 'Moved to inbox.');
             }
+            closeThread();
+            await refreshBoxes();
+            loadThreads();
+        } catch (err) {
+            toastApiError(err);
+        }
+    }
+
+    async function toggleSpam() {
+        const t = state.open;
+        if (!t) return;
+        if (!t.spam) {
+            const ok = await tkConfirm(
+                `Future mail from ${t.counterpart_email || 'this sender'} will go straight to Spam, and their contact-form messages will be dropped.`,
+                { title: 'Mark as spam?', confirmText: 'Mark as spam', danger: true });
+            if (!ok) return;
+        }
+        try {
+            await post(`${MAIL_API}/threads/${t.id}/state/`, { spam: !t.spam });
+            toast.success(t.spam ? 'Moved back to the inbox. The sender is unblocked.' : 'Marked as spam. The sender is blocked.');
+            closeThread();
+            await refreshBoxes();
+            loadThreads();
+        } catch (err) {
+            toastApiError(err);
+        }
+    }
+
+    async function deleteThread() {
+        const t = state.open;
+        if (!t) return;
+        const ok = await tkConfirm('It disappears from this mailbox. Administrators can still see it under All mail.',
+            { title: 'Delete this conversation?', confirmText: 'Delete', danger: true });
+        if (!ok) return;
+        try {
+            await fetchJson(`${MAIL_API}/threads/${t.id}/delete/`, {
+                method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN },
+            });
+            toast.success('Deleted.');
             closeThread();
             await refreshBoxes();
             loadThreads();
@@ -500,6 +549,8 @@
         $('mailBack').addEventListener('click', closeThread);
         $('mailArchiveBtn').addEventListener('click', () => setState({ archived: !state.open.archived }));
         $('mailUnreadBtn').addEventListener('click', () => setState({ unread: true }));
+        $('mailSpamBtn').addEventListener('click', toggleSpam);
+        $('mailDeleteBtn').addEventListener('click', deleteThread);
 
         $('mailMessages').addEventListener('click', (e) => {
             const textToggle = e.target.closest('[data-quoted]');

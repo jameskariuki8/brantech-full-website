@@ -213,6 +213,17 @@ class MailThread(models.Model):
     snippet = models.CharField(max_length=200, blank=True, default="")
     unread = models.BooleanField(default=True)
     archived = models.BooleanField(default=False)
+    spam = models.BooleanField(default=False)
+    # Deleting hides a thread from its mailbox, not from view_all_mail:
+    # oversight that anyone can erase is not oversight.
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
     last_message_at = models.DateTimeField(db_index=True)
 
     class Meta:
@@ -263,3 +274,26 @@ class MailMessage(models.Model):
 
     def __str__(self):
         return f"{self.direction} {self.from_email}: {self.subject[:50]}"
+
+
+class BlockedSender(models.Model):
+    """An address marked as spam. Its mail is filed straight into Spam with
+    nobody notified, and its contact-form submissions are dropped."""
+
+    email = models.EmailField(unique=True)
+    blocked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def is_blocked(cls, email):
+        return bool(email) and cls.objects.filter(email__iexact=email.strip()).exists()
+
+    def __str__(self):
+        return self.email
