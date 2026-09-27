@@ -3,36 +3,24 @@ Mail client. Always rendered, like tasks: every staff member has their own
 mailbox. inbox.js asks /api/messaging/mail/mailboxes/ which shared mailboxes
 and oversight views this person gets; the APIs enforce all of it.
 
-Three panes on desktop (mailboxes | conversations | reader). Below lg the
-reader replaces the list while a conversation is open.
+Entering Mail swaps the panel sidebar for the mailboxes (#mailSidebar in
+admin_panel.html), leaving two panes here: conversations | reader. Below lg
+the reader replaces the list while a conversation is open.
 {% endcomment %}
 <div id="inbox" class="section hidden">
-    <div class="flex items-center justify-between gap-4 mb-5">
-        <div>
-            <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-                <i class="fas fa-inbox text-brand-blue"></i> Mail
-            </h2>
-            <p id="mailSubtitle" class="text-gray-400 text-sm"></p>
-        </div>
-        <button type="button" id="mailComposeBtn"
-            class="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-            <i class="fas fa-pen"></i> Compose
-        </button>
-    </div>
-
-    <div id="mailNoHandle" class="hidden mb-5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 text-sm rounded-xl px-4 py-3">
+    <div id="mailNoHandle" class="hidden mb-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 text-sm rounded-xl px-4 py-3">
         You have no work address yet, so you have no mailbox.
         <a href="/staff/address/?next=/admin-panel/%3Fsection%3Dinbox" class="underline font-semibold">Choose one</a>.
     </div>
 
-    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex h-[calc(100vh-13rem)] min-h-[480px]">
-        <!-- Mailboxes -->
-        <nav id="mailBoxes" class="hidden md:flex w-48 xl:w-56 shrink-0 flex-col border-r border-dark-border overflow-y-auto py-3 text-sm" aria-label="Mailboxes"></nav>
-
+    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex h-[calc(100vh-7rem)] lg:h-[calc(100vh-9rem)] min-h-[480px]">
         <!-- Conversation list -->
-        <section id="mailListPane" class="w-full lg:w-[320px] xl:w-[380px] shrink-0 flex flex-col border-r border-dark-border min-w-0">
+        <section id="mailListPane" class="w-full lg:w-[340px] xl:w-[400px] shrink-0 flex flex-col border-r border-dark-border min-w-0">
             <div class="p-3 border-b border-dark-border space-y-2">
-                <select id="mailBoxSelect" class="md:hidden w-full bg-[#06090F] border border-white/10 rounded-lg px-3 py-2 text-sm text-white" aria-label="Mailbox"></select>
+                <div class="flex items-baseline justify-between gap-2 px-1">
+                    <h2 id="mailBoxTitle" class="text-base font-semibold text-white truncate"></h2>
+                    <span id="mailBoxAddress" class="text-xs text-gray-500 truncate"></span>
+                </div>
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
                     <input type="search" id="mailSearch" placeholder="Search mail"

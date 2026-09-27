@@ -121,6 +121,16 @@
             margin-right: 0 !important;
             font-size: 1.25rem;
         }
+
+        /* Mail mode: entering Mail swaps the panel nav for the mailboxes. */
+        .mail-mode #mainNav { display: none; }
+        body:not(.mail-mode) #mailSidebar { display: none; }
+        .mail-mode #mailSidebar { animation: sidebar-swap 0.22s ease-out; }
+        @keyframes sidebar-swap {
+            from { opacity: 0; transform: translateX(-12px); }
+            to { opacity: 1; transform: none; }
+        }
+        .sidebar-collapsed #mailSidebar .mail-compose { padding-left: 0; padding-right: 0; justify-content: center; }
     </style>
     <!-- Chart.js and CDNs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -145,7 +155,7 @@
         </div>
 
         <!-- Nav -->
-        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+        <nav id="mainNav" class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
             <a href="/admin-panel/?section=dashboard" id="nav-dashboard"
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i><span class="nav-label">Dashboard</span>
@@ -228,6 +238,8 @@
             </a>
             {% endif %}
         </nav>
+        {# Other navigation a page swaps in, e.g. the mail sidebar. #}
+        {% block sidebar_modes %}{% endblock %}
     </aside>
 
     <!-- Main Content -->

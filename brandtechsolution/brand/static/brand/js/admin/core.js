@@ -31,23 +31,18 @@ function safeUrl(value) {
     return '#';
 }
 
-// Toggle Sidebar
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('mobileOverlay');
+// The mobile drawer's open/close is wired once, in admin_base.html. Wiring it
+// here too made one tap toggle it twice, so it never opened on this page.
 
-mobileMenuBtn.addEventListener('click', () => {
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
-});
 
-overlay.addEventListener('click', () => {
-    sidebar.classList.add('-translate-x-full');
-    overlay.classList.add('hidden');
-});
-
+// Where Mail's "back" goes: the section open before Mail was entered.
+let lastPanelSection = 'dashboard';
 
 function showSection(sectionName, clickedElement) {
+    // Mail swaps the sidebar for its mailboxes; every other section restores it.
+    document.body.classList.toggle('mail-mode', sectionName === 'inbox');
+    if (sectionName !== 'inbox') lastPanelSection = sectionName;
+
     // Main content sections
     document.querySelectorAll('.section').forEach(section => { section.classList.add('hidden'); });
     const targetSection = document.getElementById(sectionName);

@@ -73,44 +73,47 @@
         return entries;
     }
 
+    // The mailboxes live in the sidebar while Mail is open. They reuse the
+    // panel nav's classes, so the collapsed sidebar shows them as icons.
     function renderBoxes() {
         const entries = boxEntries();
         let lastGroup = null;
         $('mailBoxes').innerHTML = entries.map((e) => {
             const header = e.group !== lastGroup
-                ? `<p class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-600 truncate">${escapeHtml(e.group)}</p>`
+                ? `<div class="sidebar-header pt-4 pb-1 px-4 text-[11px] font-semibold uppercase tracking-wider text-gray-600 truncate">${escapeHtml(e.group)}</div>`
                 : '';
             lastGroup = e.group;
             const active = e.key === state.box;
             return `${header}
-                <button type="button" data-box="${escapeHtml(e.key)}" title="${escapeHtml(e.title || '')}"
-                    class="mx-2 px-3 py-2 rounded-lg flex items-center gap-3 text-left transition-colors ${active ? 'bg-brand-blue/15 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}">
-                    <i class="fas ${e.icon} w-4 text-center ${active ? 'text-brand-blue' : ''}"></i>
-                    <span class="flex-1 truncate">${escapeHtml(e.label)}</span>
-                    ${e.unread ? `<span class="text-[11px] font-semibold ${active ? 'text-white' : 'text-brand-blue'}">${e.unread}</span>` : ''}
+                <button type="button" data-box="${escapeHtml(e.key)}" title="${escapeHtml(e.title || e.label)}"
+                    class="nav-item w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg text-left transition-colors ${active ? 'active' : 'text-gray-400 hover:text-white hover:bg-white/5'}">
+                    <i class="fas ${e.icon} w-6 text-center mr-3"></i>
+                    <span class="nav-label flex-1 truncate">${escapeHtml(e.label)}</span>
+                    ${e.unread ? `<span class="nav-label text-[11px] font-semibold ml-2 ${active ? '' : 'text-brand-blue'}">${e.unread}</span>` : ''}
                 </button>`;
         }).join('');
 
-        $('mailBoxSelect').innerHTML = entries.map((e) =>
-            `<option value="${escapeHtml(e.key)}" ${e.key === state.box ? 'selected' : ''}>${escapeHtml(e.group === 'Shared' || e.group === 'Oversight' ? e.label : `${e.label} · ${e.group}`)}${e.unread ? ` (${e.unread})` : ''}</option>`
-        ).join('');
+        const current = entries.find((e) => e.key === state.box);
+        $('mailBoxTitle').textContent = current ? current.label : 'Mail';
+        const b = state.boxes;
+        const shared = b.shared.find((x) => x.mailbox === state.box);
+        $('mailBoxAddress').textContent = (state.box === 'me' || state.box === 'sent') && b.me ? b.me.address
+            : shared && shared.mailbox !== 'other' ? shared.address
+            : '';
 
         const person = $('mailPerson');
         const showPerson = state.box === 'all';
         person.classList.toggle('hidden', !showPerson);
         $('mailRefresh').classList.toggle('ml-auto', !showPerson);
         if (showPerson && !person.options.length) {
-            person.innerHTML = '<option value="">Everyone</option>' + state.boxes.people.map((p) =>
+            person.innerHTML = '<option value="">Everyone</option>' + b.people.map((p) =>
                 `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
         }
 
-        const me = state.boxes.me;
-        $('mailSubtitle').textContent = me ? me.address : '';
-        $('mailNoHandle').classList.toggle('hidden', !!me);
-        const canCompose = !!me || state.boxes.shared.some((s) => s.can_send);
-        $('mailComposeBtn').disabled = !canCompose;
+        $('mailNoHandle').classList.toggle('hidden', !!b.me);
+        $('mailComposeBtn').disabled = !(b.me || b.shared.some((x) => x.can_send));
 
-        const totalUnread = (me ? me.unread : 0) + state.boxes.shared.reduce((n, s) => n + s.unread, 0);
+        const totalUnread = (b.me ? b.me.unread : 0) + b.shared.reduce((n, x) => n + x.unread, 0);
         updateNavBadge(totalUnread);
     }
 
@@ -128,7 +131,20 @@
         badge.classList.toggle('hidden', !count);
     }
 
+    function closeMobileDrawer() {
+        if (window.innerWidth >= 1024) return;
+        $('sidebar')?.classList.add('-translate-x-full');
+        $('mobileOverlay')?.classList.add('hidden');
+    }
+
+    function exitMail() {
+        const section = lastPanelSection || 'dashboard';
+        showSection(section);
+        history.pushState(null, '', `/admin-panel/?section=${encodeURIComponent(section)}`);
+    }
+
     function selectBox(key) {
+        closeMobileDrawer();
         if (key === state.box) return;
         state.box = key;
         state.page = 1;
@@ -445,7 +461,7 @@
             const btn = e.target.closest('[data-box]');
             if (btn) selectBox(btn.dataset.box);
         });
-        $('mailBoxSelect').addEventListener('change', (e) => selectBox(e.target.value));
+        $('mailExit').addEventListener('click', exitMail);
         $('mailFilters').addEventListener('click', (e) => {
             const btn = e.target.closest('.mail-filter');
             if (!btn || btn.dataset.filter === state.filter) return;
@@ -516,7 +532,10 @@
             });
         });
 
-        $('mailComposeBtn').addEventListener('click', openCompose);
+        $('mailComposeBtn').addEventListener('click', () => {
+            closeMobileDrawer();
+            openCompose();
+        });
         $('mailComposeModal').addEventListener('click', (e) => {
             if (e.target.id === 'mailComposeModal' || e.target.closest('[data-compose-close]')) closeCompose(false);
         });
