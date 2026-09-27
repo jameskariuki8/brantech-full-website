@@ -73,6 +73,7 @@ function showSection(sectionName, clickedElement) {
     // Load data
     if (sectionName === 'blogs') loadBlogs();
     if (sectionName === 'projects') loadProjects();
+    if (sectionName === 'githubSync') loadGithubRepos();
     // Events removed
     if (sectionName === 'dashboard') loadDashboard();
     if (sectionName === 'inbox') loadInbox();

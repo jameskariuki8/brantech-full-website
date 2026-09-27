@@ -2,7 +2,6 @@ import logging
 import json
 from django.http import JsonResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage
 from .models import BlogPost, Project, ProjectFeature, ProjectImage, ProjectNote
@@ -514,14 +513,16 @@ def project_detail(request, pk):
 # --- GitHub Integration APIs ---
 from .github_service import GitHubService
 
-def is_admin(user):
-    return user.is_authenticated and (user.is_staff or user.is_superuser)
-
-@login_required
+# Gated on manage_projects, like the Projects section these feed. They used to
+# check is_staff alone, which let any staff account import repositories while
+# the sidebar hid the screen from them -- the link and the endpoint disagreed.
+# No @login_required: the capability check answers an anonymous caller with a
+# JSON 401, where the decorator would redirect the admin JS to a login page.
 @require_http_methods(["GET"])
 def github_repos_list(request):
-    if not is_admin(request.user):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    denied = capability_required_json(request, 'manage_projects')
+    if denied:
+        return denied
     try:
         service = GitHubService()
         repos = service.get_user_repositories()
@@ -533,23 +534,28 @@ def github_repos_list(request):
         logger.exception('github_repos_list failed')
         return JsonResponse({'error': 'Could not reach GitHub.'}, status=500)
 
-@login_required
 @require_http_methods(["POST"])
 def github_sync_selected(request):
-    if not is_admin(request.user):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    denied = capability_required_json(request, 'manage_projects')
+    if denied:
+        return denied
     try:
         data = get_data(request)
         repo_ids = data.get('repo_ids', [])
-        if not repo_ids:
+        if not isinstance(repo_ids, list) or not repo_ids:
             return JsonResponse({'error': 'No repository IDs provided'}, status=400)
+        try:
+            repo_ids = [int(r) for r in repo_ids]
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Repository IDs must be numbers.'}, status=400)
             
         service = GitHubService()
         result = service.sync_repositories(repo_ids)
         if result.get("success"):
             return JsonResponse(result)
-        else:
-            return JsonResponse({'error': result.get("error")}, status=500)
+        # The service's error is str() of whatever it caught, which is the
+        # same token-leak risk as above; it is already in the log.
+        return JsonResponse({'error': 'Could not sync repositories.'}, status=500)
     except Exception:
         logger.exception('github_sync_selected failed')
         return JsonResponse({'error': 'Could not sync repositories.'}, status=500)

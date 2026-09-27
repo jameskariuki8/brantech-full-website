@@ -2,10 +2,18 @@ import logging
 from typing import List, Dict, Any
 from github import Github
 from github.GithubException import GithubException
+from django.utils import timezone
 from brandtechsolution.config import config
 from brand.models import Project
 
 logger = logging.getLogger(__name__)
+
+
+def _short(description):
+    """Fit a repository description into Project.short_description (500)."""
+    if description and len(description) > 500:
+        return description[:497] + '...'
+    return description
 
 
 class GitHubService:
@@ -53,10 +61,14 @@ class GitHubService:
             user = self.client.get_user()
             repos = user.get_repos(affiliation='owner,collaborator')
 
+            synced_ids = set(
+                Project.objects.filter(github_repo_id__isnull=False)
+                .values_list('github_repo_id', flat=True)
+            )
             repo_list = []
             for repo in repos:
                 role = 'owner' if repo.owner.login == self.username else 'collaborator'
-                is_synced = Project.objects.filter(github_repo_id=repo.id).exists()
+                is_synced = repo.id in synced_ids
                 repo_list.append({
                     'id': repo.id,
                     'name': repo.name,
@@ -80,7 +92,8 @@ class GitHubService:
         """
         Sync specific repositories by their GitHub IDs.
         Creates or updates Project records with:
-          - repo metadata (name, description, URLs, role)
+          - repo metadata (URL, role); name and description only when the
+            project is first created, so admin edits survive a re-sync
           - total commit count
           - raw README markdown
           - last 10 commits cached in DB (no live GitHub calls needed by users)
@@ -110,20 +123,35 @@ class GitHubService:
                     # Last 10 commits — stored in DB, served cold to every user
                     cached_commits = self._fetch_commits_from_github(repo, count=10) or None
 
+                    # Two kinds of field. GitHub owns the repository facts and
+                    # they are refreshed on every sync. The text is GitHub's
+                    # only on the way in: once the project exists it belongs to
+                    # whoever edits it in the admin panel. This used to be one
+                    # update_or_create over both, and the hourly Beat sync put
+                    # the repo name and description back over every edit.
+                    facts = {
+                        'github_url': repo.html_url,
+                        'commit_count': commit_count,
+                        'is_github_synced': True,
+                        'github_role': role,
+                        # When we synced, not when the repo last changed --
+                        # repo.updated_at is what this used to store, and it
+                        # made a working sync look days stale.
+                        'last_synced_at': timezone.now(),
+                        'readme_content': readme_content,
+                        'cached_commits': cached_commits,
+                    }
+                    # create_defaults replaces defaults on create rather than
+                    # adding to it, so the facts go in both.
                     Project.objects.update_or_create(
                         github_repo_id=repo.id,
-                        defaults={
+                        defaults=facts,
+                        create_defaults={
+                            **facts,
                             'title': repo.name,
-                            'short_description': (repo.description[:497] + '...') if repo.description and len(repo.description) > 500 else repo.description,
+                            'short_description': _short(repo.description),
                             'description': repo.description or "",
-                            'github_url': repo.html_url,
-                            'commit_count': commit_count,
-                            'is_github_synced': True,
-                            'github_role': role,
-                            'last_synced_at': repo.updated_at,
-                            'readme_content': readme_content,
-                            'cached_commits': cached_commits,
-                        }
+                        },
                     )
                     success_count += 1
 
