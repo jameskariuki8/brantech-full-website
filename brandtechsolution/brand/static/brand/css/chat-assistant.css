@@ -4,15 +4,15 @@
 
 /* CSS Variables for Chat */
 :root {
-  --chat-primary: #1f3a93;
-  --chat-secondary: #47a447;
+  --chat-primary: #33348E;
+  --chat-secondary: #33348E;
   --chat-bg: #ffffff;
   --chat-bg-secondary: #f8fafc;
   --chat-text: #1f2937;
   --chat-text-secondary: #6b7280;
   --chat-border: #e5e7eb;
-  --chat-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  --chat-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
+  --chat-shadow: 0 10px 25px rgba(51, 52, 142, 0.15);
+  --chat-shadow-hover: 0 20px 40px rgba(51, 52, 142, 0.25);
   --chat-radius: 12px;
   --chat-radius-lg: 16px;
 }
@@ -34,11 +34,53 @@
   }
 }
 
+/* Chat Toggle Wrapper (Contains Button + Label) */
+.chat-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Floating "Chat with us" Label */
+.chat-prompt-label {
+  background: white;
+  color: var(--chat-primary);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 15px rgba(51, 52, 142, 0.15);
+  border: 1px solid rgba(51, 52, 142, 0.05);
+  animation: float-label 3s infinite ease-in-out;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.chat-prompt-label:hover {
+  background: var(--chat-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(51, 52, 142, 0.3);
+}
+
+@keyframes float-label {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+/* Hide label when chat window is open */
+.chat-assistant:has(.chat-window.open) .chat-prompt-label,
+.chat-assistant:has(.chat-window[style*="display: flex"]) .chat-prompt-label {
+  display: none !important;
+}
+
 /* Floating Chat Button */
 .chat-toggle {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, var(--chat-primary), var(--chat-secondary));
+  background: var(--chat-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -53,7 +95,8 @@
 
 .chat-toggle:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: var(--chat-shadow-hover);
+  box-shadow: 0 10px 25px rgba(51, 52, 142, 0.4);
+  background: #3A3B9B; /* Slightly brighter blue on hover */
 }
 
 .chat-toggle:active {
@@ -164,15 +207,18 @@
 
 .chat-header-text h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #ffffff !important;
 }
 
 .chat-header-text p {
-  margin: 0;
-  font-size: 12px;
-  opacity: 0.9;
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  opacity: 1;
+  color: #ffffff !important;
   line-height: 1.2;
 }
 
@@ -516,23 +562,24 @@
 }
 
 .chat-send {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, var(--chat-primary), var(--chat-secondary));
+  width: 44px;
+  height: 44px;
+  background: var(--chat-primary);
   border: none;
   border-radius: 50%;
-  color: white;
+  color: #ffffff !important;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
   outline: none;
+  box-shadow: 0 4px 10px rgba(51, 52, 142, 0.2);
 }
 
 .chat-send:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(31, 58, 147, 0.3);
+  box-shadow: 0 6px 14px rgba(51, 52, 142, 0.4);
 }
 
 .chat-send:active:not(:disabled) {
@@ -540,14 +587,16 @@
 }
 
 .chat-send:disabled {
-  opacity: 0.5;
+  opacity: 0.7;
+  background: #9ca3af;
+  box-shadow: none;
   cursor: not-allowed;
   transform: none;
 }
 
 .chat-send svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 /* Error Message */

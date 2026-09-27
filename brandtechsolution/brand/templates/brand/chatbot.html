@@ -1,14 +1,18 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
+<link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}?v=1.5" />
 
 <!-- Chat Assistant Floating Widget -->
 <div id="chatAssistant" class="chat-assistant">
-  <!-- Floating Chat Button -->
-  <div id="chatToggle" class="chat-toggle">
+  
+  <div class="chat-toggle-wrapper">
+    <div class="chat-prompt-label" onclick="document.getElementById('chatToggle').click()">Chat with us 👋</div>
+    <!-- Floating Chat Button -->
+    <div id="chatToggle" class="chat-toggle">
     <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" />
     </svg>
     <div class="chat-notification" id="chatNotification" style="display: none;"></div>
+    </div>
   </div>
 
   <!-- Chat Window -->
@@ -23,8 +27,8 @@
           </svg>
         </div>
         <div class="chat-header-text">
-          <h3>TekLora Assistant</h3>
-          <p>How can I help you today?</p>
+          <h3>Teklora Customer Support</h3>
+          <p>How can we help you today?</p>
         </div>
       </div>
       <button id="chatClose" class="chat-close">
@@ -76,7 +80,7 @@
           <span></span>
           <span></span>
         </div>
-        <span>TekLora Assistant is typing...</span>
+        <span>Teklora Customer Support is typing...</span>
       </div>
     </div>
   </div>

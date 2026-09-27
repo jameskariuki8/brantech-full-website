@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Premium Dark Palette (Apple x Stripe x Linear) */
-  --bg-primary: #050811;
-  --bg-card: #0A0F1D;
-  --text-primary: #FFFFFF;
-  --text-secondary: #94A3B8;
+  /* Modern Humanist Tech Palette */
+  --bg-primary: #ffffff;
+  --bg-card: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
   --text-tertiary: #64748B;
-  --accent-blue: #007AFF;
-  --accent-green: #00FF94;
-  --border-color: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(0, 122, 255, 0.3);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --accent-brand: #33348E; /* Deep Indigo */
+  --accent-warm: #10B981;  /* Emerald */
+  --border-color: rgba(51, 52, 142, 0.1);
+  --border-hover: rgba(51, 52, 142, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 40px rgba(51, 52, 142, 0.08);
   --font-heading: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', sans-serif;
   --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -71,62 +71,91 @@ p {
   border: none;
 }
 
-.btn-premium-primary {
-  background-color: var(--accent-blue) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.25);
+/* Base Glassmorphism classes applied explicitly */
+.btn-glass-blue, .btn-premium-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px; /* full rounded */
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: var(--transition-smooth);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  
+  /* Blue Glass */
+  background: rgba(51, 52, 142, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(51, 52, 142, 0.25) !important;
 }
 
-.btn-premium-primary:hover {
-  background-color: #0066D6 !important;
-  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.35);
-  transform: translateY(-1px);
+.btn-glass-blue:hover, .btn-premium-primary:hover {
+  background: rgba(51, 52, 142, 0.95) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(51, 52, 142, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
-.btn-premium-secondary {
-  background-color: rgba(255, 255, 255, 0.04) !important;
-  color: #FFFFFF !important;
-  border: 1px solid var(--border-color) !important;
+.btn-glass-white, .btn-premium-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  border-radius: 9999px; /* full rounded */
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: var(--transition-smooth);
+  cursor: pointer;
+  
+  /* White/Gray Glass */
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  color: var(--accent-brand) !important;
+  border: 1px solid rgba(51, 52, 142, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
 }
 
-.btn-premium-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  transform: translateY(-1px);
+.btn-glass-white:hover, .btn-premium-secondary:hover {
+  background: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(51, 52, 142, 0.15) !important;
+  border-color: rgba(51, 52, 142, 0.2) !important;
 }
 
 /* Global Sticky Header Redesign */
 .premium-nav-container {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
+  width: 100%;
   z-index: 100;
-  padding: 1.25rem 2rem;
-  transition: var(--transition-smooth);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(51, 52, 142, 0.1);
+  transition: all 0.3s ease;
 }
 
 .premium-nav-container.scrolled {
-  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 30px rgba(51, 52, 142, 0.08);
+  border-bottom: 1px solid rgba(51, 52, 142, 0.15);
 }
 
 .premium-nav {
   max-width: 1280px;
   margin: 0 auto;
-  background: rgba(5, 8, 17, 0.75);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 0.5rem 1.5rem;
+  padding: 1.25rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition-smooth);
-}
-
-.premium-nav-container.scrolled .premium-nav {
-  box-shadow: var(--shadow-md);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Nav links & Mega menus */
@@ -149,79 +178,56 @@ p {
   font-size: 0.95rem;
   color: var(--text-secondary);
   padding: 0.6rem 1rem;
-  border-radius: 8px;
-  transition: var(--transition-smooth);
+  border-radius: 9999px; /* Pill / Hamburger Shape */
+  transition: all 0.3s ease;
   cursor: pointer;
+  background: transparent;
 }
 
 .nav-link-item:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--accent-brand);
+  background: rgba(51, 52, 142, 0.08);
 }
 
-.nav-link-item::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 1rem;
-  right: 1rem;
-  height: 2px;
-  background: var(--accent-blue);
-  transform: scaleX(0);
-  transition: var(--transition-smooth);
-}
-
-.nav-link-item:hover::after {
-  transform: scaleX(1);
-}
-
-/* Active page indicator — only one should be active at a time */
+/* Active page indicator */
 .nav-link-item.active {
-  color: var(--text-primary) !important;
+  color: var(--accent-brand) !important;
   font-weight: 600;
-}
-.nav-link-item.active::after {
-  transform: scaleX(1);
-  background: var(--accent-blue);
-}
-/* Ensure mega-menu-trigger (non-anchor divs) never show underline */
-.mega-menu-trigger.nav-link-item::after {
-  display: none;
+  background: rgba(51, 52, 142, 0.05);
 }
 
-/* Mega menu overlay styling */
+/* Normal dropdown styling */
 .mega-menu-trigger:hover .mega-menu-dropdown {
-  display: grid;
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 .mega-menu-dropdown {
-  display: none;
   position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  width: 600px;
-  background: rgba(10, 15, 29, 0.98);
+  top: 100%; /* flush with the trigger to prevent hover loss */
+  left: 0;
+  transform: translateY(5px);
+  width: 300px;
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border: 1px solid rgba(51, 52, 142, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
   box-shadow: var(--shadow-lg);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
   z-index: 100;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
 }
 
 .mega-menu-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .mega-menu-section-title {
@@ -243,7 +249,7 @@ p {
 }
 
 .mega-menu-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(51, 52, 142, 0.06);
 }
 
 .mega-menu-icon {
@@ -500,28 +506,7 @@ p {
   font-weight: 600;
 }
 
-/* Mobile Nav Styles */
-.mobile-nav-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: rgba(5, 8, 17, 0.98);
-  backdrop-filter: blur(20px);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  transform: translateY(-100%);
-  transition: var(--transition-smooth);
-  opacity: 0;
-}
-
-.mobile-nav-panel.open {
-  transform: translateY(0);
-  opacity: 1;
-}
+/* Old Mobile Nav Styles Removed to prevent conflicts */
 
 .mobile-nav-item {
   font-family: var(--font-heading);
@@ -958,4 +943,45 @@ header.premium-nav-container {
   }
 }
 
-
+/* Mobile Navigation Panel - Popup Dropdown */
+.mobile-nav-panel {
+  position: absolute;
+  top: calc(100% + 10px); /* Small gap for pop effect */
+  bottom: auto !important; /* Force auto bottom so it can expand */
+  right: 1rem;
+  width: calc(100vw - 2rem); /* Dynamic wide pop */
+  max-width: 400px;
+  height: auto;
+  /* Removed max-height and overflow-y to show all links naturally */
+  background: rgba(255, 255, 255, 1);
+  backdrop-filter: blur(24px);
+  z-index: 1000;
+  padding: 1.5rem;
+  display: none; /* Bulletproof hide */
+  flex-direction: column;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(51, 52, 142, 0.1);
+  border-radius: 16px;
+}
+
+/* Ensure mobile menu hides entirely on desktop */
+@media (min-width: 1024px) {
+  .mobile-nav-panel {
+    display: none !important;
+  }
+}
+
+.mobile-nav-panel.open {
+  display: flex !important; /* Bulletproof show */
+}
+
+.mobile-nav-item {
+  color: #0f172a !important; /* Force explicit dark color */
+  transition: var(--transition-smooth);
+  display: block;
+}
+
+.mobile-nav-item:hover {
+  color: var(--accent-brand);
+  padding-left: 8px;
+}

@@ -44,14 +44,14 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .glass-card {
+        .clean-card {
             background: var(--brantech-card);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
         }
 
-        .glass-card:hover {
+        .clean-card:hover {
             border-color: var(--brantech-blue);
             transform: translateY(-5px);
             box-shadow: 0 10px 30px rgba(0, 122, 255, 0.1);
@@ -219,7 +219,7 @@
     </style>
 </head>
 
-<body class="bg-[#06090F] text-white font-inter">
+<body class="bg-[#06090F] text-primaryText font-inter">
 
     <!-- Header Inheritance -->
     {% include 'brand/header.html' %}
@@ -240,7 +240,7 @@
                     Support Our Mission <i class="fas fa-heart"></i>
                 </a>
                 <a href="#marketer-space"
-                    class="px-8 py-3 rounded-full border border-white/20 hover:bg-white/5 transition flex items-center gap-2">
+                    class="px-8 py-3 rounded-full border border-white/20 hover:bg-gray-100 transition flex items-center gap-2">
                     Join Our Story <i class="fas fa-users"></i>
                 </a>
             </div>
@@ -258,7 +258,7 @@
 
             <div class="grid md:grid-cols-3 gap-8">
                 <!-- Problem Solvers -->
-                <div class="p-6 glass-card rounded-3xl purpose-card animate-on-scroll">
+                <div class="p-6 clean-card rounded-3xl purpose-card animate-on-scroll">
                     <img src="{% static 'brand/images/purpose_1.png' %}" alt="Problem Solving">
                     <div
                         class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 mb-4">
@@ -270,7 +270,7 @@
                 </div>
 
                 <!-- Community First -->
-                <div class="p-6 glass-card rounded-3xl purpose-card animate-on-scroll delay-1">
+                <div class="p-6 clean-card rounded-3xl purpose-card animate-on-scroll delay-1">
                     <img src="{% static 'brand/images/purpose_2.png' %}" alt="Community Impact">
                     <div
                         class="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mb-4">
@@ -282,7 +282,7 @@
                 </div>
 
                 <!-- Timeless Legacy -->
-                <div class="p-6 glass-card rounded-3xl purpose-card animate-on-scroll delay-2">
+                <div class="p-6 clean-card rounded-3xl purpose-card animate-on-scroll delay-2">
                     <img src="{% static 'brand/images/purpose_3.png' %}" alt="Technological Legacy">
                     <div
                         class="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 mb-4">
@@ -353,7 +353,7 @@
 
             <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
                 <!-- PayPal -->
-                <div class="p-6 rounded-2xl glass-card flex flex-col items-center">
+                <div class="p-6 rounded-2xl clean-card flex flex-col items-center">
                     <div
                         class="w-14 h-14 bg-blue-500/10 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-4">
                         <i class="fab fa-paypal"></i>
@@ -368,14 +368,14 @@
                 </div>
 
                 <!-- M-Pesa -->
-                <div class="p-6 rounded-2xl glass-card flex flex-col items-center border border-green-500/10">
+                <div class="p-6 rounded-2xl clean-card flex flex-col items-center border border-green-500/10">
                     <div
                         class="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center text-2xl text-green-500 mb-4">
                         <i class="fas fa-mobile-alt"></i>
                     </div>
                     <h3 class="text-xl font-bold mb-2">M-Pesa</h3>
                     <p class="text-gray-400 text-sm mb-4">Support us locally in Kenya.</p>
-                    <div class="w-full p-3 bg-white/5 rounded-lg border border-white/10 text-center">
+                    <div class="w-full p-3 bg-gray-100 rounded-lg border border-borderLight text-center">
                         <span class="text-gray-500 text-xs block mb-1">Phone number</span>
                         <span class="font-mono text-xl font-bold text-green-400">+254 704 894220</span>
                     </div>

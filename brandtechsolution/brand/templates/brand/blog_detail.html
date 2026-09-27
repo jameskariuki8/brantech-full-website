@@ -4,308 +4,240 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ post.title }} — TekLora</title>
-  <meta name="description" content="{{ post.excerpt }}">
-  <link rel="canonical" href="{{ request.build_absolute_uri }}">
-
-  <meta property="og:type" content="article">
-  <meta property="og:title" content="{{ post.title }}">
-  <meta property="og:description" content="{{ post.excerpt }}">
-  <meta property="og:url" content="{{ request.build_absolute_uri }}">
-  {% if post.image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}">{% endif %}
-
+  <title>{{ post.title }} — Teklora Insights</title>
+  <meta name="description" content="{{ post.excerpt|default:post.content|striptags|truncatewords:25 }}">
+  
   <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-  <link rel="stylesheet" href="{% static 'brand/css/styles2.css' %}">
-  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
-
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            heading: ['Space Grotesk', 'sans-serif'],
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            background: '#FAFAFA',
+            surface: '#FFFFFF',
+            primaryText: '#18181B',
+            secondaryText: '#52525B',
+            brandBlue: '#33348E',
+            brandWarm: '#10B981',
+            borderLight: '#E4E4E7'
           }
         }
       }
     }
   </script>
-
-  <style>
-    :root {
-      --bg-dark: #050811;
-      --panel-dark: #0A0F1D;
-      --accent-blue: #007AFF;
-      --accent-green: #00FF94;
-    }
-
-    body {
-      background: var(--bg-dark) !important;
-      color: #94A3B8 !important;
-      min-height: 100vh;
-    }
-
-    .reading-prose {
-      font-family: 'Inter', sans-serif;
-      line-height: 1.8;
-      font-size: 1.05rem;
-      color: #E2E8F0;
-    }
-
-    .reading-prose h1, .reading-prose h2, .reading-prose h3 {
-      font-family: var(--font-heading);
-      color: #FFFFFF;
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-      font-weight: 700;
-    }
-
-    .reading-prose h1 { font-size: 1.75rem; }
-    .reading-prose h2 { font-size: 1.5rem; }
-    .reading-prose p { margin-bottom: 1.25rem; }
-
-    .comment-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-  </style>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": "{{ post.title|escapejs }}",
-    "description": "{{ post.excerpt|escapejs }}",
-    "datePublished": "{{ post.created_at|date:'c' }}",
-    "dateModified": "{{ post.updated_at|date:'c' }}",
-    {% if post.image %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}",{% endif %}
-    "author": {"@type": "Organization", "name": "TekLora"},
-    "publisher": {"@type": "Organization", "name": "TekLora"},
-    "mainEntityOfPage": {"@type": "WebPage", "@id": "{{ request.build_absolute_uri }}"}
-  }
-  </script>
-</head>
-<body class="bg-[#050811] text-[#94A3B8]">
   
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.0.0">
+  
+  <style>
+    /* Clean Markdown Styling */
+    .prose h2 { font-size: 1.5rem; font-weight: 700; color: var(--primaryText); margin-top: 2rem; margin-bottom: 1rem; }
+    .prose h3 { font-size: 1.25rem; font-weight: 600; color: var(--primaryText); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+    .prose p { margin-bottom: 1.25rem; line-height: 1.75; color: var(--secondaryText); }
+    .prose a { color: var(--brandBlue); text-decoration: underline; text-underline-offset: 4px; }
+    .prose a:hover { color: var(--brandWarm); }
+    .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; color: var(--secondaryText); }
+    .prose ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; color: var(--secondaryText); }
+    .prose blockquote { border-left: 4px solid var(--brandBlue); padding-left: 1rem; font-style: italic; color: #71717A; margin-bottom: 1.25rem; background: #F4F4F5; padding: 1rem; border-radius: 0 8px 8px 0; }
+    .prose pre { background: #18181B; color: #F4F4F5; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1.25rem; font-size: 0.875rem; }
+    .prose code { font-family: monospace; background: #F4F4F5; color: #EF4444; padding: 0.125rem 0.25rem; border-radius: 4px; font-size: 0.875em; }
+    .prose pre code { background: transparent; color: inherit; padding: 0; }
+    .prose img { max-width: 100%; height: auto; border-radius: 12px; margin: 2rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body class="bg-background text-secondaryText font-sans antialiased pt-24">
+
   {% include 'brand/header.html' %}
 
-  <!-- Reading container -->
-  <article class="max-w-3xl mx-auto px-6 py-32 space-y-8">
+  <main class="section-padding max-w-4xl mx-auto px-6">
     
-    <!-- Article Header -->
-    <div class="space-y-4 text-center">
-      <span class="px-2.5 py-0.5 bg-[#007AFF]/10 text-[#007AFF] text-xs font-bold rounded-full uppercase tracking-wider">{{ post.category }}</span>
-      <h1 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight" style="font-family: var(--font-heading);">{{ post.title }}</h1>
-      <p class="text-xs text-gray-500">{{ post.created_at|date:"F j, Y" }}</p>
-    </div>
-
-    <!-- Article Hero Image (Omitted if none exists) -->
-    {% if post.image %}
-    <div class="w-full overflow-hidden rounded-2xl border border-white/5 aspect-video">
-      <img class="w-full h-full object-cover" src="{{ post.image.url }}" alt="{{ post.title }}">
-    </div>
-    {% endif %}
-
-    <!-- Main Prose Reading Body -->
-    <div class="reading-prose border-b border-white/5 pb-10">
-      {{ content_html|safe }}
-    </div>
-
-    <!-- Interactive Section -->
-    <div class="space-y-8 pt-4">
+    <!-- Breadcrumb & Meta -->
+    <div class="mb-8 space-y-4">
+      <a href="{% url 'blog' %}" class="text-sm font-medium text-brandBlue hover:text-brandWarm transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Journal
+      </a>
       
-      <!-- Likes Action Block -->
-      <div class="flex items-center justify-between bg-[#0A0F1D] p-5 rounded-2xl border border-white/5">
-        <div class="space-y-1">
-          <h4 class="font-bold text-sm text-white">Support this publication</h4>
-          <p class="text-xs text-gray-500">Likes help surface articles on the popular filter tab.</p>
+      <div class="flex items-center gap-3 pt-4">
+        <span class="text-xs font-bold uppercase tracking-wider text-brandBlue bg-blue-50 px-3 py-1 rounded-full">{{ post.category }}</span>
+        <span class="text-sm text-gray-500">{{ post.created_at|date:"F d, Y" }}</span>
+        <span class="text-sm text-gray-500">• {{ post.view_count|default:0 }} views</span>
+      </div>
+    </div>
+
+    <!-- Title & Hero Image -->
+    <header class="mb-12 space-y-8">
+      <h1 class="text-4xl md:text-5xl font-bold text-primaryText tracking-tight leading-tight">
+        {{ post.title }}
+      </h1>
+      
+      {% if post.image %}
+        <div class="w-full aspect-[21/9] rounded-2xl overflow-hidden shadow-lg bg-gray-100">
+          <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover">
         </div>
-        <button id="modalLikeBtn" onclick="toggleLikePost()" class="btn-premium px-5 py-2.5 flex items-center gap-2 rounded-xl transition-all font-bold text-xs" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255,255,255,0.06); color: white;">
-          <i class="fas fa-thumbs-up"></i>
-          <span>Like (<span id="modalLikesCount">{{ likes_count }}</span>)</span>
+      {% endif %}
+    </header>
+
+    <!-- Content -->
+    <article class="prose max-w-none">
+      {{ content_html|safe }}
+    </article>
+
+    <!-- Interaction Bar (Likes) -->
+    <div class="mt-16 py-6 border-y border-borderLight flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button id="likeBtn" class="flex items-center gap-2 px-4 py-2 rounded-full border border-borderLight hover:bg-gray-50 transition-colors text-primaryText font-medium" data-post-id="{{ post.id }}">
+          <i class="fas fa-heart text-gray-400" id="likeIcon"></i>
+          <span id="likeCount">{{ likes_count }}</span> Likes
         </button>
       </div>
-
-      <!-- Comments Threads -->
-      <div class="space-y-6">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2" style="font-family: var(--font-heading);">
-          <i class="fas fa-comments text-[#00FF94]"></i> Comments (<span id="modalCommentsCount">{{ comments.count }}</span>)
-        </h3>
-
-        <div id="modalCommentsList" class="space-y-3">
-          {% for c in comments %}
-          <div class="comment-card">
-            <div class="flex justify-between items-center mb-1 text-[10px]">
-              <span class="font-bold text-white">{{ c.user_name }}</span>
-              <span class="text-gray-500">{{ c.created_at|date:"M d, Y \a\t H:i" }}</span>
-            </div>
-            <p class="text-xs text-gray-300 leading-relaxed">{{ c.content }}</p>
-          </div>
-          {% empty %}
-          <p class="text-xs text-gray-500 italic">No comments posted yet. Be the first to share your thoughts!</p>
-          {% endfor %}
-        </div>
-
-        <!-- Add Comment Form -->
-        <form id="commentSubmitForm" onsubmit="submitCommentForm(event)" class="bg-[#0A0F1D] border border-white/5 p-6 rounded-2xl space-y-4">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider">Leave a Comment</h4>
-          
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label for="commentAuthor" class="block text-[10px] text-gray-500 font-bold uppercase mb-1">Your Name</label>
-              <input type="text" id="commentAuthor" required class="w-full bg-[#050811] border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#007AFF] outline-none" placeholder="e.g. John Doe">
-            </div>
-          </div>
-
-          <div>
-            <label for="commentContent" class="block text-[10px] text-gray-500 font-bold uppercase mb-1">Message</label>
-            <textarea id="commentContent" required rows="3" class="w-full bg-[#050811] border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#007AFF] outline-none resize-none" placeholder="Join the discussion..."></textarea>
-          </div>
-
-          {% include 'brand/_turnstile.html' with widget_id="commentTurnstile" %}
-
-          <button type="submit" class="btn-premium btn-premium-primary text-xs py-2 px-4 rounded-lg flex items-center gap-2">
-            <span>Post Comment</span>
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </form>
+      
+      <div class="flex gap-3">
+        <span class="text-sm text-gray-500 font-medium mr-2 self-center">Share:</span>
+        <a href="https://twitter.com/intent/tweet?text={{ post.title }}&url={{ request.build_absolute_uri }}" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-brandBlue hover:text-white transition-colors">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.build_absolute_uri }}&title={{ post.title }}" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-brandBlue hover:text-white transition-colors">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
       </div>
-
     </div>
 
-    <p style="margin-top:4rem;"><a href="{% url 'blog' %}" class="text-xs font-bold text-[#007AFF] hover:underline">&larr; Back to all posts</a></p>
-  </article>
+    <!-- Comments Section -->
+    <section class="mt-12 space-y-8">
+      <h3 class="text-2xl font-bold text-primaryText">Discussion ({{ comments.count }})</h3>
+      
+      <div class="space-y-6">
+        {% for comment in comments %}
+          <div class="clean-card p-6 flex gap-4">
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-brandBlue flex items-center justify-center font-bold shrink-0">
+              {{ comment.user_name|make_list|first|upper }}
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-bold text-primaryText">{{ comment.user_name }}</span>
+                <span class="text-xs text-gray-400">{{ comment.created_at|date:"M d, Y" }}</span>
+              </div>
+              <p class="text-sm text-secondaryText">{{ comment.content }}</p>
+            </div>
+          </div>
+        {% empty %}
+          <div class="p-6 text-center text-gray-500 bg-gray-50 rounded-xl border border-borderLight">
+            No comments yet. Be the first to start the discussion!
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Add Comment Form -->
+      <div class="mt-8 clean-card p-6">
+        <h4 class="font-bold text-primaryText mb-4">Leave a Comment</h4>
+        <form id="commentForm" class="space-y-4" data-post-id="{{ post.id }}">
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 mb-1">Name</label>
+              <input type="text" id="commentName" required class="w-full px-4 py-2 rounded-lg border border-borderLight focus:outline-none focus:border-brandBlue" placeholder="John Doe">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Message</label>
+            <textarea id="commentContent" required rows="4" class="w-full px-4 py-2 rounded-lg border border-borderLight focus:outline-none focus:border-brandBlue" placeholder="What are your thoughts?"></textarea>
+          </div>
+          
+          <!-- Cloudflare Turnstile required by backend -->
+          <div class="cf-turnstile" data-sitekey="{{ settings.TURNSTILE_SITEKEY|default:'1x00000000000000000000AA' }}" data-callback="onTurnstileSuccess"></div>
+          <input type="hidden" id="cf-turnstile-response" name="cf-turnstile-response">
+          
+          <button type="submit" class="btn-modern btn-primary px-6 py-2 text-sm">Post Comment</button>
+        </form>
+        <p id="commentFeedback" class="text-xs mt-2 hidden"></p>
+      </div>
+    </section>
+
+  </main>
 
   {% include 'brand/footer.html' %}
 
-  <!-- Scripts -->
   <script>
-    const browserId = localStorage.getItem('teklora_browser_id') || ('usr_' + Math.random().toString(36).substr(2, 9));
-    if (!localStorage.getItem('teklora_browser_id')) {
+    // Simple mock browser_id logic for likes/comments
+    let browserId = localStorage.getItem('teklora_browser_id');
+    if (!browserId) {
+      browserId = 'bid_' + Math.random().toString(36).substr(2, 9);
       localStorage.setItem('teklora_browser_id', browserId);
     }
 
-    const postId = {{ post.id }};
-    let postUserLiked = false;
-
-    // Check if user liked post
-    async function checkUserLike() {
-      try {
-        const res = await fetch(`/blog/post/${postId}/json/?browser_id=${browserId}`);
-        if (res.ok) {
-          const data = await res.json();
-          postUserLiked = data.user_liked;
-          updateLikeBtnStyle();
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function toggleLikePost() {
+    // Like logic
+    const likeBtn = document.getElementById('likeBtn');
+    const likeIcon = document.getElementById('likeIcon');
+    const likeCount = document.getElementById('likeCount');
+    
+    likeBtn.addEventListener('click', async () => {
+      const postId = likeBtn.dataset.postId;
       try {
         const res = await fetch(`/api/blogs/${postId}/like/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ browser_id: browserId })
         });
+        const data = await res.json();
         if (res.ok) {
-          const data = await res.json();
-          document.getElementById('modalLikesCount').textContent = data.likes_count;
-          postUserLiked = data.liked;
-          updateLikeBtnStyle();
+          likeCount.textContent = data.likes_count;
+          if (data.liked) {
+            likeIcon.classList.remove('text-gray-400');
+            likeIcon.classList.add('text-red-500');
+          } else {
+            likeIcon.classList.remove('text-red-500');
+            likeIcon.classList.add('text-gray-400');
+          }
         }
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
+    });
+
+    // Turnstile callback
+    function onTurnstileSuccess(token) {
+      document.getElementById('cf-turnstile-response').value = token;
     }
 
-    function updateLikeBtnStyle() {
-      const btn = document.getElementById('modalLikeBtn');
-      if (!btn) return;
-      if (postUserLiked) {
-        btn.style.background = '#007AFF';
-        btn.style.color = '#FFFFFF';
-        btn.style.borderColor = 'transparent';
-      } else {
-        btn.style.background = 'rgba(255, 255, 255, 0.04)';
-        btn.style.color = 'white';
-        btn.style.borderColor = 'rgba(255,255,255,0.06)';
-      }
-    }
-
-    async function submitCommentForm(e) {
+    // Comment logic
+    const commentForm = document.getElementById('commentForm');
+    commentForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const nameInput = document.getElementById('commentAuthor');
-      const contentInput = document.getElementById('commentContent');
+      const postId = commentForm.dataset.postId;
+      const turnstileResponse = document.getElementById('cf-turnstile-response').value;
+      const payload = {
+        browser_id: browserId,
+        user_name: document.getElementById('commentName').value,
+        content: document.getElementById('commentContent').value,
+        'cf-turnstile-response': turnstileResponse
+      };
 
-      const name = nameInput.value.trim() || 'Anonymous';
-      const content = contentInput.value.trim();
-
-      if (!content) return;
+      const btn = commentForm.querySelector('button');
+      btn.disabled = true;
+      btn.textContent = 'Posting...';
 
       try {
         const res = await fetch(`/api/blogs/${postId}/comment/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            browser_id: browserId,
-            user_name: name,
-            content: content,
-            'cf-turnstile-response': turnstileToken('commentTurnstile')
-          })
+          body: JSON.stringify(payload)
         });
-
-        // Spent either way - Cloudflare rejects a replayed token, so leaving
-        // the solved widget in place would refuse every comment after the
-        // first.
-        resetTurnstile('commentTurnstile');
-
         if (res.ok) {
-          const data = await res.json();
-          contentInput.value = '';
-
-          const commentsList = document.getElementById('modalCommentsList');
-          if (commentsList.querySelector('.italic')) {
-            commentsList.innerHTML = '';
-          }
-
-          const newComment = document.createElement('div');
-          newComment.className = 'comment-card';
-          newComment.innerHTML = `
-            <div class="flex justify-between items-center mb-1 text-[10px]">
-              <span class="font-bold text-white">${escapeHtml(data.comment.user_name)}</span>
-              <span class="text-gray-500">Just now</span>
-            </div>
-            <p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(data.comment.content)}</p>
-          `;
-          commentsList.prepend(newComment);
-
-          const currentCount = parseInt(document.getElementById('modalCommentsCount').textContent) + 1;
-          document.getElementById('modalCommentsCount').textContent = currentCount;
+          window.location.reload(); // Simple reload to show new comment
+        } else {
+          document.getElementById('commentFeedback').textContent = 'Error posting comment.';
+          document.getElementById('commentFeedback').classList.remove('hidden', 'text-green-500');
+          document.getElementById('commentFeedback').classList.add('text-red-500');
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Post Comment';
       }
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-
-    checkUserLike();
+    });
   </script>
-
-  {% if turnstile_enabled %}
-  {# Cloudflare serves api.js from a versionless URL it updates in place, so #}
-  {# there is no stable hash to pin with integrity=.                          #}
-  <script src="{% static 'brand/js/turnstile.js' %}"></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  {% endif %}
 </body>
 </html>

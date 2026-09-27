@@ -1,0 +1,165 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Join Teklora</title>
+    <meta name="description" content="Build technology that empowers people. Join our team of passionate engineers, designers, and innovators.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#FAFAFA',
+                        surface: '#FFFFFF',
+                        primaryText: '#18181B',
+                        secondaryText: '#52525B',
+                        brandBlue: '#33348E',
+                        brandWarm: '#10B981',
+                        borderLight: '#E4E4E7'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- UI/UX CSS -->
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
+</head>
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-brandBlue selection:text-white pt-24">
+
+    <!-- Global Navigation Header -->
+    {% include 'brand/header.html' %}
+
+    <!-- HERO SECTION -->
+    <section class="py-16 sm:py-24 bg-background text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-background to-background opacity-80"></div>
+        <div class="max-w-7xl mx-auto relative z-10 px-6 max-w-4xl space-y-6">
+            <h1 class="text-4xl md:text-6xl font-bold text-primaryText tracking-tight">
+                Build Technology for <span class="text-gradient">Humans.</span>
+            </h1>
+            <p class="text-lg md:text-xl max-w-2xl mx-auto leading-relaxed text-secondaryText">
+                We're looking for passionate engineers, empathetic designers, and creative problem-solvers to join us in building digital infrastructure that actually leaves a positive impact.
+            </p>
+            <div class="pt-8 flex justify-center gap-4">
+                <a href="#open-roles" class="btn-premium btn-premium-primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2">
+                    View Open Roles <i class="fas fa-arrow-down"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CORE VALUES SECTION -->
+    <section class="py-16 sm:py-24 bg-surface border-y border-borderLight">
+        <div class="max-w-7xl mx-auto px-6 space-y-12">
+            <div class="text-center max-w-2xl mx-auto space-y-4">
+                <h2 class="text-3xl font-bold text-primaryText">Why Join Teklora?</h2>
+                <p>It's not just about writing code; it's about what the code does for the people using it.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="clean-card space-y-4 text-center">
+                    <div class="w-14 h-14 rounded-full bg-blue-50 text-brandBlue flex items-center justify-center mx-auto text-xl">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-primaryText">Continuous Learning</h3>
+                    <p class="text-sm">We give you the freedom to explore emerging technologies, from AI to spatial computing, on real-world projects.</p>
+                </div>
+                <div class="clean-card space-y-4 text-center">
+                    <div class="w-14 h-14 rounded-full bg-orange-50 text-brandWarm flex items-center justify-center mx-auto text-xl">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-primaryText">Human-Centric Culture</h3>
+                    <p class="text-sm">We value empathy as much as engineering talent. We build inclusive, collaborative teams that respect work-life boundaries.</p>
+                </div>
+                <div class="clean-card space-y-4 text-center">
+                    <div class="w-14 h-14 rounded-full bg-green-50 text-green-500 flex items-center justify-center mx-auto text-xl">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-primaryText">Real Impact</h3>
+                    <p class="text-sm">Your work will directly improve systems in healthcare, education, and government sectors across the globe.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- OPEN ROLES SECTION -->
+    <section id="open-roles" class="py-16 sm:py-24 bg-background">
+        <div class="max-w-7xl mx-auto px-6 max-w-4xl space-y-12">
+            <div class="space-y-4">
+                <h2 class="text-3xl font-bold text-primaryText">Open Positions</h2>
+                <p>Find where you fit in. Don't see a role for you? Drop us a line anyway.</p>
+            </div>
+
+            <!-- Roles List -->
+            <div class="space-y-4">
+                
+                <!-- Role 1 -->
+                <div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-bold text-primaryText">Senior Backend Engineer (Python/Django)</h3>
+                        <div class="flex flex-wrap gap-3 text-sm">
+                            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> Remote / Hybrid</span>
+                            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> Full-time</span>
+                        </div>
+                    </div>
+                    <a href="mailto:careers@teklora.com?subject=Application for Senior Backend Engineer" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
+                        Apply Now
+                    </a>
+                </div>
+
+                <!-- Role 2 -->
+                <div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-bold text-primaryText">UI/UX Product Designer</h3>
+                        <div class="flex flex-wrap gap-3 text-sm">
+                            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> Remote</span>
+                            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> Full-time</span>
+                        </div>
+                    </div>
+                    <a href="mailto:careers@teklora.com?subject=Application for UI/UX Product Designer" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
+                        Apply Now
+                    </a>
+                </div>
+
+                <!-- Role 3 -->
+                <div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-bold text-primaryText">Data Scientist (Machine Learning)</h3>
+                        <div class="flex flex-wrap gap-3 text-sm">
+                            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> Nairobi Office / Hybrid</span>
+                            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> Full-time</span>
+                        </div>
+                    </div>
+                    <a href="mailto:careers@teklora.com?subject=Application for Data Scientist" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
+                        Apply Now
+                    </a>
+                </div>
+
+            </div>
+            
+            <div class="mt-8 text-center text-sm p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+                <p>Not seeing a perfect match? Send your resume to <a href="mailto:careers@teklora.com" class="text-brandBlue font-semibold hover:underline">careers@teklora.com</a> and tell us how you can help.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Inheritance -->
+    {% include 'brand/footer.html' %}
+
+</body>
+</html>

@@ -6,1116 +6,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Teklora Insights — Engineering & AI Journal</title>
   <meta name="description" content="Deep dives into AI infrastructure, automated orchestration, and spatial systems logic.">
-  <!-- Favicon -->
+  
   <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-  <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
-
-  <!-- Fonts (same as homepage) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Icons -->
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Tailwind CSS (same config as homepage) -->
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            heading: ['Space Grotesk', 'sans-serif'],
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            background: '#FAFAFA',
+            surface: '#FFFFFF',
+            primaryText: '#18181B',
+            secondaryText: '#52525B',
+            brandBlue: '#33348E',
+            brandWarm: '#10B981',
+            borderLight: '#E4E4E7'
           }
         }
       }
     }
   </script>
-
-  <!-- Styles (same order as homepage) -->
-  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
-  <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}">
-  <link rel="stylesheet" href="{% static 'brand/css/toast.css' %}">
-  <script src="{% static 'brand/js/toast.js' %}"></script>
-
-  <style>
-    :root {
-      --bg:     #050811;
-      --panel:  #0A0F1D;
-      --blue:   #007AFF;
-      --green:  #00FF94;
-      --border: rgba(255,255,255,0.07);
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { background: var(--bg) !important; color: #94A3B8 !important; overflow-x: hidden; }
-
-    /* ─── HERO ─────────────────────────────────── */
-    #blogHero {
-      position: relative;
-      padding-top: 6rem;
-      padding-bottom: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: var(--bg);
-    }
-    #heroCanvas {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-    }
-
-    /* Badge + Title */
-    .hero-title-wrap {
-      position: relative;
-      z-index: 10;
-      text-align: center;
-      padding: 0 1.5rem;
-      pointer-events: none;
-    }
-    .hero-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 900;
-      font-size: clamp(4.5rem, 13vw, 11rem);
-      line-height: 0.88;
-      letter-spacing: -0.05em;
-      text-transform: uppercase;
-      color: #fff;
-      position: relative;
-      display: inline-block;
-    }
-    /* Overlapping badge — updated icon, no emoji */
-    .hero-float-badge {
-      position: absolute;
-      right: -0.12em;
-      bottom: 0.08em;
-      width: clamp(50px, 7vw, 90px);
-      height: clamp(50px, 7vw, 90px);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      z-index: 20;
-      transition: transform 0.08s ease;
-    }
-    .badge-ring {
-      position: absolute; inset: 0;
-      border-radius: 50%;
-      border: 2px dashed var(--blue);
-      animation: spin-ring 10s linear infinite;
-    }
-    .badge-ring-2 {
-      position: absolute; inset: 6px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(0,255,148,0.4);
-      animation: spin-ring 7s linear infinite reverse;
-    }
-    @keyframes spin-ring { to { transform: rotate(360deg); } }
-    .badge-icon-svg {
-      position: relative; z-index: 2;
-      width: clamp(22px, 3.5vw, 42px);
-      height: clamp(22px, 3.5vw, 42px);
-      color: var(--green);
-      filter: drop-shadow(0 0 8px rgba(0,255,148,0.7));
-    }
-
-    /* Hero sub label */
-    .hero-label {
-      margin-top: 1rem;
-      font-size: clamp(0.6rem, 1.2vw, 0.78rem);
-      color: rgba(255,255,255,0.28);
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      font-family: 'Inter', sans-serif;
-    }
-
-    /* Scroll cue */
-    .hero-scroll-cue {
-      position: absolute;
-      bottom: 1.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      z-index: 10;
-      opacity: 0.3;
-      animation: bounce-cue 2s ease-in-out infinite;
-    }
-    @keyframes bounce-cue {
-      0%,100% { transform: translateX(-50%) translateY(0); }
-      50%      { transform: translateX(-50%) translateY(5px); }
-    }
-    .hero-scroll-cue span {
-      display: block;
-      width: 1px;
-      height: 24px;
-      background: linear-gradient(to bottom, rgba(0,255,148,0.5), transparent);
-    }
-
-    /* ─── SECTION LABEL ────────────────────────── */
-    .section-eyebrow {
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--blue);
-      margin-bottom: 0.4rem;
-    }
-    .section-heading {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: clamp(1.5rem, 3vw, 2.25rem);
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.04em;
-    }
-
-    /* ─── SORT PILLS ───────────────────────────── */
-    .sort-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 0.45rem 1.1rem;
-      border-radius: 100px;
-      font-size: 11px;
-      font-weight: 700;
-      border: 1px solid transparent;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-    .sort-pill-active {
-      background: var(--blue);
-      color: #fff;
-    }
-    .sort-pill-inactive {
-      border-color: var(--border);
-      color: #64748B;
-    }
-    .sort-pill-inactive:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
-
-    /* ─── BENTO GRID ───────────────────────────── */
-    .bento-grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      grid-auto-rows: auto;
-      gap: 1.25rem;
-      align-items: start;
-    }
-    @media (max-width: 1024px) {
-      .bento-grid { grid-template-columns: repeat(6, 1fr); }
-    }
-    @media (max-width: 640px) {
-      .bento-grid { grid-template-columns: 1fr; }
-    }
-
-    /* Slot widths */
-    .col-8  { grid-column: span 8; }
-    .col-4  { grid-column: span 4; }
-    .col-6  { grid-column: span 6; }
-    .col-12 { grid-column: span 12; }
-
-    @media (max-width: 1024px) {
-      .col-8,.col-4 { grid-column: span 6; }
-      .col-6        { grid-column: span 3; }
-      .col-12       { grid-column: span 6; }
-    }
-    @media (max-width: 640px) {
-      .col-8,.col-4,.col-6,.col-12 { grid-column: span 1; }
-    }
-
-    /* ─── CARD BASE ────────────────────────────── */
-    .bc {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.45s cubic-bezier(0.16,1,0.3,1),
-                  box-shadow 0.45s ease,
-                  border-color 0.25s ease;
-    }
-    /* Subtle tilt per card — removed on hover */
-    .tilt-l { transform: rotate(-1.2deg) translateY(3px); }
-    .tilt-r { transform: rotate(1.1deg)  translateY(-3px); }
-    .tilt-s { transform: rotate(-0.6deg) translateX(2px); }
-
-    .bc:hover {
-      transform: rotate(0deg) translateY(-8px) scale(1.02) !important;
-      border-color: rgba(0,122,255,0.5);
-      box-shadow: 0 30px 70px rgba(0,0,0,0.65),
-                  0 0 40px rgba(0,122,255,0.12);
-      z-index: 20;
-    }
-
-    /* Card variants */
-    .bc-accent {
-      background: linear-gradient(145deg,#00173d 0%,#010c1e 100%);
-      border-color: rgba(0,122,255,0.18);
-    }
-    .bc-green {
-      background: linear-gradient(145deg,#001c12 0%,#030e07 100%);
-      border-color: rgba(0,255,148,0.12);
-    }
-
-    /* ─── CARD INTERNALS ───────────────────────── */
-    .ci { /* card image wrapper */
-      width: 100%;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .ci img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.55s ease;
-    }
-    .bc:hover .ci img { transform: scale(1.05); }
-
-    .ci-h260 { height: 260px; }
-    .ci-h200 { height: 200px; }
-    .ci-h160 { height: 160px; }
-
-    .cb { /* card body */
-      padding: 1.4rem 1.6rem 1.5rem;
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-    }
-
-    .cc { /* card category tag */
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--blue);
-      margin-bottom: 0.45rem;
-    }
-    .cc-g { color: var(--green); }
-
-    .ct { /* card title */
-      font-family: 'Space Grotesk', sans-serif;
-      color: #fff;
-      font-weight: 700;
-      letter-spacing: -0.035em;
-      line-height: 1.2;
-      margin-bottom: 0.7rem;
-    }
-    .ct-xl { font-size: 1.7rem; }
-    .ct-lg { font-size: 1.3rem; }
-    .ct-md { font-size: 1.1rem; }
-    .ct-sm { font-size: 0.95rem; }
-
-    .ce { /* card excerpt */
-      font-size: 0.82rem;
-      color: #64748B;
-      line-height: 1.65;
-      flex-grow: 1;
-      margin-bottom: 1rem;
-    }
-
-    .cm { /* card meta bar */
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid var(--border);
-      padding-top: 0.7rem;
-      margin-top: auto;
-      font-size: 10px;
-      color: #475569;
-      gap: 0.5rem;
-    }
-    .cm-stats { display: flex; gap: 10px; align-items: center; }
-    .cm-stat-l { color: var(--blue); }
-    .cm-stat-c { color: var(--green); }
-    .cm-cta {
-      color: var(--blue);
-      font-weight: 800;
-      font-size: 10px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* Number hero inside a card */
-    .card-big-num {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 3.8rem;
-      font-weight: 900;
-      line-height: 1;
-      color: var(--green);
-      letter-spacing: -0.06em;
-      margin: 0.4rem 0 0.15rem;
-    }
-    .card-big-label {
-      font-size: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #374151;
-      margin-bottom: 1rem;
-    }
-
-    /* Horizontal card (image left, text right) */
-    .bc-horizontal {
-      flex-direction: row;
-      align-items: stretch;
-    }
-    .bc-horizontal .ci {
-      width: 40%;
-      min-width: 180px;
-      height: auto;
-      flex-shrink: 0;
-    }
-    .bc-horizontal .ci img { height: 100%; min-height: 190px; }
-    .bc-horizontal .cb { width: 60%; }
-    @media (max-width: 640px) {
-      .bc-horizontal { flex-direction: column; }
-      .bc-horizontal .ci { width: 100%; height: 180px; }
-      .bc-horizontal .cb { width: 100%; }
-    }
-
-    /* ─── READING MODAL (Comic Panel Style) ─── */
-    .reading-modal {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      z-index: 1000;
-      overflow-y: auto;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .reading-modal.show { display: block; opacity: 1; }
-
-    /* Comic panel header strip */
-    .rp-navbar {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: rgba(5,8,17,0.95);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.85rem 1.5rem;
-    }
-    .rp-back-btn {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #fff;
-      border-radius: 50%;
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 0.85rem;
-      flex-shrink: 0;
-      transition: all .2s;
-    }
-    .rp-back-btn:hover { border-color: var(--blue); background: rgba(0,122,255,0.1); }
-    .rp-nav-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 0.875rem;
-      color: #fff;
-      letter-spacing: -0.02em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .rp-nav-actions { margin-left: auto; display: flex; gap: 0.5rem; flex-shrink: 0; }
-
-    /* Comic panel: article wrapper */
-    .rp-body {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem 5rem;
-    }
-
-    /* Panel header — dark bordered block like a comic caption */
-    .rp-header-panel {
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-    }
-    .rp-header-band {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: 1.25rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-    .rp-category-tag {
-      background: rgba(0,122,255,0.1);
-      border: 1px solid rgba(0,122,255,0.2);
-      color: var(--blue);
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 100px;
-    }
-    .rp-date {
-      font-size: 10px;
-      color: #475569;
-      font-family: 'Inter', sans-serif;
-    }
-    .rp-title-block {
-      padding: 1.5rem 1.5rem 1.75rem;
-      background: rgba(255,255,255,0.012);
-    }
-    .rp-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: clamp(1.5rem, 4vw, 2.5rem);
-      color: #fff;
-      letter-spacing: -0.045em;
-      line-height: 1.1;
-      margin: 0;
-    }
-
-    /* Hero image panel */
-    .rp-image-panel {
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-    }
-    .rp-image-panel img {
-      width: 100%;
-      display: block;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-    }
-    .rp-image-panel.hidden { display: none; }
-
-    /* Comic reading panel: prose */
-    .rp-prose-panel {
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      background: var(--panel);
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-    }
-    .rp-prose-label {
-      background: rgba(0,122,255,0.06);
-      border-bottom: 1px solid var(--border);
-      padding: 0.6rem 1.25rem;
-      font-size: 8px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: #334155;
-    }
-    .rp-prose-inner {
-      padding: 1.75rem 1.5rem;
-    }
-
-    /* Comic interaction panel */
-    .rp-interact-panel {
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      margin-bottom: 1.5rem;
-    }
-    .rp-panel-header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: 0.65rem 1.25rem;
-      font-size: 8px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: #334155;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .rp-panel-body { padding: 1.25rem 1.5rem; background: rgba(5,8,17,0.4); }
-
-    .reading-prose {
-      font-family: 'Inter', sans-serif;
-      line-height: 1.85;
-      font-size: 1.02rem;
-      color: #CBD5E1;
-    }
-    .reading-prose h1,.reading-prose h2,.reading-prose h3 {
-      font-family: 'Space Grotesk', sans-serif;
-      color: #fff;
-      margin-top: 2rem;
-      margin-bottom: 0.75rem;
-      font-weight: 700;
-      letter-spacing: -0.035em;
-    }
-    .reading-prose h1 { font-size: 1.85rem; }
-    .reading-prose h2 { font-size: 1.4rem; }
-    .reading-prose h3 { font-size: 1.15rem; }
-    .reading-prose p  { margin-bottom: 1.2rem; }
-    .reading-prose code {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      padding: 2px 7px;
-      font-size: 0.85em;
-      color: var(--green);
-    }
-    .reading-prose blockquote {
-      border-left: 3px solid var(--blue);
-      padding-left: 1.25rem;
-      color: #64748B;
-      font-style: italic;
-      margin: 1.5rem 0;
-    }
-
-    .comment-card {
-      background: rgba(255,255,255,0.018);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem 1.1rem;
-      margin-bottom: 0.65rem;
-    }
-
-    /* Pagination */
-    .pgn {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.75rem;
-      margin-top: 3.5rem;
-      font-size: 0.75rem;
-    }
-    .pgn a {
-      padding: 0.4rem 1rem;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      color: #fff;
-      text-decoration: none;
-      transition: border-color 0.2s;
-    }
-    .pgn a:hover { border-color: var(--blue); }
-    .pgn span { color: #374151; }
-
-    /* Reveal animation */
-    .reveal-line { overflow: hidden; display: block; }
-    .reveal-inner {
-      display: block;
-      transform: translateY(110%);
-      transition: transform 0.9s cubic-bezier(0.16,1,0.3,1);
-    }
-    .in-view .reveal-inner { transform: translateY(0); }
-  </style>
+  
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.0.0">
 </head>
-<body>
+<body class="bg-background text-secondaryText font-sans antialiased pt-24">
 
-{% include 'brand/header.html' %}
+  {% include 'brand/header.html' %}
 
-<!-- ═══════════════ HERO ═══════════════ -->
-<section id="blogHero">
-  <canvas id="heroCanvas"></canvas>
+  <!-- HERO SECTION -->
+  <section class="section-padding bg-background text-center relative overflow-hidden">
+    <div class="container-wide relative z-10 px-6 max-w-4xl space-y-6">
+        <h1 class="text-4xl md:text-6xl font-bold text-primaryText tracking-tight">
+            Engineering <span class="text-gradient">Journal.</span>
+        </h1>
+        <p class="text-lg md:text-xl max-w-2xl mx-auto leading-relaxed text-secondaryText">
+            Insights, architecture deep-dives, and thoughts on building scalable, human-centered technology.
+        </p>
+    </div>
+  </section>
 
-  <div class="hero-title-wrap">
-    <div class="hero-title" id="heroTitleEl">
-      INSIGHTS
-      <div class="hero-float-badge" id="heroBadge">
-        <div class="badge-ring"></div>
-        <div class="badge-ring-2"></div>
-        <!-- SVG icon instead of emoji -->
-        <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-        </svg>
+  <!-- BLOG LISTING -->
+  <section class="section-padding bg-surface border-y border-borderLight min-h-[50vh]">
+    <div class="container-wide px-6">
+      
+      <!-- Sorting Controls -->
+      <div class="flex justify-end mb-8">
+        <div class="inline-flex rounded-lg border border-borderLight bg-surface p-1">
+          <a href="?sort=latest" class="px-4 py-1.5 text-sm font-medium rounded-md {% if sort_by != 'popular' %}bg-gray-100 text-primaryText{% else %}text-secondaryText hover:text-primaryText{% endif %}">Latest</a>
+          <a href="?sort=popular" class="px-4 py-1.5 text-sm font-medium rounded-md {% if sort_by == 'popular' %}bg-gray-100 text-primaryText{% else %}text-secondaryText hover:text-primaryText{% endif %}">Popular</a>
+        </div>
       </div>
-    </div>
-    <p class="hero-label">Teklora · Engineering Journal · AI & Infrastructure</p>
-  </div>
 
-  <!-- Scroll cue arrow -->
-  <div class="hero-scroll-cue">
-    <i class="fas fa-chevron-down" style="font-size:10px; color:rgba(255,255,255,0.4);"></i>
-    <span></span>
-  </div>
-</section>
+      {% if posts %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {% for post in posts %}
+            <article class="clean-card p-0 overflow-hidden flex flex-col hover:border-brandBlue/30">
+              {% if post.image %}
+                <div class="aspect-[16/9] w-full overflow-hidden bg-gray-100">
+                  <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+                </div>
+              {% endif %}
+              
+              <div class="p-6 flex flex-col flex-grow">
+                <div class="flex items-center gap-3 mb-4">
+                  <span class="text-xs font-bold uppercase tracking-wider text-brandBlue bg-blue-50 px-2 py-1 rounded">{{ post.category }}</span>
+                  <span class="text-xs text-gray-400">{{ post.created_at|date:"M d, Y" }}</span>
+                </div>
+                
+                <h2 class="text-xl font-bold text-primaryText mb-3 line-clamp-2">
+                  <a href="{% url 'blog_detail' post.slug %}" class="hover:text-brandBlue transition-colors">{{ post.title }}</a>
+                </h2>
+                
+                <p class="text-sm text-secondaryText mb-6 line-clamp-3 flex-grow">
+                  {{ post.excerpt|default:post.content|striptags|truncatewords:20 }}
+                </p>
+                
+                <div class="flex items-center justify-between pt-4 border-t border-borderLight mt-auto">
+                  <a href="{% url 'blog_detail' post.slug %}" class="text-sm font-medium text-brandBlue hover:text-brandWarm transition-colors">Read Article <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
+                  <div class="flex gap-4 text-xs text-gray-400">
+                    <span><i class="fas fa-heart mr-1"></i> {{ post.likes_count|default:0 }}</span>
+                    <span><i class="fas fa-comment mr-1"></i> {{ post.comments_count|default:0 }}</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
 
-<!-- ═══════════════ ARTICLES ═══════════════ -->
-<main style="max-width:1300px; margin:0 auto; padding:1.25rem 1.5rem 4rem;">
-
-  <!-- Header row -->
-  <div style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:2.75rem;">
-    <div>
-      <p class="section-eyebrow">Published Articles</p>
-      <h2 class="section-heading reveal-line"><span class="reveal-inner">{% if sort_by == 'popular' %}Most Loved{% else %}Latest Articles{% endif %}</span></h2>
-    </div>
-    <div style="display:flex; gap:0.6rem;">
-      <a href="?sort=latest" class="sort-pill {% if sort_by != 'popular' %}sort-pill-active{% else %}sort-pill-inactive{% endif %}">
-        <i class="fas fa-clock"></i> Latest
-      </a>
-      <a href="?sort=popular" class="sort-pill {% if sort_by == 'popular' %}sort-pill-active{% else %}sort-pill-inactive{% endif %}">
-        <i class="fas fa-fire-flame-curved"></i> Popular
-      </a>
-    </div>
-  </div>
-
-  <!-- ─── BENTO GRID ─── -->
-  <div class="bento-grid" id="blogGrid">
-    {% for post in posts %}
-
-    {% if forloop.counter == 1 %}
-    <!-- ① FEATURED WIDE — dominates the first row -->
-    <article class="bc bc-accent col-8 tilt-l" onclick="openPost({{ post.id }})">
-      {% if post.image %}
-      <div class="ci ci-h260"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
-      {% endif %}
-      <div class="cb">
-        <span class="cc">{{ post.category|default:"General" }}</span>
-        <h2 class="ct ct-xl">{{ post.title }}</h2>
-        <p class="ce">{{ post.excerpt|truncatechars:210 }}</p>
-        <div class="cm">
-          <div class="cm-stats">
-            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
-            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
-            <span>{{ post.created_at|date:"M d, Y" }}</span>
+        <!-- Pagination -->
+        {% if posts.has_other_pages %}
+          <div class="flex justify-center mt-12 gap-2">
+            {% if posts.has_previous %}
+              <a href="?page={{ posts.previous_page_number }}&sort={{ sort_by }}" class="w-10 h-10 flex items-center justify-center rounded-lg border border-borderLight hover:bg-gray-50 text-primaryText"><i class="fas fa-chevron-left"></i></a>
+            {% endif %}
+            
+            <span class="w-10 h-10 flex items-center justify-center rounded-lg bg-brandBlue text-white font-medium">{{ posts.number }}</span>
+            
+            {% if posts.has_next %}
+              <a href="?page={{ posts.next_page_number }}&sort={{ sort_by }}" class="w-10 h-10 flex items-center justify-center rounded-lg border border-borderLight hover:bg-gray-50 text-primaryText"><i class="fas fa-chevron-right"></i></a>
+            {% endif %}
           </div>
-          <span class="cm-cta">Read Article →</span>
-        </div>
-      </div>
-    </article>
-
-    {% elif forloop.counter == 2 %}
-    <!-- ② TALL SIDEBAR — right column of first row -->
-    <article class="bc col-4 tilt-r" onclick="openPost({{ post.id }})">
-      {% if post.image %}
-      <div class="ci ci-h200"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
-      {% endif %}
-      <div class="cb">
-        <span class="cc cc-g">{{ post.category|default:"General" }}</span>
-        <h2 class="ct ct-lg">{{ post.title }}</h2>
-        <p class="ce">{{ post.excerpt|truncatechars:120 }}</p>
-        <div class="cm">
-          <div class="cm-stats">
-            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
-            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
+        {% endif %}
+      {% else %}
+        <div class="text-center py-20">
+          <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl">
+            <i class="fas fa-pen-nib"></i>
           </div>
-          <span class="cm-cta">Read →</span>
+          <h3 class="text-xl font-bold text-primaryText mb-2">No Articles Yet</h3>
+          <p class="text-secondaryText">Check back soon for engineering insights.</p>
         </div>
-      </div>
-    </article>
-
-    {% elif forloop.counter == 3 %}
-    <!-- ③ HORIZONTAL BAND — full width -->
-    <article class="bc bc-horizontal col-12 tilt-s" onclick="openPost({{ post.id }})">
-      {% if post.image %}
-      <div class="ci"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
       {% endif %}
-      <div class="cb" {% if not post.image %}style="width:100%"{% endif %}>
-        <span class="cc">{{ post.category|default:"General" }}</span>
-        <h2 class="ct ct-lg">{{ post.title }}</h2>
-        <p class="ce">{{ post.excerpt|truncatechars:220 }}</p>
-        <div class="cm">
-          <div class="cm-stats">
-            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
-            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
-            <span>{{ post.created_at|date:"M d, Y" }}</span>
-          </div>
-          <span class="cm-cta">Read Full Article →</span>
-        </div>
-      </div>
-    </article>
 
-    {% elif forloop.counter == 4 %}
-    <!-- ④ METRIC CARD — green accent with big like number -->
-    <article class="bc bc-green col-4 tilt-r" onclick="openPost({{ post.id }})">
-      <div class="cb">
-        <span class="cc cc-g">{{ post.category|default:"General" }}</span>
-        <div class="card-big-num">{{ post.likes_count|default:"0" }}</div>
-        <div class="card-big-label">Reader Endorsements</div>
-        <h2 class="ct ct-md" style="margin-bottom:0;">{{ post.title }}</h2>
-        <div class="cm">
-          <span>{{ post.created_at|date:"M d, Y" }}</span>
-          <span class="cm-cta">Read →</span>
-        </div>
-      </div>
-    </article>
-
-    {% elif forloop.counter == 5 %}
-    <!-- ⑤ STANDARD — medium card -->
-    <article class="bc col-4 tilt-l" onclick="openPost({{ post.id }})">
-      {% if post.image %}
-      <div class="ci ci-h160"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
-      {% endif %}
-      <div class="cb">
-        <span class="cc">{{ post.category|default:"General" }}</span>
-        <h2 class="ct ct-md">{{ post.title }}</h2>
-        <p class="ce">{{ post.excerpt|truncatechars:95 }}</p>
-        <div class="cm">
-          <div class="cm-stats">
-            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
-            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
-          </div>
-          <span class="cm-cta">Read →</span>
-        </div>
-      </div>
-    </article>
-
-    {% elif forloop.counter == 6 %}
-    <!-- ⑥ COMPACT TALL — skinny right column -->
-    <article class="bc col-4 tilt-s" onclick="openPost({{ post.id }})">
-      {% if post.image %}
-      <div class="ci ci-h160"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
-      {% endif %}
-      <div class="cb">
-        <span class="cc cc-g">{{ post.category|default:"General" }}</span>
-        <h2 class="ct ct-md">{{ post.title }}</h2>
-        <div class="cm">
-          <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
-          <span class="cm-cta">Read →</span>
-        </div>
-      </div>
-    </article>
-
-    {% else %}
-    <!-- ⑦+ REMAINING — alternating halves, alternate tilt -->
-    <article class="bc col-6 {% cycle 'tilt-l' 'tilt-r' 'tilt-s' %}" onclick="openPost({{ post.id }})">
-      {% if post.image %}
-      <div class="ci ci-h200"><img src="{{ post.image.url }}" alt="{{ post.title }}"></div>
-      {% endif %}
-      <div class="cb">
-        <span class="cc">{{ post.category|default:"General" }}</span>
-        <h2 class="ct ct-md">{{ post.title }}</h2>
-        <p class="ce">{{ post.excerpt|truncatechars:110 }}</p>
-        <div class="cm">
-          <div class="cm-stats">
-            <span class="cm-stat-l"><i class="fas fa-thumbs-up fa-xs"></i> <span id="cl-{{ post.id }}">{{ post.likes_count }}</span></span>
-            <span class="cm-stat-c"><i class="fas fa-comments fa-xs"></i> <span id="cc-{{ post.id }}">{{ post.comments_count }}</span></span>
-            <span>{{ post.created_at|date:"M d, Y" }}</span>
-          </div>
-          <span class="cm-cta">Read →</span>
-        </div>
-      </div>
-    </article>
-    {% endif %}
-
-    {% empty %}
-    <div style="grid-column:span 12; text-align:center; padding:5rem 0;">
-      <i class="fas fa-newspaper" style="font-size:2.5rem; color:#1E293B; display:block; margin-bottom:1rem;"></i>
-      <p style="color:#374151; font-size:0.875rem;">No articles published yet.</p>
     </div>
-    {% endfor %}
-  </div>
+  </section>
 
-  <!-- Pagination -->
-  {% if posts.has_other_pages %}
-  <div class="pgn">
-    {% if posts.has_previous %}
-    <a href="?page={{ posts.previous_page_number }}&sort={{ sort_by }}">&larr; Newer</a>
-    {% endif %}
-    <span>Page {{ posts.number }} of {{ posts.paginator.num_pages }}</span>
-    {% if posts.has_next %}
-    <a href="?page={{ posts.next_page_number }}&sort={{ sort_by }}">Older &rarr;</a>
-    {% endif %}
-  </div>
-  {% endif %}
+  {% include 'brand/footer.html' %}
 
-</main>
-
-<!-- ═══════════════ READING MODAL (Comic Panel) ═══════════════ -->
-<div id="readingModal" class="reading-modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-
-  <!-- Sticky Navbar for modal -->
-  <div class="rp-navbar">
-    <button class="rp-back-btn" onclick="closePost()" aria-label="Back to articles">
-      <i class="fas fa-arrow-left"></i>
-    </button>
-    <span class="rp-nav-title" id="mNavTitle">Article</span>
-    <div class="rp-nav-actions">
-      <button id="likeBtn" onclick="toggleLike()"
-        style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#fff;border-radius:8px;padding:0.45rem 0.9rem;font-size:11px;font-weight:700;cursor:pointer;transition:all .25s;white-space:nowrap;">
-        <i class="fas fa-thumbs-up" style="font-size:0.8rem;"></i>
-        <span>Like</span> (<span id="mLikes">0</span>)
-      </button>
-    </div>
-  </div>
-
-  <!-- Article body -->
-  <div class="rp-body">
-
-    <!-- Panel 1: Article header (comic caption box) -->
-    <div class="rp-header-panel">
-      <div class="rp-header-band">
-        <span id="mCat" class="rp-category-tag">Category</span>
-        <span id="mDate" class="rp-date">Date</span>
-      </div>
-      <div class="rp-title-block">
-        <h1 id="mTitle" class="rp-title"></h1>
-      </div>
-    </div>
-
-    <!-- Panel 2: Hero image (hidden if none) -->
-    <div id="mImgWrap" class="rp-image-panel hidden">
-      <img id="mImg" src="" alt="Article banner">
-    </div>
-
-    <!-- Panel 3: Article prose -->
-    <div class="rp-prose-panel">
-      <div class="rp-prose-label">Article Content</div>
-      <div class="rp-prose-inner">
-        <div id="mBody" class="reading-prose"></div>
-      </div>
-    </div>
-
-    <!-- Panel 4: Comments -->
-    <div class="rp-interact-panel">
-      <div class="rp-panel-header">
-        <span style="display:flex;align-items:center;gap:6px;">
-          <i class="fas fa-comments" style="color:var(--green);"></i>
-          Discussion (<span id="mCommentCount">0</span>)
-        </span>
-      </div>
-      <div class="rp-panel-body">
-        <div id="mComments" style="margin-bottom:1.25rem;"></div>
-
-        <form id="commentForm" onsubmit="submitComment(event)"
-          style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
-          <p style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#334155;margin-bottom:0.85rem;">Add a Comment</p>
-          <input type="text" id="cName" required placeholder="Your name"
-            style="width:100%;background:var(--bg);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.55rem 0.8rem;font-size:0.78rem;color:#fff;margin-bottom:0.6rem;outline:none;display:block;">
-          <textarea id="cText" required rows="3" placeholder="Share your thoughts..."
-            style="width:100%;background:var(--bg);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.55rem 0.8rem;font-size:0.78rem;color:#fff;resize:none;outline:none;display:block;margin-bottom:0.65rem;"></textarea>
-          <button type="submit"
-            style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:0.5rem 1.1rem;font-size:0.72rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-            <i class="fas fa-paper-plane"></i> Post
-          </button>
-        </form>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-{% include 'brand/footer.html' %}
-<script src="{% static 'brand/js/components.js' %}"></script>
-
-<script>
-/* ─── Browser fingerprint ─── */
-let bId = localStorage.getItem('teklora_browser_id');
-if (!bId) { bId = 'usr_' + Math.random().toString(36).substr(2,14); localStorage.setItem('teklora_browser_id', bId); }
-
-let curPostId = null, userLiked = false;
-
-/* ─── Hero particle canvas ─── */
-(function() {
-  const canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W, H, pts = [];
-  const hero = document.getElementById('blogHero');
-  let mx = 0, my = 0;
-
-  function resize() {
-    W = canvas.width  = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-    mx = W / 2; my = H / 2;
-  }
-
-  function mkPts() {
-    pts = [];
-    const n = Math.min(Math.floor((W * H) / 8000), 120);
-    for (let i = 0; i < n; i++) {
-      pts.push({ x: Math.random()*W, y: Math.random()*H,
-                 vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4,
-                 r: Math.random()*1.4+.4, a: Math.random()*.7+.2 });
-    }
-  }
-
-  hero.addEventListener('mousemove', e => {
-    const r = canvas.getBoundingClientRect();
-    mx = e.clientX - r.left; my = e.clientY - r.top;
-  });
-
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    // Connecting lines
-    for (let i = 0; i < pts.length; i++) {
-      for (let j = i+1; j < pts.length; j++) {
-        const dx = pts[i].x-pts[j].x, dy = pts[i].y-pts[j].y;
-        const d = Math.sqrt(dx*dx+dy*dy);
-        if (d < 130) {
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(0,122,255,${.06*(1-d/130)})`;
-          ctx.lineWidth = .6;
-          ctx.moveTo(pts[i].x, pts[i].y);
-          ctx.lineTo(pts[j].x, pts[j].y);
-          ctx.stroke();
-        }
-      }
-    }
-    pts.forEach(p => {
-      // Gentle mouse repulsion
-      const dx = p.x-mx, dy = p.y-my;
-      const d = Math.sqrt(dx*dx+dy*dy);
-      if (d < 150) { p.vx += dx/d*.035; p.vy += dy/d*.035; }
-      p.vx *= .985; p.vy *= .985;
-      p.x += p.vx; p.y += p.vy;
-      if (p.x<0||p.x>W) p.vx*=-1;
-      if (p.y<0||p.y>H) p.vy*=-1;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(0,122,255,${p.a*.55})`;
-      ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-
-  window.addEventListener('resize', () => { resize(); mkPts(); });
-  resize(); mkPts(); draw();
-})();
-
-/* ─── Badge parallax (no cursor change) ─── */
-const badge = document.getElementById('heroBadge');
-const heroEl = document.getElementById('blogHero');
-heroEl.addEventListener('mousemove', e => {
-  const r = heroEl.getBoundingClientRect();
-  const x = (e.clientX - r.left - r.width/2)  * 0.035;
-  const y = (e.clientY - r.top  - r.height/2) * 0.035;
-  badge.style.transform = `translate(${x}px, ${y}px) rotate(${x*.4}deg)`;
-});
-heroEl.addEventListener('mouseleave', () => {
-  badge.style.transform = 'translate(0,0) rotate(0deg)';
-});
-
-/* ─── Scroll reveal ─── */
-const io = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in-view'); });
-}, { threshold: .1 });
-document.querySelectorAll('.reveal-line').forEach(el => io.observe(el));
-
-/* ─── Modal open ─── */
-async function openPost(id) {
-  curPostId = id;
-  try {
-    const res = await fetch(`/blog/post/${id}/json/?browser_id=${bId}`);
-    if (!res.ok) throw new Error();
-    const d = await res.json();
-
-    document.getElementById('mCat').textContent      = d.category || 'General';
-    document.getElementById('mTitle').textContent     = d.title;
-    document.getElementById('mNavTitle').textContent  = d.title;
-    document.getElementById('mDate').textContent      = d.created_at;
-    document.getElementById('mBody').innerHTML        = d.content_html;
-    document.getElementById('mLikes').textContent     = d.likes_count;
-    document.getElementById('mCommentCount').textContent = d.comments.length;
-
-    const wrap = document.getElementById('mImgWrap');
-    const img  = document.getElementById('mImg');
-    if (d.image) { img.src = d.image; wrap.classList.remove('hidden'); }
-    else          { wrap.classList.add('hidden'); }
-
-    userLiked = d.user_liked;
-    refreshLikeBtn();
-
-    const list = document.getElementById('mComments');
-    list.innerHTML = d.comments.length
-      ? d.comments.map(c => mkComment(c.user_name, c.content, c.created_at)).join('')
-      : '<p style="font-size:.78rem;color:#374151;font-style:italic;">No comments yet — be the first!</p>';
-
-    document.getElementById('commentForm').reset();
-
-    const modal = document.getElementById('readingModal');
-    modal.classList.add('show');
-    modal.scrollTo(0, 0);
-    document.body.style.overflow = 'hidden';
-  } catch (err) { toastApiError(err, 'That article could not be loaded. Please try again.'); }
-}
-
-function closePost() {
-  document.getElementById('readingModal').classList.remove('show');
-  document.body.style.overflow = 'auto';
-  curPostId = null;
-}
-
-/* ─── Like toggle ─── */
-async function toggleLike() {
-  if (!curPostId) return;
-  const res = await fetch(`/api/blogs/${curPostId}/like/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ browser_id: bId })
-  });
-  if (res.ok) {
-    const d = await res.json();
-    document.getElementById('mLikes').textContent = d.likes_count;
-    const cl = document.getElementById(`cl-${curPostId}`);
-    if (cl) cl.textContent = d.likes_count;
-    userLiked = d.liked;
-    refreshLikeBtn();
-  }
-}
-
-function refreshLikeBtn() {
-  const btn = document.getElementById('likeBtn');
-  if (!btn) return;
-  btn.style.background   = userLiked ? 'var(--blue)' : 'rgba(255,255,255,0.04)';
-  btn.style.borderColor  = userLiked ? 'transparent' : 'rgba(255,255,255,0.08)';
-}
-
-/* ─── Comment submit ─── */
-async function submitComment(e) {
-  e.preventDefault();
-  const name = document.getElementById('cName').value.trim() || 'Anonymous';
-  const text = document.getElementById('cText').value.trim();
-  if (!text || !curPostId) return;
-
-  const res = await fetch(`/api/blogs/${curPostId}/comment/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ browser_id: bId, user_name: name, content: text })
-  });
-  if (res.ok) {
-    const d = await res.json();
-    document.getElementById('cText').value = '';
-    const list = document.getElementById('mComments');
-    const placeholder = list.querySelector('p');
-    if (placeholder) list.innerHTML = '';
-    list.insertAdjacentHTML('afterbegin', mkComment(d.comment.user_name, d.comment.content, 'Just now'));
-    const cnt = parseInt(document.getElementById('mCommentCount').textContent) + 1;
-    document.getElementById('mCommentCount').textContent = cnt;
-    const cc = document.getElementById(`cc-${curPostId}`);
-    if (cc) cc.textContent = cnt;
-  }
-}
-
-function mkComment(name, text, date) {
-  return `<div class="comment-card">
-    <div style="display:flex;justify-content:space-between;margin-bottom:.4rem;font-size:10px;">
-      <strong style="color:#fff;">${esc(name)}</strong>
-      <span style="color:#374151;">${date}</span>
-    </div>
-    <p style="font-size:.8rem;color:#94A3B8;line-height:1.6;margin:0;">${esc(text)}</p>
-  </div>`;
-}
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-}
-
-/* Close modal on backdrop click */
-document.getElementById('readingModal').addEventListener('click', function(e) {
-  if (e.target === this) closePost();
-});
-/* Close modal on ESC */
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePost(); });
-</script>
 </body>
 </html>

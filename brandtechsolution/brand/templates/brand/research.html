@@ -29,19 +29,28 @@
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         heading: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#FAFAFA',
+                        surface: '#FFFFFF',
+                        primaryText: '#18181B',
+                        secondaryText: '#52525B',
+                        brandBlue: '#33348E',
+                        brandWarm: '#10B981',
+                        borderLight: '#E4E4E7'
                     }
                 }
             }
         }
     </script>
 
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
     <style>
         html { scroll-behavior: smooth; }
         .research-hero-title {
-            color: #FFFFFF !important;
+            color: var(--text-primary) !important;
             font-family: var(--font-heading) !important;
         }
 
@@ -83,13 +92,13 @@
             transition: all 0.2s ease;
         }
         .jump-nav-link:hover {
-            color: #FFFFFF !important;
+            color: var(--text-primary) !important;
             border-color: #A855F7 !important;
             background: rgba(168, 85, 247, 0.15);
         }
     </style>
 </head>
-<body class="bg-[#050811] text-[#94A3B8] font-sans antialiased selection:bg-purple-500/30 selection:text-white relative overflow-x-hidden">
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-purple-500/30 selection:text-primaryText relative overflow-x-hidden">
 
     <!-- Header Inheritance -->
     {% include 'brand/header.html' %}
@@ -101,7 +110,7 @@
         <!-- HERO SECTION WITH RICH IMAGERY -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             <div class="text-center space-y-6">
-                <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md max-w-[90vw]">
+                <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-gray-100 border border-borderLight backdrop-blur-md max-w-[90vw]">
                 <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse shrink-0"></span>
                 <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-purple-400 truncate">Teklora R&D & Tech Innovation</span>
             </div>
@@ -111,28 +120,28 @@
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-sky-400 to-[#00FF94]">Python, React, Agentic AI & Quantum Horizons.</span>
                 </h1>
 
-                <p class="text-base sm:text-lg text-[#94A3B8] leading-relaxed max-w-3xl mx-auto font-medium">
+                <p class="text-base sm:text-lg text-secondaryText leading-relaxed max-w-3xl mx-auto font-medium">
                     Explore how Teklora engineered digital systems using Python microservices, React component architectures, multi-agent AI, and quantum-classical algorithms.
                 </p>
 
                 <!-- Sub-Nav Jump Bar -->
                 <div class="flex flex-wrap justify-center gap-2 pt-2">
-                    <a href="#solutions-approach" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white">
+                    <a href="#solutions-approach" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-primaryText">
                         ⚡ Solution Methodology
                     </a>
-                    <a href="#tech-stack" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    <a href="#tech-stack" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
                         🐍 Python & React Stack
                     </a>
-                    <a href="#ai" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    <a href="#ai" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
                         🤖 Agentic AI & ML
                     </a>
-                    <a href="#quantum" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    <a href="#quantum" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
                         ⚛️ Quantum Computing
                     </a>
-                    <a href="#spatial" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    <a href="#spatial" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
                         🌐 Spatial & Digital Twins
                     </a>
-                    <a href="#future-tech" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-[#94A3B8]">
+                    <a href="#future-tech" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
                         🚀 Future of Tech
                     </a>
                 </div>
@@ -140,35 +149,35 @@
 
             <!-- Hero Image Gallery Grid -->
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
-                <div class="img-zoom-container border border-white/10 h-60 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-60 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=900&auto=format&fit=crop&q=80" alt="Python & Server Microservices" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">PYTHON BACKEND</span>
-                        <h3 class="text-base font-bold text-white font-heading">High-Speed Microservices</h3>
+                        <h3 class="text-base font-bold text-primaryText font-heading">High-Speed Microservices</h3>
                     </div>
                 </div>
 
-                <div class="img-zoom-container border border-white/10 h-60 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-60 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=900&auto=format&fit=crop&q=80" alt="React Frontend Architecture" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">REACT FRONTEND</span>
-                        <h3 class="text-base font-bold text-white font-heading">Component UI Architecture</h3>
+                        <h3 class="text-base font-bold text-primaryText font-heading">Component UI Architecture</h3>
                     </div>
                 </div>
 
-                <div class="img-zoom-container border border-white/10 h-60 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-60 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=900&auto=format&fit=crop&q=80" alt="Artificial Intelligence Research" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">AGENTIC AI</span>
-                        <h3 class="text-base font-bold text-white font-heading">Multi-Agent Orchestration</h3>
+                        <h3 class="text-base font-bold text-primaryText font-heading">Multi-Agent Orchestration</h3>
                     </div>
                 </div>
 
-                <div class="img-zoom-container border border-white/10 h-60 relative group shadow-2xl">
+                <div class="img-zoom-container border border-borderLight h-60 relative group shadow-2xl">
                     <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=900&auto=format&fit=crop&q=80" alt="Quantum Computing Research" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                         <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">QUANTUM HORIZONS</span>
-                        <h3 class="text-base font-bold text-white font-heading">Qubit Simulation & Post-Quantum</h3>
+                        <h3 class="text-base font-bold text-primaryText font-heading">Qubit Simulation & Post-Quantum</h3>
                     </div>
                 </div>
             </div>
@@ -180,15 +189,15 @@
             <!-- ============================================================ -->
             <!-- SECTION 1: HOW WE PROVIDE DIGITAL SOLUTIONS (#solutions-approach) -->
             <!-- ============================================================ -->
-            <section id="solutions-approach" class="research-card glass-card p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8">
-                <div class="space-y-2 pb-6 border-b border-white/5">
+            <section id="solutions-approach" class="research-card clean-card p-6 sm:p-10 rounded-3xl border border-borderLight space-y-8">
+                <div class="space-y-2 pb-6 border-b border-gray-200">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20 text-xs font-bold uppercase tracking-wider">
                         <i class="fas fa-lightbulb"></i> Engineering Methodology
                     </div>
-                    <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                    <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                         How We Engineer Digital Solutions Using Technology
                     </h2>
-                    <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                    <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                         At Teklora, technology is not just code — it is a structured engine for solving real human and enterprise friction. We follow a 4-phase R&D blueprint to deliver resilient software.
                     </p>
                 </div>
@@ -197,37 +206,37 @@
                 <div class="grid lg:grid-cols-12 gap-8 items-center">
                     <div class="lg:col-span-7 space-y-4">
                         <div class="grid sm:grid-cols-2 gap-4">
-                            <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-2">
+                            <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-2">
                                 <div class="w-8 h-8 rounded-lg bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-xs font-bold">01</div>
-                                <h3 class="text-sm font-bold text-white font-heading">Problem Abstraction</h3>
-                                <p class="text-xs text-[#94A3B8]">Deconstructing complex operational challenges into modular data schemas and algorithm requirements.</p>
+                                <h3 class="text-sm font-bold text-primaryText font-heading">Problem Abstraction</h3>
+                                <p class="text-xs text-secondaryText">Deconstructing complex operational challenges into modular data schemas and algorithm requirements.</p>
                             </div>
 
-                            <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-2">
+                            <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-2">
                                 <div class="w-8 h-8 rounded-lg bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center text-xs font-bold">02</div>
-                                <h3 class="text-sm font-bold text-white font-heading">Python Microservice Backend</h3>
-                                <p class="text-xs text-[#94A3B8]">Building high-concurrency REST & WebSocket APIs using Django, FastAPI, Celery, and PostgreSQL.</p>
+                                <h3 class="text-sm font-bold text-primaryText font-heading">Python Microservice Backend</h3>
+                                <p class="text-xs text-secondaryText">Building high-concurrency REST & WebSocket APIs using Django, FastAPI, Celery, and PostgreSQL.</p>
                             </div>
 
-                            <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-2">
+                            <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-2">
                                 <div class="w-8 h-8 rounded-lg bg-sky-400/10 text-sky-400 flex items-center justify-center text-xs font-bold">03</div>
-                                <h3 class="text-sm font-bold text-white font-heading">React Component UI</h3>
-                                <p class="text-xs text-[#94A3B8]">Crafting responsive, glassmorphic interfaces with React, Next.js, and state hydration for fast load times.</p>
+                                <h3 class="text-sm font-bold text-primaryText font-heading">React Component UI</h3>
+                                <p class="text-xs text-secondaryText">Crafting responsive, glassmorphic interfaces with React, Next.js, and state hydration for fast load times.</p>
                             </div>
 
-                            <div class="p-5 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-2">
+                            <div class="p-5 rounded-2xl bg-surface border border-borderLight space-y-2">
                                 <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-xs font-bold">04</div>
-                                <h3 class="text-sm font-bold text-white font-heading">AI & Telemetry Integration</h3>
-                                <p class="text-xs text-[#94A3B8]">Embedding vector search, LLM multi-agents, and automated telemetry health monitoring.</p>
+                                <h3 class="text-sm font-bold text-primaryText font-heading">AI & Telemetry Integration</h3>
+                                <p class="text-xs text-secondaryText">Embedding vector search, LLM multi-agents, and automated telemetry health monitoring.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="lg:col-span-5 space-y-3">
-                        <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <h4 class="text-xs font-bold text-primaryText uppercase tracking-wider flex items-center gap-2">
                             <i class="fas fa-chart-line text-[#00FF94]"></i> Data Story: R&D Sprint Velocity & Optimization Speed
                         </h4>
-                        <div class="p-4 rounded-2xl bg-[#0A0F1D] border border-white/5 flex items-center justify-center">
+                        <div class="p-4 rounded-2xl bg-surface border border-gray-200 flex items-center justify-center">
                             <canvas id="chartMethodology" class="max-h-[220px]"></canvas>
                         </div>
                     </div>
@@ -238,12 +247,12 @@
             <!-- ============================================================ -->
             <!-- SECTION 2: OUR CORE TECH STACK — PYTHON & REACT (#tech-stack) -->
             <!-- ============================================================ -->
-            <section id="tech-stack" class="research-card glass-card p-6 sm:p-10 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-[#050811] via-[#101422] to-[#050811] space-y-10">
-                <div class="space-y-2 pb-6 border-b border-white/10">
+            <section id="tech-stack" class="research-card clean-card p-6 sm:p-10 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-[#050811] via-[#101422] to-[#050811] space-y-10">
+                <div class="space-y-2 pb-6 border-b border-borderLight">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold uppercase tracking-wider">
                         <i class="fab fa-python"></i> Primary Tech Stack
                     </div>
-                    <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                    <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                         Our Core Engineering Stack: Python & React Ecosystems
                     </h2>
                     <p class="text-xs sm:text-sm text-amber-200/80 max-w-3xl">
@@ -255,22 +264,22 @@
                 <div class="grid md:grid-cols-2 gap-8">
                     
                     <!-- Python Column -->
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-amber-500/20 space-y-6">
+                    <div class="p-6 rounded-2xl bg-surface border border-amber-500/20 space-y-6">
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-2xl border border-amber-500/20">
                                 <i class="fab fa-python"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-white font-heading">Python Backend Ecosystem</h3>
-                                <p class="text-xs text-[#94A3B8]">Data Pipelines, AI & High-Concurrency APIs</p>
+                                <h3 class="text-xl font-bold text-primaryText font-heading">Python Backend Ecosystem</h3>
+                                <p class="text-xs text-secondaryText">Data Pipelines, AI & High-Concurrency APIs</p>
                             </div>
                         </div>
 
-                        <div class="img-zoom-container border border-white/10 h-48 relative shadow-lg">
+                        <div class="img-zoom-container border border-borderLight h-48 relative shadow-lg">
                             <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80" alt="Python Code Matrix" class="w-full h-full object-cover" />
                         </div>
 
-                        <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                        <ul class="space-y-2.5 text-xs text-secondaryText">
                             <li class="flex items-start gap-2 p-2 rounded-xl bg-white/[0.02]"><i class="fas fa-check text-amber-400 mt-0.5"></i> <strong>Django & Django REST Framework:</strong> Robust ORM, rapid API prototyping, and administrative control.</li>
                             <li class="flex items-start gap-2 p-2 rounded-xl bg-white/[0.02]"><i class="fas fa-check text-amber-400 mt-0.5"></i> <strong>FastAPI & AsyncIO:</strong> Asynchronous high-speed endpoints for real-time WebSocket telemetry.</li>
                             <li class="flex items-start gap-2 p-2 rounded-xl bg-white/[0.02]"><i class="fas fa-check text-amber-400 mt-0.5"></i> <strong>PyTorch, LangChain & Celery:</strong> Distributed AI model execution, vector embeddings, and background tasks.</li>
@@ -278,22 +287,22 @@
                     </div>
 
                     <!-- React Column -->
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-sky-500/20 space-y-6">
+                    <div class="p-6 rounded-2xl bg-surface border border-sky-500/20 space-y-6">
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-2xl border border-sky-500/20">
                                 <i class="fab fa-react"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-white font-heading">React & Next.js Frontend</h3>
-                                <p class="text-xs text-[#94A3B8]">Component Architectures & WebGL Canvases</p>
+                                <h3 class="text-xl font-bold text-primaryText font-heading">React & Next.js Frontend</h3>
+                                <p class="text-xs text-secondaryText">Component Architectures & WebGL Canvases</p>
                             </div>
                         </div>
 
-                        <div class="img-zoom-container border border-white/10 h-48 relative shadow-lg">
+                        <div class="img-zoom-container border border-borderLight h-48 relative shadow-lg">
                             <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80" alt="React Component UI" class="w-full h-full object-cover" />
                         </div>
 
-                        <ul class="space-y-2.5 text-xs text-[#94A3B8]">
+                        <ul class="space-y-2.5 text-xs text-secondaryText">
                             <li class="flex items-start gap-2 p-2 rounded-xl bg-white/[0.02]"><i class="fas fa-check text-sky-400 mt-0.5"></i> <strong>React 18 & Next.js:</strong> Server-side rendering, hydration optimization, and reusable component libraries.</li>
                             <li class="flex items-start gap-2 p-2 rounded-xl bg-white/[0.02]"><i class="fas fa-check text-sky-400 mt-0.5"></i> <strong>Three.js & WebGL Canvas:</strong> 3D graphics rendering for spatial environments like HoloDesk Workspace OS.</li>
                             <li class="flex items-start gap-2 p-2 rounded-xl bg-white/[0.02]"><i class="fas fa-check text-sky-400 mt-0.5"></i> <strong>Tailwind CSS & State Hydration:</strong> Responsive design, glassmorphic UI, and smooth micro-animations.</li>
@@ -310,16 +319,16 @@
             <div class="space-y-12">
                 
                 <!-- 3A: ARTIFICIAL INTELLIGENCE & MULTI-AGENTS (#ai) -->
-                <article id="ai" class="research-card glass-card p-6 sm:p-10 rounded-3xl border border-[#00FF94]/30 space-y-8">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                <article id="ai" class="research-card clean-card p-6 sm:p-10 rounded-3xl border border-[#00FF94]/30 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                         <div class="space-y-2">
                             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20 text-xs font-bold uppercase tracking-wider">
                                 <i class="fas fa-[#00FF94] fa-robot"></i> Trending Tech • AI & Autonomous Agents
                             </div>
-                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                            <h3 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                                 Artificial Intelligence & Multi-Agent Orchestration
                             </h3>
-                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                            <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                                 We research and deploy multi-agent LLM systems that autonomously analyze codebases, retrieve vector knowledge from databases, and execute complex workflows without human intervention.
                             </p>
                         </div>
@@ -328,28 +337,28 @@
                     <!-- AI Photo Gallery + Interactive Agent Simulator -->
                     <div class="grid lg:grid-cols-12 gap-8 items-start">
                         <div class="lg:col-span-5 space-y-4">
-                            <div class="img-zoom-container border border-white/10 h-56 relative shadow-xl">
+                            <div class="img-zoom-container border border-borderLight h-56 relative shadow-xl">
                                 <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=80" alt="Artificial Intelligence Neural Network" class="w-full h-full object-cover" />
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 flex flex-col justify-end">
                                     <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">AI NEURAL NETWORK</span>
-                                    <h4 class="text-xs font-bold text-white">Vector Embedding & RAG Search</h4>
+                                    <h4 class="text-xs font-bold text-primaryText">Vector Embedding & RAG Search</h4>
                                 </div>
                             </div>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 Our AI models integrate retrieval-augmented generation (RAG) with vector databases (Qdrant, Pinecone), ensuring factual accuracy and zero hallucination.
                             </p>
                         </div>
 
                         <!-- Interactive Agent Workflow Simulator -->
-                        <div class="lg:col-span-7 p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-4">
+                        <div class="lg:col-span-7 p-6 rounded-2xl bg-surface border border-borderLight space-y-4">
                             <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <h4 class="text-xs font-bold text-primaryText uppercase tracking-wider flex items-center gap-2">
                                     <i class="fas fa-terminal text-[#00FF94]"></i> Interactive Multi-Agent Orchestrator
                                 </h4>
                                 <span class="text-[10px] font-mono text-[#00FF94] px-2 py-0.5 rounded bg-[#00FF94]/10">LIVE SIMULATOR</span>
                             </div>
 
-                            <div class="p-4 rounded-xl bg-black border border-white/10 font-mono text-xs text-[#00FF94] space-y-2 h-40 overflow-y-auto" id="agentConsole">
+                            <div class="p-4 rounded-xl bg-black border border-borderLight font-mono text-xs text-[#00FF94] space-y-2 h-40 overflow-y-auto" id="agentConsole">
                                 <div>[SYS_READY] Multi-Agent Pool Initialized (Agent-Planner, Agent-Coder, Agent-[#00FF94] Validator)</div>
                                 <div>[USER_QUERY] "Deconstruct PostgreSQL query latency and recommend index strategy"</div>
                                 <div>[AGENT_PLANNER] Generating execution breakdown across 3 sub-tasks...</div>
@@ -364,16 +373,16 @@
 
 
                 <!-- 3B: QUANTUM COMPUTING EXPLORATION (#quantum) -->
-                <article id="quantum" class="research-card glass-card p-6 sm:p-10 rounded-3xl border border-purple-500/30 space-y-8">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                <article id="quantum" class="research-card clean-card p-6 sm:p-10 rounded-3xl border border-purple-500/30 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                         <div class="space-y-2">
                             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-bold uppercase tracking-wider">
                                 <i class="fas fa-[#00FF94] fa-atom"></i> Emerging Frontier • Quantum Computing
                             </div>
-                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                            <h3 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                                 Quantum-Classical Hybrid Computing & Post-Quantum Security
                             </h3>
-                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                            <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                                 Preparing enterprise systems for the quantum era. We research quantum approximate optimization algorithms (QAOA) for logistics route solving and post-quantum cryptographic primitives (Kyber & Dilithium).
                             </p>
                         </div>
@@ -382,28 +391,28 @@
                     <!-- Quantum Photo Gallery + Interactive Qubit Simulator -->
                     <div class="grid lg:grid-cols-12 gap-8 items-start">
                         <div class="lg:col-span-5 space-y-4">
-                            <div class="img-zoom-container border border-white/10 h-56 relative shadow-xl">
+                            <div class="img-zoom-container border border-borderLight h-56 relative shadow-xl">
                                 <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80" alt="Quantum Computer Processor" class="w-full h-full object-cover" />
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 flex flex-col justify-end">
                                     <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">QUANTUM CIRCUIT</span>
-                                    <h4 class="text-xs font-bold text-white">Qubit Superposition & Entanglement</h4>
+                                    <h4 class="text-xs font-bold text-primaryText">Qubit Superposition & Entanglement</h4>
                                 </div>
                             </div>
-                            <p class="text-xs text-[#94A3B8] leading-relaxed">
+                            <p class="text-xs text-secondaryText leading-relaxed">
                                 Using Python quantum libraries (Qiskit, Cirq), we simulate quantum gates to benchmark optimization bottlenecks in supply chain and logistics algorithms.
                             </p>
                         </div>
 
                         <!-- Interactive Qubit Gate Simulator -->
-                        <div class="lg:col-span-7 p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-4">
+                        <div class="lg:col-span-7 p-6 rounded-2xl bg-surface border border-borderLight space-y-4">
                             <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <h4 class="text-xs font-bold text-primaryText uppercase tracking-wider flex items-center gap-2">
                                     <i class="fas fa-[#00FF94] fa-microchip text-purple-400"></i> Interactive 3-Qubit Hadamard Gate Simulator
                                 </h4>
                                 <span class="text-[10px] font-mono text-purple-400 px-2 py-0.5 rounded bg-purple-500/10">QUANTUM SIM</span>
                             </div>
 
-                            <div class="p-4 rounded-xl bg-black border border-white/10 space-y-3 font-mono text-xs">
+                            <div class="p-4 rounded-xl bg-black border border-borderLight space-y-3 font-mono text-xs">
                                 <div class="flex items-center justify-between text-purple-300">
                                     <span>Qubit |q0⟩: Hadamard (H)</span>
                                     <span id="q0State" class="text-[#00FF94]">|0⟩ → (|0⟩ + |1⟩)/√2</span>
@@ -418,7 +427,7 @@
                                 </div>
                             </div>
 
-                            <button type="button" onclick="collapseQubitState()" class="w-full btn-premium btn-premium-primary py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white border-none">
+                            <button type="button" onclick="collapseQubitState()" class="w-full btn-premium btn-premium-primary py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-primaryText border-none">
                                 Measure & Collapse Qubit Wavefunction →
                             </button>
                         </div>
@@ -427,35 +436,35 @@
 
 
                 <!-- 3C: SPATIAL COMPUTING & DIGITAL TWINS (#spatial, #digital-twins) -->
-                <article id="spatial" class="research-card glass-card p-6 sm:p-10 rounded-3xl border border-sky-500/30 space-y-8">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/5">
+                <article id="spatial" class="research-card clean-card p-6 sm:p-10 rounded-3xl border border-sky-500/30 space-y-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                         <div class="space-y-2">
                             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-bold uppercase tracking-wider">
                                 <i class="fas fa-vr-cardboard"></i> Emerging Frontier • Spatial & Digital Twins
                             </div>
-                            <h3 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                            <h3 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                                 Spatial Web OS & Physical Digital Twins
                             </h3>
-                            <p class="text-xs sm:text-sm text-[#94A3B8] max-w-3xl">
+                            <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
                                 Merging 3D spatial web canvases (Three.js/WebGL) with real-time physical digital twin telemetry (IoT soil sensors, FHIR health telemetry, slaughterhouse cold-storage).
                             </p>
                         </div>
                     </div>
 
                     <div class="grid sm:grid-cols-2 gap-6">
-                        <div class="img-zoom-container border border-white/10 h-60 relative shadow-xl">
+                        <div class="img-zoom-container border border-borderLight h-60 relative shadow-xl">
                             <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80" alt="3D Spatial Web Campus" class="w-full h-full object-cover" />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                                 <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">SPATIAL COMPUTING</span>
-                                <h4 class="text-sm font-bold text-white font-heading">HoloDesk Workspace OS 3D Environment</h4>
+                                <h4 class="text-sm font-bold text-primaryText font-heading">HoloDesk Workspace OS 3D Environment</h4>
                             </div>
                         </div>
 
-                        <div class="img-zoom-container border border-white/10 h-60 relative shadow-xl">
+                        <div class="img-zoom-container border border-borderLight h-60 relative shadow-xl">
                             <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80" alt="Digital Twin Telemetry" class="w-full h-full object-cover" />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                                 <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">DIGITAL TWINS</span>
-                                <h4 class="text-sm font-bold text-white font-heading">Physical IoT Asset Telemetry Stream</h4>
+                                <h4 class="text-sm font-bold text-primaryText font-heading">Physical IoT Asset Telemetry Stream</h4>
                             </div>
                         </div>
                     </div>
@@ -467,12 +476,12 @@
             <!-- ============================================================ -->
             <!-- SECTION 4: OUR TAKE ON THE FUTURE OF TECH (#future-tech) -->
             <!-- ============================================================ -->
-            <section id="future-tech" class="research-card glass-card p-6 sm:p-10 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-[#050811] via-[#0E1326] to-[#050811] space-y-10">
-                <div class="space-y-2 pb-6 border-b border-white/10">
+            <section id="future-tech" class="research-card clean-card p-6 sm:p-10 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-[#050811] via-[#0E1326] to-[#050811] space-y-10">
+                <div class="space-y-2 pb-6 border-b border-borderLight">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold uppercase tracking-wider">
                         <i class="fas fa-rocket"></i> Teklora Vision 2026–2035
                     </div>
-                    <h2 class="text-2xl sm:text-4xl font-bold text-white font-heading">
+                    <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
                         Our Take on the Future of Technology
                     </h2>
                     <p class="text-xs sm:text-sm text-indigo-200/80 max-w-3xl">
@@ -483,32 +492,32 @@
                 <!-- 3 Pillars of the Future Grid -->
                 <div class="grid md:grid-cols-3 gap-6">
                     
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3">
                         <div class="w-12 h-12 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-xl border border-[#00FF94]/20">
                             <i class="fas fa-[#00FF94] fa-brain"></i>
                         </div>
-                        <h3 class="text-lg font-bold text-white font-heading">1. Sovereign & Localized AI</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-lg font-bold text-primaryText font-heading">1. Sovereign & Localized AI</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             Generic centralized AI will be replaced by air-gapped, domain-specific AI models running locally in Africa and regional hubs to preserve data privacy and cultural nuance.
                         </p>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3">
                         <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl border border-purple-500/20">
                             <i class="fas fa-shield-halved"></i>
                         </div>
-                        <h3 class="text-lg font-bold text-white font-heading">2. Post-Quantum Zero Trust</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-lg font-bold text-primaryText font-heading">2. Post-Quantum Zero Trust</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             As quantum decryption matures, standard RSA/ECC encryption will fail. All enterprise databases will migrate to lattice-based post-quantum cryptography.
                         </p>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-[#0A0F1D] border border-white/10 space-y-3">
+                    <div class="p-6 rounded-2xl bg-surface border border-borderLight space-y-3">
                         <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-xl border border-sky-500/20">
                             <i class="fas fa-desktop"></i>
                         </div>
-                        <h3 class="text-lg font-bold text-white font-heading">3. The Spatial Web OS</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
+                        <h3 class="text-lg font-bold text-primaryText font-heading">3. The Spatial Web OS</h3>
+                        <p class="text-xs text-secondaryText leading-relaxed">
                             2D flat web pages will evolve into persistent 3D spatial operating environments accessible inside any browser, merging video, collaboration, and documents into spatial rooms.
                         </p>
                     </div>
@@ -517,28 +526,28 @@
 
                 <!-- Future Tech Photo Gallery -->
                 <div class="grid sm:grid-cols-2 gap-6 pt-2">
-                    <div class="img-zoom-container border border-white/10 h-60 relative shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-60 relative shadow-xl">
                         <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&auto=format&fit=crop&q=80" alt="Future Global Data Mesh" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                             <span class="text-[10px] font-bold text-[#00FF94] uppercase tracking-wider">FUTURE DATA MESH</span>
-                            <h4 class="text-sm font-bold text-white font-heading">Autonomous Sovereign Networks</h4>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">Autonomous Sovereign Networks</h4>
                         </div>
                     </div>
 
-                    <div class="img-zoom-container border border-white/10 h-60 relative shadow-xl">
+                    <div class="img-zoom-container border border-borderLight h-60 relative shadow-xl">
                         <img src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=900&auto=format&fit=crop&q=80" alt="Scientific Research Innovation" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-5 flex flex-col justify-end">
                             <span class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">TEKLORA R&D COMMITMENT</span>
-                            <h4 class="text-sm font-bold text-white font-heading">Continuous Technological Research</h4>
+                            <h4 class="text-sm font-bold text-primaryText font-heading">Continuous Technological Research</h4>
                         </div>
                     </div>
                 </div>
 
                 <!-- CTA Callout -->
-                <div class="p-6 sm:p-8 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="p-6 sm:p-8 rounded-2xl bg-gray-50 border border-borderLight flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div class="space-y-1 text-left">
-                        <h4 class="text-lg font-bold text-white font-heading">Want to Collaborate on High-Tech R&D?</h4>
-                        <p class="text-xs text-[#94A3B8]">Inquire about custom AI development, Python architecture, or quantum research projects.</p>
+                        <h4 class="text-lg font-bold text-primaryText font-heading">Want to Collaborate on High-Tech R&D?</h4>
+                        <p class="text-xs text-secondaryText">Inquire about custom AI development, Python architecture, or quantum research projects.</p>
                     </div>
 
                     <a href="{% url 'contacts' %}" class="btn-premium btn-premium-primary py-3 px-6 text-xs font-bold shrink-0">
@@ -554,7 +563,7 @@
     {% include 'brand/footer.html' %}
 
     <script>
-        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.color = '#52525B';
         Chart.defaults.font.family = 'Inter';
 
         // Solution Methodology Chart

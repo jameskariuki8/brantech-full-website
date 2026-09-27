@@ -1,6 +1,6 @@
 {% load static %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=1.0.2">
+<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7">
 
 <header class="premium-nav-container" id="premiumHeaderContainer">
   <nav class="premium-nav">
@@ -16,8 +16,8 @@
       
       <!-- Products Mega Menu -->
       <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'products' or request.resolver_match.url_name == 'projects' %}active{% endif %}" style="position: relative;">
-        Products <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
-        <div class="mega-menu-dropdown" style="min-width: 580px;">
+        <a href="{% url 'products' %}" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Products <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.6;"></i></a>
+        <div class="mega-menu-dropdown">
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Completed Platforms</div>
             <a href="{% url 'products' %}#edushare" class="mega-menu-item">
@@ -71,7 +71,7 @@
 
       <!-- Solutions Mega Menu -->
       <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'solutions' %}active{% endif %}" style="position: relative;">
-        Solutions <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
+        <a href="{% url 'solutions' %}" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Solutions <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.6;"></i></a>
         <div class="mega-menu-dropdown">
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Development Sectors</div>
@@ -119,8 +119,8 @@
 
       <!-- Research Mega Menu -->
       <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'research' %}active{% endif %}" style="position: relative;">
-        Research <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
-        <div class="mega-menu-dropdown" style="width: 580px; grid-template-columns: repeat(3, 1fr);">
+        <a href="{% url 'research' %}" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Research <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.6;"></i></a>
+        <div class="mega-menu-dropdown">
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">AI & Emerging Tech</div>
             <a href="{% url 'research' %}#ai" class="mega-menu-item" style="padding: 0.35rem 0.25rem;">
@@ -170,7 +170,7 @@
 
       <!-- Company Mega Menu -->
       <div class="nav-link-item mega-menu-trigger {% if request.resolver_match.url_name == 'about' %}active{% endif %}" style="position: relative;">
-        Company <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.6;"></i>
+        <a href="{% url 'about' %}" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Company <i class="fas fa-chevron-down" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.6;"></i></a>
         <div class="mega-menu-dropdown">
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Organization</div>
@@ -188,6 +188,13 @@
                 <div class="mega-menu-item-desc">Intelligent utilities.</div>
               </div>
             </a>
+            <a href="{% url 'about' %}#csr" class="mega-menu-item">
+              <i class="fas fa-hand-holding-heart mega-menu-icon" style="color: #F59E0B;"></i>
+              <div>
+                <div class="mega-menu-item-title">Community & CSR</div>
+                <div class="mega-menu-item-desc">Tech for social impact.</div>
+              </div>
+            </a>
           </div>
           <div class="mega-menu-section">
             <div class="mega-menu-section-title">Partners & Growth</div>
@@ -198,11 +205,11 @@
                 <div class="mega-menu-item-desc">We are open to partner!</div>
               </div>
             </a>
-            <a href="{% url 'about' %}#careers" class="mega-menu-item">
-              <i class="fas fa-hands-helping mega-menu-icon" style="color: #38BDF8;"></i>
+            <a href="{% url 'careers' %}" class="mega-menu-item">
+              <i class="fas fa-briefcase mega-menu-icon" style="color: #38BDF8;"></i>
               <div>
-                <div class="mega-menu-item-title">Volunteer & Learn</div>
-                <div class="mega-menu-item-desc">Hands-on learning pool.</div>
+                <div class="mega-menu-item-title">Careers</div>
+                <div class="mega-menu-item-desc">Join our engineering team.</div>
               </div>
             </a>
           </div>
@@ -215,27 +222,28 @@
 
     <!-- CTA & Mobile Toggle (Toggle hidden on large screens) -->
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary hidden sm:inline-flex" style="font-size: 0.85rem; padding: 0.5rem 1rem;">Book Consultation</a>
-      <button id="premiumMenuToggle" class="menu-toggle" aria-label="Toggle menu">
+      <div class="hidden lg:block">
+        <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">Book Consultation</a>
+      </div>
+      <button id="premiumMenuToggle" class="menu-toggle" aria-label="Toggle menu" onclick="document.getElementById('premiumMobileNav').classList.toggle('open')">
         <i class="fas fa-bars"></i>
       </button>
     </div>
   </nav>
-</header>
 
-<!-- Mobile Navigation Panel -->
-<div class="mobile-nav-panel" id="premiumMobileNav">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+  <!-- Mobile Navigation Panel -->
+  <div class="mobile-nav-panel" id="premiumMobileNav">
+  <div style="display: none; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0, 0, 0, 0.08);">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
       <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" style="height: 32px; width: 32px; object-fit: contain; border-radius: 8px;">
       <span style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">Teklora</span>
     </div>
-    <button id="premiumMobileClose" style="background: rgba(255, 255, 255, 0.05); border: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 1.1rem; color: var(--text-primary);" aria-label="Close menu">
+    <button id="premiumMobileClose" style="background: rgba(0, 0, 0, 0.05); border: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 1.1rem; color: var(--text-primary);" aria-label="Close menu">
       <i class="fas fa-times"></i>
     </button>
   </div>
   
-  <div style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; flex-grow: 1; padding-right: 0.25rem;">
+  <div style="display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
     
     <!-- Home -->
     <a href="{% url 'index' %}" class="mobile-nav-item" style="text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0;">Home</a>
@@ -246,16 +254,16 @@
         <span>Products</span>
         <i class="fas fa-chevron-down" id="mob-products-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
       </button>
-      <div id="mob-products" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(0, 255, 148, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
-        <div style="font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase; margin-top: 0.5rem;">Completed Platforms</div>
-        <a href="{% url 'products' %}#edushare" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-graduation-cap text-[#00FF94] mr-2"></i> EduShare Africa</a>
-        <a href="{% url 'products' %}#dommaterdei" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-school text-[#007AFF] mr-2"></i> DOMMaterdei SMS</a>
-        <a href="{% url 'products' %}#poise" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-gem text-purple-400 mr-2"></i> Poise & Purpose</a>
+      <div id="mob-products" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(51, 52, 142, 0.15); margin-top: 0.25rem; margin-bottom: 0.5rem;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-top: 0.5rem;">Completed Platforms</div>
+        <a href="{% url 'products' %}#edushare" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-graduation-cap text-[#00FF94] mr-2"></i> EduShare Africa</a>
+        <a href="{% url 'products' %}#dommaterdei" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-school text-[#007AFF] mr-2"></i> DOMMaterdei SMS</a>
+        <a href="{% url 'products' %}#poise" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-gem text-purple-400 mr-2"></i> Poise & Purpose</a>
 
-        <div style="font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase; margin-top: 0.75rem;">Active & Future Pipeline</div>
-        <a href="{% url 'products' %}#kiamiko" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fab fa-whatsapp text-[#25D366] mr-2"></i> Kiamiko WhatsApp Commerce</a>
-        <a href="{% url 'products' %}#campus-food" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-utensils text-amber-400 mr-2"></i> Campus Fast-Food Delivery</a>
-        <a href="{% url 'products' %}#holodesk" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-vr-cardboard text-sky-400 mr-2"></i> HoloDesk Workspace OS</a>
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-top: 0.75rem;">Active & Future Pipeline</div>
+        <a href="{% url 'products' %}#kiamiko" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fab fa-whatsapp text-[#25D366] mr-2"></i> Kiamiko WhatsApp Commerce</a>
+        <a href="{% url 'products' %}#campus-food" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-utensils text-amber-400 mr-2"></i> Campus Fast-Food Delivery</a>
+        <a href="{% url 'products' %}#holodesk" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-vr-cardboard text-sky-400 mr-2"></i> HoloDesk Workspace OS</a>
       </div>
     </div>
 
@@ -266,11 +274,11 @@
         <i class="fas fa-chevron-down" id="mob-solutions-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
       </button>
       <div id="mob-solutions" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(0, 122, 255, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
-        <a href="{% url 'solutions' %}#education" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-book-open text-[#00FF94] mr-2"></i> Education Sector</a>
-        <a href="{% url 'solutions' %}#healthcare" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-heart-pulse text-red-400 mr-2"></i> Healthcare Sector</a>
-        <a href="{% url 'solutions' %}#agriculture" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-seedling text-emerald-400 mr-2"></i> Agriculture & IoT</a>
-        <a href="{% url 'solutions' %}#business" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-briefcase text-purple-400 mr-2"></i> Business & Corporate</a>
-        <a href="{% url 'solutions' %}#government" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-building text-amber-400 mr-2"></i> Government Tech</a>
+        <a href="{% url 'solutions' %}#education" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-book-open text-[#00FF94] mr-2"></i> Education Sector</a>
+        <a href="{% url 'solutions' %}#healthcare" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-heart-pulse text-red-400 mr-2"></i> Healthcare Sector</a>
+        <a href="{% url 'solutions' %}#agriculture" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-seedling text-emerald-400 mr-2"></i> Agriculture & IoT</a>
+        <a href="{% url 'solutions' %}#business" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-briefcase text-purple-400 mr-2"></i> Business & Corporate</a>
+        <a href="{% url 'solutions' %}#government" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-building text-amber-400 mr-2"></i> Government Tech</a>
       </div>
     </div>
 
@@ -281,13 +289,13 @@
         <i class="fas fa-chevron-down" id="mob-research-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
       </button>
       <div id="mob-research" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(168, 85, 247, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
-        <a href="{% url 'research' %}#ai" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-robot text-[#00FF94] mr-2"></i> Artificial Intelligence</a>
-        <a href="{% url 'research' %}#digital-twins" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-network-wired text-[#007AFF] mr-2"></i> Digital Twins</a>
-        <a href="{% url 'research' %}#spatial" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-vr-cardboard text-purple-400 mr-2"></i> Spatial Computing</a>
-        <a href="{% url 'research' %}#tech-stack" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fab fa-python text-amber-400 mr-2"></i> Python & React Stack</a>
-        <a href="{% url 'research' %}#quantum" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-atom text-sky-400 mr-2"></i> Quantum Computing</a>
-        <a href="{% url 'blog' %}" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-newspaper text-emerald-400 mr-2"></i> Engineering Blog</a>
-        <a href="{% url 'research' %}#future-tech" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-rocket text-indigo-400 mr-2"></i> Future of Tech</a>
+        <a href="{% url 'research' %}#ai" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-robot text-[#00FF94] mr-2"></i> Artificial Intelligence</a>
+        <a href="{% url 'research' %}#digital-twins" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-network-wired text-[#007AFF] mr-2"></i> Digital Twins</a>
+        <a href="{% url 'research' %}#spatial" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-vr-cardboard text-purple-400 mr-2"></i> Spatial Computing</a>
+        <a href="{% url 'research' %}#tech-stack" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fab fa-python text-amber-400 mr-2"></i> Python & React Stack</a>
+        <a href="{% url 'research' %}#quantum" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-atom text-sky-400 mr-2"></i> Quantum Computing</a>
+        <a href="{% url 'blog' %}" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-newspaper text-emerald-400 mr-2"></i> Engineering Blog</a>
+        <a href="{% url 'research' %}#future-tech" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-rocket text-indigo-400 mr-2"></i> Future of Tech</a>
       </div>
     </div>
 
@@ -297,11 +305,12 @@
         <span>Company</span>
         <i class="fas fa-chevron-down" id="mob-company-icon" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
       </button>
-      <div id="mob-company" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(0, 255, 148, 0.3); margin-top: 0.25rem; margin-bottom: 0.5rem;">
-        <a href="{% url 'about' %}#story" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-compass text-[#00FF94] mr-2"></i> About Teklora</a>
-        <a href="{% url 'about' %}#mission" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-bullseye text-[#007AFF] mr-2"></i> Mission & Values</a>
-        <a href="{% url 'about' %}#partnerships" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-handshake text-[#00FF94] mr-2"></i> Partnerships</a>
-        <a href="{% url 'about' %}#careers" style="display: block; padding: 0.4rem 0; text-decoration: none; color: #94A3B8; font-size: 0.9rem;"><i class="fas fa-hands-helping text-sky-400 mr-2"></i> Volunteer & Learn</a>
+      <div id="mob-company" class="mobile-submenu" style="display: none; padding-left: 1rem; border-left: 2px solid rgba(51, 52, 142, 0.15); margin-top: 0.25rem; margin-bottom: 0.5rem;">
+        <a href="{% url 'about' %}#story" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-compass text-[#00FF94] mr-2"></i> About Teklora</a>
+        <a href="{% url 'about' %}#mission" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-bullseye text-[#007AFF] mr-2"></i> Mission & Values</a>
+        <a href="{% url 'about' %}#csr" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-hand-holding-heart text-amber-500 mr-2"></i> Community & CSR</a>
+        <a href="{% url 'about' %}#partnerships" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-handshake text-[#00FF94] mr-2"></i> Partnerships</a>
+        <a href="{% url 'careers' %}" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;"><i class="fas fa-briefcase text-sky-400 mr-2"></i> Careers</a>
       </div>
     </div>
 
@@ -315,6 +324,7 @@
     <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="width: 100%; text-decoration: none; text-align: center; justify-content: center;">Book Strategy Consultation</a>
   </div>
 </div>
+</header>
 
 <script>
   (function initPremiumHeader() {
@@ -332,21 +342,22 @@
       }
     });
 
-    // Mobile panel toggling
-    toggle?.addEventListener('click', () => {
-      panel.classList.add('open');
-    });
+    // Mobile panel toggling is handled via inline onclick to prevent conflicts
 
-    close?.addEventListener('click', () => {
-      panel.classList.remove('open');
-    });
-
-    // Close panel on link click (only for leaf links, not accordion triggers)
-    panel?.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
+    if (close) {
+      close.addEventListener('click', () => {
         panel.classList.remove('open');
       });
-    });
+    }
+
+    // Close panel on link click (only for leaf links, not accordion triggers)
+    if (panel) {
+      panel.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          panel.classList.remove('open');
+        });
+      });
+    }
   })();
 
   function toggleMobileSubmenu(id) {
