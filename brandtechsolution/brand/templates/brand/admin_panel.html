@@ -235,7 +235,8 @@
     {% if can.manage_projects %}{% include 'brand/admin/_projects.html' %}{% endif %}
 
     <!-- Inbox Section -->
-    {% if can.view_inbox %}{% include 'brand/admin/_inbox.html' %}{% endif %}
+    {# Every staff member has a mailbox; shared ones are gated by the API. #}
+    {% include 'brand/admin/_inbox.html' %}
 
     <!-- Templates Section -->
     {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
@@ -258,7 +259,7 @@
 <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/github.js' %}" defer></script>
-<script src="{% static 'brand/js/admin/inbox.js' %}?v=1.0.3" defer></script>
+<script src="{% static 'brand/js/admin/inbox.js' %}?v=2.0.0" defer></script>
 <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>

@@ -19,6 +19,9 @@ CAPABILITY_GROUPS = [
         "Communications",
         [
             ("view_inbox", "View inbox"),
+            # Every staff member reads their own mailbox without a capability.
+            # This one opens every mailbox, sent mail included, for oversight.
+            ("view_all_mail", "Read every staff mailbox"),
             ("handle_inquiries", "Reply to and archive inquiries"),
             ("manage_templates", "Manage email templates"),
             ("manage_campaigns", "Create and edit campaigns"),

@@ -188,3 +188,78 @@ class CampaignExclusion(models.Model):
 
     def __str__(self):
         return f"{self.email} excluded from campaign {self.campaign_id}"
+
+
+class MailThread(models.Model):
+    """One conversation in one mailbox.
+
+    A mailbox is the local part of a work address: a staff handle (owner set)
+    or a shared name like "info" (owner null). Mail to two staff lands as two
+    threads, so each keeps its own read and archived state, as real mail does.
+    """
+
+    mailbox = models.CharField(max_length=64, db_index=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="mail_threads",
+    )
+    subject = models.CharField(max_length=500, blank=True, default="")
+    # The outside party, for the thread list.
+    counterpart_name = models.CharField(max_length=200, blank=True, default="")
+    counterpart_email = models.EmailField(blank=True, default="")
+    snippet = models.CharField(max_length=200, blank=True, default="")
+    unread = models.BooleanField(default=True)
+    archived = models.BooleanField(default=False)
+    last_message_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        ordering = ["-last_message_at"]
+
+    def __str__(self):
+        return f"{self.mailbox}: {self.subject[:50]}"
+
+
+class MailMessage(models.Model):
+    DIRECTION_CHOICES = [("in", "Received"), ("out", "Sent")]
+    STATUS_CHOICES = [
+        ("received", "Received"),
+        ("sent", "Sent"),
+        ("failed", "Failed"),
+    ]
+
+    thread = models.ForeignKey(MailThread, on_delete=models.CASCADE, related_name="messages")
+    direction = models.CharField(max_length=3, choices=DIRECTION_CHOICES)
+    from_name = models.CharField(max_length=200, blank=True, default="")
+    from_email = models.EmailField()
+    to = models.JSONField(default=list, blank=True)
+    cc = models.JSONField(default=list, blank=True)
+    # The work address this copy was delivered to (Bcc included), which is
+    # how mail to an unclaimed address finds its owner once it is claimed.
+    delivered_to = models.CharField(max_length=254, blank=True, default="", db_index=True)
+    subject = models.CharField(max_length=500, blank=True, default="")
+    body_text = models.TextField(blank=True, default="")
+    body_html = models.TextField(blank=True, default="")
+    # RFC 5322 Message-ID without angle brackets; what replies thread on.
+    message_id = models.CharField(max_length=500, blank=True, default="", db_index=True)
+    in_reply_to = models.CharField(max_length=500, blank=True, default="")
+    references = models.TextField(blank=True, default="")
+    attachments = models.JSONField(default=list, blank=True)
+    sent_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sent_mail",
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    error = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.direction} {self.from_email}: {self.subject[:50]}"

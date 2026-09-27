@@ -20,26 +20,29 @@ class InboxEscapingTests(SimpleTestCase):
         with open(found, "r", encoding="utf-8") as f:
             return f.read()
 
-    def test_inbox_js_does_not_interpolate_raw_inquiry_fields(self):
-        js = self._read_static("brand/js/admin/inbox.js")
-        for raw in ["${i.name}", "${i.message}", "${i.email}"]:
-            self.assertNotIn(
-                raw, js,
-                f"Found unescaped interpolation {raw!r} in inbox.js - "
-                "this reintroduces the stored-XSS vulnerability."
-            )
-
-    def test_inbox_js_escapes_untrusted_inquiry_fields(self):
+    def test_inbox_js_escapes_untrusted_mail_fields(self):
         js = self._read_static("brand/js/admin/inbox.js")
         for escaped in [
-            "escapeHtml(i.name)",
-            "escapeHtml(i.message)",
-            "escapeHtml(i.email)",
+            "escapeHtml(who)",
+            "escapeHtml(t.subject",
+            "escapeHtml(t.snippet)",
+            "escapeHtml(m.from_email)",
+            "escapeHtml(main)",
+            "escapeHtml(quoted)",
+            "escapeHtml(a.name)",
         ]:
             self.assertIn(
                 escaped, js,
-                f"Expected {escaped!r} in inbox.js to escape untrusted inquiry data."
+                f"Expected {escaped!r} in inbox.js to escape untrusted mail data."
             )
+        for raw in ["${t.subject}", "${t.snippet}", "${m.from_email}", "${m.body_text}", "${who}"]:
+            self.assertNotIn(raw, js, f"Unescaped interpolation {raw!r} in inbox.js.")
+
+    def test_html_bodies_render_only_in_a_scriptless_sandbox(self):
+        js = self._read_static("brand/js/admin/inbox.js")
+        self.assertIn('sandbox="allow-same-origin allow-popups', js)
+        self.assertNotIn("allow-scripts", js)
+        self.assertIn("default-src \\'none\\'", js)
 
     def test_core_js_defines_escape_html_helper(self):
         js = self._read_static("brand/js/admin/core.js")

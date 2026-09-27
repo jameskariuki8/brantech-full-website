@@ -42,7 +42,7 @@ class AdminPanelRenderTests(TestCase):
 
     def test_panel_renders_bare_for_staff_without_capabilities(self):
         """A staff account with no capabilities still gets a working shell:
-        dashboard only, with every script still loaded. Each script guards
+        dashboard and their own mail, with every script still loaded. Each script guards
         itself against the elements its section would have provided."""
         bare = User.objects.create_user("bare", password="p", is_staff=True)
         self.client.force_login(bare)
@@ -50,7 +50,9 @@ class AdminPanelRenderTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
         self.assertIn('id="dashboard"', html)
-        for anchor in ['id="blogs"', 'id="projects"', 'id="inbox"',
+        # Every staff member has a mailbox, so mail is never gated.
+        self.assertIn('id="inbox"', html)
+        for anchor in ['id="blogs"', 'id="projects"',
                        'id="templates"', 'id="campaigns"', 'id="staff"']:
             self.assertNotIn(anchor, html)
         for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js',

@@ -11,6 +11,8 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from messaging.mailbox import claim_unmatched
+
 from .audit import record
 from .handles import mailbox_address, needs_handle, suggest_handles, validate_handle
 from .models import StaffInvitation
@@ -137,21 +139,24 @@ def choose_handle(request):
         return render(request, "staff/choose_handle.html", context)
 
     user = request.user
+    previous = user.username
     try:
         with transaction.atomic():
             handle = validate_handle(request.POST.get("handle"), user=user)
             # Guarded like the invitation claim: a double submit updates
             # nothing the second time, so a handle is only ever picked once.
-            changed = User.objects.filter(pk=user.pk, username=user.username).update(
+            changed = User.objects.filter(pk=user.pk, username=previous).update(
                 username=handle
             )
             if changed:
+                user.username = handle
+                claim_unmatched(user)
                 record(
                     actor=user,
                     action="handle_chosen",
                     summary=f"{user.email} chose {mailbox_address(handle)}",
                     target_user=user,
-                    detail={"handle": handle, "previous_username": user.username},
+                    detail={"handle": handle, "previous_username": previous},
                 )
     except ValidationError as exc:
         context["error"] = " ".join(exc.messages)

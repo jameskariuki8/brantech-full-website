@@ -18,6 +18,8 @@ from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
 from staff.emails import capability_holder_emails
+from staff.handles import mailbox_address
+from .mailbox import deliver_inbound, local_parts, resolve_mailbox
 from .models import InboundEmail, Inquiry, Suppression
 from .tokens import read_unsubscribe_token
 
@@ -105,6 +107,19 @@ def contact_submit(request):
 
     inquiry = Inquiry.objects.create(
         name=name, email=email, phone=phone, message=message
+    )
+    # Also into the shared info@ mailbox, so it can be answered from there
+    # like any email.
+    deliver_inbound(
+        mailbox="info",
+        owner=None,
+        delivered_to=mailbox_address("info"),
+        from_name=name,
+        from_email=email,
+        to=[],
+        cc=[],
+        subject="Website contact form",
+        body_text=f"{message}\n\nPhone / WhatsApp: {phone}" if phone else message,
     )
 
     # Whoever currently holds handle_inquiries, rather than a list of addresses
@@ -301,13 +316,50 @@ def _verify_mailgun_signature(request, payload=None):
     return True
 
 
+def _payload_header(payload, name):
+    """A header from a Mailgun forward. Mailgun posts the common ones as
+    fields of their own, in varying case, and every header in the JSON
+    "message-headers" list."""
+    wanted = name.lower()
+    for key, value in payload.items():
+        if key.lower() == wanted and isinstance(value, str):
+            return value
+    raw = payload.get("message-headers")
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError:
+            raw = []
+    for pair in raw if isinstance(raw, list) else []:
+        if isinstance(pair, (list, tuple)) and len(pair) == 2 and str(pair[0]).lower() == wanted:
+            return str(pair[1])
+    return ""
+
+
+def _addresses(raw):
+    return [
+        email.utils.formataddr((name, addr)) if name else addr
+        for name, addr in email.utils.getaddresses([raw or ""])
+        if addr
+    ]
+
+
+def _attachment_info(request):
+    return [
+        {"name": f.name, "size": f.size, "content_type": getattr(f, "content_type", "")}
+        for f in request.FILES.values()
+    ]
+
+
 @csrf_exempt
 @require_POST
 def mailgun_inbound_webhook(request):
-    """
-    Webhook endpoint to receive inbound emails routed from Mailgun.
-    Creates both an InboundEmail record and an Inquiry record for administrative visibility,
-    and alerts team members holding the 'handle_inquiries' capability.
+    """Receive mail Mailgun forwards for any address on MAILBOX_DOMAIN.
+
+    Each address it was sent to is filed in that mailbox: a staff member's
+    own, a shared one, or "other". The raw InboundEmail is kept as the record
+    of what arrived. Only mail to shared mailboxes becomes an Inquiry and
+    notifies handle_inquiries holders; personal mail stays personal.
     """
     payload = _parse_mailgun_payload(request)
 
@@ -315,71 +367,95 @@ def mailgun_inbound_webhook(request):
         logger.warning("Invalid signature on Mailgun inbound webhook request.")
         return JsonResponse({"ok": False, "error": "Invalid signature"}, status=406)
 
-    raw_sender = str(payload.get("sender") or payload.get("from") or payload.get("From") or "")
+    raw_from = str(payload.get("from") or payload.get("From") or payload.get("sender") or "")
     raw_recipient = str(payload.get("recipient") or payload.get("to") or payload.get("To") or "")
-    sender_name, sender_email = email.utils.parseaddr(raw_sender)
+    sender_name, sender_email = email.utils.parseaddr(raw_from)
     if not sender_email:
-        sender_email = raw_sender
+        sender_name, sender_email = email.utils.parseaddr(str(payload.get("sender") or ""))
+    sender_email = sender_email or raw_from
 
-    subject = str(payload.get("subject") or "").strip()
-    body_plain = str(
-        payload.get("stripped-text")
-        or payload.get("body-plain")
-        or payload.get("text")
-        or ""
-    ).strip()
+    subject = str(payload.get("subject") or payload.get("Subject") or "").strip()
+    body_plain = str(payload.get("body-plain") or payload.get("text") or "").strip()
+    stripped_text = str(payload.get("stripped-text") or "").strip()
+    body_plain = body_plain or stripped_text
     body_html = str(
-        payload.get("stripped-html")
-        or payload.get("body-html")
-        or payload.get("html")
-        or ""
+        payload.get("body-html") or payload.get("html") or payload.get("stripped-html") or ""
     ).strip()
 
-    # Save raw inbound email record
     inbound_email = InboundEmail.objects.create(
         sender=sender_email,
-        recipient=raw_recipient,
-        subject=subject,
+        recipient=raw_recipient[:254],
+        subject=subject[:500],
         body_plain=body_plain,
         body_html=body_html,
-        message_headers={"raw_sender": raw_sender, "raw_recipient": raw_recipient},
+        message_headers={"raw_sender": raw_from, "raw_recipient": raw_recipient},
+        attachments_info=_attachment_info(request),
     )
 
-    # Automatically create Inquiry for admin dashboard visibility
-    display_name = sender_name or sender_email
-    inquiry_message = f"[Inbound Mailgun Email to {raw_recipient}]\nSubject: {subject}\n\n{body_plain}"
+    header_to = _payload_header(payload, "To")
+    to_list = _addresses(header_to) or _addresses(raw_recipient)
+    cc_list = _addresses(_payload_header(payload, "Cc"))
+    message_id = _payload_header(payload, "Message-Id")
 
-    inquiry = Inquiry.objects.create(
-        name=display_name,
-        email=sender_email,
-        phone="",
-        message=inquiry_message,
-    )
+    # The envelope recipient is who Mailgun is delivering to, Bcc included;
+    # the To header is the fallback for a payload that lacks it.
+    locals_ = local_parts(raw_recipient) or local_parts(header_to)
+    shared_hit = False
+    delivered = 0
+    for local in locals_:
+        mailbox, owner = resolve_mailbox(local)
+        message = deliver_inbound(
+            mailbox=mailbox,
+            owner=owner,
+            delivered_to=mailbox_address(local),
+            from_name=sender_name,
+            from_email=sender_email,
+            to=to_list,
+            cc=cc_list,
+            subject=subject,
+            body_text=body_plain,
+            body_html=body_html,
+            message_id=message_id,
+            in_reply_to=_payload_header(payload, "In-Reply-To"),
+            references=_payload_header(payload, "References"),
+            attachments=inbound_email.attachments_info,
+            snippet_text=stripped_text,
+        )
+        if message is not None:
+            delivered += 1
+            shared_hit = shared_hit or owner is None
 
-    # Broadcast notification to team members holding 'handle_inquiries' capability
-    recipients = capability_holder_emails("handle_inquiries")
-    if recipients:
-        try:
-            send_mail(
-                subject=f"[Inbound Email] {subject or 'New Customer Message'} from {display_name}",
-                message=(
-                    f"New Inbound Email Received via Mailgun:\n\n"
-                    f"From: {display_name} <{sender_email}>\n"
-                    f"To: {raw_recipient}\n"
-                    f"Subject: {subject}\n\n"
-                    f"Message Body:\n{body_plain}\n"
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=recipients,
-                fail_silently=True,
-            )
-        except Exception:
-            logger.exception("Failed to notify team of inbound Mailgun email from %s", sender_email)
+    inquiry = None
+    if shared_hit:
+        display_name = sender_name or sender_email
+        inquiry = Inquiry.objects.create(
+            name=display_name,
+            email=sender_email,
+            phone="",
+            message=f"[Email to {raw_recipient}]\nSubject: {subject}\n\n{stripped_text or body_plain}",
+        )
+        recipients = capability_holder_emails("handle_inquiries")
+        if recipients:
+            try:
+                send_mail(
+                    subject=f"[Inbound Email] {subject or 'New Customer Message'} from {display_name}",
+                    message=(
+                        f"New email in a shared mailbox:\n\n"
+                        f"From: {display_name} <{sender_email}>\n"
+                        f"To: {raw_recipient}\n"
+                        f"Subject: {subject}\n\n"
+                        f"{stripped_text or body_plain}\n"
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=recipients,
+                    fail_silently=True,
+                )
+            except Exception:
+                logger.exception("Failed to notify team of inbound email from %s", sender_email)
 
     return JsonResponse({
         "ok": True,
         "inbound_id": inbound_email.pk,
-        "inquiry_id": inquiry.pk,
+        "inquiry_id": inquiry.pk if inquiry else None,
+        "delivered": delivered,
     })
-
-

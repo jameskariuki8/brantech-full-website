@@ -18,6 +18,8 @@ class TaskSectionVisibilityTest(TestCase):
 
         self.assertContains(response, 'id="taskList"')
         self.assertContains(response, 'id="nav-tasks"')
+        # So is mail: everyone has their own mailbox.
+        self.assertContains(response, 'id="nav-inbox"')
 
     def test_manage_tasks_is_not_leaked_to_someone_without_it(self):
         user = User.objects.create_user("nobody", password="pw", is_staff=True)
@@ -74,7 +76,6 @@ class NavGatingTest(TestCase):
         response = self.client.get("/admin-panel/")
 
         self.assertNotContains(response, 'id="nav-blogs"')
-        self.assertNotContains(response, 'id="nav-inbox"')
         self.assertNotContains(response, 'id="nav-campaigns"')
         self.assertNotContains(response, 'id="nav-staff"')
 
