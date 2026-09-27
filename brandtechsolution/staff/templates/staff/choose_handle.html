@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose your work address</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#06090F] text-white min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#0D121D] border border-white/10 rounded-xl p-8">
+        <h1 class="text-2xl font-bold mb-2">Choose your work address</h1>
+        <p class="text-gray-400 text-sm mb-6">
+            This is your username and your email address for clients, so keep it
+            professional. You pick it once; only an administrator can change it later.
+        </p>
+
+        {% if error %}
+        <p class="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">
+            {{ error }}
+        </p>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <div>
+                <label for="handle" class="block text-sm font-medium text-gray-400 mb-2">Address</label>
+                <div class="flex items-stretch bg-[#06090F] border border-white/10 rounded-lg focus-within:border-blue-500">
+                    <input id="handle" type="text" name="handle" required minlength="3" maxlength="30"
+                        value="{{ value }}" autocomplete="off" autocapitalize="none" spellcheck="false"
+                        pattern="[a-z0-9]([a-z0-9.\-]*[a-z0-9])?"
+                        class="flex-1 min-w-0 bg-transparent px-4 py-3 text-white focus:outline-none">
+                    <span class="flex items-center pr-4 text-gray-500 text-sm">@{{ mailbox_domain }}</span>
+                </div>
+                <p class="mt-2 text-xs text-gray-500">Lowercase letters, digits, dots and hyphens.</p>
+            </div>
+
+            {% if suggestions %}
+            <div>
+                <p class="text-xs text-gray-500 mb-2">Suggestions</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for s in suggestions %}
+                    <button type="button" data-suggestion="{{ s }}"
+                        class="text-sm px-3 py-1.5 rounded-full border border-white/10 text-gray-300 hover:border-blue-500 hover:text-white">
+                        {{ s }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <p class="text-xs text-gray-500 bg-white/5 rounded-lg px-4 py-3">
+                Mail sent to and from this address is company mail. Administrators
+                can read it, including what you send.
+            </p>
+
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-500 font-semibold px-5 py-3 rounded-lg">
+                Claim this address
+            </button>
+        </form>
+    </div>
+    <script>
+        document.querySelectorAll('[data-suggestion]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById('handle');
+                input.value = btn.dataset.suggestion;
+                input.focus();
+            });
+        });
+        document.getElementById('handle').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toLowerCase().replace(/\s+/g, '');
+        });
+    </script>
+</body>
+</html>

@@ -39,6 +39,7 @@
 
     function fill(me) {
         document.getElementById('profileEmail').textContent = me.email || me.username;
+        document.getElementById('profileMailbox').textContent = me.mailbox || 'Not chosen yet';
         profileForm.first_name.value = me.first_name || '';
         profileForm.last_name.value = me.last_name || '';
         profileForm.phone.value = me.phone || '';

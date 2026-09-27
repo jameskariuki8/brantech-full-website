@@ -262,7 +262,7 @@
                 <div id="userDropdownMenu" class="hidden absolute right-0 top-12 w-56 bg-dark-card border border-dark-border rounded-xl shadow-2xl py-2 z-50 animate-fade-in">
                     <div class="px-4 py-2.5 border-b border-dark-border">
                         <p class="text-xs text-gray-500">Signed in as</p>
-                        <p class="text-sm font-bold text-white truncate">{{ request.user.username }}</p>
+                        <p class="text-sm font-bold text-white truncate">{{ request.user.username }}{% if "@" not in request.user.username %}@{{ mailbox_domain }}{% endif %}</p>
                         {% if request.user.email %}
                         <p class="text-xs text-gray-400 truncate">{{ request.user.email }}</p>
                         {% endif %}
@@ -298,11 +298,17 @@
             </div>
 
             <form id="profileForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Email</label>
-                    <p id="profileEmail" class="text-sm text-gray-300"></p>
-                    <p class="text-xs text-gray-500 mt-1">You sign in with this. Ask whoever manages staff to change it.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Work address</label>
+                        <p id="profileMailbox" class="text-sm text-gray-300 break-all"></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Personal email</label>
+                        <p id="profileEmail" class="text-sm text-gray-300 break-all"></p>
+                    </div>
                 </div>
+                <p class="text-xs text-gray-500 -mt-2">You can sign in with either. Ask whoever manages staff to change them.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="profileFirstName" class="block text-sm font-medium text-gray-400 mb-2">First name</label>

@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from .capabilities import CODENAMES
 from .models import AuditEntry, StaffInvitation
+from .handles import mailbox_address, needs_handle
 from .phone import normalize_phone
 
 
@@ -153,17 +154,21 @@ class InvitationSerializer(serializers.ModelSerializer):
 
 class MeSerializer(serializers.ModelSerializer):
     """The signed-in user's own profile. Email and username are read-only:
-    invited accounts use the email as the username, and both are how they
-    sign in, so changing either belongs to whoever manages staff."""
+    the username is the handle picked once at /staff/address/, and both are
+    how they sign in, so changing either belongs to whoever manages staff."""
 
     phone = serializers.CharField(
         source="staff_profile.phone", required=False, allow_blank=True, max_length=32
     )
+    mailbox = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "phone"]
+        fields = ["id", "username", "email", "mailbox", "first_name", "last_name", "phone"]
         read_only_fields = ["id", "username", "email"]
+
+    def get_mailbox(self, obj):
+        return None if needs_handle(obj) else mailbox_address(obj.username)
 
     def validate_phone(self, value):
         try:

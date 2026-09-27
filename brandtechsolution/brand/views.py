@@ -340,11 +340,17 @@ def login_view(request):
         # Authenticate user (support both email and username)
         user = authenticate(request, username=email, password=password)
         
-        # If authentication fails, try finding user by email or username in a single query
+        # If authentication fails, try the personal email, the handle in any
+        # case, or the work address <handle>@MAILBOX_DOMAIN.
         if user is None:
             try:
+                identifier = email.strip()
+                handle = identifier
+                domain_suffix = '@' + settings.MAILBOX_DOMAIN
+                if identifier.lower().endswith(domain_suffix.lower()):
+                    handle = identifier[:-len(domain_suffix)]
                 user_obj = User.objects.filter(
-                    models.Q(username=email) | models.Q(email=email)
+                    models.Q(username__iexact=handle) | models.Q(email__iexact=identifier)
                 ).first()
                 
                 if user_obj:

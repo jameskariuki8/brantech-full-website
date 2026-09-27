@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core import signing
@@ -5,10 +6,13 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .audit import record
+from .handles import mailbox_address, needs_handle, suggest_handles, validate_handle
 from .models import StaffInvitation
 from .tokens import read_invitation_token
 
@@ -108,3 +112,52 @@ def accept_invitation(request, token):
         )
 
     return redirect("login")
+
+
+@login_required
+def choose_handle(request):
+    """Pick a work address once. It becomes the username and the mailbox."""
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = ""
+    next_url = next_url or "/admin-panel/"
+
+    if not needs_handle(request.user):
+        return redirect(next_url)
+
+    context = {
+        "next": next_url,
+        "mailbox_domain": settings.MAILBOX_DOMAIN,
+        "suggestions": suggest_handles(request.user),
+        "value": request.POST.get("handle", ""),
+    }
+    if request.method != "POST":
+        return render(request, "staff/choose_handle.html", context)
+
+    user = request.user
+    try:
+        with transaction.atomic():
+            handle = validate_handle(request.POST.get("handle"), user=user)
+            # Guarded like the invitation claim: a double submit updates
+            # nothing the second time, so a handle is only ever picked once.
+            changed = User.objects.filter(pk=user.pk, username=user.username).update(
+                username=handle
+            )
+            if changed:
+                record(
+                    actor=user,
+                    action="handle_chosen",
+                    summary=f"{user.email} chose {mailbox_address(handle)}",
+                    target_user=user,
+                    detail={"handle": handle, "previous_username": user.username},
+                )
+    except ValidationError as exc:
+        context["error"] = " ".join(exc.messages)
+        return render(request, "staff/choose_handle.html", context)
+    except IntegrityError:
+        context["error"] = "Someone just took that address. Pick another."
+        return render(request, "staff/choose_handle.html", context)
+
+    return redirect(next_url)

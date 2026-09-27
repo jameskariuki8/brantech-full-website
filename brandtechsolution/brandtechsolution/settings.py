@@ -96,6 +96,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'staff.middleware.HandleRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -250,6 +251,10 @@ elif MAILGUN_DOMAIN:
     DEFAULT_FROM_EMAIL = f"noreply@{MAILGUN_DOMAIN}"
 else:
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "noreply@teklora.co.ke"
+
+# Staff work addresses are <handle>@MAILBOX_DOMAIN. The root domain's MX
+# records point at Mailgun, so this is the sending domain itself.
+MAILBOX_DOMAIN = MAILGUN_DOMAIN or "teklora.co.ke"
 
 EDITORIAL_REVIEW_EMAIL = (
     config.editorial_review_email or config.email_host_user or ""

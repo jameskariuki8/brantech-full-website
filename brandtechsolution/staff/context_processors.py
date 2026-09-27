@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+from django.conf import settings
+
 from .capabilities import CODENAMES
 
 
@@ -33,4 +35,4 @@ def capabilities(request):
     Gating in templates is cosmetic - every API enforces its own capability.
     """
     held, can = held_capabilities(getattr(request, "user", None))
-    return {"capabilities": held, "can": can}
+    return {"capabilities": held, "can": can, "mailbox_domain": settings.MAILBOX_DOMAIN}

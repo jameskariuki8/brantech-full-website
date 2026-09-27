@@ -41,6 +41,7 @@ class AuditEntry(models.Model):
         ("group_created", "Role created"),
         ("group_updated", "Role updated"),
         ("group_deleted", "Role deleted"),
+        ("handle_chosen", "Work address chosen"),
     ]
 
     actor = models.ForeignKey(
