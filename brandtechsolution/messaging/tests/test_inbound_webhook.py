@@ -131,3 +131,19 @@ class MailgunInboundWebhookTestCase(TestCase):
         with self.settings(MAILGUN_WEBHOOK_SIGNING_KEY=key, TESTING=False):
             res = self.client.post(self.webhook_url, payload)
             self.assertEqual(res.status_code, 406)
+
+    def test_slashless_url_is_handled_not_redirected(self):
+        # Mailgun drops a POST that gets a 301, so the route must not rely
+        # on APPEND_SLASH when it is configured without the trailing slash.
+        payload = {
+            "sender": "Bob <bob@example.com>",
+            "recipient": "contact@teklora.co.ke",
+            "subject": "No slash",
+            "stripped-text": "Hello",
+            "timestamp": "1722898000",
+            "token": "slashless-token",
+            "signature": "test-sig",
+        }
+        response = self.client.post(self.webhook_url.rstrip("/"), payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(InboundEmail.objects.filter(subject="No slash").exists())
