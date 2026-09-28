@@ -17,10 +17,16 @@ the right, rendered by contacts.js.
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-[15rem_1fr] gap-6 items-start">
-        <nav id="contactViews" class="bg-dark-card border border-dark-border rounded-xl p-2 text-sm lg:sticky lg:top-20" aria-label="Contact views"></nav>
+        {# Below lg the views collapse to one select, so the people come first. #}
+        <div class="lg:hidden flex gap-2">
+            <label for="contactViewSelect" class="sr-only">Show</label>
+            <select id="contactViewSelect" class="flex-1 min-w-0 bg-dark-card border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue"></select>
+            <button type="button" data-contact-act="new-segment" class="shrink-0 px-3 py-2.5 rounded-lg border border-dark-border text-sm text-gray-300 hover:text-white hover:bg-white/5">New segment</button>
+        </div>
+        <nav id="contactViews" class="hidden lg:block bg-dark-card border border-dark-border rounded-xl p-2 text-sm lg:sticky lg:top-20" aria-label="Contact views"></nav>
 
         <section class="bg-dark-card border border-dark-border rounded-xl min-w-0">
-            <header class="px-5 py-4 border-b border-dark-border flex flex-wrap items-center gap-3">
+            <header class="px-4 sm:px-5 py-4 border-b border-dark-border flex flex-wrap items-center gap-3">
                 <div class="min-w-0 flex-1">
                     <h3 id="contactViewTitle" class="text-lg font-semibold text-white truncate">All contacts</h3>
                     <p id="contactViewNote" class="text-xs text-gray-500 mt-0.5"></p>
@@ -30,7 +36,8 @@ the right, rendered by contacts.js.
                     class="w-full sm:w-72 bg-[#06090F] border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue">
             </header>
 
-            <div id="contactBulkBar" class="hidden px-5 py-2.5 border-b border-dark-border bg-brand-blue/5 flex flex-wrap items-center gap-2 text-sm"></div>
+            {# Sticky under the top bar so the actions stay in reach while ticking down a long list. #}
+            <div id="contactBulkBar" class="hidden sticky top-16 z-10 px-4 sm:px-5 py-2.5 border-b border-dark-border bg-[#0f1a2b] flex flex-wrap items-center gap-2 text-sm"></div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -40,7 +47,7 @@ the right, rendered by contacts.js.
                             <th class="px-3 py-2.5 font-medium">Name</th>
                             <th class="px-3 py-2.5 font-medium hidden md:table-cell">Segments</th>
                             <th class="px-3 py-2.5 font-medium hidden xl:table-cell">Came from</th>
-                            <th class="px-3 py-2.5 font-medium">Status</th>
+                            <th class="px-3 py-2.5 font-medium hidden sm:table-cell">Status</th>
                         </tr>
                     </thead>
                     <tbody id="contactsBody" class="divide-y divide-white/5"></tbody>

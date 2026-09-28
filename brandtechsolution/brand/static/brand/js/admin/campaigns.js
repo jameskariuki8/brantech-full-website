@@ -169,11 +169,11 @@ function selectCampaign(id) {
 
 function _card(title, body, step) {
     return `<section class="border border-dark-border rounded-xl">
-        <header class="px-5 py-3 border-b border-dark-border flex items-center gap-3">
+        <header class="px-4 sm:px-5 py-3 border-b border-dark-border flex items-center gap-3">
             ${step ? `<span class="w-6 h-6 rounded-full bg-white/5 text-xs text-gray-300 flex items-center justify-center font-semibold">${step}</span>` : ''}
             <h4 class="text-sm font-semibold text-white">${title}</h4>
         </header>
-        <div class="p-5">${body}</div>
+        <div class="p-4 sm:p-5">${body}</div>
     </section>`;
 }
 
@@ -253,7 +253,7 @@ function _draftBody(c) {
     const audience = `
         <div class="flex items-baseline justify-between gap-3 mb-4">
             <p class="text-sm text-gray-300"><span class="text-2xl font-bold text-white mr-1">${c.total.toLocaleString()}</span>recipient${c.total === 1 ? '' : 's'} so far</p>
-            <button type="button" data-cd="recipients" class="px-3 py-1.5 text-xs rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5">Review list</button>
+            <button type="button" data-cd="recipients" class="shrink-0 whitespace-nowrap px-3 py-1.5 text-xs rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5">Review list</button>
         </div>
         ${c.audience && c.audience.length ? `<p class="text-xs text-gray-500 -mt-2 mb-4">Built from ${c.audience.map(a => `<span class="text-gray-300">${escapeHtml(a)}</span>`).join(', ')}</p>` : ''}
         <p class="text-xs font-medium text-gray-400 mb-2">Segments</p>
@@ -377,7 +377,7 @@ function renderCampaignDetail() {
     }
     const key = _statusKey(c);
     pane.innerHTML = `
-        <div class="p-5 lg:p-6 space-y-5 max-w-4xl">
+        <div class="p-3 sm:p-5 lg:p-6 space-y-5 max-w-4xl">
             <div class="flex items-start gap-3">
                 <button type="button" data-cd="back" class="lg:hidden text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5" aria-label="Back to campaigns"><i class="fas fa-arrow-left"></i></button>
                 <div class="min-w-0 flex-1">

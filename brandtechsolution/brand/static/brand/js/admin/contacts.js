@@ -145,6 +145,15 @@ function renderContactViews() {
         ${segments}
         ${_heading('Came from')}
         ${s.origins.map(o => _viewButton(`src:${o.key}`, o.label, o.count)).join('')}`;
+
+    const opt = (view, label, count) =>
+        `<option value="${escapeHtml(view)}" ${CONTACTS.view === view ? 'selected' : ''}>${escapeHtml(label)} (${(count || 0).toLocaleString()})</option>`;
+    document.getElementById('contactViewSelect').innerHTML = `
+        ${opt('all', 'All contacts', s.total)}
+        ${opt('none', 'Not in a segment', s.unsegmented)}
+        ${opt('unsub', 'Not emailed', s.unsubscribed)}
+        ${s.segments.length ? `<optgroup label="Segments">${s.segments.map(seg => opt(`seg:${seg.id}`, seg.name, seg.count)).join('')}</optgroup>` : ''}
+        <optgroup label="Came from">${s.origins.map(o => opt(`src:${o.key}`, o.label, o.count)).join('')}</optgroup>`;
 }
 
 function renderContactHeader() {
@@ -201,13 +210,14 @@ function renderContactRows() {
             const checked = CONTACTS.allMatching || CONTACTS.selected.has(c.id);
             return `<tr data-contact-id="${c.id}" class="cursor-pointer hover:bg-white/[0.03] ${checked ? 'bg-brand-blue/5' : ''}">
                 <td class="pl-5 pr-2 py-3"><input type="checkbox" class="contact-check accent-[#007AFF]" value="${c.id}" ${checked ? 'checked' : ''} aria-label="Select ${escapeHtml(c.email)}"></td>
-                <td class="px-3 py-3 min-w-0">
-                    <div class="text-white font-medium truncate max-w-[18rem]">${escapeHtml(c.name || c.email)}</div>
-                    <div class="text-xs text-gray-500 truncate max-w-[18rem]">${c.name ? escapeHtml(c.email) : ''}${c.company ? `${c.name ? ' &middot; ' : ''}${escapeHtml(c.company)}` : ''}</div>
+                <td class="px-3 py-3 max-w-0 w-full sm:w-auto sm:max-w-none">
+                    <button type="button" data-open-contact class="block max-w-full text-left text-white font-medium truncate sm:max-w-[18rem] rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue">${escapeHtml(c.name || c.email)}</button>
+                    <div class="text-xs text-gray-500 truncate sm:max-w-[18rem]">${c.name ? escapeHtml(c.email) : ''}${c.company ? `${c.name ? ', ' : ''}${escapeHtml(c.company)}` : ''}</div>
+                    ${c.status === 'subscribed' ? '' : `<div class="sm:hidden text-xs mt-0.5 ${CONTACT_STATUS_STYLE[c.status] || 'text-orange-300'}">${escapeHtml(c.status_label)}</div>`}
                 </td>
                 <td class="px-3 py-3 hidden md:table-cell">${_segmentChips(c.segments) || '<span class="text-xs text-gray-600">None</span>'}</td>
                 <td class="px-3 py-3 hidden xl:table-cell text-xs text-gray-400">${escapeHtml(c.source_label)}<div class="text-gray-600">${escapeHtml(_ago(c.created_at))}</div></td>
-                <td class="px-3 py-3 text-xs whitespace-nowrap ${CONTACT_STATUS_STYLE[c.status] || 'text-orange-300'}">${escapeHtml(c.status_label)}</td>
+                <td class="px-3 py-3 hidden sm:table-cell text-xs whitespace-nowrap ${CONTACT_STATUS_STYLE[c.status] || 'text-orange-300'}">${escapeHtml(c.status_label)}</td>
             </tr>`;
         }).join('');
         checkAll.checked = CONTACTS.allMatching || CONTACTS.items.every(c => CONTACTS.selected.has(c.id));
@@ -239,7 +249,7 @@ function renderContactBulkBar() {
         <span class="text-white font-medium">${n.toLocaleString()} selected</span>
         ${offerAll ? `<button type="button" data-contact-act="select-all-matching" class="text-brand-blue hover:underline text-xs">Select all ${CONTACTS.count.toLocaleString()}</button>` : ''}
         <button type="button" data-contact-act="clear-selection" class="text-gray-500 hover:text-white text-xs">Clear</button>
-        <span class="flex-1"></span>
+        <span class="hidden sm:block flex-1"></span>
         <select id="contactBulkSegment" class="bg-[#06090F] border border-dark-border rounded-lg px-2 py-1.5 text-xs text-gray-200">
             <option value="">Add to segment</option>${addOptions}<option value="__new">New segment...</option>
         </select>
@@ -555,6 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
             CONTACTS.items.forEach(c => e.target.checked ? CONTACTS.selected.add(c.id) : CONTACTS.selected.delete(c.id));
             renderContactRows();
             renderContactBulkBar();
+        } else if (e.target.id === 'contactViewSelect') {
+            _switchView(e.target.value);
         } else if (e.target.id === 'contactBulkSegment') {
             _bulkAddToSegment(e.target);
         }
