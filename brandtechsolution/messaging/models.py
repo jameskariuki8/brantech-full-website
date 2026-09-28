@@ -74,6 +74,7 @@ class Suppression(models.Model):
     REASON_CHOICES = [
         ("unsubscribed", "Unsubscribed"),
         ("bounced", "Bounced"),
+        ("complained", "Marked as spam"),
         ("manual", "Manual"),
     ]
     email = models.EmailField(unique=True)
@@ -100,10 +101,22 @@ class Campaign(models.Model):
         default="",
         help_text="Authored HTML as edited. Sanitized but not CSS-inlined.",
     )
-    body_html = models.TextField()
+    body_html = models.TextField(blank=True, default="")
+    # The content is written in a template and copied onto the campaign, so
+    # editing a template later changes drafts that use it but never a
+    # campaign that has already been queued.
     template = models.ForeignKey(
         "EmailTemplate", null=True, blank=True, on_delete=models.SET_NULL
     )
+    # Local part of the address it is sent from, and where replies go:
+    # a shared mailbox or the author's own. Blank sends from
+    # DEFAULT_FROM_EMAIL, which is what campaigns made before this did.
+    from_mailbox = models.CharField(max_length=64, blank=True, default="")
+    # A queued campaign is not picked up before this. Null means as soon as
+    # the outbox next runs.
+    send_at = models.DateTimeField(null=True, blank=True)
+    # Why the system paused it, shown in the panel.
+    note = models.CharField(max_length=300, blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     total = models.PositiveIntegerField(default=0)
     sent_count = models.PositiveIntegerField(default=0)
@@ -155,6 +168,16 @@ class CampaignRecipient(models.Model):
     # rows it won itself (a status of "sending" alone can belong to another run).
     claim_token = models.UUIDField(null=True, blank=True)
     claimed_at = models.DateTimeField(null=True, blank=True)
+    # What happened after Mailgun accepted it, reported by its events
+    # webhook and matched on the Message-ID we set.
+    OUTCOME_CHOICES = [
+        ("delivered", "Delivered"),
+        ("bounced", "Bounced"),
+        ("complained", "Marked as spam"),
+    ]
+    message_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    outcome = models.CharField(max_length=20, choices=OUTCOME_CHOICES, blank=True, default="")
+    outcome_detail = models.CharField(max_length=300, blank=True, default="")
 
     class Meta:
         unique_together = ("campaign", "email")

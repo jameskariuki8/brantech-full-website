@@ -8,5 +8,7 @@ urlpatterns = [
     # Mailgun won't follow APPEND_SLASH's 301 on a POST, so a route pasted
     # without the slash would silently drop every inbound email.
     path("messaging/inbound-webhook", views.mailgun_inbound_webhook),
+    path("messaging/events-webhook/", views.mailgun_events_webhook, name="mailgun_events_webhook"),
+    path("messaging/events-webhook", views.mailgun_events_webhook),
 ]
 

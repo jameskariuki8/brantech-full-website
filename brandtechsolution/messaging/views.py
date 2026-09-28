@@ -20,7 +20,7 @@ from brandtechsolution import turnstile
 from staff.emails import capability_holder_emails
 from staff.handles import mailbox_address
 from .mailbox import deliver_inbound, local_parts, resolve_mailbox
-from .models import BlockedSender, InboundEmail, Inquiry, Suppression
+from .models import BlockedSender, CampaignRecipient, InboundEmail, Inquiry, Suppression
 from .tokens import read_unsubscribe_token
 
 logger = logging.getLogger(__name__)
@@ -468,3 +468,67 @@ def mailgun_inbound_webhook(request):
         "inquiry_id": inquiry.pk if inquiry else None,
         "delivered": delivered,
     })
+
+
+# Mailgun event -> (suppression reason, recipient outcome). Only permanent
+# failures suppress: a temporary one (full mailbox, greylisting) is retried
+# by Mailgun itself and says nothing about the address.
+EVENT_EFFECTS = {
+    "complained": ("complained", "complained"),
+    "unsubscribed": ("unsubscribed", ""),
+    "delivered": (None, "delivered"),
+}
+
+
+@csrf_exempt
+@require_POST
+def mailgun_events_webhook(request):
+    """Delivery events from Mailgun's webhooks (Sending, Webhooks in the
+    dashboard): permanent failures, spam complaints, unsubscribes and
+    deliveries. Bounced and complaining addresses are suppressed so no
+    campaign mails them again, which is what keeps the domain's reputation."""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"ok": False, "error": "Expected JSON."}, status=400)
+    if not isinstance(payload, dict) or not _verify_mailgun_signature(request, payload):
+        return JsonResponse({"ok": False, "error": "Invalid signature."}, status=403)
+
+    event = payload.get("event-data") or {}
+    kind = event.get("event", "")
+    address = (event.get("recipient") or "").strip().lower()
+    if kind == "failed":
+        if event.get("severity") != "permanent":
+            return JsonResponse({"ok": True, "ignored": "temporary failure"})
+        reason, outcome = "bounced", "bounced"
+    elif kind in EVENT_EFFECTS:
+        reason, outcome = EVENT_EFFECTS[kind]
+    else:
+        return JsonResponse({"ok": True, "ignored": kind})
+    if not address:
+        return JsonResponse({"ok": True, "ignored": "no recipient"})
+
+    if reason:
+        Suppression.objects.get_or_create(email=address, defaults={"reason": reason})
+
+    matched = 0
+    if outcome:
+        status = event.get("delivery-status") or {}
+        detail = (
+            status.get("description") or status.get("message") or event.get("reason") or ""
+        )[:300]
+        headers = (event.get("message") or {}).get("headers") or {}
+        message_id = (headers.get("message-id") or "").strip("<> ")
+        rows = CampaignRecipient.objects.filter(email=address)
+        if message_id:
+            rows = rows.filter(message_id=message_id)
+        else:
+            # No id to match on: the most recent send to this address.
+            latest = rows.filter(status="sent").order_by("-sent_at").first()
+            rows = rows.filter(pk=latest.pk) if latest else rows.none()
+        # A delivery report never overwrites a worse outcome that arrived first.
+        if outcome == "delivered":
+            rows = rows.filter(outcome="")
+        matched = rows.update(outcome=outcome, outcome_detail=detail)
+
+    return JsonResponse({"ok": True, "event": kind, "matched": matched})

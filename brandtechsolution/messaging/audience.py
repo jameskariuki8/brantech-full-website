@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 
+from django.conf import settings
+
 from appointments.models import Appointment
-from .models import CampaignExclusion, CampaignRecipient, Inquiry, Suppression
+from .models import BlockedSender, CampaignExclusion, CampaignRecipient, Inquiry, Suppression
 from .validation import validate_syntax
 
 SOURCE_KEYS = {"inquiries", "users", "appointments"}
@@ -13,7 +15,8 @@ def _iter_source(key):
         for name, email in Inquiry.objects.values_list("name", "email"):
             yield email, name
     elif key == "users":
-        for first, last, email in User.objects.exclude(email="").values_list(
+        # Customers only: staff hear about things through the panel.
+        for first, last, email in User.objects.exclude(email="").filter(is_staff=False).values_list(
             "first_name", "last_name", "email"
         ):
             yield email, (f"{first} {last}".strip())
@@ -28,6 +31,9 @@ def resolve_recipients(source_keys, manual_emails):
         (e or "").strip().lower()
         for e in Suppression.objects.values_list("email", flat=True)
     }
+    # Senders marked as spam in the mail client, and our own addresses.
+    suppressed |= set(BlockedSender.objects.values_list("email", flat=True))
+    own_domain = "@" + settings.MAILBOX_DOMAIN.lower()
     merged = {}  # email(lower) -> name
 
     for key in source_keys:
@@ -47,7 +53,7 @@ def resolve_recipients(source_keys, manual_emails):
     return [
         {"email": e, "name": n}
         for e, n in merged.items()
-        if e not in suppressed
+        if e not in suppressed and not e.endswith(own_domain)
     ]
 
 

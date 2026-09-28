@@ -3,25 +3,17 @@ import uuid
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives, get_connection
+from django.core.mail import get_connection
 from django.core.management.base import BaseCommand
-from django.db.models import F
-from django.urls import reverse
+from django.db.models import F, Q
 from django.utils import timezone
 
-from messaging.models import Campaign, CampaignRecipient, Suppression
-from messaging.placeholders import build_context
-from messaging.rendering import html_to_text, render_html, render_text
-from messaging.tokens import make_unsubscribe_token
+from messaging import campaigns as campaign_rules
+from messaging import quota
+from messaging.models import Campaign, CampaignRecipient, MailSettings, Suppression
+from messaging.outbox import UNSUBSCRIBE_FOOTER, send_campaign_email  # noqa: F401 - re-exported
 
 logger = logging.getLogger(__name__)
-
-UNSUBSCRIBE_FOOTER = (
-    '<hr><p style="font-size:12px;color:#888;">'
-    'If you no longer wish to receive these emails, '
-    '<a href="{url}">unsubscribe</a>.</p>'
-)
-
 
 class Command(BaseCommand):
     help = "Send a batch of pending bulk emails from queued/sending campaigns."
@@ -34,7 +26,23 @@ class Command(BaseCommand):
 
         suppressed = set(Suppression.objects.values_list("email", flat=True))
 
-        campaigns = Campaign.objects.filter(status__in=["queued", "sending"])
+        # A scheduled campaign waits for its time.
+        campaigns = Campaign.objects.filter(
+            Q(send_at__isnull=True) | Q(send_at__lte=timezone.now()),
+            status__in=["queued", "sending"],
+        ).select_related("created_by").order_by("send_at", "id")
+
+        # The company's monthly cap covers campaigns too. Once it is spent,
+        # everything due is paused with the reason, rather than left queued
+        # to resume silently on the 1st.
+        cap = MailSettings.load().monthly_cap
+        headroom = max(cap - quota.used_this_month(), 0)
+        if headroom <= 0:
+            if campaigns.exists():
+                logger.warning("Outbox: monthly cap of %s reached; pausing campaigns", cap)
+                campaigns.update(status="paused", note=campaign_rules.cap_note(cap))
+            return
+        budget = min(budget, headroom)
         connection = get_connection()
 
         # Open once for the whole run: every message otherwise pays a full TLS
@@ -141,35 +149,10 @@ class Command(BaseCommand):
         ).update(status="pending", claim_token=None, claimed_at=None)
 
     def _send_one(self, campaign, recipient, connection, max_attempts):
-        token = make_unsubscribe_token(recipient.email)
-        unsubscribe_url = settings.SITE_BASE_URL.rstrip("/") + reverse(
-            "unsubscribe", args=[token]
-        )
-        context = build_context(recipient, unsubscribe_url)
-        subject = render_text(campaign.subject, context)
-        html_body = render_html(campaign.body_html, context)
-        if unsubscribe_url not in html_body:
-            html_body += UNSUBSCRIBE_FOOTER.format(url=unsubscribe_url)
-        text_body = html_to_text(html_body)
-        if unsubscribe_url not in text_body:
-            # html_to_text() drops href attributes, so carry the URL explicitly.
-            text_body += (
-                "\n\nIf you no longer wish to receive these emails, "
-                f"unsubscribe: {unsubscribe_url}"
-            )
-
         try:
-            msg = EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[recipient.email],
-                connection=connection,
+            message_id = send_campaign_email(
+                campaign, recipient.email, recipient.name, connection=connection
             )
-            msg.extra_headers["List-Unsubscribe"] = f"<{unsubscribe_url}>"
-            msg.extra_headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
-            msg.attach_alternative(html_body, "text/html")
-            msg.send()
         except Exception as exc:  # noqa: BLE001 - record and retry/fail
             recipient.attempts += 1
             logger.warning(
@@ -199,11 +182,12 @@ class Command(BaseCommand):
         recipient.status = "sent"
         recipient.sent_at = timezone.now()
         recipient.attempts += 1
+        recipient.message_id = message_id[:255]
         recipient.claim_token = None
         recipient.claimed_at = None
         recipient.save(
             update_fields=[
-                "status", "sent_at", "attempts", "claim_token", "claimed_at",
+                "status", "sent_at", "attempts", "message_id", "claim_token", "claimed_at",
             ]
         )
         Campaign.objects.filter(pk=campaign.pk).update(sent_count=F("sent_count") + 1)

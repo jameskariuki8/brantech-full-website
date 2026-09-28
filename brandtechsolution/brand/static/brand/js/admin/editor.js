@@ -61,7 +61,7 @@ function insertAtCaret(input, text) {
     input.focus();
 }
 
-function createEmailEditor(prefix) {
+function createEmailEditor(prefix, options = {}) {
     const container = document.getElementById(`${prefix}EditorContainer`);
     if (!container) return undefined;
 
@@ -180,6 +180,13 @@ function createEmailEditor(prefix) {
             }
         },
     };
+
+    // Lets a page react to edits (the template page's live preview).
+    if (typeof options.onChange === 'function') {
+        quill.on('text-change', options.onChange);
+        textarea.addEventListener('input', options.onChange);
+        if (subjectInput) subjectInput.addEventListener('input', options.onChange);
+    }
 
     if (toggleBtn) toggleBtn.onclick = () => editor.toggleSource();
     if (previewBtn) previewBtn.onclick = () => editor.preview();

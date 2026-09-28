@@ -81,12 +81,12 @@ class BodySourceApiTests(TestCase):
         self.assertIn("body_source", resp.json())
         self.assertEqual(EmailTemplate.objects.count(), 0)
 
-    def test_campaign_without_body_source_is_rejected(self):
+    def test_campaign_without_body_source_or_template_is_rejected(self):
         resp = self.client.post("/api/messaging/campaigns/", data={
             "name": "C", "subject": "s",
         })
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("body_source", resp.json())
+        self.assertIn("template", resp.json())
         self.assertEqual(Campaign.objects.count(), 0)
 
     def test_patch_template_subject_only_leaves_body_html_unchanged(self):

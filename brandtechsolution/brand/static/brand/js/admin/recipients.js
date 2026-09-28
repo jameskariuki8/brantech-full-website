@@ -19,6 +19,12 @@ const SEND_BADGE = {
     skipped: 'text-orange-400 bg-orange-900/20',
 };
 
+const OUTCOME_BADGE = {
+    delivered: { label: 'delivered', cls: 'text-brand-green bg-green-900/20' },
+    bounced: { label: 'bounced', cls: 'text-orange-300 bg-orange-900/20' },
+    complained: { label: 'marked spam', cls: 'text-red-400 bg-red-900/20' },
+};
+
 function openRecipients(campaignId, campaignName) {
     RECIPIENTS.campaignId = campaignId;
     RECIPIENTS.page = 1;
@@ -72,7 +78,8 @@ async function loadRecipients(isRetry = false) {
                 ${r.name ? `<p class="text-xs text-gray-500 truncate">${escapeHtml(r.name)}</p>` : ''}
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${sendCls}">${escapeHtml(r.status)}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${sendCls}" title="${escapeHtml(r.error || '')}">${escapeHtml(r.status)}</span>
+                ${OUTCOME_BADGE[r.outcome] ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${OUTCOME_BADGE[r.outcome].cls}" title="${escapeHtml(r.outcome_detail || '')}">${OUTCOME_BADGE[r.outcome].label}</span>` : ''}
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${validity.cls}">${validity.label}</span>
                 <button type="button" onclick="removeRecipient(${r.id})"
                     class="text-gray-500 hover:text-red-400 px-2 py-1 rounded hover:bg-white/5"

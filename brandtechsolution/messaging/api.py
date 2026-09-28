@@ -1,18 +1,24 @@
 from django.conf import settings
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from staff.handles import mailbox_address
 from staff.permissions import has_capability
 
-from . import audience
-from .models import Campaign, CampaignExclusion, CampaignRecipient, EmailTemplate, Inquiry
+from . import audience, quota
+from . import campaigns as campaign_rules
+from .models import Campaign, CampaignExclusion, CampaignRecipient, EmailTemplate, Inquiry, MailSettings
+from .outbox import send_campaign_email
 from .serializers import (
     ADDABLE_CAMPAIGN_STATUSES,
     CampaignRecipientSerializer,
@@ -96,7 +102,7 @@ class EmailTemplateViewSet(viewsets.ModelViewSet):
 
 
 class CampaignViewSet(viewsets.ModelViewSet):
-    queryset = Campaign.objects.all()
+    queryset = Campaign.objects.select_related("template", "created_by")
     serializer_class = CampaignSerializer
 
     # Sending is the one irreversible, externally visible action, so it is
@@ -104,6 +110,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     ACTION_CAPABILITIES = {
         "build_recipients": "manage_recipients",
         "queue": "send_campaigns",
+        "unqueue": "send_campaigns",
         "pause": "send_campaigns",
         "resume": "send_campaigns",
     }
@@ -114,6 +121,33 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        campaign = self.get_object()
+        if campaign.status != "draft":
+            return Response(
+                {"detail": "Only a draft can be deleted. A queued or sent campaign is kept as a record."},
+                status=400,
+            )
+        campaign.delete()
+        return Response(status=204)
+
+    @action(detail=False, methods=["get"])
+    def overview(self, request):
+        """What the campaigns page needs beyond the list: where it may send
+        from and how much of the month is left."""
+        mail_settings = MailSettings.load()
+        used = quota.used_this_month()
+        return Response({
+            "senders": campaign_rules.sender_choices(request.user),
+            "month": {
+                "used": used,
+                "cap": mail_settings.monthly_cap,
+                "committed": campaign_rules.committed(),
+                "headroom": campaign_rules.month_headroom(),
+            },
+            "can_send": request.user.has_perm("staff.send_campaigns"),
+        })
 
     @action(detail=True, methods=["post"])
     def build_recipients(self, request, pk=None):
@@ -130,14 +164,60 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def queue(self, request, pk=None):
-        campaign = self.get_object()
-        if campaign.status != "draft":
-            return Response({"detail": "Only draft campaigns can be queued."}, status=400)
-        if campaign.total == 0:
-            return Response({"detail": "No recipients. Build recipients first."}, status=400)
-        campaign.status = "queued"
-        campaign.save(update_fields=["status"])
-        return Response({"status": campaign.status})
+        send_at = None
+        raw = request.data.get("send_at")
+        if raw:
+            send_at = parse_datetime(str(raw))
+            if send_at is None:
+                return Response({"detail": "The send time is not a valid date and time."}, status=400)
+            if timezone.is_naive(send_at):
+                send_at = timezone.make_aware(send_at)
+            if send_at <= timezone.now():
+                send_at = None
+
+        with transaction.atomic():
+            campaign = Campaign.objects.select_for_update().get(pk=self.get_object().pk)
+            if campaign.status != "draft":
+                return Response({"detail": "Only draft campaigns can be queued."}, status=400)
+            if campaign.total == 0:
+                return Response({"detail": "No recipients. Build recipients first."}, status=400)
+            if campaign.template_id:
+                campaign_rules.copy_template(campaign, campaign.template)
+            if not campaign.body_html.strip():
+                return Response({"detail": "The email has no content. Choose a template."}, status=400)
+
+            # Checked at queue time so a campaign that cannot finish this
+            # month is refused up front rather than stalling halfway.
+            quota.lock()
+            pending = campaign.recipients.filter(status="pending").count()
+            headroom = campaign_rules.month_headroom(exclude=campaign)
+            if pending > headroom:
+                return Response({"detail": (
+                    f"This campaign has {pending} recipients but only {headroom} are left "
+                    "in this month's sending cap, after other queued campaigns. "
+                    "Trim the audience or raise the cap under Mail, Sending limits."
+                )}, status=400)
+
+            campaign.status = "queued"
+            campaign.send_at = send_at
+            campaign.note = ""
+            campaign.save(update_fields=[
+                "status", "send_at", "note", "template", "subject", "body_source", "body_html",
+            ])
+        return Response(self.get_serializer(campaign).data)
+
+    @action(detail=True, methods=["post"])
+    def unqueue(self, request, pk=None):
+        """Take a campaign that has not started back to draft, to change it."""
+        updated = Campaign.objects.filter(
+            pk=self.get_object().pk, status__in=("queued", "paused"), started_at__isnull=True,
+        ).update(status="draft", send_at=None, note="")
+        if not updated:
+            return Response(
+                {"detail": "Only a campaign that has not started sending can go back to draft."},
+                status=400,
+            )
+        return Response(self.get_serializer(Campaign.objects.get(pk=pk)).data)
 
     @action(detail=True, methods=["post"])
     def pause(self, request, pk=None):
@@ -159,8 +239,39 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 {"detail": "Only paused campaigns can be resumed."}, status=400
             )
         campaign.status = "queued"
-        campaign.save(update_fields=["status"])
+        campaign.note = ""
+        campaign.save(update_fields=["status", "note"])
         return Response({"status": campaign.status})
+
+    @action(detail=True, methods=["post"])
+    def test(self, request, pk=None):
+        """Send the campaign as it stands to the person asking, marked as a
+        test, so they see it in a real inbox before anyone else does."""
+        campaign = self.get_object()
+        user = request.user
+        if campaign.template_id and campaign.status == "draft":
+            campaign_rules.copy_template(campaign, campaign.template)
+        if not campaign.body_html.strip():
+            return Response({"detail": "The email has no content. Choose a template."}, status=400)
+        to = mailbox_address(user.username) if "@" not in user.username else user.email
+        if not to:
+            return Response({"detail": "You have no address to send a test to."}, status=400)
+
+        key = f"campaign-test:{user.pk}:{timezone.localdate()}"
+        cache.add(key, 0, timeout=60 * 60 * 25)
+        if cache.incr(key) > TEST_SENDS_PER_DAY:
+            return Response(
+                {"detail": f"That is {TEST_SENDS_PER_DAY} test sends today. Try again tomorrow."},
+                status=429,
+            )
+        try:
+            send_campaign_email(campaign, to, user.get_full_name(), test=True)
+        except Exception as exc:  # the backend raises RuntimeError or a network error
+            return Response({"detail": f"The test could not be sent: {exc}"}, status=502)
+        return Response({"to": to})
+
+
+TEST_SENDS_PER_DAY = 20
 
 
 class RecipientPagination(PageNumberPagination):
