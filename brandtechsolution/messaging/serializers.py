@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
 from .emailhtml import inline_email_css, sanitize_email_html
-from .models import Campaign, CampaignRecipient, EmailTemplate, Inquiry, Suppression
+from .models import Campaign, CampaignRecipient, Contact, EmailTemplate, Inquiry, Segment, Suppression
 from . import campaigns as campaign_rules
+from . import contacts as contact_rules
 from .validation import validate_syntax
 
 
@@ -81,12 +82,12 @@ class CampaignSerializer(EmailBodyMixin, serializers.ModelSerializer):
         model = Campaign
         fields = [
             "id", "name", "subject", "body_source", "body_html", "template",
-            "template_name", "from_mailbox", "from_address", "send_at", "note",
+            "template_name", "from_mailbox", "from_address", "send_at", "note", "audience",
             "status", "total", "sent_count", "failed_count", "stats",
             "created_by_name", "created_at", "started_at", "completed_at",
         ]
         read_only_fields = [
-            "id", "body_html", "send_at", "note", "status", "total", "sent_count",
+            "id", "body_html", "send_at", "note", "audience", "status", "total", "sent_count",
             "failed_count", "created_at", "started_at", "completed_at",
         ]
 
@@ -141,6 +142,67 @@ class CampaignSerializer(EmailBodyMixin, serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return super().update(instance, self._with_template(validated_data))
+
+
+class SegmentSerializer(serializers.ModelSerializer):
+    count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Segment
+        fields = ["id", "name", "description", "count", "created_at"]
+        read_only_fields = ["id", "count", "created_at"]
+
+    def validate_name(self, value):
+        value = value.strip()
+        clash = Segment.objects.filter(name__iexact=value)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError("There is already a segment with that name.")
+        return value
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    # Declared without the model's UniqueValidator, which would compare the
+    # address before it is lowercased; validate_email checks instead.
+    email = serializers.EmailField(max_length=254)
+    segments = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Segment.objects.all(), required=False
+    )
+    source_label = serializers.CharField(source="get_source_display", read_only=True)
+    status = serializers.SerializerMethodField()
+    status_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Contact
+        fields = [
+            "id", "email", "name", "phone", "company", "notes", "segments",
+            "source", "source_label", "status", "status_label", "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "source", "created_at", "updated_at"]
+
+    def validate_email(self, value):
+        value = contact_rules.normalise(value)
+        if contact_rules.is_ours(value):
+            raise serializers.ValidationError("That is one of our own addresses.")
+        clash = Contact.objects.filter(email=value)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError("There is already a contact with that address.")
+        return value
+
+    def _status(self, obj):
+        known = self.context.get("statuses")
+        if known is not None:
+            return known.get(obj.email, "")
+        return contact_rules.statuses([obj.email]).get(obj.email, "")
+
+    def get_status(self, obj):
+        return self._status(obj) or "subscribed"
+
+    def get_status_label(self, obj):
+        return contact_rules.STATUS_LABELS.get(self._status(obj), "Unsubscribed")
 
 
 ADDABLE_CAMPAIGN_STATUSES = {"draft", "queued", "sending", "paused"}

@@ -72,6 +72,7 @@ function showSection(sectionName, clickedElement) {
     // Events removed
     if (sectionName === 'dashboard') loadDashboard();
     if (sectionName === 'inbox') loadInbox();
+    if (sectionName === 'contacts') loadContacts();
     if (sectionName === 'templates') loadTemplates();
     if (sectionName === 'campaigns') loadCampaigns();
     if (sectionName === 'staff') loadStaff();

@@ -1,9 +1,10 @@
 from django.contrib.auth.models import User
 
 from django.conf import settings
+from django.db.models import Q
 
 from appointments.models import Appointment
-from .models import BlockedSender, CampaignExclusion, CampaignRecipient, Inquiry, Suppression
+from .models import BlockedSender, CampaignExclusion, CampaignRecipient, Contact, Inquiry, Suppression
 from .validation import validate_syntax
 
 SOURCE_KEYS = {"inquiries", "users", "appointments"}
@@ -25,8 +26,27 @@ def _iter_source(key):
             yield email, name
 
 
-def resolve_recipients(source_keys, manual_emails):
-    """Merge selected sources + manual list into deduped, suppression-filtered dicts."""
+def _iter_contacts(selection):
+    """(email, name) for the contacts a campaign audience picks: everyone,
+    or anyone in the chosen segments or from the chosen origins."""
+    if not selection:
+        return
+    qs = Contact.objects.all()
+    if not selection.get("everyone"):
+        q = Q()
+        if selection.get("segments"):
+            q |= Q(segments__in=selection["segments"])
+        if selection.get("origins"):
+            q |= Q(source__in=selection["origins"])
+        if not q:
+            return
+        qs = qs.filter(q).distinct()
+    yield from qs.values_list("email", "name")
+
+
+def resolve_recipients(source_keys, manual_emails, contacts=None):
+    """Merge selected sources, contacts and a manual list into deduped,
+    suppression-filtered dicts."""
     suppressed = {
         (e or "").strip().lower()
         for e in Suppression.objects.values_list("email", flat=True)
@@ -45,6 +65,9 @@ def resolve_recipients(source_keys, manual_emails):
             e = email.strip().lower()
             merged.setdefault(e, (name or "").strip())
 
+    for email, name in _iter_contacts(contacts):
+        merged.setdefault(email.strip().lower(), (name or "").strip())
+
     for email in manual_emails or []:
         e = (email or "").strip().lower()
         if e:
@@ -57,7 +80,7 @@ def resolve_recipients(source_keys, manual_emails):
     ]
 
 
-def build_recipients(campaign, source_keys, manual_emails):
+def build_recipients(campaign, source_keys, manual_emails, contacts=None):
     """Materialize resolved recipients as CampaignRecipient rows; set campaign.total.
 
     Drops any address the admin has deliberately removed from this campaign
@@ -66,7 +89,7 @@ def build_recipients(campaign, source_keys, manual_emails):
     `.strip().lower()`, so the exclusion set is normalised the same way to
     match.
     """
-    recipients = resolve_recipients(source_keys, manual_emails)
+    recipients = resolve_recipients(source_keys, manual_emails, contacts)
     excluded = {
         (e or "").strip().lower()
         for e in CampaignExclusion.objects.filter(campaign=campaign).values_list(

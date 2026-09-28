@@ -1,0 +1,176 @@
+{% comment %}
+Contacts: everyone outside the company we may email, grouped into
+segments. Campaigns send to segments. A list of views on the left (all,
+each segment, where people came from) and the people in the chosen view on
+the right, rendered by contacts.js.
+{% endcomment %}
+<div id="contacts" class="section hidden">
+    <div class="flex flex-wrap justify-between items-end mb-6 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Contacts</h2>
+            <p class="text-gray-500 text-sm mt-1">Everyone you can email. Group them into segments, then send campaigns to a segment.</p>
+        </div>
+        <div class="flex gap-2">
+            <button type="button" id="contactImportBtn" class="px-4 py-2.5 rounded-lg text-sm border border-dark-border text-gray-200 hover:text-white hover:bg-white/5 flex items-center"><i class="fas fa-file-import mr-2"></i>Import</button>
+            <button type="button" id="contactNewBtn" class="bg-brand-blue hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center text-sm font-medium"><i class="fas fa-plus mr-2"></i>New contact</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[15rem_1fr] gap-6 items-start">
+        <nav id="contactViews" class="bg-dark-card border border-dark-border rounded-xl p-2 text-sm lg:sticky lg:top-20" aria-label="Contact views"></nav>
+
+        <section class="bg-dark-card border border-dark-border rounded-xl min-w-0">
+            <header class="px-5 py-4 border-b border-dark-border flex flex-wrap items-center gap-3">
+                <div class="min-w-0 flex-1">
+                    <h3 id="contactViewTitle" class="text-lg font-semibold text-white truncate">All contacts</h3>
+                    <p id="contactViewNote" class="text-xs text-gray-500 mt-0.5"></p>
+                </div>
+                <div id="contactViewActions" class="flex gap-2"></div>
+                <input type="search" id="contactSearch" placeholder="Search contacts"
+                    class="w-full sm:w-72 bg-[#06090F] border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue">
+            </header>
+
+            <div id="contactBulkBar" class="hidden px-5 py-2.5 border-b border-dark-border bg-brand-blue/5 flex flex-wrap items-center gap-2 text-sm"></div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-dark-border">
+                            <th class="pl-5 pr-2 py-2.5 w-8"><input type="checkbox" id="contactCheckAll" class="accent-[#007AFF]" aria-label="Select all on this page"></th>
+                            <th class="px-3 py-2.5 font-medium">Name</th>
+                            <th class="px-3 py-2.5 font-medium hidden md:table-cell">Segments</th>
+                            <th class="px-3 py-2.5 font-medium hidden xl:table-cell">Came from</th>
+                            <th class="px-3 py-2.5 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contactsBody" class="divide-y divide-white/5"></tbody>
+                </table>
+            </div>
+
+            <footer class="px-5 py-3 border-t border-dark-border flex items-center justify-between gap-3">
+                <span id="contactPageInfo" class="text-xs text-gray-500"></span>
+                <div class="flex gap-2">
+                    <button type="button" id="contactPrev" class="px-3 py-1.5 text-xs rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40">Previous</button>
+                    <button type="button" id="contactNext" class="px-3 py-1.5 text-xs rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40">Next</button>
+                </div>
+            </footer>
+        </section>
+    </div>
+
+    <!-- One contact: new or edit -->
+    <div id="contactModal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto">
+        <form id="contactForm" class="max-w-lg mx-auto my-12 bg-dark-card border border-dark-border rounded-xl">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-dark-border">
+                <div class="min-w-0">
+                    <h3 id="contactFormTitle" class="text-lg font-bold text-white truncate">New contact</h3>
+                    <p id="contactFormMeta" class="text-xs text-gray-500"></p>
+                </div>
+                <button type="button" data-close-contact class="text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <input type="hidden" name="id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-400 mb-2" for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" name="email" required
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2" for="contactName">Name</label>
+                        <input type="text" id="contactName" name="name" maxlength="200"
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2" for="contactCompany">Company</label>
+                        <input type="text" id="contactCompany" name="company" maxlength="200"
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-400 mb-2" for="contactPhone">Phone</label>
+                        <input type="tel" id="contactPhone" name="phone" maxlength="40"
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue">
+                    </div>
+                </div>
+                <div>
+                    <span class="block text-sm font-medium text-gray-400 mb-2">Segments</span>
+                    <div id="contactFormSegments" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2" for="contactNotes">Notes</label>
+                    <textarea id="contactNotes" name="notes" rows="3" placeholder="Only staff see these"
+                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue"></textarea>
+                </div>
+                <div id="contactFormStatus" class="hidden text-xs rounded-lg px-3 py-2"></div>
+            </div>
+            <div class="flex items-center gap-3 px-6 py-4 border-t border-dark-border">
+                <button type="button" id="contactDeleteBtn" class="hidden text-xs text-gray-500 hover:text-red-400 px-3 py-2 rounded-lg hover:bg-red-900/10">Delete contact</button>
+                <button type="button" id="contactStopBtn" class="hidden text-xs text-gray-500 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5"></button>
+                <div class="ml-auto flex gap-3">
+                    <button type="button" data-close-contact class="px-5 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">Cancel</button>
+                    <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Import -->
+    <div id="contactImportModal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto">
+        <form id="contactImportForm" class="max-w-lg mx-auto my-12 bg-dark-card border border-dark-border rounded-xl">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-dark-border">
+                <h3 class="text-lg font-bold text-white">Import contacts</h3>
+                <button type="button" data-close-import class="text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2" for="contactImportFile">From a file</label>
+                    <input type="file" id="contactImportFile" name="file" accept=".csv,.txt,.xlsx,.pdf,.docx"
+                        class="block w-full text-sm text-gray-300 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-white/10 file:text-white hover:file:bg-white/15">
+                    <p class="text-xs text-gray-500 mt-2">A CSV with an Email column also brings in Name (or First name and Last name), Phone and Company. Other files give addresses only.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2" for="contactImportText">Or paste addresses</label>
+                    <textarea id="contactImportText" name="text" rows="4" placeholder="Separated by commas, spaces or new lines"
+                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-blue"></textarea>
+                </div>
+                <div>
+                    <span class="block text-sm font-medium text-gray-400 mb-2">Add everyone in it to</span>
+                    <div id="contactImportSegments" class="flex flex-wrap gap-2"></div>
+                    <input type="text" id="contactImportNewSegment" name="new_segment" maxlength="80" placeholder="Or a new segment, e.g. Expo 2026 leads"
+                        class="mt-3 w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-blue">
+                </div>
+                <p class="text-xs text-gray-500">People already in contacts keep their details and are added to the segments. Our own addresses and senders marked as spam are skipped.</p>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 border-t border-dark-border">
+                <button type="button" data-close-import class="px-5 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">Cancel</button>
+                <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50">Import</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Segment: new or rename -->
+    <div id="segmentModal" class="hidden fixed inset-0 z-50 bg-black/70 p-4 overflow-y-auto">
+        <form id="segmentForm" class="max-w-md mx-auto my-16 bg-dark-card border border-dark-border rounded-xl">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-dark-border">
+                <h3 id="segmentFormTitle" class="text-lg font-bold text-white">New segment</h3>
+                <button type="button" data-close-segment class="text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-white/5" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <input type="hidden" name="id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2" for="segmentName">Name</label>
+                    <input type="text" id="segmentName" name="name" required maxlength="80" placeholder="e.g. Clients, Leads, Partners"
+                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2" for="segmentDescription">Who belongs in it</label>
+                    <input type="text" id="segmentDescription" name="description" maxlength="200" placeholder="Optional, for the rest of the team"
+                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 py-4 border-t border-dark-border">
+                <button type="button" data-close-segment class="px-5 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">Cancel</button>
+                <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50">Save</button>
+            </div>
+        </form>
+    </div>
+</div>

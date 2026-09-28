@@ -262,6 +262,9 @@
     {# Every staff member has a mailbox; shared ones are gated by the API. #}
     {% include 'brand/admin/_inbox.html' %}
 
+    <!-- Contacts Section -->
+    {% if can.manage_recipients %}{% include 'brand/admin/_contacts.html' %}{% endif %}
+
     <!-- Templates Section -->
     {% if can.manage_templates %}{% include 'brand/admin/_templates.html' %}{% endif %}
 
@@ -278,14 +281,15 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'brand/js/admin/core.js' %}" defer></script>
+<script src="{% static 'brand/js/admin/core.js' %}?v=1.1.0" defer></script>
 <script src="{% static 'brand/js/admin/editor.js' %}?v=3.0.0" defer></script>
 <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/github.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/inbox.js' %}?v=2.3.0" defer></script>
 <script src="{% static 'brand/js/admin/templates.js' %}?v=3.0.0" defer></script>
-<script src="{% static 'brand/js/admin/campaigns.js' %}?v=3.0.0" defer></script>
+<script src="{% static 'brand/js/admin/contacts.js' %}?v=1.0.0" defer></script>
+<script src="{% static 'brand/js/admin/campaigns.js' %}?v=3.1.0" defer></script>
 <script src="{% static 'brand/js/admin/recipients.js' %}?v=3.0.0" defer></script>
 <script src="{% static 'brand/js/admin/staff.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/tasks.js' %}" defer></script>

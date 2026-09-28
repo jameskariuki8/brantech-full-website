@@ -117,6 +117,9 @@ class Campaign(models.Model):
     send_at = models.DateTimeField(null=True, blank=True)
     # Why the system paused it, shown in the panel.
     note = models.CharField(max_length=300, blank=True, default="")
+    # What the audience was built from, in words ("Clients", "Everyone"),
+    # so a sent campaign still says who it went to after segments change.
+    audience = models.JSONField(default=list, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     total = models.PositiveIntegerField(default=0)
     sent_count = models.PositiveIntegerField(default=0)
@@ -344,3 +347,58 @@ class MailSettings(models.Model):
 
     def __str__(self):
         return "Mail settings"
+
+
+class Segment(models.Model):
+    """A group of contacts staff define themselves, such as Clients or
+    Partners. A contact can be in any number of them; campaigns are sent to
+    one or more segments."""
+
+    name = models.CharField(max_length=80, unique=True)
+    description = models.CharField(max_length=200, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Contact(models.Model):
+    """Someone outside the company we may email.
+
+    Filled automatically from inquiries, bookings and customer accounts
+    (see messaging/signals.py), and by hand or by import. Whether they may
+    be emailed is not stored here: Suppression is the one record of that,
+    so an unsubscribe applies whether or not the address is a contact.
+    """
+
+    SOURCE_CHOICES = [
+        ("inquiry", "Website inquiry"),
+        ("appointment", "Booking"),
+        ("account", "Customer account"),
+        ("import", "Imported"),
+        ("manual", "Added by hand"),
+    ]
+
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=200, blank=True, default="")
+    phone = models.CharField(max_length=40, blank=True, default="")
+    company = models.CharField(max_length=200, blank=True, default="")
+    notes = models.TextField(blank=True, default="")
+    # Where the address first came from. Later sightings do not change it.
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="manual", db_index=True)
+    segments = models.ManyToManyField(Segment, related_name="contacts", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def save(self, *args, **kwargs):
+        self.email = (self.email or "").strip().lower()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} <{self.email}>" if self.name else self.email

@@ -218,6 +218,12 @@
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
                 <i class="fas fa-inbox w-6 text-center mr-3"></i><span class="nav-label">Mail</span>
             </a>
+            {% if can.manage_recipients %}
+            <a href="/admin-panel/?section=contacts" id="nav-contacts"
+                class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">
+                <i class="fas fa-address-book w-6 text-center mr-3"></i><span class="nav-label">Contacts</span>
+            </a>
+            {% endif %}
             {% if can.manage_templates %}
             <a href="/admin-panel/?section=templates" id="nav-templates"
                 class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 transition-colors">

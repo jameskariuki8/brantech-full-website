@@ -7,6 +7,8 @@ router.register(r"inquiries", api.InquiryViewSet, basename="inquiries")
 router.register(r"templates", api.EmailTemplateViewSet, basename="templates")
 router.register(r"campaigns", api.CampaignViewSet, basename="campaigns")
 router.register(r"recipients", api.CampaignRecipientViewSet, basename="recipients")
+router.register(r"contacts", api.ContactViewSet, basename="contacts")
+router.register(r"segments", api.SegmentViewSet, basename="segments")
 
 urlpatterns = [
     path("", include(router.urls)),

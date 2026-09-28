@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -10,6 +10,7 @@ from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from staff.handles import mailbox_address
@@ -17,14 +18,21 @@ from staff.permissions import has_capability
 
 from . import audience, quota
 from . import campaigns as campaign_rules
-from .models import Campaign, CampaignExclusion, CampaignRecipient, EmailTemplate, Inquiry, MailSettings
+from . import contacts as contact_rules
+from .imports import UnsupportedFileType
+from .models import (
+    Campaign, CampaignExclusion, CampaignRecipient, Contact, EmailTemplate, Inquiry,
+    MailSettings, Segment, Suppression,
+)
 from .outbox import send_campaign_email
 from .serializers import (
     ADDABLE_CAMPAIGN_STATUSES,
     CampaignRecipientSerializer,
     CampaignSerializer,
+    ContactSerializer,
     EmailTemplateSerializer,
     InquirySerializer,
+    SegmentSerializer,
 )
 from .validation import validate_campaign_recipients
 
@@ -147,6 +155,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
                 "headroom": campaign_rules.month_headroom(),
             },
             "can_send": request.user.has_perm("staff.send_campaigns"),
+            "audience": _audience_choices(),
         })
 
     @action(detail=True, methods=["post"])
@@ -159,7 +168,27 @@ class CampaignViewSet(viewsets.ModelViewSet):
             )
         sources = request.data.get("sources", []) or []
         manual = request.data.get("manual_emails", []) or []
-        count = audience.build_recipients(campaign, sources, manual)
+        try:
+            segment_ids = [int(i) for i in request.data.get("segments", []) or []]
+        except (TypeError, ValueError):
+            return Response({"detail": "Segments must be ids."}, status=400)
+        segments = list(Segment.objects.filter(pk__in=segment_ids))
+        origins = [o for o in request.data.get("origins", []) or [] if o in contact_rules.SOURCE_LABELS]
+        everyone = bool(request.data.get("everyone"))
+        selection = {"everyone": everyone, "segments": [s.pk for s in segments], "origins": origins}
+        count = audience.build_recipients(campaign, sources, manual, selection)
+
+        # Say in words what went in, for the campaign's record.
+        groups = dict(contact_rules.ORIGIN_GROUPS)
+        labels = ["Everyone in contacts"] if everyone else (
+            [s.name for s in segments] + [groups[o] for o in origins]
+        )
+        if manual:
+            labels.append("Addresses added by hand")
+        new = [label for label in labels if label not in campaign.audience]
+        if new:
+            campaign.audience = campaign.audience + new
+            campaign.save(update_fields=["audience"])
         return Response({"count": count})
 
     @action(detail=True, methods=["post"])
@@ -272,6 +301,167 @@ class CampaignViewSet(viewsets.ModelViewSet):
 
 
 TEST_SENDS_PER_DAY = 20
+
+
+def _audience_choices():
+    """What a campaign audience can be built from, and how many people each
+    would actually reach once unsubscribed and bounced addresses are out."""
+    reach = contact_rules.reachable()
+    return {
+        "everyone": reach.count(),
+        "segments": [
+            {"id": s.pk, "name": s.name, "count": reach.filter(segments=s).count()}
+            for s in Segment.objects.all()
+        ],
+        "origins": [
+            {"key": key, "label": label, "count": reach.filter(source=key).count()}
+            for key, label in contact_rules.ORIGIN_GROUPS
+        ],
+    }
+
+
+class SegmentViewSet(viewsets.ModelViewSet):
+    """Deleting a segment keeps its contacts."""
+
+    serializer_class = SegmentSerializer
+    permission_classes = [has_capability("manage_recipients")]
+
+    def get_queryset(self):
+        return Segment.objects.annotate(count=Count("contacts"))
+
+
+class ContactPagination(PageNumberPagination):
+    page_size = 50
+
+
+class ContactViewSet(viewsets.ModelViewSet):
+    serializer_class = ContactSerializer
+    permission_classes = [has_capability("manage_recipients")]
+    pagination_class = ContactPagination
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def _filter(self, qs, params):
+        """The list's filters, shared with bulk actions on everything
+        matching them."""
+        q = (params.get("q") or "").strip()
+        if q:
+            qs = qs.filter(
+                Q(email__icontains=q) | Q(name__icontains=q)
+                | Q(company__icontains=q) | Q(phone__icontains=q)
+            )
+        segment = params.get("segment")
+        if segment == "none":
+            qs = qs.filter(segments__isnull=True)
+        elif segment:
+            try:
+                qs = qs.filter(segments=int(segment))
+            except (TypeError, ValueError):
+                raise ValidationError({"detail": "segment must be an id."})
+        source = params.get("source")
+        if source:
+            qs = qs.filter(source=source)
+        status = params.get("status")
+        if status == "subscribed":
+            qs = qs.exclude(email__in=contact_rules.suppressed_emails())
+        elif status == "unsubscribed":
+            qs = qs.filter(email__in=contact_rules.suppressed_emails())
+        return qs
+
+    def get_queryset(self):
+        qs = Contact.objects.prefetch_related("segments")
+        if self.action == "list":
+            qs = self._filter(qs, self.request.query_params)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        page = self.paginate_queryset(self.get_queryset())
+        context = self.get_serializer_context()
+        context["statuses"] = contact_rules.statuses(c.email for c in page)
+        return self.get_paginated_response(
+            self.get_serializer(page, many=True, context=context).data
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(source="manual")
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        """Counts for the page's side list."""
+        suppressed = contact_rules.suppressed_emails()
+        return Response({
+            "total": Contact.objects.count(),
+            "unsubscribed": Contact.objects.filter(email__in=suppressed).count(),
+            "unsegmented": Contact.objects.filter(segments__isnull=True).count(),
+            "origins": [
+                {"key": key, "label": label, "count": Contact.objects.filter(source=key).count()}
+                for key, label in contact_rules.ORIGIN_GROUPS
+            ],
+            "segments": SegmentSerializer(
+                Segment.objects.annotate(count=Count("contacts")), many=True
+            ).data,
+        })
+
+    @action(detail=False, methods=["post"])
+    def bulk(self, request):
+        """One action on the ticked contacts, or on every contact matching
+        the list's filters when all_matching is set."""
+        if request.data.get("all_matching"):
+            qs = self._filter(Contact.objects.all(), request.data.get("filters") or {})
+        else:
+            try:
+                ids = [int(i) for i in request.data.get("ids") or []]
+            except (TypeError, ValueError):
+                return Response({"detail": "ids must be numbers."}, status=400)
+            qs = Contact.objects.filter(pk__in=ids)
+        ids = list(qs.values_list("pk", flat=True))
+        if not ids:
+            return Response({"detail": "No contacts selected."}, status=400)
+        emails = list(Contact.objects.filter(pk__in=ids).values_list("email", flat=True))
+        op = request.data.get("action")
+
+        if op in ("add_segment", "remove_segment"):
+            segment = Segment.objects.filter(pk=request.data.get("segment") or 0).first()
+            if segment is None:
+                return Response({"detail": "Choose a segment."}, status=400)
+            if op == "add_segment":
+                segment.contacts.add(*ids)
+            else:
+                segment.contacts.remove(*ids)
+        elif op == "delete":
+            Contact.objects.filter(pk__in=ids).delete()
+        elif op == "unsubscribe":
+            Suppression.objects.bulk_create(
+                [Suppression(email=e, reason="manual") for e in emails], ignore_conflicts=True,
+            )
+        elif op == "resubscribe":
+            # Only undoes a stop staff put in place. People who unsubscribed,
+            # bounced or complained themselves stay off the list.
+            Suppression.objects.filter(email__in=emails, reason="manual").delete()
+        else:
+            return Response({"detail": "Unknown action."}, status=400)
+        return Response({"count": len(ids)})
+
+    @action(detail=False, methods=["post"], url_path="import")
+    def import_contacts(self, request):
+        """Add people from a file or pasted text, optionally into segments."""
+        upload = request.FILES.get("file")
+        if upload:
+            if upload.size > MAX_IMPORT_BYTES:
+                return Response({"detail": "File too large (max 5MB)."}, status=400)
+            try:
+                rows = contact_rules.rows_from_file(upload)
+            except UnsupportedFileType:
+                return Response({"detail": "Use a CSV, TXT, XLSX, PDF or DOCX file."}, status=400)
+            except Exception:
+                return Response({"detail": "The file could not be read."}, status=400)
+        else:
+            rows = contact_rules.rows_from_text(request.data.get("text") or "")
+        if not rows:
+            return Response({"detail": "No email addresses were found."}, status=400)
+        segments, error = contact_rules.segment_from_request(request.data)
+        if error:
+            return Response({"detail": error}, status=400)
+        return Response(contact_rules.import_contacts(rows, segments))
 
 
 class RecipientPagination(PageNumberPagination):

@@ -36,9 +36,13 @@ class AdminPanelRenderTests(TestCase):
             'id="recipientsModal"',
             'id="recipientsList"',
             'id="addRecipientForm"',
+            'id="contacts"',
+            'id="contactViews"',
+            'id="contactImportModal"',
+            'id="nav-contacts"',
         ]:
             self.assertIn(anchor, html)
-        for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js', 'templates.js', 'campaigns.js', 'editor.js', 'recipients.js', 'staff.js']:
+        for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js', 'templates.js', 'campaigns.js', 'editor.js', 'recipients.js', 'staff.js', 'contacts.js']:
             self.assertIn(script, html)
 
     def test_panel_renders_bare_for_staff_without_capabilities(self):
@@ -54,7 +58,8 @@ class AdminPanelRenderTests(TestCase):
         # Every staff member has a mailbox, so mail is never gated.
         self.assertIn('id="inbox"', html)
         for anchor in ['id="blogs"', 'id="projects"',
-                       'id="templates"', 'id="campaigns"', 'id="staff"']:
+                       'id="templates"', 'id="campaigns"', 'id="staff"',
+                       'id="contacts"', 'id="nav-contacts"']:
             self.assertNotIn(anchor, html)
         for script in ['core.js', 'blogs.js', 'projects.js', 'inbox.js',
                        'templates.js', 'campaigns.js', 'editor.js',

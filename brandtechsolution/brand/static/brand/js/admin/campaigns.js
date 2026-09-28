@@ -8,6 +8,10 @@ const CAMPAIGN = {
     selectedId: null,
     filter: 'all',
     timer: null,
+    // campaign id -> segment ids to tick in its audience step, when it was
+    // started from a segment under Contacts.
+    preselectSegments: {},
+    pendingSegment: null,
 };
 
 const CAMPAIGN_STATUS_STYLE = {
@@ -19,12 +23,6 @@ const CAMPAIGN_STATUS_STYLE = {
     sent: 'text-brand-green bg-green-900/20',
     failed: 'text-red-400 bg-red-900/20',
 };
-
-const AUDIENCE_SOURCES = [
-    { key: 'users', label: 'Customer accounts', hint: 'People with an account on the site. Staff are left out.' },
-    { key: 'inquiries', label: 'Website inquiries', hint: 'Everyone who used the contact form, minus senders marked as spam.' },
-    { key: 'appointments', label: 'Appointment bookings', hint: 'Everyone who booked a call.' },
-];
 
 function _jsonPost(url, body) {
     return fetchJson(url, {
@@ -206,6 +204,7 @@ function _emailSummary(c) {
         <dt class="text-gray-500">Template</dt><dd class="text-gray-200">${escapeHtml(c.template_name || 'Own content')}</dd>
         <dt class="text-gray-500">From</dt><dd class="text-gray-200 break-all">${escapeHtml(c.from_address)}</dd>
         <dt class="text-gray-500">Subject</dt><dd class="text-gray-200">${escapeHtml(c.subject)}</dd>
+        ${c.audience && c.audience.length ? `<dt class="text-gray-500">Audience</dt><dd class="text-gray-200">${c.audience.map(escapeHtml).join(', ')}</dd>` : ''}
     </dl>`;
 }
 
@@ -239,28 +238,38 @@ function _draftBody(c) {
         <p class="text-sm text-gray-400 mt-4"><span class="text-gray-500">Subject:</span> ${escapeHtml(c.subject)}</p>
         <p class="text-xs text-gray-500 mt-1">Replies arrive in the sending mailbox in Mail. Edits to the template carry over until you queue.</p>`;
 
-    const sources = AUDIENCE_SOURCES.map(s => `
-        <label class="flex items-start gap-3 p-3 rounded-lg border border-white/5 hover:border-white/15 cursor-pointer">
-            <input type="checkbox" class="cd-source mt-0.5 accent-[#10B981]" value="${s.key}">
-            <span><span class="block text-sm text-gray-200">${s.label}</span><span class="block text-xs text-gray-500">${s.hint}</span></span>
-        </label>`).join('');
+    const choices = (CAMPAIGN.overview && CAMPAIGN.overview.audience) || { everyone: 0, segments: [], origins: [] };
+    const preselect = CAMPAIGN.preselectSegments[c.id] || [];
+    const option = (kind, value, label, count, checked = false) => `
+        <label class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-white/5 hover:border-white/15 cursor-pointer has-[:checked]:border-brand-green/50 has-[:checked]:bg-green-900/10">
+            <span class="flex items-center gap-3 min-w-0"><input type="checkbox" class="cd-audience accent-[#10B981]" data-kind="${kind}" value="${escapeHtml(String(value))}" ${checked ? 'checked' : ''}>
+            <span class="text-sm text-gray-200 truncate">${escapeHtml(label)}</span></span>
+            <span class="text-xs text-gray-500 shrink-0">${count.toLocaleString()}</span>
+        </label>`;
+    const segmentList = choices.segments.length
+        ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${choices.segments.map(s => option('segment', s.id, s.name, s.count, preselect.includes(s.id))).join('')}</div>`
+        : `<p class="text-sm text-gray-500">No segments yet. Group people under Contacts, such as Clients or Leads, and they show up here.</p>`;
+    const origins = choices.origins.filter(o => o.count);
     const audience = `
         <div class="flex items-baseline justify-between gap-3 mb-4">
             <p class="text-sm text-gray-300"><span class="text-2xl font-bold text-white mr-1">${c.total.toLocaleString()}</span>recipient${c.total === 1 ? '' : 's'} so far</p>
             <button type="button" data-cd="recipients" class="px-3 py-1.5 text-xs rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5">Review list</button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">${sources}</div>
-        <label class="block text-xs font-medium text-gray-400 mt-4 mb-1.5" for="cdManual">Or paste addresses</label>
-        <textarea id="cdManual" rows="3" placeholder="Separated by commas, spaces or new lines"
-            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue"></textarea>
-        <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
-            <label class="text-xs text-gray-400 cursor-pointer hover:text-white">
-                <i class="fas fa-file-import mr-1.5"></i>Import from a file (CSV, TXT, XLSX, PDF, DOCX)
-                <input type="file" id="cdImport" class="hidden" accept=".csv,.txt,.xlsx,.pdf,.docx">
-            </label>
+        ${c.audience && c.audience.length ? `<p class="text-xs text-gray-500 -mt-2 mb-4">Built from ${c.audience.map(a => `<span class="text-gray-300">${escapeHtml(a)}</span>`).join(', ')}</p>` : ''}
+        <p class="text-xs font-medium text-gray-400 mb-2">Segments</p>
+        ${segmentList}
+        <details class="mt-4 group">
+            <summary class="text-xs font-medium text-gray-400 cursor-pointer hover:text-white select-none">Everyone, or by where they came from</summary>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                ${option('everyone', 1, 'Everyone in contacts', choices.everyone)}
+                ${origins.map(o => option('origin', o.key, o.label, o.count)).join('')}
+            </div>
+        </details>
+        <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+            ${window.can && window.can('manage_recipients') ? `<button type="button" data-cd="contacts" class="text-xs text-gray-400 hover:text-white"><i class="fas fa-address-book mr-1.5"></i>Manage contacts and segments</button>` : '<span></span>'}
             <button type="button" data-cd="build" class="bg-white/10 hover:bg-white/15 text-white text-sm px-4 py-2 rounded-lg disabled:opacity-50">Add to audience</button>
         </div>
-        <p class="text-xs text-gray-500 mt-3">Duplicates, unsubscribed addresses and past bounces are left out automatically.</p>`;
+        <p class="text-xs text-gray-500 mt-3">Counts leave out people who unsubscribed or bounced, and so does the audience. Someone in two segments gets one email.</p>`;
 
     const fits = c.total <= headroom;
     const send = `
@@ -435,13 +444,20 @@ async function _campaignAction(action, btn) {
     if (action === 'recipients') { openRecipients(c.id, c.name); return; }
     if (action === 'edit-template') { window.editTemplateById && window.editTemplateById(c.template); return; }
 
+    if (action === 'contacts') { showSection('contacts'); history.pushState(null, '', '/admin-panel/?section=contacts'); return; }
+
     if (action === 'build') {
-        const sources = Array.from(document.querySelectorAll('.cd-source:checked')).map(el => el.value);
-        const manual = (document.getElementById('cdManual').value || '').split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
-        if (!sources.length && !manual.length) { toast.error('Tick a source or paste some addresses first.'); return; }
+        const ticked = kind => Array.from(document.querySelectorAll(`.cd-audience[data-kind="${kind}"]:checked`)).map(el => el.value);
+        const body = {
+            everyone: ticked('everyone').length > 0,
+            segments: ticked('segment').map(Number),
+            origins: ticked('origin'),
+        };
+        if (!body.everyone && !body.segments.length && !body.origins.length) { toast.error('Tick a segment first.'); return; }
         await _busy(btn, async () => {
             try {
-                const data = await _jsonPost(`${base}/build_recipients/`, { sources, manual_emails: manual });
+                const data = await _jsonPost(`${base}/build_recipients/`, body);
+                delete CAMPAIGN.preselectSegments[c.id];
                 toast.success(`${data.count.toLocaleString()} recipient${data.count === 1 ? '' : 's'} in the audience.`);
                 await loadCampaigns();
             } catch (e) { toastApiError(e, 'The audience could not be built.'); }
@@ -518,22 +534,6 @@ async function _campaignAction(action, btn) {
     }
 }
 
-async function _importInto(input) {
-    const file = input.files && input.files[0];
-    if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
-    try {
-        const data = await fetchJson(`${API_BASE}/messaging/extract-emails/`, {
-            method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN }, body: fd,
-        });
-        const box = document.getElementById('cdManual');
-        box.value = (box.value ? box.value + '\n' : '') + data.emails.join('\n');
-        toast.success(`Found ${data.count} address${data.count === 1 ? '' : 'es'}. Press Add to audience to use them.`);
-    } catch (e) { toastApiError(e, 'The file could not be read.'); }
-    input.value = '';
-}
-
 // --- new campaign -------------------------------------------------------
 
 function openNewCampaign(templateId) {
@@ -566,6 +566,8 @@ async function createCampaign(event) {
             });
             closeNewCampaign();
             toast.success('Draft created. Now choose the audience.');
+            if (CAMPAIGN.pendingSegment) CAMPAIGN.preselectSegments[created.id] = [CAMPAIGN.pendingSegment];
+            CAMPAIGN.pendingSegment = null;
             CAMPAIGN.selectedId = created.id;
             CAMPAIGN.filter = 'all';
             await loadCampaigns();
@@ -575,16 +577,30 @@ async function createCampaign(event) {
 
 // From the template gallery: open Campaigns with this template chosen.
 window.startCampaignFrom = async function (templateId) {
+    CAMPAIGN.pendingSegment = null;
     showSection('campaigns');
     await loadCampaigns();
     openNewCampaign(templateId);
+};
+
+// From a segment under Contacts: the new draft's audience step comes up
+// with that segment already ticked.
+window.startCampaignForSegment = async function (segmentId) {
+    showSection('campaigns');
+    history.pushState(null, '', '/admin-panel/?section=campaigns');
+    await loadCampaigns();
+    openNewCampaign();
+    CAMPAIGN.pendingSegment = segmentId;
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('addCampaignForm');
     if (!form) return;
     form.addEventListener('submit', createCampaign);
-    document.getElementById('campaignNewBtn').addEventListener('click', () => openNewCampaign());
+    document.getElementById('campaignNewBtn').addEventListener('click', () => {
+        CAMPAIGN.pendingSegment = null;
+        openNewCampaign();
+    });
     document.querySelectorAll('[data-close-new]').forEach(b => b.addEventListener('click', closeNewCampaign));
 
     document.getElementById('campaignFilters').addEventListener('click', (e) => {
@@ -610,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!c) return;
         if (e.target.id === 'cdTemplate' && e.target.value) _patchCampaign(c, { template: Number(e.target.value) }, 'Template changed.');
         if (e.target.id === 'cdFrom') _patchCampaign(c, { from_mailbox: e.target.value }, 'Sender changed.');
-        if (e.target.id === 'cdImport') _importInto(e.target);
         if (e.target.id === 'cdSendAt') {
             const later = document.querySelector('input[name="cdWhen"][value="later"]');
             if (later) later.checked = true;
