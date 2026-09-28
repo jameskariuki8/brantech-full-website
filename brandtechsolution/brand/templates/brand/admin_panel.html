@@ -52,6 +52,12 @@
             title="Compose">
             <i class="fas fa-pen w-6 text-center"></i><span class="nav-label">Compose</span>
         </button>
+        <div id="mailQuota" class="sidebar-header hidden mt-3 px-1" title="Recipients you have sent to today">
+            <div class="flex justify-between text-[11px] text-gray-500 mb-1">
+                <span>Sent today</span><span id="mailQuotaText"></span>
+            </div>
+            <div class="h-1 rounded-full bg-white/5 overflow-hidden"><div id="mailQuotaBar" class="h-full bg-brand-blue rounded-full" style="width:0"></div></div>
+        </div>
     </div>
     <div id="mailBoxes" class="space-y-0.5"></div>
 </nav>
@@ -277,7 +283,7 @@
 <script src="{% static 'brand/js/admin/blogs.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/projects.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/github.js' %}" defer></script>
-<script src="{% static 'brand/js/admin/inbox.js' %}?v=2.2.0" defer></script>
+<script src="{% static 'brand/js/admin/inbox.js' %}?v=2.3.0" defer></script>
 <script src="{% static 'brand/js/admin/templates.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/campaigns.js' %}" defer></script>
 <script src="{% static 'brand/js/admin/recipients.js' %}" defer></script>

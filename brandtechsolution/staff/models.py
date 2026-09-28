@@ -42,6 +42,7 @@ class AuditEntry(models.Model):
         ("group_updated", "Role updated"),
         ("group_deleted", "Role deleted"),
         ("handle_chosen", "Work address chosen"),
+        ("mail_limit_changed", "Mail sending limit changed"),
     ]
 
     actor = models.ForeignKey(
@@ -125,6 +126,9 @@ class StaffProfile(models.Model):
         max_length=16, blank=True,
         help_text="E.164, e.g. +254712345678. A WhatsApp number is preferred.",
     )
+    # Recipients per day this person may send to from any mailbox. Null
+    # follows the company default in messaging.MailSettings; 0 suspends.
+    daily_mail_limit = models.PositiveIntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

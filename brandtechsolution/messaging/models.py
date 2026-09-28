@@ -297,3 +297,27 @@ class BlockedSender(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class MailSettings(models.Model):
+    """Company-wide sending limits. A single row, fetched with load()."""
+
+    default_daily_limit = models.PositiveIntegerField(
+        default=20, help_text="Recipients per person per day, unless overridden."
+    )
+    monthly_cap = models.PositiveIntegerField(
+        default=3000,
+        help_text="Recipients the whole company may send per calendar month "
+                  "(staff mail and campaigns). Match it to the Mailgun plan.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Mail settings"
+
+    @classmethod
+    def load(cls):
+        return cls.objects.get_or_create(pk=1)[0]
+
+    def __str__(self):
+        return "Mail settings"

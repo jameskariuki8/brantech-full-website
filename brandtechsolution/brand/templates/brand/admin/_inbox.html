@@ -13,7 +13,56 @@ the reader replaces the list while a conversation is open.
         <a href="/staff/address/?next=/admin-panel/%3Fsection%3Dinbox" class="underline font-semibold">Choose one</a>.
     </div>
 
-    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex h-[calc(100vh-7rem)] lg:h-[calc(100vh-9rem)] min-h-[480px]">
+    <div id="mailLimitsView" class="hidden space-y-6">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Sending limits</h2>
+            <p class="text-sm text-gray-400 mt-1">Counted in recipients: one email to 10 people uses 10. Personal limits reset at midnight.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form id="mailDefaultForm" class="bg-dark-card border border-dark-border rounded-xl p-5">
+                <label for="mailDefaultLimit" class="block text-sm font-semibold text-white">Default per person</label>
+                <p class="text-xs text-gray-500 mt-1 mb-3">Recipients a day for anyone without their own limit.</p>
+                <div class="flex gap-2">
+                    <input id="mailDefaultLimit" name="default_daily_limit" type="number" min="0" max="100000" required
+                        class="w-32 bg-[#06090F] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue/60">
+                    <button type="submit" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-200 rounded-lg text-sm font-medium disabled:opacity-50">Save</button>
+                </div>
+            </form>
+            <form id="mailCapForm" class="bg-dark-card border border-dark-border rounded-xl p-5">
+                <label for="mailMonthlyCap" class="block text-sm font-semibold text-white">Company monthly cap</label>
+                <p class="text-xs text-gray-500 mt-1 mb-3">Staff mail and campaigns together. Keep it at or below the Mailgun plan.</p>
+                <div class="flex gap-2">
+                    <input id="mailMonthlyCap" name="monthly_cap" type="number" min="0" max="100000" required
+                        class="w-32 bg-[#06090F] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue/60">
+                    <button type="submit" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-200 rounded-lg text-sm font-medium disabled:opacity-50">Save</button>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-xs text-gray-500 mb-1"><span>Used this month</span><span id="mailMonthText"></span></div>
+                    <div class="h-1.5 rounded-full bg-white/5 overflow-hidden"><div id="mailMonthBar" class="h-full rounded-full bg-brand-blue" style="width:0"></div></div>
+                </div>
+            </form>
+        </div>
+        <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-dark-border">
+                <h3 class="text-sm font-semibold text-white">People</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Leave a limit empty to use the default. 0 suspends sending.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-500 border-b border-white/5">
+                            <th class="px-5 py-2.5 font-medium">Person</th>
+                            <th class="px-5 py-2.5 font-medium">Sent today</th>
+                            <th class="px-5 py-2.5 font-medium">Daily limit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mailLimitRows" class="divide-y divide-white/5"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="mailClient" class="bg-dark-card border border-dark-border rounded-xl overflow-hidden flex h-[calc(100vh-7rem)] lg:h-[calc(100vh-9rem)] min-h-[480px]">
         <!-- Conversation list -->
         <section id="mailListPane" class="w-full lg:w-[340px] xl:w-[400px] shrink-0 flex flex-col border-r border-dark-border min-w-0">
             <div class="p-3 border-b border-dark-border space-y-2">
@@ -120,7 +169,8 @@ the reader replaces the list while a conversation is open.
                 <textarea name="body" rows="12" required placeholder="Write your message"
                     class="w-full bg-[#06090F] border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue/60 resize-y"></textarea>
             </div>
-            <div class="px-5 py-4 border-t border-dark-border flex justify-end gap-2">
+            <div class="px-5 py-4 border-t border-dark-border flex items-center justify-end gap-2">
+                <p id="mailComposeQuota" class="mr-auto text-xs text-gray-500"></p>
                 <button type="button" data-compose-close class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm">Discard</button>
                 <button type="submit" class="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
                     <i class="fas fa-paper-plane"></i> Send

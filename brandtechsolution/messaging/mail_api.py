@@ -6,6 +6,7 @@ import email.utils
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -16,10 +17,14 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from staff.audit import record
 from staff.handles import mailbox_address
+from staff.models import StaffProfile
+from staff.permissions import has_capability
 
 from . import mailbox as mb
-from .models import MailThread
+from . import quota
+from .models import MailSettings, MailThread
 
 
 class ThreadPagination(PageNumberPagination):
@@ -90,6 +95,8 @@ def mailboxes(request):
         ),
         "shared": [],
         "all_mail": user.has_perm("staff.view_all_mail"),
+        "manage_limits": user.has_perm("staff.manage_mail_limits"),
+        "quota": quota.status(user),
         "people": [],
     }
     if user.has_perm("staff.view_inbox"):
@@ -251,8 +258,14 @@ def _body(request):
 
 
 def _send(request, **kwargs):
+    recipients = len(kwargs["to"]) + len(kwargs["cc"])
     try:
-        message = mb.send(request.user, **kwargs)
+        with transaction.atomic():
+            quota.lock()
+            quota.check(request.user, recipients)
+            message = mb.send(request.user, **kwargs)
+    except quota.QuotaExceeded as exc:
+        return Response({"detail": str(exc)}, status=429)
     except mb.SendError as exc:
         return Response({"detail": f"The message was not sent: {exc}"}, status=502)
     data = _thread_json(message.thread)
@@ -324,3 +337,91 @@ def unread_count(request):
     ).count()
     return Response({"unread": count})
 
+
+
+# --- sending limits --------------------------------------------------------
+
+
+def _limit_value(raw, field, allow_null=False):
+    if raw is None or raw == "":
+        if allow_null:
+            return None
+        raise ValidationError({field: "Enter a number."})
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        raise ValidationError({field: "Enter a whole number."})
+    if value < 0 or value > 100000:
+        raise ValidationError({field: "Use a number between 0 and 100000."})
+    return value
+
+
+def _limits_json():
+    mail_settings = MailSettings.load()
+    profiles = {
+        p.user_id: p.daily_mail_limit for p in StaffProfile.objects.all()
+    }
+    people = []
+    for user in User.objects.filter(is_staff=True, is_active=True).order_by("username"):
+        override = profiles.get(user.pk)
+        people.append({
+            "id": user.pk,
+            "name": user.get_full_name() or user.username,
+            "address": None if "@" in user.username else mailbox_address(user.username),
+            "used_today": quota.used_today(user),
+            "limit": override,
+            "effective": mail_settings.default_daily_limit if override is None else override,
+        })
+    return {
+        "default_daily_limit": mail_settings.default_daily_limit,
+        "monthly_cap": mail_settings.monthly_cap,
+        "month_used": quota.used_this_month(),
+        "people": people,
+    }
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([has_capability("manage_mail_limits")])
+def limits(request):
+    if request.method == "PATCH":
+        mail_settings = MailSettings.load()
+        changes = {}
+        for field in ("default_daily_limit", "monthly_cap"):
+            if field in request.data:
+                value = _limit_value(request.data[field], field)
+                if value != getattr(mail_settings, field):
+                    changes[field] = [getattr(mail_settings, field), value]
+                    setattr(mail_settings, field, value)
+        if changes:
+            with transaction.atomic():
+                mail_settings.save()
+                record(
+                    actor=request.user,
+                    action="mail_limit_changed",
+                    summary=f"{request.user} changed the company mail limits",
+                    detail=changes,
+                )
+    return Response(_limits_json())
+
+
+@api_view(["PATCH"])
+@permission_classes([has_capability("manage_mail_limits")])
+def person_limit(request, pk):
+    """Set one person's daily limit. null returns them to the default."""
+    person = get_object_or_404(User, pk=pk, is_staff=True)
+    value = _limit_value(request.data.get("limit"), "limit", allow_null=True)
+    profile, _ = StaffProfile.objects.get_or_create(user=person)
+    before = profile.daily_mail_limit
+    if value != before:
+        with transaction.atomic():
+            profile.daily_mail_limit = value
+            profile.save(update_fields=["daily_mail_limit", "updated_at"])
+            shown = "the default" if value is None else ("suspended" if value == 0 else f"{value}/day")
+            record(
+                actor=request.user,
+                action="mail_limit_changed",
+                summary=f"{request.user} set {person}'s mail limit to {shown}",
+                target_user=person,
+                detail={"before": before, "after": value},
+            )
+    return Response(_limits_json())

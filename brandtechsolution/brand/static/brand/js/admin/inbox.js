@@ -70,6 +70,9 @@
         if (b.all_mail) {
             entries.push({ key: 'all', label: 'All mail', icon: 'fa-eye', group: 'Oversight' });
         }
+        if (b.manage_limits) {
+            entries.push({ key: 'limits', label: 'Sending limits', icon: 'fa-gauge', group: 'Oversight' });
+        }
         return entries;
     }
 
@@ -110,11 +113,100 @@
                 `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
         }
 
+        renderQuota(b.quota);
         $('mailNoHandle').classList.toggle('hidden', !!b.me);
         $('mailComposeBtn').disabled = !(b.me || b.shared.some((x) => x.can_send));
 
         const totalUnread = (b.me ? b.me.unread : 0) + b.shared.reduce((n, x) => n + x.unread, 0);
         updateNavBadge(totalUnread);
+    }
+
+    function quotaText(q) {
+        if (!q) return '';
+        if (q.limit === 0) return 'Sending suspended';
+        return `${q.used} of ${q.limit}`;
+    }
+
+    function renderQuota(q) {
+        const box = $('mailQuota');
+        box.classList.toggle('hidden', !q);
+        if (!q) return;
+        $('mailQuotaText').textContent = quotaText(q);
+        const pct = q.limit ? Math.min(100, Math.round((q.used / q.limit) * 100)) : 100;
+        const bar = $('mailQuotaBar');
+        bar.style.width = `${pct}%`;
+        bar.className = `h-full rounded-full ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-yellow-400' : 'bg-brand-blue'}`;
+    }
+
+    // --- sending limits (manage_mail_limits) --------------------------------
+
+    function showLimitsView(show) {
+        $('mailLimitsView').classList.toggle('hidden', !show);
+        $('mailClient').classList.toggle('hidden', show);
+        $('mailClient').classList.toggle('flex', !show);
+    }
+
+    function renderLimits(data) {
+        $('mailDefaultLimit').value = data.default_daily_limit;
+        $('mailMonthlyCap').value = data.monthly_cap;
+        $('mailMonthText').textContent = `${data.month_used} of ${data.monthly_cap}`;
+        const pct = data.monthly_cap ? Math.min(100, Math.round((data.month_used / data.monthly_cap) * 100)) : 100;
+        const bar = $('mailMonthBar');
+        bar.style.width = `${pct}%`;
+        bar.className = `h-full rounded-full ${pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-yellow-400' : 'bg-brand-blue'}`;
+
+        $('mailLimitRows').innerHTML = data.people.map((p) => {
+            const chip = p.effective === 0
+                ? '<span class="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Suspended</span>'
+                : p.used_today >= p.effective
+                    ? '<span class="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300">Limit reached</span>'
+                    : '';
+            return `
+                <tr>
+                    <td class="px-5 py-3">
+                        <p class="text-white">${escapeHtml(p.name)}</p>
+                        <p class="text-xs text-gray-500">${escapeHtml(p.address || 'No work address yet')}</p>
+                    </td>
+                    <td class="px-5 py-3 text-gray-300 whitespace-nowrap">${p.used_today} of ${p.effective}${chip}</td>
+                    <td class="px-5 py-3">
+                        <input type="number" min="0" max="100000" data-limit-person="${p.id}"
+                            value="${p.limit === null ? '' : p.limit}" placeholder="Default (${data.default_daily_limit})"
+                            aria-label="Daily limit for ${escapeHtml(p.name)}"
+                            class="w-36 bg-[#06090F] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-brand-blue/60">
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    async function loadLimits() {
+        try {
+            renderLimits(await fetchJson(`${MAIL_API}/limits/`));
+        } catch (err) {
+            toastApiError(err, 'Could not load the sending limits.');
+        }
+    }
+
+    function patch(url, body) {
+        return fetchJson(url, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(body),
+        });
+    }
+
+    async function savePersonLimit(input) {
+        const raw = input.value.trim();
+        if (raw === input.defaultValue) return;
+        input.disabled = true;
+        try {
+            renderLimits(await patch(`${MAIL_API}/limits/people/${input.dataset.limitPerson}/`,
+                { limit: raw === '' ? null : Number(raw) }));
+            toast.success('Limit saved.');
+            refreshBoxes();
+        } catch (err) {
+            toastApiError(err);
+            input.disabled = false;
+        }
     }
 
     function updateNavBadge(count) {
@@ -147,6 +239,14 @@
         closeMobileDrawer();
         if (key === state.box) return;
         state.box = key;
+        if (key === 'limits') {
+            closeThread();
+            renderBoxes();
+            showLimitsView(true);
+            loadLimits();
+            return;
+        }
+        showLimitsView(false);
         state.page = 1;
         state.filter = 'inbox';
         closeThread();
@@ -214,6 +314,7 @@
     }
 
     async function loadThreads(append) {
+        if (state.box === 'limits') return;
         if (!state.boxes || (!state.boxes.me && (state.box === 'me' || state.box === 'sent'))) {
             state.threads = [];
             renderThreads();
@@ -462,13 +563,13 @@
         }
     }
 
-    async function withBusy(form, work) {
+    async function withBusy(form, work, fallback = 'The message was not sent.') {
         const button = form.querySelector('button[type="submit"]');
         button.disabled = true;
         try {
             await work();
         } catch (err) {
-            toastApiError(err, 'The message was not sent.');
+            toastApiError(err, fallback);
         } finally {
             button.disabled = false;
         }
@@ -483,6 +584,10 @@
         state.boxes.shared.filter((s) => s.can_send).forEach((s) =>
             options.push(`<option value="${escapeHtml(s.mailbox)}">${escapeHtml(s.address)} (shared)</option>`));
         form.elements.from.innerHTML = options.join('');
+        const q = state.boxes.quota;
+        $('mailComposeQuota').textContent = q
+            ? (q.limit === 0 ? 'Your sending is suspended.' : `${q.remaining} of ${q.limit} recipients left today`)
+            : '';
         if (state.boxes.shared.some((s) => s.mailbox === state.box && s.can_send)) {
             form.elements.from.value = state.box;
         }
@@ -580,8 +685,27 @@
                 toast.success('Sent.');
                 await openThread(t.id);
                 loadThreads();
+                refreshBoxes();
             });
         });
+
+        $('mailLimitRows').addEventListener('change', (e) => {
+            const input = e.target.closest('[data-limit-person]');
+            if (input) savePersonLimit(input);
+        });
+        $('mailLimitRows').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.matches('[data-limit-person]')) e.target.blur();
+        });
+        const saveSettings = (form, field) => form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            withBusy(form, async () => {
+                renderLimits(await patch(`${MAIL_API}/limits/`, { [field]: Number(form.elements[field].value) }));
+                toast.success('Saved.');
+                refreshBoxes();
+            }, 'Could not save.');
+        });
+        saveSettings($('mailDefaultForm'), 'default_daily_limit');
+        saveSettings($('mailCapForm'), 'monthly_cap');
 
         $('mailComposeBtn').addEventListener('click', () => {
             closeMobileDrawer();
@@ -620,7 +744,10 @@
     async function loadInbox() {
         wire();
         renderFilters();
-        if (await refreshBoxes()) loadThreads();
+        if (!(await refreshBoxes())) return;
+        showLimitsView(state.box === 'limits');
+        if (state.box === 'limits') loadLimits();
+        else loadThreads();
     }
 
     window.loadInbox = loadInbox;

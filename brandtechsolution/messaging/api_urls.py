@@ -21,4 +21,6 @@ urlpatterns = [
     path("mail/threads/<int:pk>/reply/", mail_api.reply, name="mail-reply"),
     path("mail/threads/<int:pk>/delete/", mail_api.delete_thread, name="mail-delete"),
     path("mail/compose/", mail_api.compose, name="mail-compose"),
+    path("mail/limits/", mail_api.limits, name="mail-limits"),
+    path("mail/limits/people/<int:pk>/", mail_api.person_limit, name="mail-person-limit"),
 ]

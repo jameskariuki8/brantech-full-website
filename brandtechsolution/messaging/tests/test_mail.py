@@ -1,11 +1,14 @@
+from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth.models import Permission, User
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
-from messaging.models import BlockedSender, Inquiry, MailMessage, MailThread
+from messaging.models import BlockedSender, Inquiry, MailMessage, MailSettings, MailThread
+from staff.models import AuditEntry, StaffProfile
 
 WEBHOOK = "/messaging/inbound-webhook/"
 
@@ -326,3 +329,97 @@ class SpamAndDeleteTest(TestCase):
         inbound(self.client, "ann@teklora.co.ke", subject="Re: Hello",
                 **{"Message-Id": "<second@example.com>", "In-Reply-To": "<first@example.com>"})
         self.assertEqual(self.listing(self.ann, "box=me"), [self.thread.id])
+
+
+@override_settings(
+    MAILBOX_DOMAIN="teklora.co.ke",
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+)
+class SendingLimitTest(TestCase):
+    def setUp(self):
+        self.ann = staff("ann")
+        self.admin = staff("boss", "manage_mail_limits")
+        settings_row = MailSettings.load()
+        settings_row.default_daily_limit = 3
+        settings_row.save()
+        self.client.force_login(self.ann)
+
+    def compose(self, to):
+        return self.client.post("/api/messaging/mail/compose/", {
+            "to": to, "subject": "Hi", "body": "Hello",
+        }, content_type="application/json")
+
+    def test_limit_counts_recipients_not_messages(self):
+        self.assertEqual(self.compose("a@example.com, b@example.com").status_code, 201)
+        resp = self.compose("c@example.com, d@example.com")
+        self.assertEqual(resp.status_code, 429)
+        self.assertIn("1 of your 3 left today", resp.json()["detail"])
+        self.assertEqual(self.compose("c@example.com").status_code, 201)
+        self.assertEqual(self.compose("e@example.com").status_code, 429)
+        self.assertEqual(MailMessage.objects.filter(direction="out").count(), 2)
+
+    def test_hitting_the_limit_tells_the_admins_once(self):
+        self.compose("a@example.com, b@example.com, c@example.com")
+        mail.outbox.clear()
+        self.compose("d@example.com")
+        self.compose("d@example.com")
+        notices = [m for m in mail.outbox if "reached their daily mail limit" in m.subject]
+        self.assertEqual(len(notices), 1)
+        self.assertEqual(notices[0].to, ["boss@personal.example"])
+
+    def test_a_personal_override_and_suspension(self):
+        StaffProfile.objects.create(user=self.ann, daily_mail_limit=0)
+        resp = self.compose("a@example.com")
+        self.assertEqual(resp.status_code, 429)
+        self.assertIn("suspended", resp.json()["detail"])
+
+    def test_yesterdays_mail_does_not_count(self):
+        self.compose("a@example.com, b@example.com, c@example.com")
+        MailMessage.objects.update(created_at=timezone.now() - timedelta(days=1))
+        self.assertEqual(self.compose("d@example.com").status_code, 201)
+
+    def test_monthly_cap_covers_the_whole_company(self):
+        settings_row = MailSettings.load()
+        settings_row.monthly_cap = 2
+        settings_row.default_daily_limit = 100
+        settings_row.save()
+        self.assertEqual(self.compose("a@example.com, b@example.com").status_code, 201)
+        self.client.force_login(self.admin)
+        resp = self.compose("c@example.com")
+        self.assertEqual(resp.status_code, 429)
+        self.assertIn("this month", resp.json()["detail"])
+
+    def test_mailboxes_reports_the_quota(self):
+        self.compose("a@example.com")
+        quota = self.client.get("/api/messaging/mail/mailboxes/").json()["quota"]
+        self.assertEqual((quota["used"], quota["limit"], quota["remaining"]), (1, 3, 2))
+
+    def test_only_limit_managers_can_change_limits(self):
+        self.assertEqual(self.client.get("/api/messaging/mail/limits/").status_code, 403)
+        resp = self.client.patch(f"/api/messaging/mail/limits/people/{self.ann.pk}/",
+                                 {"limit": 500}, content_type="application/json")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_manager_sets_limits_and_it_is_audited(self):
+        self.client.force_login(self.admin)
+        resp = self.client.patch(f"/api/messaging/mail/limits/people/{self.ann.pk}/",
+                                 {"limit": 50}, content_type="application/json")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        row = next(p for p in resp.json()["people"] if p["id"] == self.ann.pk)
+        self.assertEqual((row["limit"], row["effective"]), (50, 50))
+        self.assertTrue(AuditEntry.objects.filter(
+            action="mail_limit_changed", target_user=self.ann).exists())
+
+        # null returns them to the default.
+        resp = self.client.patch(f"/api/messaging/mail/limits/people/{self.ann.pk}/",
+                                 {"limit": None}, content_type="application/json")
+        row = next(p for p in resp.json()["people"] if p["id"] == self.ann.pk)
+        self.assertEqual((row["limit"], row["effective"]), (None, 3))
+
+        resp = self.client.patch("/api/messaging/mail/limits/",
+                                 {"default_daily_limit": 40, "monthly_cap": 2500},
+                                 content_type="application/json")
+        self.assertEqual((resp.json()["default_daily_limit"], resp.json()["monthly_cap"]), (40, 2500))
+        bad = self.client.patch("/api/messaging/mail/limits/", {"monthly_cap": -1},
+                                content_type="application/json")
+        self.assertEqual(bad.status_code, 400)
