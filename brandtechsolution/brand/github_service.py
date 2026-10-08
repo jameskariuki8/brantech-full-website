@@ -61,22 +61,57 @@ class GitHubService:
             user = self.client.get_user()
             repos = user.get_repos(affiliation='owner,collaborator')
 
-            synced_ids = set(
-                Project.objects.filter(github_repo_id__isnull=False)
-                .values_list('github_repo_id', flat=True)
-            )
+            synced_projects = {
+                p.github_repo_id: p
+                for p in Project.objects.filter(github_repo_id__isnull=False)
+            }
             repo_list = []
             for repo in repos:
-                role = 'owner' if repo.owner.login == self.username else 'collaborator'
-                is_synced = repo.id in synced_ids
+                owner_login = repo.owner.login if hasattr(repo, 'owner') and hasattr(repo.owner, 'login') else ''
+                role = 'owner' if owner_login == self.username else 'collaborator'
+                project = synced_projects.get(repo.id)
+                is_synced = project is not None
+
+                project_data = None
+                if project:
+                    project_data = {
+                        'id': project.id,
+                        'title': project.title,
+                        'short_description': project.short_description or "",
+                        'description': project.description or "",
+                        'commit_count': project.commit_count or 0,
+                        'last_synced_at': project.last_synced_at.isoformat() if project.last_synced_at else None,
+                        'has_readme': bool(project.readme_content),
+                        'readme_content': project.readme_content or "",
+                        'cached_commits': project.cached_commits or [],
+                        'project_url': project.project_url or "",
+                        'featured': project.featured,
+                    }
+
+                language = repo.language if isinstance(getattr(repo, 'language', None), str) else None
+                stars = repo.stargazers_count if isinstance(getattr(repo, 'stargazers_count', None), int) else 0
+                forks = repo.forks_count if isinstance(getattr(repo, 'forks_count', None), int) else 0
+                default_branch = repo.default_branch if isinstance(getattr(repo, 'default_branch', None), str) else 'main'
+                full_name = repo.full_name if isinstance(getattr(repo, 'full_name', None), str) else repo.name
+                
+                updated_at_val = getattr(repo, 'updated_at', None)
+                updated_at = updated_at_val.isoformat() if hasattr(updated_at_val, 'isoformat') else None
+
                 repo_list.append({
                     'id': repo.id,
                     'name': repo.name,
+                    'full_name': full_name,
                     'description': repo.description or "No description provided.",
                     'html_url': repo.html_url,
-                    'is_private': repo.private,
+                    'is_private': bool(getattr(repo, 'private', False)),
                     'role': role,
+                    'language': language,
+                    'stargazers_count': stars,
+                    'forks_count': forks,
+                    'default_branch': default_branch,
+                    'updated_at': updated_at,
                     'is_synced': is_synced,
+                    'project': project_data,
                 })
 
             return sorted(repo_list, key=lambda x: (not x['is_synced'], x['name'].lower()))
@@ -87,6 +122,33 @@ class GitHubService:
         except Exception as e:
             logger.error(f"Unexpected error when fetching repositories: {e}")
             raise Exception(f"An unexpected error occurred: {str(e)}")
+
+    def get_repository_readme(self, repo_id: int) -> Dict[str, Any]:
+        """Fetch raw and decoded README markdown for a repository."""
+        try:
+            # If project exists and has cached readme, return it
+            project = Project.objects.filter(github_repo_id=repo_id).first()
+            if project and project.readme_content:
+                return {
+                    "success": True,
+                    "readme": project.readme_content,
+                    "cached": True,
+                }
+
+            repo = self.client.get_repo(repo_id)
+            readme_file = repo.get_readme()
+            readme_content = readme_file.decoded_content.decode('utf-8')
+            return {
+                "success": True,
+                "readme": readme_content,
+                "cached": False,
+            }
+        except GithubException as e:
+            logger.warning(f"Could not fetch README for repo {repo_id}: {e}")
+            return {"success": False, "error": "No README found for this repository on GitHub."}
+        except Exception as e:
+            logger.error(f"Unexpected error fetching README: {e}")
+            return {"success": False, "error": str(e)}
 
     def sync_repositories(self, repo_ids: List[int]) -> Dict[str, Any]:
         """

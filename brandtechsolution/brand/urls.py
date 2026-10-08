@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/projects/<int:pk>/commits/', api_views.project_commits, name='api_project_commits'),
     
     path('api/github/repos/', api_views.github_repos_list, name='api_github_repos'),
+    path('api/github/repos/<int:repo_id>/readme/', api_views.github_repo_readme, name='api_github_repo_readme'),
     path('api/github/sync/', api_views.github_sync_selected, name='api_github_sync'),
 
     path('blog/', views.blog, name='blog'),

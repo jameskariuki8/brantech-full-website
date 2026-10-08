@@ -1238,4 +1238,141 @@ html.dark .mobile-nav-item,
 html.dark .mobile-nav-item:hover,
 [data-theme="dark"] .mobile-nav-item:hover {
   color: #38BDF8 !important;
-}
+}
+
+/* ============================================================ */
+/* GitHub Markdown Reader Styles */
+/* ============================================================ */
+.github-readme-body {
+  color: #CBD5E1;
+  font-size: 0.925rem;
+  line-height: 1.7;
+}
+
+.github-readme-body h1 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #F8FAFC !important;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.github-readme-body h2 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: #F1F5F9 !important;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.github-readme-body h3 {
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  color: #E2E8F0 !important;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.github-readme-body p {
+  margin-bottom: 0.85rem;
+  color: #94A3B8 !important;
+}
+
+.github-readme-body a {
+  color: #38BDF8 !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.github-readme-body a:hover {
+  color: #7DD3FC !important;
+}
+
+.github-readme-body ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.github-readme-body ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.github-readme-body li {
+  margin-bottom: 0.35rem;
+  color: #CBD5E1;
+}
+
+.github-readme-body pre {
+  background: #04060A !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  overflow-x: auto !important;
+  margin: 1rem 0 !important;
+}
+
+.github-readme-body pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #34D399 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.825rem !important;
+}
+
+.github-readme-body :not(pre) > code {
+  background: rgba(56, 189, 248, 0.1) !important;
+  color: #38BDF8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
+  padding: 0.15rem 0.4rem !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.825rem !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+.github-readme-body blockquote {
+  border-left: 3px solid #38BDF8;
+  background: rgba(56, 189, 248, 0.05);
+  padding: 0.6rem 1rem;
+  margin: 0.85rem 0;
+  border-radius: 0 0.375rem 0.375rem 0;
+  color: #94A3B8;
+  font-style: italic;
+}
+
+.github-readme-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.github-readme-body th {
+  background: #0A101D;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.6rem 0.75rem;
+  color: #F8FAFC;
+  font-weight: 600;
+  text-align: left;
+}
+
+.github-readme-body td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.5rem 0.75rem;
+  color: #CBD5E1;
+}
+
+.github-readme-body img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0.75rem 0;
+}
+

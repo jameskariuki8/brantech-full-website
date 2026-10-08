@@ -200,3 +200,24 @@ class EndpointTests(GitHubTestCase):
         page = self.client.get("/admin-panel/").content.decode()
         self.assertNotIn('id="nav-githubSync"', page)
         self.assertNotIn('id="githubSync"', page)
+
+    def test_the_list_includes_project_data_for_synced_repos(self):
+        self.add(repo_id=101, name="widget", description="A widget.")
+        self.sync(101)
+        self.client.force_login(staff_with("manage_projects"))
+
+        resp = self.client.get("/api/github/repos/")
+        self.assertEqual(resp.status_code, 200)
+        repo_data = resp.json()["results"][0]
+        self.assertTrue(repo_data["is_synced"])
+        self.assertIsNotNone(repo_data["project"])
+        self.assertEqual(repo_data["project"]["title"], "widget")
+        self.assertEqual(repo_data["project"]["commit_count"], 3)
+
+    def test_github_repo_readme_endpoint(self):
+        self.add(repo_id=101, name="widget", readme="# Widget Readme")
+        self.client.force_login(staff_with("manage_projects"))
+
+        resp = self.client.get("/api/github/repos/101/readme/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["readme"], "# Widget Readme")

@@ -561,6 +561,21 @@ def github_sync_selected(request):
         return JsonResponse({'error': 'Could not sync repositories.'}, status=500)
 
 @require_http_methods(["GET"])
+def github_repo_readme(request, repo_id):
+    denied = capability_required_json(request, 'manage_projects')
+    if denied:
+        return denied
+    try:
+        service = GitHubService()
+        result = service.get_repository_readme(repo_id)
+        if result.get("success"):
+            return JsonResponse(result)
+        return JsonResponse({'error': result.get("error", "Could not fetch README.")}, status=404)
+    except Exception:
+        logger.exception('github_repo_readme failed for repo %s', repo_id)
+        return JsonResponse({'error': 'Could not fetch README from GitHub.'}, status=500)
+
+@require_http_methods(["GET"])
 def project_commits(request, pk):
     """
     Returns last 10 commits for a GitHub-synced project.
