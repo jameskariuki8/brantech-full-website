@@ -1,6 +1,19 @@
 {% load static %}
+<script>
+  (function() {
+    const saved = localStorage.getItem('teklora-theme');
+    if (saved === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      // Default to dark theme for modern calm & clean experience
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7">
+<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.8">
 
 <header class="premium-nav-container" id="premiumHeaderContainer">
   <nav class="premium-nav">
@@ -220,8 +233,12 @@
       <a href="{% url 'contacts' %}" class="nav-link-item {% if request.resolver_match.url_name == 'contacts' %}active{% endif %}">Contact</a>
     </div>
 
-    <!-- CTA & Mobile Toggle (Toggle hidden on large screens) -->
+    <!-- CTA, Theme Toggle & Mobile Toggle (Toggle hidden on large screens) -->
     <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button id="themeToggleBtn" type="button" aria-label="Toggle theme" title="Toggle dark/light theme" class="theme-toggle-btn">
+        <i class="fas fa-moon"></i>
+        <i class="fas fa-sun"></i>
+      </button>
       <div class="hidden lg:block">
         <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">Book Consultation</a>
       </div>
@@ -320,7 +337,12 @@
 
   </div>
   
-  <div style="margin-top: 1.5rem; pt-1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+  <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 0.75rem;">
+    <button id="themeToggleBtnMobile" type="button" class="btn-premium btn-glass-white" style="width: 100%; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
+      <i class="fas fa-moon"></i>
+      <i class="fas fa-sun"></i>
+      <span>Toggle Dark / Light Mode</span>
+    </button>
     <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary" style="width: 100%; text-decoration: none; text-align: center; justify-content: center;">Book Strategy Consultation</a>
   </div>
 </div>
@@ -333,6 +355,20 @@
     const close = document.getElementById('premiumMobileClose');
     const panel = document.getElementById('premiumMobileNav');
 
+    // Theme toggle handling
+    function toggleThemeMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      const newTheme = isDark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('teklora-theme', newTheme);
+      window.dispatchEvent(new CustomEvent('teklora-theme-changed', { detail: { theme: newTheme } }));
+    }
+
+    const tBtn = document.getElementById('themeToggleBtn');
+    if (tBtn) tBtn.addEventListener('click', toggleThemeMode);
+    const tBtnMob = document.getElementById('themeToggleBtnMobile');
+    if (tBtnMob) tBtnMob.addEventListener('click', toggleThemeMode);
+
     // Scroll styling effect
     window.addEventListener('scroll', () => {
       if (window.scrollY > 30) {
@@ -343,7 +379,6 @@
     });
 
     // Mobile panel toggling is handled via inline onclick to prevent conflicts
-
     if (close) {
       close.addEventListener('click', () => {
         panel.classList.remove('open');

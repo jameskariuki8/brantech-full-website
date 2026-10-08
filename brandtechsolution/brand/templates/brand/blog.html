@@ -15,82 +15,83 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'sans-serif'] },
           colors: {
-            background: '#FAFAFA',
-            surface: '#FFFFFF',
-            primaryText: '#18181B',
-            secondaryText: '#52525B',
-            brandBlue: '#33348E',
-            brandWarm: '#10B981',
-            borderLight: '#E4E4E7'
+            background: 'var(--bg-primary)',
+            surface: 'var(--bg-card)',
+            primaryText: 'var(--text-primary)',
+            secondaryText: 'var(--text-secondary)',
+            brandBlue: 'var(--brand-blue)',
+            brandWarm: 'var(--brand-warm)',
+            borderLight: 'var(--border-color)'
           }
         }
       }
     }
   </script>
   
-  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.0.0">
+  <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9">
 </head>
-<body class="bg-background text-secondaryText font-sans antialiased pt-24">
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-brandBlue/30 relative overflow-x-hidden">
 
   {% include 'brand/header.html' %}
 
   <!-- HERO SECTION -->
-  <section class="section-padding bg-background text-center relative overflow-hidden">
-    <div class="container-wide relative z-10 px-6 max-w-4xl space-y-6">
-        <h1 class="text-4xl md:text-6xl font-bold text-primaryText tracking-tight">
-            Engineering <span class="text-gradient">Journal.</span>
+  <section class="pt-32 sm:pt-40 pb-16 bg-background text-center relative overflow-hidden">
+    <div class="max-w-4xl mx-auto px-6 space-y-4 relative z-10">
+        <h1 class="text-4xl md:text-6xl font-extrabold text-primaryText tracking-tight">
+            Engineering <span class="text-brandBlue">Journal.</span>
         </h1>
-        <p class="text-lg md:text-xl max-w-2xl mx-auto leading-relaxed text-secondaryText">
+        <p class="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed text-secondaryText">
             Insights, architecture deep-dives, and thoughts on building scalable, human-centered technology.
         </p>
     </div>
   </section>
 
   <!-- BLOG LISTING -->
-  <section class="section-padding bg-surface border-y border-borderLight min-h-[50vh]">
-    <div class="container-wide px-6">
+  <section class="py-16 bg-surface border-y border-borderLight min-h-[50vh]">
+    <div class="max-w-7xl mx-auto px-6">
       
       <!-- Sorting Controls -->
       <div class="flex justify-end mb-8">
         <div class="inline-flex rounded-lg border border-borderLight bg-surface p-1">
-          <a href="?sort=latest" class="px-4 py-1.5 text-sm font-medium rounded-md {% if sort_by != 'popular' %}bg-gray-100 text-primaryText{% else %}text-secondaryText hover:text-primaryText{% endif %}">Latest</a>
-          <a href="?sort=popular" class="px-4 py-1.5 text-sm font-medium rounded-md {% if sort_by == 'popular' %}bg-gray-100 text-primaryText{% else %}text-secondaryText hover:text-primaryText{% endif %}">Popular</a>
+          <a href="?sort=latest" class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {% if sort_by != 'popular' %}bg-brandBlue text-white shadow-sm{% else %}text-secondaryText hover:text-primaryText{% endif %}">Latest</a>
+          <a href="?sort=popular" class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {% if sort_by == 'popular' %}bg-brandBlue text-white shadow-sm{% else %}text-secondaryText hover:text-primaryText{% endif %}">Popular</a>
         </div>
       </div>
 
       {% if posts %}
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {% for post in posts %}
-            <article class="clean-card p-0 overflow-hidden flex flex-col hover:border-brandBlue/30">
+            <article class="clean-card p-0 overflow-hidden flex flex-col hover:border-brandBlue/40 transition-all duration-300">
               {% if post.image %}
-                <div class="aspect-[16/9] w-full overflow-hidden bg-gray-100">
+                <div class="aspect-[16/9] w-full overflow-hidden bg-surface/50 border-b border-borderLight">
                   <img src="{{ post.image.url }}" alt="{{ post.title }}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105">
                 </div>
               {% endif %}
               
               <div class="p-6 flex flex-col flex-grow">
                 <div class="flex items-center gap-3 mb-4">
-                  <span class="text-xs font-bold uppercase tracking-wider text-brandBlue bg-blue-50 px-2 py-1 rounded">{{ post.category }}</span>
-                  <span class="text-xs text-gray-400">{{ post.created_at|date:"M d, Y" }}</span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-brandBlue bg-brandBlue/10 border border-brandBlue/20 px-2.5 py-1 rounded-md">{{ post.category }}</span>
+                  <span class="text-xs text-secondaryText">{{ post.created_at|date:"M d, Y" }}</span>
                 </div>
                 
                 <h2 class="text-xl font-bold text-primaryText mb-3 line-clamp-2">
                   <a href="{% url 'blog_detail' post.slug %}" class="hover:text-brandBlue transition-colors">{{ post.title }}</a>
                 </h2>
                 
-                <p class="text-sm text-secondaryText mb-6 line-clamp-3 flex-grow">
+                <p class="text-sm text-secondaryText mb-6 line-clamp-3 flex-grow leading-relaxed">
                   {{ post.excerpt|default:post.content|striptags|truncatewords:20 }}
                 </p>
                 
                 <div class="flex items-center justify-between pt-4 border-t border-borderLight mt-auto">
-                  <a href="{% url 'blog_detail' post.slug %}" class="text-sm font-medium text-brandBlue hover:text-brandWarm transition-colors">Read Article <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
-                  <div class="flex gap-4 text-xs text-gray-400">
-                    <span><i class="fas fa-heart mr-1"></i> {{ post.likes_count|default:0 }}</span>
-                    <span><i class="fas fa-comment mr-1"></i> {{ post.comments_count|default:0 }}</span>
+                  <a href="{% url 'blog_detail' post.slug %}" class="text-sm font-semibold text-brandBlue hover:text-brandWarm transition-colors">Read Article <i class="fas fa-arrow-right ml-1 text-xs"></i></a>
+                  <div class="flex gap-4 text-xs text-secondaryText">
+                    <span><i class="fas fa-heart text-rose-500/80 mr-1"></i> {{ post.likes_count|default:0 }}</span>
+                    <span><i class="fas fa-comment text-brandBlue/80 mr-1"></i> {{ post.comments_count|default:0 }}</span>
                   </div>
                 </div>
               </div>

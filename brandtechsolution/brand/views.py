@@ -122,6 +122,7 @@ def products(request):
             'dot': dot_color,
             'dot_animation': dot_animation,
             'tab_label': Project.PHASE_TAB_LABELS[key],
+            'icon': Project.PHASE_ICONS.get(key, ''),
             'items': items,
             'count': len(items),
         })

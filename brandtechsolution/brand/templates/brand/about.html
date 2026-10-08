@@ -21,6 +21,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -28,20 +29,20 @@
                         heading: ['Space Grotesk', 'sans-serif'],
                     },
                     colors: {
-                        background: '#FAFAFA',
-                        surface: '#FFFFFF',
-                        primaryText: '#18181B',
-                        secondaryText: '#52525B',
-                        brandBlue: '#33348E',
-                        brandWarm: '#10B981',
-                        borderLight: '#E4E4E7'
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)'
                     }
                 }
             }
         }
     </script>
 
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
     <style>

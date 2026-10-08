@@ -98,7 +98,7 @@ class EditorialPipelineOrchestrator:
         stage = on_stage or (lambda key: None)
 
         logger.info("================================================================")
-        logger.info("🤖 TEKLORA AI EDITORIAL INTELLIGENCE PIPELINE STARTED")
+        logger.info("[TEKLORA AI EDITORIAL INTELLIGENCE PIPELINE STARTED]")
         logger.info("================================================================")
 
         # Tidied here rather than on a schedule of its own: the work that
@@ -236,7 +236,7 @@ class EditorialPipelineOrchestrator:
                     self.approval_workflow.notify_editors(article)
 
                 processed_articles.append(article)
-                logger.info(f"✅ Successfully processed Article #{article.id}: '{article.title}'")
+                logger.info(f"[SUCCESS] Successfully processed Article #{article.id}: '{article.title}'")
 
             except AgentError as e:
                 # An agent failed rather than declined. It has already recorded
@@ -249,6 +249,6 @@ class EditorialPipelineOrchestrator:
                 logger.error(f"Error processing topic '{topic.title}': {e}", exc_info=True)
 
         logger.info("================================================================")
-        logger.info(f"🎉 PIPELINE RUN FINISHED. Processed {len(processed_articles)} articles.")
+        logger.info(f"[PIPELINE RUN FINISHED] Processed {len(processed_articles)} articles.")
         logger.info("================================================================")
         return processed_articles

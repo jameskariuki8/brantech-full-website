@@ -31,7 +31,7 @@ class HumanApprovalWorkflow:
         article.save()
 
         preview_summary = (
-            f"📰 NEW DRAFT FOR REVIEW: {article.title}\n"
+            f"[NEW DRAFT FOR REVIEW] {article.title}\n"
             f"Category: {article.topic.category if article.topic else 'General'}\n"
             f"Readability Score: {article.estimated_reading_difficulty} | Est. Time: {article.reading_time_minutes} mins\n"
             f"Summary: {article.executive_summary[:200]}...\n\n"

@@ -69,179 +69,163 @@
     <!-- Dashboard Section -->
     <div id="dashboard" class="section animate-fade-in">
         <header class="mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">Overview</h1>
-            <p class="text-gray-500">Welcome back, here's what's happening across your platform.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-primaryText mb-1.5 font-heading">Overview</h1>
+            <p class="text-sm text-secondaryText">Welcome back, here's what's happening across your platform.</p>
         </header>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
             <!-- Stat Card 1: Total Blogs -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-brand-blue rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-blog text-6xl text-brand-blue"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-brandBlue/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Total Blogs</span>
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-blog"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Total Blogs</p>
-                    <h3 class="text-3xl font-bold text-white" id="blogCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="blogCount">0</h3>
             </div>
 
             <!-- Stat Card 2: Total Blog Views -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-brand-green rounded-xl p-6 relative overflow-hidden group hover:border-brand-green/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-eye text-6xl text-brand-green"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-brandWarm/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Blog Views</span>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-eye"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Blog Views</p>
-                    <h3 class="text-3xl font-bold text-white" id="blogViewsCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="blogViewsCount">0</h3>
             </div>
 
             <!-- Stat Card 3: Active Projects -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-yellow-500 rounded-xl p-6 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-rocket text-6xl text-yellow-500"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-indigo-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Active Projects</span>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-diagram-project"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Active Projects</p>
-                    <h3 class="text-3xl font-bold text-white" id="projectCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="projectCount">0</h3>
             </div>
 
             <!-- Stat Card 4: Total Events -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-purple-500 rounded-xl p-6 relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-calendar-days text-6xl text-purple-500"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-violet-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Total Events</span>
+                    <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-calendar-days"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Total Events</p>
-                    <h3 class="text-3xl font-bold text-white" id="eventCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="eventCount">0</h3>
             </div>
 
             <!-- Stat Card 5: Email Templates -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-pink-500 rounded-xl p-6 relative overflow-hidden group hover:border-pink-500/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-file-lines text-6xl text-pink-500"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-blue-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Email Templates</span>
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-file-lines"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Email Templates</p>
-                    <h3 class="text-3xl font-bold text-white" id="templateCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="templateCount">0</h3>
             </div>
 
             <!-- Stat Card 6: Campaigns -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-cyan-500 rounded-xl p-6 relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-paper-plane text-6xl text-cyan-500"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-cyan-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Campaigns</span>
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Campaigns</p>
-                    <h3 class="text-3xl font-bold text-white" id="campaignCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="campaignCount">0</h3>
             </div>
 
             <!-- Stat Card 7: Inquiries -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-orange-500 rounded-xl p-6 relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-envelope-open-text text-6xl text-orange-500"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-amber-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Inquiries</span>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Inquiries</p>
-                    <h3 class="text-3xl font-bold text-white" id="inquiryCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="inquiryCount">0</h3>
             </div>
 
             <!-- Stat Card 8: Appointments -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-teal-500 rounded-xl p-6 relative overflow-hidden group hover:border-teal-500/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-calendar-check text-6xl text-teal-500"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-teal-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Appointments</span>
+                    <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Appointments</p>
-                    <h3 class="text-3xl font-bold text-white" id="appointmentCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="appointmentCount">0</h3>
             </div>
 
             <!-- Stat Card 9: Total Likes -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-brand-blue rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-thumbs-up text-6xl text-brand-blue"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-rose-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Total Likes</span>
+                    <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Total Likes</p>
-                    <h3 class="text-3xl font-bold text-white" id="likesCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="likesCount">0</h3>
             </div>
 
             <!-- Stat Card 10: Total Comments -->
-            <div
-                class="bg-dark-card border border-dark-border border-l-4 border-brand-green rounded-xl p-6 relative overflow-hidden group hover:border-brand-green/30 transition-all duration-300">
-                <div
-                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <i class="fas fa-comments text-6xl text-brand-green"></i>
+            <div class="clean-card rounded-2xl p-5 sm:p-6 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-secondaryText">Total Comments</span>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">
+                        <i class="fas fa-comments"></i>
+                    </div>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-gray-400 mb-1">Total Comments</p>
-                    <h3 class="text-3xl font-bold text-white" id="commentsCount">0</h3>
-                </div>
+                <h3 class="text-3xl font-extrabold text-primaryText font-heading mt-3" id="commentsCount">0</h3>
             </div>
         </div>
 
         <!-- Charts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Chart 1: Top Blogs by View Count -->
-            <div
-                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-blue/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
-                        class="fas fa-chart-bar text-brand-blue mr-2"></i>Top Performing Blog Posts</h3>
+            <div class="clean-card rounded-2xl p-6 hover:border-brandBlue/40 transition-all duration-300">
+                <h3 class="text-base font-bold text-primaryText font-heading mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-bar text-brandBlue"></i>
+                    <span>Top Performing Blog Posts</span>
+                </h3>
                 <div class="relative h-64 w-full">
                     <canvas id="topBlogsChart"></canvas>
                 </div>
             </div>
 
             <!-- Chart 2: Appointments by Status -->
-            <div
-                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-brand-green/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
-                        class="fas fa-chart-pie text-brand-green mr-2"></i>Appointments Breakdown</h3>
+            <div class="clean-card rounded-2xl p-6 hover:border-brandWarm/40 transition-all duration-300">
+                <h3 class="text-base font-bold text-primaryText font-heading mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-brandWarm"></i>
+                    <span>Appointments Breakdown</span>
+                </h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="appointmentsChart"></canvas>
                 </div>
             </div>
 
             <!-- Chart 3: Inquiries by Status -->
-            <div
-                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-orange-500/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
-                        class="fas fa-chart-line text-orange-500 mr-2"></i>Inquiries by Status</h3>
+            <div class="clean-card rounded-2xl p-6 hover:border-amber-500/40 transition-all duration-300">
+                <h3 class="text-base font-bold text-primaryText font-heading mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-amber-400"></i>
+                    <span>Inquiries by Status</span>
+                </h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="inquiriesChart"></canvas>
                 </div>
             </div>
 
             <!-- Chart 4: Campaigns Overview -->
-            <div
-                class="bg-dark-card border border-dark-border rounded-xl p-6 hover:border-purple-500/30 transition-all duration-300">
-                <h3 class="text-lg font-bold text-white mb-4"><i
-                        class="fas fa-envelope text-purple-500 mr-2"></i>Campaigns Overview</h3>
+            <div class="clean-card rounded-2xl p-6 hover:border-cyan-500/40 transition-all duration-300">
+                <h3 class="text-base font-bold text-primaryText font-heading mb-4 flex items-center gap-2">
+                    <i class="fas fa-envelope text-cyan-400"></i>
+                    <span>Campaigns Overview</span>
+                </h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="campaignsChart"></canvas>
                 </div>

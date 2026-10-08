@@ -5,322 +5,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - BranTech Solutions</title>
+    <title>Sign In - Teklora</title>
+    <meta name="description" content="Sign in to your Teklora account to manage products, editorial workflows, and enterprise services.">
 
     <!-- Favicon -->
-    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/jpeg">
-    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/jpeg">
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="{% static 'brand/css/header-styles.css' %}" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
 
-        body {
-            background: #0a0e17;
-            color: #e0e0e0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .login-container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 120px 20px 60px;
-        }
-
-        .auth-card {
-            display: flex;
-            width: 520px;
-            height: auto;
-            background: #121826;
-            border: 1px solid #E4E4E7;
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            flex-direction: column;
-            padding: 30px;
-            max-width: 92vw;
-        }
-
-        .login-section {
-            width: 100%;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .auth-brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: row;
-            gap: 12px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .brand-title {
-            font-weight: 800;
-            font-size: 28px;
-            line-height: 1.05;
-            letter-spacing: .2px;
-            text-align: center;
-        }
-
-        .brand-title .accent-1 {
-            color: #34d399;
-        }
-
-        .brand-title .accent-2 {
-            color: #60a5fa;
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-right: 15px;
-            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
-        }
-
-        .logo-text {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(to right, #3498db, #2ecc71);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: #f5f5f5;
-        }
-
-        .subtitle {
-            color: #a0a0a0;
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #b0b0b0;
-            font-size: 14px;
-        }
-
-        input {
-            width: 100%;
-            height: 46px;
-            padding: 10px 14px;
-            background: #0f1a27;
-            border: 1px solid #243244;
-            border-radius: 12px;
-            color: #e5e7eb;
-            font-size: 15px;
-            transition: all 0.2s ease;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-            text-align: center;
-        }
-
-        input::placeholder {
-            color: #9aa6b2;
-            opacity: .9;
-            text-align: center;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 40px;
-            cursor: pointer;
-            color: #3498db;
-        }
-
-        .options {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
-
-        .remember {
-            display: flex;
-            align-items: center;
-        }
-
-        .remember input {
-            width: auto;
-            margin-right: 8px;
-        }
-
-        .forgot {
-            color: #3498db;
-            text-decoration: none;
-        }
-
-        .forgot:hover {
-            text-decoration: underline;
-        }
-
-        .login-btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-            width: 100%;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.6);
-        }
-
-        .signup {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 13px;
-        }
-
-        .signup a {
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .signup a:hover {
-            text-decoration: underline;
-        }
-
-        .messages {
-            margin-bottom: 20px;
-        }
-
-        .alert {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: #fca5a5;
-        }
-
-        .alert-success {
-            background: rgba(34, 197, 94, 0.2);
-            border: 1px solid rgba(34, 197, 94, 0.5);
-            color: #86efac;
-        }
-
-        @media (max-width: 768px) {
-            .auth-card {
-                width: 92vw;
-                padding: 20px;
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)'
+                    }
+                }
             }
+        }
+    </script>
+
+    <!-- UI/UX CSS -->
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
+
+    <style>
+        .auth-ambient-glow {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 700px;
+            max-width: 90vw;
+            height: 450px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 45%, transparent 70%);
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
         }
     </style>
 </head>
 
-<body>
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-brandBlue/30 relative flex flex-col min-h-screen">
     {% include 'brand/header.html' %}
 
-    <div class="login-container">
-        <div class="auth-card">
-            <div class="login-section">
-                <h1 style="margin-top: 10px; text-align: center;">Sign In</h1>
+    <div class="auth-ambient-glow"></div>
 
-                {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
-                    </div>
-                    {% endfor %}
+    <main class="flex-1 flex items-center justify-center pt-32 sm:pt-40 pb-20 px-4 relative z-10">
+        <div class="clean-card w-full max-w-md p-8 sm:p-10 rounded-3xl border border-borderLight shadow-2xl relative">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brandBlue/10 border border-brandBlue/20 text-brandBlue mb-4">
+                    <i class="fas fa-shield-halved text-xl"></i>
                 </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-primaryText tracking-tight font-heading">
+                    Welcome Back
+                </h1>
+                <p class="text-sm text-secondaryText mt-1.5">
+                    Sign in to your Teklora account
+                </p>
+            </div>
+
+            {% if messages %}
+            <div class="space-y-3 mb-6">
+                {% for message in messages %}
+                <div class="p-3.5 rounded-xl text-sm flex items-start gap-2.5 {% if message.tags == 'error' %}bg-rose-500/10 border border-rose-500/30 text-rose-400{% else %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-400{% endif %}">
+                    <i class="{% if message.tags == 'error' %}fas fa-circle-exclamation{% else %}fas fa-circle-check{% endif %} mt-0.5 text-base shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form id="loginForm" method="POST" action="{% url 'login' %}" class="space-y-5">
+                {% csrf_token %}
+                {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {% elif request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
                 {% endif %}
 
-                <form id="loginForm" method="POST" action="{% url 'login' %}">
-                    {% csrf_token %}
-                    {% if next %}
-                    <input type="hidden" name="next" value="{{ next }}">
-                    {% elif request.GET.next %}
-                    <input type="hidden" name="next" value="{{ request.GET.next }}">
-                    {% endif %}
-                    <div class="input-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                <div>
+                    <label for="email" class="block text-xs font-semibold text-secondaryText uppercase tracking-wider mb-2">
+                        Email Address or Username
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondaryText/60">
+                            <i class="fas fa-envelope text-sm"></i>
+                        </span>
+                        <input type="text" id="email" name="email" placeholder="you@teklora.com" required
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-borderLight bg-background text-primaryText placeholder:text-secondaryText/50 focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                     </div>
-
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="••••••••" required>
-                        <span class="password-toggle" id="togglePassword">Show</span>
-                    </div>
-
-                    <div class="options">
-                        <div class="remember">
-                            <input type="checkbox" id="remember" name="remember">
-                            <label for="remember">Remember me</label>
-                        </div>
-                        <a href="#" class="forgot">Forgot password?</a>
-                    </div>
-
-                    <button type="submit" class="login-btn">Sign In</button>
-                </form>
-
-                <div class="signup">
-                    Don't have an account? <a href="{% url 'signup' %}">Sign up</a>
                 </div>
+
+                <div>
+                    <label for="password" class="block text-xs font-semibold text-secondaryText uppercase tracking-wider mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondaryText/60">
+                            <i class="fas fa-lock text-sm"></i>
+                        </span>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required
+                            class="w-full pl-10 pr-11 py-3 rounded-xl border border-borderLight bg-background text-primaryText placeholder:text-secondaryText/50 focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                        <button type="button" id="togglePasswordBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-secondaryText hover:text-primaryText transition-colors focus:outline-none" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye text-sm" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <label class="inline-flex items-center gap-2 cursor-pointer text-secondaryText hover:text-primaryText transition-colors">
+                        <input type="checkbox" id="remember" name="remember" class="w-4 h-4 rounded border-borderLight bg-background text-brandBlue focus:ring-brandBlue/30">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="text-brandBlue font-medium hover:underline">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-brandBlue hover:bg-sky-500 text-white font-semibold text-sm shadow-lg shadow-brandBlue/25 hover:shadow-brandBlue/40 transition-all flex items-center justify-center gap-2 group">
+                    <span>Sign In</span>
+                    <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-borderLight text-center text-xs text-secondaryText">
+                Don't have an account? 
+                <a href="{% url 'signup' %}" class="text-brandBlue font-semibold hover:underline ml-1">Sign up</a>
             </div>
         </div>
-    </div>
+    </main>
 
     {% include 'brand/footer.html' %}
 
     <script>
-        // Toggle password visibility
-        const togglePassword = document.getElementById('togglePassword');
-        const password = document.getElementById('password');
+        const toggleBtn = document.getElementById('togglePasswordBtn');
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('togglePasswordIcon');
 
-        if (togglePassword && password) {
-            togglePassword.addEventListener('click', function () {
-                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-                password.setAttribute('type', type);
-                this.textContent = type === 'password' ? 'Show' : 'Hide';
+        if (toggleBtn && passwordInput && toggleIcon) {
+            toggleBtn.addEventListener('click', function () {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                if (isPassword) {
+                    toggleIcon.classList.remove('fa-eye');
+                    toggleIcon.classList.add('fa-eye-slash');
+                } else {
+                    toggleIcon.classList.remove('fa-eye-slash');
+                    toggleIcon.classList.add('fa-eye');
+                }
             });
         }
     </script>

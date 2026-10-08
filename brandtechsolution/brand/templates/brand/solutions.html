@@ -24,6 +24,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -31,20 +32,20 @@
                         heading: ['Space Grotesk', 'sans-serif'],
                     },
                     colors: {
-                        background: '#FAFAFA',
-                        surface: '#FFFFFF',
-                        primaryText: '#18181B',
-                        secondaryText: '#52525B',
-                        brandBlue: '#33348E',
-                        brandWarm: '#10B981',
-                        borderLight: '#E4E4E7'
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)'
                     }
                 }
             }
         }
     </script>
     
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
     <style>
@@ -499,8 +500,8 @@
                                     <span id="bizTimeSaved" class="text-[#10B981] font-bold">SAVED 98.4% TIME</span>
                                 </div>
                                 <div id="bizLogs" class="text-primaryText space-y-1 text-[11px]">
-                                    <p>⚡ Agent-1: Scanned 1,420 invoice line items in 12ms.</p>
-                                    <p>⚡ Agent-2: Reconciled purchase orders with 100% match score.</p>
+                                    <p><i class="fas fa-bolt text-amber-500 mr-1"></i> Agent-1: Scanned 1,420 invoice line items in 12ms.</p>
+                                    <p><i class="fas fa-bolt text-amber-500 mr-1"></i> Agent-2: Reconciled purchase orders with 100% match score.</p>
                                 </div>
                             </div>
                         </div>
@@ -581,7 +582,7 @@
                                     <span class="text-purple-400 font-bold">IMMUTABLE PROOF</span>
                                 </div>
                                 <div id="govHashLog" class="text-primaryText space-y-1 text-[11px] break-all">
-                                    <p class="text-[#10B981]">✓ SHA-256 Signature Verified</p>
+                                    <p class="text-[#10B981]"><i class="fas fa-check-circle mr-1"></i> SHA-256 Signature Verified</p>
                                     <p class="text-gray-500">Hash: 8f9a2b1c4e7d3a0f5e6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f</p>
                                 </div>
                             </div>
@@ -797,14 +798,14 @@
                 spo2.textContent = '94 %';
                 bp.textContent = '142/95';
                 alertBox.className = 'p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 flex items-center gap-2';
-                alertText.textContent = '⚠️ Tachycardia Pattern Detected - Auto Escalating to On-Call Physician.';
+                alertText.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Tachycardia Pattern Detected - Auto Escalating to On-Call Physician.';
             } else {
                 hr.textContent = '74 BPM';
                 hr.className = 'text-base font-bold text-primaryText';
                 spo2.textContent = '98 %';
                 bp.textContent = '120/80';
                 alertBox.className = 'p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-400 flex items-center gap-2';
-                alertText.textContent = 'Telemetry stable. Normal sinus rhythm detected.';
+                alertText.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Telemetry stable. Normal sinus rhythm detected.';
             }
         }
 
@@ -827,26 +828,26 @@
             const logs = document.getElementById('bizLogs');
             const timeSaved = document.getElementById('bizTimeSaved');
 
-            logs.innerHTML = `<p class="text-[#3B82F6] animate-pulse">⚡ Multi-agent system evaluating workflow dependencies...</p>`;
+            logs.innerHTML = `<p class="text-[#3B82F6] animate-pulse"><i class="fas fa-bolt mr-1"></i> Multi-agent system evaluating workflow dependencies...</p>`;
 
             setTimeout(() => {
                 if (process === 'invoice') {
                     timeSaved.textContent = 'SAVED 98.4% TIME';
                     logs.innerHTML = `
-                        <p>✓ Agent-1: Extracted 1,420 invoice lines in 12ms.</p>
-                        <p>✓ Agent-2: Reconciled Purchase Orders with 100% match score.</p>
+                        <p><i class="fas fa-check text-[#10B981] mr-1"></i> Agent-1: Extracted 1,420 invoice lines in 12ms.</p>
+                        <p><i class="fas fa-check text-[#10B981] mr-1"></i> Agent-2: Reconciled Purchase Orders with 100% match score.</p>
                     `;
                 } else if (process === 'payroll') {
                     timeSaved.textContent = 'SAVED 99.1% TIME';
                     logs.innerHTML = `
-                        <p>✓ Agent-1: Audited 4,200 employee payroll records across 12 countries.</p>
-                        <p>✓ Agent-2: Executed tax compliance checks and multi-currency transfers.</p>
+                        <p><i class="fas fa-check text-[#10B981] mr-1"></i> Agent-1: Audited 4,200 employee payroll records across 12 countries.</p>
+                        <p><i class="fas fa-check text-[#10B981] mr-1"></i> Agent-2: Executed tax compliance checks and multi-currency transfers.</p>
                     `;
                 } else {
                     timeSaved.textContent = 'SAVED 96.5% TIME';
                     logs.innerHTML = `
-                        <p>✓ Agent-1: Analyzed AWS & GCP spot instance pricing matrix.</p>
-                        <p>✓ Agent-2: Shifted batch jobs to lowest cost region, reducing spend by $14,200/mo.</p>
+                        <p><i class="fas fa-check text-[#10B981] mr-1"></i> Agent-1: Analyzed AWS & GCP spot instance pricing matrix.</p>
+                        <p><i class="fas fa-check text-[#10B981] mr-1"></i> Agent-2: Shifted batch jobs to lowest cost region, reducing spend by $14,200/mo.</p>
                     `;
                 }
             }, 500);
@@ -861,7 +862,7 @@
             setTimeout(() => {
                 const randomHash = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join('');
                 log.innerHTML = `
-                    <p class="text-[#10B981]">✓ SHA-256 Signature Verified for [${val}]</p>
+                    <p class="text-[#10B981]"><i class="fas fa-check-circle mr-1"></i> SHA-256 Signature Verified for [${val}]</p>
                     <p class="text-gray-500">Hash: 8f9a2b1c4e7d3a0f5e6b7c8d9e0f${randomHash}</p>
                 `;
             }, 500);

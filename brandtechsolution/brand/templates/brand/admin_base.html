@@ -11,10 +11,27 @@
     <link rel="shortcut icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
 
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Pre-render Theme Script -->
+    <script>
+        (function() {
+            const saved = localStorage.getItem('teklora-theme') || 'dark';
+            if (saved === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+
+    <!-- UI/UX CSS -->
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
 
     <!-- Toast notifications (replaces native alert/confirm) -->
     <link rel="stylesheet" href="{% static 'brand/css/toast.css' %}" />
@@ -24,21 +41,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
                         inter: ['Inter', 'sans-serif'],
-                        heading: ['Outfit', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
                     },
                     colors: {
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        cardSubtle: 'var(--bg-card-subtle)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)',
                         dark: {
-                            bg: '#06090F',
-                            card: '#0D121D',
-                            border: 'rgba(255, 255, 255, 0.05)',
+                            bg: 'var(--bg-primary)',
+                            card: 'var(--bg-card)',
+                            border: 'var(--border-color)',
                         },
                         brand: {
-                            blue: '#007AFF',
-                            green: '#00FF94',
+                            blue: 'var(--brand-blue)',
+                            green: 'var(--brand-warm)',
                         }
                     }
                 }
@@ -49,23 +76,25 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary) !important;
+            color: var(--text-secondary) !important;
         }
 
         .glass-panel {
-            background: rgba(13, 18, 29, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--bg-card) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color) !important;
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(0, 122, 255, 0.1), rgba(0, 255, 148, 0.05));
-            border-left: 3px solid #007AFF;
-            color: #fff;
+            background: rgba(56, 189, 248, 0.12) !important;
+            border-left: 3px solid var(--brand-blue) !important;
+            color: var(--text-primary) !important;
         }
 
         .nav-item:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
         }
 
         /* Scrollbar */
@@ -74,16 +103,16 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #06090F;
+            background: var(--bg-primary);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1F2937;
+            background: var(--border-color);
             border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #374151;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* Collapsible Sidebar Styles */
@@ -136,22 +165,22 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-dark-bg text-gray-300 antialiased min-h-screen flex overflow-hidden">
+<body class="bg-background text-secondaryText antialiased min-h-screen flex overflow-hidden">
 
     <!-- Mobile Menu Button -->
     <button id="mobileMenuBtn"
-        class="fixed top-4 left-4 z-50 lg:hidden text-white bg-dark-card p-2 rounded-lg border border-dark-border">
+        class="fixed top-4 left-4 z-50 lg:hidden text-primaryText bg-surface p-2 rounded-lg border border-borderLight shadow-md">
         <i class="fas fa-bars"></i>
     </button>
 
     <!-- Sidebar -->
     <aside id="sidebar"
-        class="fixed inset-y-0 left-0 w-64 bg-[#0B0F17] border-r border-dark-border transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
+        class="fixed inset-y-0 left-0 w-64 bg-surface border-r border-borderLight transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
         <!-- Logo -->
-        <div class="h-20 flex items-center px-6 border-b border-dark-border logo-container">
+        <div class="h-16 flex items-center px-6 border-b border-borderLight logo-container">
             <img src="{% static 'brand/images/logo.png' %}" alt="Logo" class="w-8 h-8 rounded-lg mr-3">
-            <span class="text-xl font-bold text-white tracking-tight logo-text">Teklora<span
-                    class="text-brand-blue">Admin</span></span>
+            <span class="text-xl font-bold text-primaryText tracking-tight logo-text font-heading">Teklora<span
+                    class="text-brandBlue ml-1">Admin</span></span>
         </div>
 
         <!-- Nav -->
@@ -249,46 +278,52 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-dark-bg relative">
+    <main class="flex-1 lg:ml-64 h-screen overflow-y-auto bg-background relative">
         <!-- Top Bar (Mobile Overlay) -->
         <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
 
         <!-- Sticky Top Navbar -->
-        <header class="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-[#0D121D]/80 backdrop-blur border-b border-dark-border">
+        <header class="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-surface/80 backdrop-blur-md border-b border-borderLight">
             <div class="flex items-center gap-4">
                 <!-- Collapse Toggle Button (lg only) -->
-                <button id="sidebarCollapseBtn" class="hidden lg:flex items-center justify-center p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors" title="Toggle Sidebar">
+                <button id="sidebarCollapseBtn" class="hidden lg:flex items-center justify-center p-2 rounded-lg text-secondaryText hover:text-primaryText hover:bg-white/5 transition-colors" title="Toggle Sidebar">
                     <i id="collapseIcon" class="fas fa-angles-left"></i>
                 </button>
             </div>
             
-            <div class="flex items-center gap-4 relative">
+            <div class="flex items-center gap-3 relative">
+                <!-- Theme Toggle Button -->
+                <button id="themeToggleBtn" type="button" class="theme-toggle-btn w-9 h-9 rounded-xl border border-borderLight bg-surface flex items-center justify-center text-secondaryText hover:text-primaryText hover:border-brandBlue/40 transition-colors focus:outline-none" title="Toggle Theme">
+                    <i class="fas fa-sun text-amber-400 text-sm hidden dark:inline-block"></i>
+                    <i class="fas fa-moon text-indigo-400 text-sm inline-block dark:hidden"></i>
+                </button>
+
                 <!-- User Profile Dropdown -->
                 <button id="userDropdownBtn" class="flex items-center gap-3 p-1.5 rounded-lg hover:bg-white/5 transition-colors focus:outline-none">
-                    <div class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-sm">
+                    <div class="w-8 h-8 rounded-full bg-brandBlue flex items-center justify-center text-white font-bold text-sm shadow-sm">
                         {{ request.user.username|slice:":1"|upper }}
                     </div>
-                    <span id="headerUserName" class="hidden md:inline text-sm font-medium text-gray-300">{{ request.user.get_full_name|default:request.user.username }}</span>
-                    <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    <span id="headerUserName" class="hidden md:inline text-sm font-medium text-primaryText">{{ request.user.get_full_name|default:request.user.username }}</span>
+                    <i class="fas fa-chevron-down text-xs text-secondaryText"></i>
                 </button>
                 
                 <!-- Dropdown Menu -->
-                <div id="userDropdownMenu" class="hidden absolute right-0 top-12 w-56 bg-dark-card border border-dark-border rounded-xl shadow-2xl py-2 z-50 animate-fade-in">
-                    <div class="px-4 py-2.5 border-b border-dark-border">
-                        <p class="text-xs text-gray-500">Signed in as</p>
-                        <p class="text-sm font-bold text-white truncate">{{ request.user.username }}{% if "@" not in request.user.username %}@{{ mailbox_domain }}{% endif %}</p>
+                <div id="userDropdownMenu" class="hidden absolute right-0 top-12 w-56 bg-surface border border-borderLight rounded-2xl shadow-2xl py-2 z-50 animate-fade-in">
+                    <div class="px-4 py-2.5 border-b border-borderLight">
+                        <p class="text-xs text-secondaryText">Signed in as</p>
+                        <p class="text-sm font-bold text-primaryText truncate">{{ request.user.username }}{% if "@" not in request.user.username %}@{{ mailbox_domain }}{% endif %}</p>
                         {% if request.user.email %}
-                        <p class="text-xs text-gray-400 truncate">{{ request.user.email }}</p>
+                        <p class="text-xs text-secondaryText truncate">{{ request.user.email }}</p>
                         {% endif %}
                     </div>
-                    <button type="button" id="myProfileBtn" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
-                        <i class="fas fa-user-pen w-4 text-center text-gray-500"></i>My profile
+                    <button type="button" id="myProfileBtn" class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-secondaryText hover:text-primaryText hover:bg-white/5 transition-colors">
+                        <i class="fas fa-user-pen w-4 text-center text-secondaryText"></i>My profile
                     </button>
-                    <a href="/admin/" target="_blank" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
-                        <i class="fas fa-shield-halved w-4 text-center text-gray-500"></i>Django Admin
+                    <a href="/admin/" target="_blank" class="flex items-center gap-2.5 px-4 py-2 text-sm text-secondaryText hover:text-primaryText hover:bg-white/5 transition-colors">
+                        <i class="fas fa-shield-halved w-4 text-center text-secondaryText"></i>Django Admin
                     </a>
-                    <div class="border-t border-dark-border my-1"></div>
-                    <a href="{% url 'logout' %}" class="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                    <div class="border-t border-borderLight my-1"></div>
+                    <a href="{% url 'logout' %}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors">
                         <i class="fas fa-sign-out-alt w-4 text-center"></i>Logout
                     </a>
                 </div>
@@ -303,10 +338,10 @@
     opens from is on every admin page. profile.js fills and submits it.
     {% endcomment %}
     <div id="profileModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
-        <div class="bg-dark-card border border-dark-border rounded-xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6">
+        <div class="bg-surface border border-borderLight rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 sm:p-8 shadow-2xl">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-white">My profile</h3>
-                <button type="button" data-profile-close class="text-gray-400 hover:text-white">
+                <h3 class="text-lg font-bold text-primaryText font-heading">My profile</h3>
+                <button type="button" data-profile-close class="text-secondaryText hover:text-primaryText transition-colors p-1">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -314,45 +349,45 @@
             <form id="profileForm" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-2">Work address</label>
-                        <p id="profileMailbox" class="text-sm text-gray-300 break-all"></p>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Work address</label>
+                        <p id="profileMailbox" class="text-sm text-primaryText break-all font-mono"></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-2">Personal email</label>
-                        <p id="profileEmail" class="text-sm text-gray-300 break-all"></p>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Personal email</label>
+                        <p id="profileEmail" class="text-sm text-primaryText break-all font-mono"></p>
                     </div>
                 </div>
-                <p class="text-xs text-gray-500 -mt-2">You can sign in with either. Ask whoever manages staff to change them.</p>
+                <p class="text-xs text-secondaryText -mt-2">You can sign in with either. Ask whoever manages staff to change them.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="profileFirstName" class="block text-sm font-medium text-gray-400 mb-2">First name</label>
+                        <label for="profileFirstName" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">First name</label>
                         <input id="profileFirstName" name="first_name" type="text" maxlength="150" autocomplete="given-name"
-                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                            class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                     </div>
                     <div>
-                        <label for="profileLastName" class="block text-sm font-medium text-gray-400 mb-2">Last name</label>
+                        <label for="profileLastName" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Last name</label>
                         <input id="profileLastName" name="last_name" type="text" maxlength="150" autocomplete="family-name"
-                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                            class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                     </div>
                 </div>
                 <div>
-                    <label for="profilePhone" class="block text-sm font-medium text-gray-400 mb-2">Phone number</label>
+                    <label for="profilePhone" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Phone number</label>
                     <input id="profilePhone" name="phone" type="tel" autocomplete="tel" placeholder="+254 712 345 678"
-                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
-                    <p class="text-xs text-gray-500 mt-1"><i class="fab fa-whatsapp text-green-400 mr-1"></i>Use your WhatsApp number if you have one. That's how the team will reach you quickly.</p>
+                        class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                    <p class="text-xs text-secondaryText mt-1.5"><i class="fab fa-whatsapp text-emerald-400 mr-1.5"></i>Use your WhatsApp number if you have one. That's how the team will reach you quickly.</p>
                 </div>
                 <button type="submit"
-                    class="w-full bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-3 rounded-lg disabled:opacity-50">Save profile</button>
+                    class="w-full bg-brandBlue hover:bg-sky-500 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-brandBlue/20 transition-all disabled:opacity-50 text-sm">Save profile</button>
             </form>
 
-            <form id="passwordForm" class="space-y-4 mt-8 pt-6 border-t border-dark-border">
-                <h4 class="text-sm font-semibold text-white">Change password</h4>
+            <form id="passwordForm" class="space-y-4 mt-8 pt-6 border-t border-borderLight">
+                <h4 class="text-sm font-semibold text-primaryText font-heading">Change password</h4>
                 <input id="currentPassword" name="current_password" type="password" autocomplete="current-password" placeholder="Current password" required
-                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                 <input id="newPassword" name="new_password" type="password" autocomplete="new-password" placeholder="New password" required
-                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                 <button type="submit"
-                    class="w-full px-5 py-3 text-sm rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50">Change password</button>
+                    class="w-full px-5 py-2.5 text-sm rounded-xl border border-borderLight text-secondaryText hover:text-primaryText hover:bg-white/5 transition-colors disabled:opacity-50">Change password</button>
             </form>
         </div>
     </div>
@@ -361,6 +396,23 @@
     <!-- Sidebar Collapse and Dropdown Toggle -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Theme toggle listener
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const next = isDark ? 'light' : 'dark';
+                    if (next === 'dark') {
+                        document.documentElement.classList.add('dark');
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        document.documentElement.setAttribute('data-theme', 'light');
+                    }
+                    localStorage.setItem('teklora-theme', next);
+                });
+            }
+
             // Retrieve and apply sidebar collapsed state from localStorage
             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
             if (isCollapsed) {

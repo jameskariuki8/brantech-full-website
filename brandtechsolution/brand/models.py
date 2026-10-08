@@ -145,9 +145,14 @@ class Project(models.Model):
     # Matches the tab labels on /products/. Kept beside the choices so the
     # filter bar and the group headings cannot drift apart.
     PHASE_TAB_LABELS = {
-        PHASE_COMPLETED: '✅ Completed & Live',
-        PHASE_ACTIVE: '⚡ Active Development',
-        PHASE_FUTURE: '🚀 Future Vision: HoloDesk OS',
+        PHASE_COMPLETED: 'Completed & Live',
+        PHASE_ACTIVE: 'Active Development',
+        PHASE_FUTURE: 'Future Vision: HoloDesk OS',
+    }
+    PHASE_ICONS = {
+        PHASE_COMPLETED: 'fas fa-check-circle text-emerald-500',
+        PHASE_ACTIVE: 'fas fa-bolt text-amber-500',
+        PHASE_FUTURE: 'fas fa-rocket text-sky-400',
     }
     PHASE_GROUP_HEADINGS = {
         PHASE_COMPLETED: 'Phase 1: Completed & Live Deployed Products',

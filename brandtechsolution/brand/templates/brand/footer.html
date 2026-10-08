@@ -1,5 +1,5 @@
 {% load static %}
-<footer class="bg-white border-t border-gray-200 pt-20 pb-10 mt-auto">
+<footer class="bg-white dark:bg-[#090D16] border-t border-gray-200 dark:border-white/10 pt-20 pb-10 mt-auto transition-colors duration-300">
   <div class="container-wide px-6">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
       
@@ -7,54 +7,54 @@
       <div class="space-y-6">
         <div class="flex items-center gap-3">
           <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" class="h-10 w-10 object-contain rounded-lg">
-          <span class="font-bold text-xl text-gray-900 tracking-tight">Teklora</span>
+          <span class="font-bold text-xl text-gray-900 dark:text-white tracking-tight">Teklora</span>
         </div>
-        <div class="text-gray-500 text-sm max-w-sm leading-relaxed space-y-4 mt-2">
+        <div class="text-gray-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed space-y-4 mt-2">
           <p>
-            <strong class="text-gray-900 block mb-1 font-semibold">Vision</strong>
+            <strong class="text-gray-900 dark:text-white block mb-1 font-semibold">Vision</strong>
             To empower businesses across Africa and beyond to solve problems, innovate, and grow through technology.
           </p>
         </div>
         <div class="flex gap-4">
-          <a href="#" class="text-gray-400 hover:text-gray-900 transition-colors text-lg"><i class="fab fa-linkedin"></i></a>
-          <a href="#" class="text-gray-400 hover:text-gray-900 transition-colors text-lg"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="text-gray-400 hover:text-gray-900 transition-colors text-lg"><i class="fab fa-github"></i></a>
+          <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="fab fa-linkedin"></i></a>
+          <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="fab fa-github"></i></a>
         </div>
       </div>
 
       <!-- Links -->
       <div>
-        <h4 class="font-bold text-gray-900 mb-6">Company</h4>
-        <ul class="space-y-4 text-sm text-gray-500">
-          <li><a href="{% url 'about' %}" class="hover:text-gray-900 transition-colors">About Us</a></li>
-          <li><a href="{% url 'careers' %}" class="hover:text-gray-900 transition-colors">Careers</a></li>
-          <li><a href="{% url 'products' %}" class="hover:text-gray-900 transition-colors">Our Work</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">Solutions</a></li>
-          <li><a href="{% url 'blog' %}" class="hover:text-gray-900 transition-colors">Engineering Blog</a></li>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-6">Company</h4>
+        <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
+          <li><a href="{% url 'about' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">About Us</a></li>
+          <li><a href="{% url 'careers' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Careers</a></li>
+          <li><a href="{% url 'products' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Our Work</a></li>
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Solutions</a></li>
+          <li><a href="{% url 'blog' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Engineering Blog</a></li>
         </ul>
       </div>
 
       <!-- Services -->
       <div>
-        <h4 class="font-bold text-gray-900 mb-6">Services</h4>
-        <ul class="space-y-4 text-sm text-gray-500">
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">System and Web Architecture</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">UI/UX Design</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">Cloud Platforms</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">Mobile Engineering</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">AI Automation</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 transition-colors">Digital Strategy & Consultancy</a></li>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-6">Services</h4>
+        <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">System and Web Architecture</a></li>
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">UI/UX Design</a></li>
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Cloud Platforms</a></li>
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Mobile Engineering</a></li>
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">AI Automation</a></li>
+          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Digital Strategy & Consultancy</a></li>
         </ul>
       </div>
 
       <!-- Contact -->
       <div>
-        <h4 class="font-bold text-gray-900 mb-6">Get in Touch</h4>
-        <ul class="space-y-4 text-sm text-gray-500">
-          <li><a href="mailto:hello@teklora.com" class="hover:text-gray-900 transition-colors">hello@teklora.com</a></li>
-          <li><a href="tel:+254704894220" class="hover:text-gray-900 transition-colors">+254 704 894 220</a></li>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-6">Get in Touch</h4>
+        <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
+          <li><a href="mailto:hello@teklora.com" class="hover:text-gray-900 dark:hover:text-white transition-colors">hello@teklora.com</a></li>
+          <li><a href="tel:+254704894220" class="hover:text-gray-900 dark:hover:text-white transition-colors">+254 704 894 220</a></li>
           <li class="pt-2">
-            <a href="{% url 'contacts' %}" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">Contact Support <i class="fas fa-arrow-right text-xs ml-1"></i></a>
+            <a href="{% url 'contacts' %}" class="text-blue-600 dark:text-sky-400 font-medium hover:text-blue-800 dark:hover:text-sky-300 transition-colors">Contact Support <i class="fas fa-arrow-right text-xs ml-1"></i></a>
           </li>
         </ul>
       </div>
@@ -62,11 +62,11 @@
     </div>
 
     <!-- Bottom -->
-    <div class="pt-8 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+    <div class="pt-8 border-t border-gray-100 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400 dark:text-slate-500">
       <p>&copy; 2026 Teklora Solutions. All rights reserved.</p>
       <div class="flex gap-6">
-        <a href="{% url 'privacy' %}" class="hover:text-gray-900 transition-colors">Privacy Policy</a>
-        <a href="{% url 'terms' %}" class="hover:text-gray-900 transition-colors">Terms of Service</a>
+        <a href="{% url 'privacy' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</a>
+        <a href="{% url 'terms' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</a>
       </div>
     </div>
   </div>

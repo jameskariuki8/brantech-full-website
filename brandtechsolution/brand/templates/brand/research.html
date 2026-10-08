@@ -24,6 +24,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -31,20 +32,20 @@
                         heading: ['Space Grotesk', 'sans-serif'],
                     },
                     colors: {
-                        background: '#FAFAFA',
-                        surface: '#FFFFFF',
-                        primaryText: '#18181B',
-                        secondaryText: '#52525B',
-                        brandBlue: '#33348E',
-                        brandWarm: '#10B981',
-                        borderLight: '#E4E4E7'
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)'
                     }
                 }
             }
         }
     </script>
 
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
 
     <style>
@@ -127,22 +128,22 @@
                 <!-- Sub-Nav Jump Bar -->
                 <div class="flex flex-wrap justify-center gap-2 pt-2">
                     <a href="#solutions-approach" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-primaryText">
-                        ⚡ Solution Methodology
+                        <i class="fas fa-bolt text-amber-500 mr-1.5"></i> Solution Methodology
                     </a>
                     <a href="#tech-stack" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
-                        🐍 Python & React Stack
+                        <i class="fab fa-python text-sky-500 mr-1.5"></i> Python & React Stack
                     </a>
                     <a href="#ai" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
-                        🤖 Agentic AI & ML
+                        <i class="fas fa-robot text-purple-500 mr-1.5"></i> Agentic AI & ML
                     </a>
                     <a href="#quantum" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
-                        ⚛️ Quantum Computing
+                        <i class="fas fa-atom text-cyan-500 mr-1.5"></i> Quantum Computing
                     </a>
                     <a href="#spatial" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
-                        🌐 Spatial & Digital Twins
+                        <i class="fas fa-vr-cardboard text-emerald-500 mr-1.5"></i> Spatial & Digital Twins
                     </a>
                     <a href="#future-tech" class="jump-nav-link px-3.5 py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
-                        🚀 Future of Tech
+                        <i class="fas fa-rocket text-indigo-500 mr-1.5"></i> Future of Tech
                     </a>
                 </div>
             </div>

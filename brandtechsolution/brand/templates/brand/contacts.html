@@ -20,6 +20,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -27,20 +28,20 @@
                         heading: ['Space Grotesk', 'sans-serif'],
                     },
                     colors: {
-                        background: '#FAFAFA',
-                        surface: '#FFFFFF',
-                        primaryText: '#18181B',
-                        secondaryText: '#52525B',
-                        brandBlue: '#33348E',
-                        brandWarm: '#10B981',
-                        borderLight: '#E4E4E7'
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)'
                     }
                 }
             }
         }
     </script>
     
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.7" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
     <link rel="stylesheet" href="{% static 'brand/css/toast.css' %}" />
     <script src="{% static 'brand/js/toast.js' %}"></script>
@@ -254,19 +255,19 @@
                             <label class="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-secondaryText">Select Scope / Topic</label>
                             <div class="flex flex-wrap gap-1.5 sm:gap-2" id="topicPills">
                                 <button type="button" onclick="selectTopic(this, 'Enterprise AI')" class="topic-pill active px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
-                                    🤖 Enterprise AI
+                                    <i class="fas fa-robot text-purple-500 mr-1.5"></i> Enterprise AI
                                 </button>
                                 <button type="button" onclick="selectTopic(this, 'Custom Software')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
-                                    💻 Custom Software
+                                    <i class="fas fa-laptop-code text-blue-500 mr-1.5"></i> Custom Software
                                 </button>
                                 <button type="button" onclick="selectTopic(this, 'Cloud Infrastructure')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
-                                    ☁️ Cloud Infrastructure
+                                    <i class="fas fa-cloud text-sky-500 mr-1.5"></i> Cloud Infrastructure
                                 </button>
                                 <button type="button" onclick="selectTopic(this, 'Strategy Consultation')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
-                                    🎯 Strategy Consultation
+                                    <i class="fas fa-bullseye text-amber-500 mr-1.5"></i> Strategy Consultation
                                 </button>
                                 <button type="button" onclick="selectTopic(this, 'General Inquiry')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
-                                    ✉️ General Inquiry
+                                    <i class="fas fa-envelope text-emerald-500 mr-1.5"></i> General Inquiry
                                 </button>
                             </div>
                         </div>

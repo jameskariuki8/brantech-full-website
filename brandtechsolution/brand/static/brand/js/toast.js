@@ -24,10 +24,10 @@
   var MAX_VISIBLE = 4;
 
   var ICONS = {
-    success: '✓',
-    error: '✕',
-    warning: '!',
-    info: 'i'
+    success: 'fas fa-check-circle',
+    error: 'fas fa-circle-exclamation',
+    warning: 'fas fa-triangle-exclamation',
+    info: 'fas fa-circle-info'
   };
 
   var TITLES = {
@@ -90,7 +90,9 @@
     var icon = document.createElement('span');
     icon.className = 'tk-toast__icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = ICONS[type];
+    var iconEl = document.createElement('i');
+    iconEl.className = ICONS[type] || 'fas fa-circle-info';
+    icon.appendChild(iconEl);
 
     var body = document.createElement('div');
     body.className = 'tk-toast__body';
@@ -118,7 +120,9 @@
     close.className = 'tk-toast__close';
     close.type = 'button';
     close.setAttribute('aria-label', 'Dismiss notification');
-    close.textContent = '✕';
+    var closeIcon = document.createElement('i');
+    closeIcon.className = 'fas fa-xmark';
+    close.appendChild(closeIcon);
     close.addEventListener('click', function () { dismiss(id); });
 
     el.appendChild(icon);
