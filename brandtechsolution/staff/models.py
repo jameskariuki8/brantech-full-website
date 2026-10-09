@@ -42,6 +42,7 @@ class AuditEntry(models.Model):
         ("group_updated", "Role updated"),
         ("group_deleted", "Role deleted"),
         ("handle_chosen", "Work address chosen"),
+        ("onboarding_completed", "Onboarding completed"),
         ("mail_limit_changed", "Mail sending limit changed"),
     ]
 
@@ -129,6 +130,27 @@ class StaffProfile(models.Model):
     # Recipients per day this person may send to from any mailbox. Null
     # follows the company default in messaging.MailSettings; 0 suspends.
     daily_mail_limit = models.PositiveIntegerField(null=True, blank=True)
+
+    # Technical capabilities and onboarding
+    primary_role = models.CharField(
+        max_length=64, blank=True, default="",
+        help_text="e.g. Fullstack Engineer, Backend Developer, AI / ML Engineer, DevOps",
+    )
+    coding_languages = models.JSONField(
+        default=list, blank=True,
+        help_text="List of programming languages, e.g. ['Python', 'TypeScript']",
+    )
+    frameworks = models.JSONField(
+        default=list, blank=True,
+        help_text="List of frameworks & tools, e.g. ['Django', 'React', 'Docker']",
+    )
+    github_username = models.CharField(max_length=100, blank=True, default="")
+    bio = models.TextField(blank=True, default="")
+    is_onboarded = models.BooleanField(
+        default=False,
+        help_text="True when the staff member has completed capabilities & WhatsApp onboarding.",
+    )
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

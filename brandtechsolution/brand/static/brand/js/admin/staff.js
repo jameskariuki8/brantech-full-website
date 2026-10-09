@@ -98,20 +98,33 @@ const STAFF_LISTS = {
         row: p => `
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex justify-between items-center gap-4">
             <div>
-                <div class="text-white font-medium">${escapeHtml(
-                    `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username)}</div>
-                <div class="text-xs text-gray-400">
+                <div class="text-white font-medium flex items-center gap-2">
+                    <span>${escapeHtml(`${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username)}</span>
+                    ${p.primary_role ? `<span class="text-[11px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">${escapeHtml(p.primary_role)}</span>` : ''}
+                </div>
+                <div class="text-xs text-gray-400 mt-0.5">
                     ${escapeHtml(p.email || p.username)}
                     ${p.phone ? `&middot; <a href="https://wa.me/${escapeHtml(p.phone.replace('+', ''))}"
-                        target="_blank" rel="noopener" class="text-green-400 hover:text-green-300">
+                        target="_blank" rel="noopener" class="text-emerald-400 hover:text-emerald-300">
                         <i class="fab fa-whatsapp"></i> ${escapeHtml(p.phone)}</a>` : ''}
+                    ${p.github_username ? `&middot; <a href="https://github.com/${escapeHtml(p.github_username)}"
+                        target="_blank" rel="noopener" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-github"></i> ${escapeHtml(p.github_username)}</a>` : ''}
                 </div>
-                <div class="text-xs text-gray-500">${p.is_superuser
+                <div class="text-xs text-gray-500 mt-0.5">${p.is_superuser
                     ? 'All capabilities &middot; superusers bypass every check'
                     : escapeHtml(p.roles.join(', ') || 'no roles')}</div>
+                ${(p.coding_languages && p.coding_languages.length) ? `
+                <div class="flex flex-wrap gap-1 mt-1.5">
+                    ${p.coding_languages.slice(0, 5).map(l => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10">${escapeHtml(l)}</span>`).join('')}
+                    ${p.coding_languages.length > 5 ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500">+${p.coding_languages.length - 5}</span>` : ''}
+                </div>` : ''}
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5">
                 ${p.is_superuser ? '<span class="text-xs px-2 py-1 rounded bg-purple-500/10 text-purple-400">Superuser</span>' : ''}
+                <span class="text-xs px-2 py-1 rounded ${p.is_onboarded ? 'bg-sky-500/10 text-sky-400' : 'bg-amber-500/10 text-amber-400'}">
+                    ${p.is_onboarded ? 'Onboarded' : 'Setup Pending'}
+                </span>
                 <span class="text-xs px-2 py-1 rounded ${p.is_active ? 'bg-green-500/10 text-green-400' : 'bg-gray-500/10 text-gray-400'}">
                     ${p.is_active ? 'Active' : 'Deactivated'}
                 </span>

@@ -71,12 +71,43 @@ class MeApiTest(TestCase):
         self.assertEqual(self.user.email, "ann@example.com")
         self.assertEqual(self.user.username, "ann@example.com")
 
-    def test_people_list_shows_phone(self):
-        StaffProfile.objects.create(user=self.user, phone="+254712345678")
+    def test_update_coding_capabilities_and_profile(self):
+        resp = self.client.patch(
+            "/api/staff/me/",
+            {
+                "primary_role": "AI Engineer",
+                "coding_languages": ["Python", "C++"],
+                "frameworks": ["Django", "PyTorch"],
+                "github_username": "annai",
+                "bio": "Building autonomous systems",
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["primary_role"], "AI Engineer")
+        self.assertEqual(data["coding_languages"], ["Python", "C++"])
+        self.assertEqual(data["frameworks"], ["Django", "PyTorch"])
+        self.assertEqual(data["github_username"], "annai")
+        self.assertEqual(data["bio"], "Building autonomous systems")
+
+    def test_people_list_shows_capabilities_and_phone(self):
+        StaffProfile.objects.create(
+            user=self.user,
+            phone="+254712345678",
+            primary_role="Fullstack Engineer",
+            coding_languages=["Python", "TypeScript"],
+            frameworks=["Django", "React"],
+            github_username="anncode",
+            is_onboarded=True,
+        )
         self.user.is_superuser = True
         self.user.save()
         people = self.client.get("/api/staff/people/").json()["results"]
         self.assertEqual(people[0]["phone"], "+254712345678")
+        self.assertEqual(people[0]["primary_role"], "Fullstack Engineer")
+        self.assertEqual(people[0]["coding_languages"], ["Python", "TypeScript"])
+        self.assertTrue(people[0]["is_onboarded"])
 
 
 class ChangePasswordTest(TestCase):

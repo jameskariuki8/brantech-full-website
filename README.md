@@ -898,11 +898,23 @@ tick it in from **Staff & Roles → Roles** if you want it there. Reversing the
 migration removes that one grant and leaves the group and every hand-made
 grant intact.
 
+---
+
+## 🛠️ Development Workflow & Repository Standards
+
+Teklora operates under a **file-based single source of truth** engineering workflow tightly coupled with our internal platform task system:
+
+- 📖 **[CONTRIBUTING.md](file:///home/bigaddict/Projects/Codebases/brantech-full-website/CONTRIBUTING.md)**: Developer workflow guide, branch conventions, and definition of done.
+- 📋 **[CHANGELOG.md](file:///home/bigaddict/Projects/Codebases/brantech-full-website/CHANGELOG.md)**: Semantic change history; updated on every pull request.
+- 🗺️ **[docs/ROADMAP.md](file:///home/bigaddict/Projects/Codebases/brantech-full-website/docs/ROADMAP.md)**: Active milestones, upcoming initiatives, and platform capabilities.
+- 🤖 **[AGENTS.md](file:///home/bigaddict/Projects/Codebases/brantech-full-website/AGENTS.md)**: Canonical rules for AI coding assistants (symlinked to `.cursorrules`, `CLAUDE.md`, `GEMINI.md`, etc.).
+
+---
 
 ## 📝 License & Contact
 
 This repository is proprietary software for **Teklora Solutions Ltd**.
 
-- **Email**: [teklorasolutionsltd@gamil.com](mailto:teklorasolutionsltd@gamil.com)
+- **Email**: [teklorasolutionsltd@gmail.com](mailto:teklorasolutionsltd@gmail.com)
 - **Phone**: +254 704 894220
 - **Status**: ✅ Production Ready

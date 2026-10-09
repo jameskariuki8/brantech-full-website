@@ -7,4 +7,5 @@ app_name = "staff"
 urlpatterns = [
     path("invite/<str:token>/", views.accept_invitation, name="accept-invitation"),
     path("address/", views.choose_handle, name="choose-handle"),
+    path("onboarding/", views.onboarding, name="onboarding"),
 ]

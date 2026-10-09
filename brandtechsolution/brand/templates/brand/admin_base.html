@@ -374,10 +374,32 @@
                     </div>
                 </div>
                 <div>
-                    <label for="profilePhone" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Phone number</label>
+                    <label for="profilePhone" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">WhatsApp / Phone number</label>
                     <input id="profilePhone" name="phone" type="tel" autocomplete="tel" placeholder="+254 712 345 678"
                         class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
-                    <p class="text-xs text-secondaryText mt-1.5"><i class="fab fa-whatsapp text-emerald-400 mr-1.5"></i>Use your WhatsApp number if you have one. That's how the team will reach you quickly.</p>
+                    <p class="text-xs text-secondaryText mt-1.5"><i class="fab fa-whatsapp text-emerald-400 mr-1.5"></i>Use your WhatsApp number so the team can reach you quickly.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="profilePrimaryRole" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Primary Role</label>
+                        <input id="profilePrimaryRole" name="primary_role" type="text" placeholder="e.g. Fullstack Engineer"
+                            class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                    </div>
+                    <div>
+                        <label for="profileGithub" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">GitHub Username</label>
+                        <input id="profileGithub" name="github_username" type="text" placeholder="octocat"
+                            class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label for="profileLanguages" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Coding Languages</label>
+                    <input id="profileLanguages" name="coding_languages" type="text" placeholder="Python, TypeScript, SQL (comma-separated)"
+                        class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                </div>
+                <div>
+                    <label for="profileFrameworks" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Frameworks & Tools</label>
+                    <input id="profileFrameworks" name="frameworks" type="text" placeholder="Django, React, Docker, TailwindCSS (comma-separated)"
+                        class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                 </div>
                 <button type="submit"
                     class="w-full bg-brandBlue hover:bg-sky-500 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-brandBlue/20 transition-all disabled:opacity-50 text-sm">Save profile</button>

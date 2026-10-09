@@ -43,6 +43,14 @@
         profileForm.first_name.value = me.first_name || '';
         profileForm.last_name.value = me.last_name || '';
         profileForm.phone.value = me.phone || '';
+        if (profileForm.primary_role) profileForm.primary_role.value = me.primary_role || '';
+        if (profileForm.github_username) profileForm.github_username.value = me.github_username || '';
+        if (profileForm.coding_languages) {
+            profileForm.coding_languages.value = Array.isArray(me.coding_languages) ? me.coding_languages.join(', ') : (me.coding_languages || '');
+        }
+        if (profileForm.frameworks) {
+            profileForm.frameworks.value = Array.isArray(me.frameworks) ? me.frameworks.join(', ') : (me.frameworks || '');
+        }
         const headerName = document.getElementById('headerUserName');
         if (headerName) {
             const full = `${me.first_name || ''} ${me.last_name || ''}`.trim();
@@ -82,11 +90,16 @@
 
     profileForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        const parseList = (str) => (str || '').split(',').map(s => s.trim()).filter(Boolean);
         withBusy(profileForm, async () => {
             fill(await send(ME_URL, 'PATCH', {
                 first_name: profileForm.first_name.value.trim(),
                 last_name: profileForm.last_name.value.trim(),
                 phone: profileForm.phone.value.trim(),
+                primary_role: profileForm.primary_role ? profileForm.primary_role.value.trim() : undefined,
+                github_username: profileForm.github_username ? profileForm.github_username.value.trim() : undefined,
+                coding_languages: profileForm.coding_languages ? parseList(profileForm.coding_languages.value) : undefined,
+                frameworks: profileForm.frameworks ? parseList(profileForm.frameworks.value) : undefined,
             }));
             toast.success('Profile saved.');
         });

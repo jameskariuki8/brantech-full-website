@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Onboarding — Teklora Solutions</title>
+    <!-- Favicon -->
+    <link rel="icon" href="/static/brand/images/logo.png" type="image/png">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .pill-checkbox:checked + label {
+            background-color: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-[#06090F] text-white min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-2xl bg-[#0D121D] border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 relative overflow-hidden">
+        <!-- Ambient Glow -->
+        <div class="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <header class="mb-8">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-lg">
+                    <i class="fas fa-user-astronaut"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-blue-400">Teklora Platform</span>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white font-heading">Welcome to the Team!</h1>
+                </div>
+            </div>
+            <p class="text-gray-400 text-sm">
+                Let's get your profile set up so your team members know your technical stack and can reach you on WhatsApp for rapid collaboration and task assignments.
+            </p>
+        </header>
+
+        {% if error %}
+        <div class="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+            <i class="fas fa-triangle-exclamation mt-0.5 text-red-400"></i>
+            <div>{{ error }}</div>
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <!-- Section 1: WhatsApp Contact -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                    <label for="phone" class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-emerald-400 text-base"></i>
+                        <span>WhatsApp Number <span class="text-red-400">*</span></span>
+                    </label>
+                    <span class="text-xs text-gray-500">Required</span>
+                </div>
+                <div class="relative">
+                    <input id="phone" type="tel" name="phone" required placeholder="0712 345 678 or +254 712 345 678"
+                        value="{{ phone_value }}" autocomplete="tel"
+                        class="w-full bg-[#06090F] border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 text-sm">
+                </div>
+                <p class="text-xs text-gray-500 flex items-center gap-1.5">
+                    <i class="fas fa-info-circle text-gray-400"></i>
+                    Kenyan numbers (07... / 01...) are automatically normalized to E.164 (+254...).
+                </p>
+            </div>
+
+            <!-- Section 2: Primary Role -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <label for="primary_role" class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i class="fas fa-id-badge text-blue-400"></i>
+                    <span>Primary Engineering Role</span>
+                </label>
+                <select id="primary_role" name="primary_role"
+                    class="w-full bg-[#06090F] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm">
+                    <option value="">Select your main focus...</option>
+                    {% for role in role_choices %}
+                    <option value="{{ role }}" {% if primary_role_value == role %}selected{% endif %}>{{ role }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Section 3: Coding Languages -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <label class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i class="fas fa-code text-amber-400"></i>
+                    <span>Programming & Scripting Languages</span>
+                </label>
+                <p class="text-xs text-gray-400">Select all the languages you write code in:</p>
+                
+                <div class="flex flex-wrap gap-2 pt-1">
+                    {% for lang in common_languages %}
+                    <div>
+                        <input type="checkbox" id="lang_{{ forloop.counter }}" name="coding_languages" value="{{ lang }}"
+                            class="hidden pill-checkbox"
+                            {% if lang in user_languages %}checked{% endif %}>
+                        <label for="lang_{{ forloop.counter }}"
+                            class="cursor-pointer inline-flex items-center px-3.5 py-1.5 rounded-lg border border-white/10 bg-[#06090F] text-xs font-medium text-gray-300 hover:text-white hover:border-white/20 transition-all select-none">
+                            {{ lang }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="pt-2">
+                    <label for="custom_languages" class="block text-xs text-gray-500 mb-1.5">Other languages (comma separated):</label>
+                    <input id="custom_languages" name="custom_languages" type="text" placeholder="e.g. Solidity, Zig, Elixir"
+                        class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- Section 4: Frameworks & Tech Stack -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <label class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i class="fas fa-cubes text-purple-400"></i>
+                    <span>Frameworks, Libraries & Tools</span>
+                </label>
+                <p class="text-xs text-gray-400">Select technologies in your toolbelt:</p>
+                
+                <div class="flex flex-wrap gap-2 pt-1">
+                    {% for fw in common_frameworks %}
+                    <div>
+                        <input type="checkbox" id="fw_{{ forloop.counter }}" name="frameworks" value="{{ fw }}"
+                            class="hidden pill-checkbox"
+                            {% if fw in user_frameworks %}checked{% endif %}>
+                        <label for="fw_{{ forloop.counter }}"
+                            class="cursor-pointer inline-flex items-center px-3.5 py-1.5 rounded-lg border border-white/10 bg-[#06090F] text-xs font-medium text-gray-300 hover:text-white hover:border-white/20 transition-all select-none">
+                            {{ fw }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="pt-2">
+                    <label for="custom_frameworks" class="block text-xs text-gray-500 mb-1.5">Other frameworks (comma separated):</label>
+                    <input id="custom_frameworks" name="custom_frameworks" type="text" placeholder="e.g. Vue.js, GraphQL, Kubernetes, Celery"
+                        class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- Section 5: GitHub Handle & Bio -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-2">
+                    <label for="github_username" class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i class="fab fa-github text-gray-300"></i>
+                        <span>GitHub Username</span>
+                    </label>
+                    <input id="github_username" type="text" name="github_username" placeholder="octocat"
+                        value="{{ github_value }}" autocomplete="off"
+                        class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-2">
+                    <label for="bio" class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i class="fas fa-signature text-gray-300"></i>
+                        <span>Brief Bio / Summary</span>
+                    </label>
+                    <input id="bio" type="text" name="bio" placeholder="e.g. Backend specialist & AI agent tinkerer"
+                        value="{{ bio_value }}" maxlength="200"
+                        class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-500 font-semibold px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/25 transition-all text-sm flex items-center justify-center gap-2">
+                <span>Complete Onboarding & Enter Panel</span>
+                <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+        </form>
+    </div>
+</body>
+</html>

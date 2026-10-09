@@ -105,6 +105,9 @@ def accept_invitation(request, token):
         user.save()
         user.groups.set(invitation.groups.all())
 
+        from .models import StaffProfile
+        StaffProfile.objects.get_or_create(user=user, defaults={"is_onboarded": False})
+
         record(
             actor=None,
             action="invite_accepted",
@@ -164,5 +167,132 @@ def choose_handle(request):
     except IntegrityError:
         context["error"] = "Someone just took that address. Pick another."
         return render(request, "staff/choose_handle.html", context)
+
+    return redirect(next_url)
+
+
+COMMON_LANGUAGES = [
+    "Python", "JavaScript", "TypeScript", "HTML / CSS", "SQL",
+    "Go", "Rust", "C / C++", "Dart", "PHP", "Java", "Kotlin", "Swift"
+]
+
+COMMON_FRAMEWORKS = [
+    "Django", "React", "Next.js", "Tailwind CSS", "FastAPI",
+    "PostgreSQL", "Redis", "Docker", "Flutter", "Node.js",
+    "LangGraph / LangChain", "PyTorch / TensorFlow", "Google Gemini API"
+]
+
+ROLE_CHOICES = [
+    "Fullstack Engineer",
+    "Backend Developer",
+    "Frontend Engineer",
+    "AI / ML Engineer",
+    "Mobile Developer (Flutter / iOS / Android)",
+    "DevOps & Infrastructure Engineer",
+    "QA / Automation Engineer",
+    "Product / UI/UX Designer",
+    "Technical Writer & Content Editor",
+]
+
+
+@login_required
+def onboarding(request):
+    """Guided onboarding for staff to declare coding capabilities and WhatsApp."""
+    if not request.user.is_staff:
+        return redirect("/")
+
+    if needs_handle(request.user):
+        return redirect("staff:choose-handle")
+
+    from .models import StaffProfile
+    from .phone import normalize_phone
+
+    profile, _ = StaffProfile.objects.get_or_create(user=request.user)
+
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = ""
+    next_url = next_url or "/admin-panel/"
+
+    context = {
+        "next": next_url,
+        "profile": profile,
+        "role_choices": ROLE_CHOICES,
+        "common_languages": COMMON_LANGUAGES,
+        "common_frameworks": COMMON_FRAMEWORKS,
+        "user_languages": profile.coding_languages or [],
+        "user_frameworks": profile.frameworks or [],
+        "phone_value": profile.phone or "",
+        "github_value": profile.github_username or "",
+        "bio_value": profile.bio or "",
+        "primary_role_value": profile.primary_role or "",
+    }
+
+    if request.method != "POST":
+        return render(request, "staff/onboarding.html", context)
+
+    raw_phone = request.POST.get("phone", "").strip()
+    primary_role = request.POST.get("primary_role", "").strip()
+    github_username = request.POST.get("github_username", "").strip()
+    bio = request.POST.get("bio", "").strip()
+
+    selected_languages = request.POST.getlist("coding_languages")
+    custom_languages = [
+        item.strip() for item in request.POST.get("custom_languages", "").split(",") if item.strip()
+    ]
+    coding_languages = sorted(set(selected_languages + custom_languages))
+
+    selected_frameworks = request.POST.getlist("frameworks")
+    custom_frameworks = [
+        item.strip() for item in request.POST.get("custom_frameworks", "").split(",") if item.strip()
+    ]
+    frameworks = sorted(set(selected_frameworks + custom_frameworks))
+
+    if not raw_phone:
+        context["error"] = "A WhatsApp phone number is required so the team can reach you."
+        context["phone_value"] = raw_phone
+        context["primary_role_value"] = primary_role
+        context["github_value"] = github_username
+        context["bio_value"] = bio
+        context["user_languages"] = coding_languages
+        context["user_frameworks"] = frameworks
+        return render(request, "staff/onboarding.html", context)
+
+    try:
+        phone = normalize_phone(raw_phone)
+    except ValidationError as exc:
+        context["error"] = " ".join(exc.messages)
+        context["phone_value"] = raw_phone
+        context["primary_role_value"] = primary_role
+        context["github_value"] = github_username
+        context["bio_value"] = bio
+        context["user_languages"] = coding_languages
+        context["user_frameworks"] = frameworks
+        return render(request, "staff/onboarding.html", context)
+
+    profile.phone = phone
+    profile.primary_role = primary_role
+    profile.coding_languages = coding_languages
+    profile.frameworks = frameworks
+    profile.github_username = github_username
+    profile.bio = bio
+    profile.is_onboarded = True
+    profile.save()
+
+    record(
+        actor=request.user,
+        action="onboarding_completed",
+        summary=f"{request.user.username} completed capabilities & WhatsApp onboarding",
+        target_user=request.user,
+        detail={
+            "phone": phone,
+            "primary_role": primary_role,
+            "coding_languages": coding_languages,
+            "frameworks": frameworks,
+            "github_username": github_username,
+        },
+    )
 
     return redirect(next_url)

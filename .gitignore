@@ -128,9 +128,11 @@ dmypy.json
 cython_debug/
 
 # BigAddict
-# Track specs/plans under docs/superpowers/; keep the rest of docs/ local.
-# /docs/* (not /docs) so git descends far enough for the negation to apply.
+# Track specs/plans/roadmap under docs/; keep local scratch docs uncommitted.
 /docs/*
+!/docs/ROADMAP.md
+!/docs/specs/
+!/docs/plans/
 !/docs/superpowers/
 
 # OS

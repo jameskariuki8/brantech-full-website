@@ -88,6 +88,12 @@ class PersonSerializer(serializers.ModelSerializer):
     # would raise AttributeError on read otherwise.
     roles = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
+    primary_role = serializers.SerializerMethodField()
+    coding_languages = serializers.SerializerMethodField()
+    frameworks = serializers.SerializerMethodField()
+    github_username = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    is_onboarded = serializers.SerializerMethodField()
     role_ids = serializers.PrimaryKeyRelatedField(
         source="groups", queryset=Group.objects.all(), many=True, write_only=True,
         required=False,
@@ -98,7 +104,8 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = [
             "id", "username", "email", "first_name", "last_name",
             "is_active", "is_superuser", "roles", "role_ids", "date_joined",
-            "phone",
+            "phone", "primary_role", "coding_languages", "frameworks",
+            "github_username", "bio", "is_onboarded",
         ]
         read_only_fields = ["username", "is_superuser", "date_joined"]
 
@@ -110,6 +117,30 @@ class PersonSerializer(serializers.ModelSerializer):
         # profile have no row yet.
         profile = getattr(obj, "staff_profile", None)
         return profile.phone if profile else ""
+
+    def get_primary_role(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.primary_role if profile else ""
+
+    def get_coding_languages(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.coding_languages if profile else []
+
+    def get_frameworks(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.frameworks if profile else []
+
+    def get_github_username(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.github_username if profile else ""
+
+    def get_bio(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.bio if profile else ""
+
+    def get_is_onboarded(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.is_onboarded if profile else False
 
 
 class AuditEntrySerializer(serializers.ModelSerializer):
@@ -160,11 +191,39 @@ class MeSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(
         source="staff_profile.phone", required=False, allow_blank=True, max_length=32
     )
+    primary_role = serializers.CharField(
+        source="staff_profile.primary_role", required=False, allow_blank=True, max_length=64
+    )
+    coding_languages = serializers.ListField(
+        child=serializers.CharField(),
+        source="staff_profile.coding_languages",
+        required=False,
+        allow_empty=True,
+    )
+    frameworks = serializers.ListField(
+        child=serializers.CharField(),
+        source="staff_profile.frameworks",
+        required=False,
+        allow_empty=True,
+    )
+    github_username = serializers.CharField(
+        source="staff_profile.github_username", required=False, allow_blank=True, max_length=100
+    )
+    bio = serializers.CharField(
+        source="staff_profile.bio", required=False, allow_blank=True
+    )
+    is_onboarded = serializers.BooleanField(
+        source="staff_profile.is_onboarded", required=False
+    )
     mailbox = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "mailbox", "first_name", "last_name", "phone"]
+        fields = [
+            "id", "username", "email", "mailbox", "first_name", "last_name",
+            "phone", "primary_role", "coding_languages", "frameworks",
+            "github_username", "bio", "is_onboarded",
+        ]
         read_only_fields = ["id", "username", "email"]
 
     def get_mailbox(self, obj):
@@ -181,7 +240,17 @@ class MeSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
         if profile_data is not None:
             profile = instance.staff_profile
-            profile.phone = profile_data.get("phone", profile.phone)
+            for field in (
+                "phone",
+                "primary_role",
+                "coding_languages",
+                "frameworks",
+                "github_username",
+                "bio",
+                "is_onboarded",
+            ):
+                if field in profile_data:
+                    setattr(profile, field, profile_data[field])
             profile.save()
         return instance
 
