@@ -14,12 +14,20 @@ from django.core.cache import cache
 
 from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
-from .models import BlogPost, BlogLike, BlogComment, Project
+from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent
+from .forms import SiteContentForm
 from .markdown_utils import render_markdown
 
 
 def is_admin(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def can_manage_site_content(user):
+    if not is_admin(user):
+        return False
+    _, can = held_capabilities(user)
+    return bool(getattr(can, 'manage_staff', False))
 
 
 def _published_post_or_404(post_id):
@@ -266,6 +274,22 @@ def admin_panel_page(request):
         'capabilities': held,
         'can': can,
     })
+
+
+@login_required(login_url='/login/')
+@user_passes_test(can_manage_site_content, login_url='/login/')
+def admin_site_content(request):
+    """Edit the shared header, footer, and current landing-page sections."""
+    content = SiteContent.objects.filter(pk=1).first() or SiteContent()
+    if request.method == 'POST':
+        form = SiteContentForm(request.POST, instance=content)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Site content saved and published.')
+            return redirect('admin-site-content')
+    else:
+        form = SiteContentForm(instance=content)
+    return render(request, 'brand/admin_site_content.html', {'form': form})
 
 
 def projects(request):

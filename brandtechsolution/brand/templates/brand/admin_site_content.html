@@ -1,0 +1,66 @@
+{% extends 'brand/admin_base.html' %}
+
+{% block title %}Site Content · Teklora Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-5 py-8 lg:px-10">
+  <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-green mb-2">Content management</p>
+      <h1 class="text-3xl font-bold text-white">Site content</h1>
+      <p class="text-gray-400 mt-2 max-w-2xl">Update the shared header and footer, plus the copy, images, cards, technology lists, statistics, and journey steps on the existing landing page.</p>
+    </div>
+    <a href="/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10">
+      <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Preview website
+    </a>
+  </div>
+
+  {% if messages %}
+  <div class="space-y-2 mb-6" aria-live="polite">
+    {% for message in messages %}
+    <div class="rounded-lg border border-brand-green/20 bg-brand-green/10 px-4 py-3 text-sm text-brand-green">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+  <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 mb-6">
+    {{ form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+    {% for group_title, fields in form.groups %}
+    <section class="rounded-2xl border border-dark-border bg-dark-card p-5 sm:p-7">
+      <div class="mb-6 flex items-center gap-3 border-b border-white/5 pb-4">
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue">
+          {% if "Header" in group_title %}<i class="fas fa-bars-staggered" aria-hidden="true"></i>
+          {% elif "Footer" in group_title %}<i class="fas fa-shoe-prints" aria-hidden="true"></i>
+          {% else %}<i class="fas fa-layer-group" aria-hidden="true"></i>{% endif %}
+        </span>
+        <h2 class="text-lg font-bold text-white">{{ group_title }}</h2>
+      </div>
+
+      <div class="grid gap-5 md:grid-cols-2">
+        {% for field in fields %}
+        <div class="{% if field.field.widget.attrs.rows %}md:col-span-2{% endif %}">
+          <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-semibold text-gray-200">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="mt-2 text-xs leading-relaxed text-gray-500">{{ field.help_text }}</p>{% endif %}
+          {% for error in field.errors %}<p class="mt-2 text-sm text-red-300">{{ error }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+
+    <div class="sticky bottom-0 -mx-5 flex flex-col-reverse gap-3 border-t border-white/10 bg-[#06090F]/95 px-5 py-4 backdrop-blur sm:mx-0 sm:flex-row sm:justify-end sm:rounded-xl sm:border sm:px-6">
+      <a href="/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg border border-white/10 px-5 py-3 text-sm font-semibold text-gray-300 hover:bg-white/5">Cancel</a>
+      <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/20 hover:bg-blue-500">
+        <i class="fas fa-floppy-disk" aria-hidden="true"></i> Save and publish
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

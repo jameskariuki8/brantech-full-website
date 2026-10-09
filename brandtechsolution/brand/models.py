@@ -1,9 +1,12 @@
+from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.templatetags.static import static
 from pgvector.django import VectorField
+
+SITE_CONTENT_CACHE_KEY = "brand:site-content"
 
 
 def _truncate_for_embedding(text: str, max_chars: int = 1500) -> str:
@@ -20,6 +23,513 @@ def _truncate_for_embedding(text: str, max_chars: int = 1500) -> str:
     if " " in truncated:
         truncated = truncated.rsplit(" ", 1)[0]
     return truncated + " ..."
+
+
+def default_header_links():
+    return [
+        {"label": "Home", "url": "/"},
+        {
+            "label": "Products",
+            "url": "/products/",
+            "children": [
+                {"label": "EduShare Africa", "url": "/products/#edushare"},
+                {"label": "DOMMaterdei SMS", "url": "/products/#dommaterdei"},
+                {"label": "Poise & Purpose", "url": "/products/#poise"},
+                {"label": "Kiamiko WhatsApp Commerce", "url": "/products/#kiamiko"},
+                {"label": "Campus Fast-Food Delivery", "url": "/products/#campus-food"},
+                {"label": "HoloDesk Workspace OS", "url": "/products/#holodesk"},
+            ],
+        },
+        {
+            "label": "Solutions",
+            "url": "/solutions/",
+            "children": [
+                {"label": "Education", "url": "/solutions/#education"},
+                {"label": "Healthcare", "url": "/solutions/#healthcare"},
+                {"label": "Agriculture", "url": "/solutions/#agriculture"},
+                {"label": "Business & Corporate", "url": "/solutions/#business"},
+                {"label": "Government", "url": "/solutions/#government"},
+            ],
+        },
+        {
+            "label": "Research",
+            "url": "/research/",
+            "children": [
+                {"label": "Artificial Intelligence", "url": "/research/#ai"},
+                {"label": "Digital Twins", "url": "/research/#digital-twins"},
+                {"label": "Spatial Computing", "url": "/research/#spatial"},
+                {"label": "Python & React Stack", "url": "/research/#tech-stack"},
+                {"label": "Quantum Computing", "url": "/research/#quantum"},
+                {"label": "Future of Tech", "url": "/research/#future-tech"},
+            ],
+        },
+        {
+            "label": "About",
+            "url": "/about/",
+            "children": [
+                {"label": "Mission & Values", "url": "/about/#mission"},
+                {"label": "Partnerships", "url": "/about/#partnerships"},
+                {"label": "Volunteer & Learn", "url": "/about/#careers"},
+            ],
+        },
+        {"label": "Blog", "url": "/blog/"},
+        {"label": "Contact", "url": "/contacts/"},
+    ]
+
+
+def default_footer_quick_links():
+    return [
+        {"label": "Home", "url": "/"},
+        {"label": "About Us", "url": "/about/"},
+        {"label": "Products", "url": "/products/"},
+        {"label": "Services", "url": "/solutions/"},
+        {"label": "Research", "url": "/research/"},
+        {"label": "Blog", "url": "/blog/"},
+        {"label": "Contact", "url": "/contacts/"},
+        {"label": "Terms & Conditions", "url": "/terms/"},
+        {"label": "Privacy Policy", "url": "/privacy/"},
+    ]
+
+
+def default_footer_services():
+    return [
+        {"label": "Web Design & System Development", "url": "/solutions/#business"},
+        {"label": "Mobile Application Development", "url": "/products/#edushare"},
+        {"label": "Digital Strategy", "url": "/solutions/"},
+        {"label": "Cloud Computing", "url": "/solutions/"},
+    ]
+
+
+def default_footer_legal_links():
+    return [
+        {"label": "Privacy Policy", "url": "/privacy/"},
+        {"label": "Terms & Conditions", "url": "/terms/"},
+    ]
+
+
+def default_footer_social_links():
+    return [
+        {"label": "LinkedIn", "url": "https://www.linkedin.com/company/brantech-solutions-ke/", "icon": "fab fa-linkedin"},
+        {"label": "Facebook", "url": "https://www.facebook.com/", "icon": "fab fa-facebook"},
+        {"label": "TikTok", "url": "https://www.tiktok.com/", "icon": "fab fa-tiktok"},
+        {"label": "Instagram", "url": "https://www.instagram.com/brantech_solutions", "icon": "fab fa-instagram"},
+    ]
+
+
+def default_story_tabs():
+    return [
+        {
+            "label": "Purpose Before Profit",
+            "title": "Technology Built for Lasting Impact",
+            "desc": "Teklora exists because off-the-shelf software doesn't fit the realities of African infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep, enduring impact over quick turnarounds, engineering custom platforms that empower African institutions to lead.",
+            "quote": "\"Every application we engineer must deliver tangible, measurable value to African communities and enterprises.\"",
+            "author": "Teklora Philosophy",
+            "badgeText": "OUR CORE",
+            "image": "/static/brand/images/story_purpose_impact.png",
+        },
+        {
+            "label": "African-First Innovation",
+            "title": "Tailored for African Infrastructure",
+            "desc": "We design systems from the ground up to thrive in low-bandwidth, high-concurrency, and mobile-first African environments. Our zero-rated edge caching and offline-first architectures guarantee 99.98% reliability anywhere.",
+            "quote": "\"Resilient infrastructure engineered to perform under extreme regional and bandwidth constraints.\"",
+            "author": "Technical Architecture Core",
+            "badgeText": "INFRASTRUCTURE",
+            "image": "/static/brand/images/story_african_innovation.png",
+        },
+        {
+            "label": "Human-Centered Tech",
+            "title": "Apple-Grade UI with Technical Rigor",
+            "desc": "Great technology must be intuitive. We merge modern design aesthetics—dark mode elegance, crisp typography, micro-interactions—with deep Python and React engineering to make complex institutional software effortless to use.",
+            "quote": "\"Craftsmanship means making high-powered software feel clean, fast, and human-centered.\"",
+            "author": "UI/UX Design Principle",
+            "badgeText": "CRAFTSMANSHIP",
+            "image": "/static/brand/images/story_human_centered_ui.png",
+        },
+        {
+            "label": "Enduring Legacy",
+            "title": "Long-Term Support & Continental Scale",
+            "desc": "We are not chasing short-lived tech trends. We forge long-term partnerships with universities, NGOs, government agencies, and enterprises to continuously audit, scale, and maintain mission-critical software for decades.",
+            "quote": "\"Building technology today that powers Africa's leaders tomorrow.\"",
+            "author": "Pan-African Mission",
+            "badgeText": "CONTINENTAL LEGACY",
+            "image": "/static/brand/images/story_enduring_legacy.png",
+        },
+    ]
+
+
+def default_flagship_stats():
+    return [
+        {"value": "1,000+", "label": "Active Learners"},
+        {"value": "74%", "label": "Query Latency Drop"},
+        {"value": "99.98%", "label": "System Uptime"},
+        {"value": "Zero", "label": "Offline Data Loss"},
+    ]
+
+
+def default_flagship_technologies():
+    return [
+        {"label": "React", "icon": "fab fa-react"},
+        {"label": "Python", "icon": "fab fa-python"},
+        {"label": "Django Core", "icon": "fas fa-server"},
+        {"label": "PostgreSQL", "icon": "fas fa-database"},
+        {"label": "Cloudflare Edge", "icon": "fas fa-bolt"},
+    ]
+
+
+def default_capability_cards():
+    return [
+        {
+            "image": "/static/brand/images/cap_software_dev.png",
+            "badge": "BACKEND & APIS",
+            "icon": "fas fa-code",
+            "title": "Software Development",
+            "description": "Custom Python, Django, and React backbones engineered for maximum maintainability, security, and high user concurrency across enterprise systems.",
+            "technologies": [
+                {"label": "Python", "icon": "fab fa-python"},
+                {"label": "Django Core", "icon": "fas fa-server"},
+                {"label": "React.js", "icon": "fab fa-react"},
+            ],
+        },
+        {
+            "image": "/static/brand/images/cap_ai_solutions.png",
+            "badge": "AUTONOMOUS MESH",
+            "icon": "fas fa-brain",
+            "title": "AI Solutions & Agentic Mesh",
+            "description": "Multi-agent network orchestration, pgvector similarity search, and automated research compilation engines that accelerate operations 10x.",
+            "technologies": [
+                {"label": "Gemini 3.6", "icon": "fas fa-robot"},
+                {"label": "pgvector", "icon": "fas fa-database"},
+                {"label": "LangGraph", "icon": "fas fa-project-diagram"},
+            ],
+        },
+        {
+            "image": "/static/brand/images/cap_cloud_edge.png",
+            "badge": "EDGE ARCHITECTURE",
+            "icon": "fas fa-cloud",
+            "title": "Cloud Applications & Edge",
+            "description": "Micro-kernel edge caching structures and high-availability cloud infrastructure running across AWS & DigitalOcean backbones with 99.98% uptime.",
+            "technologies": [
+                {"label": "Docker", "icon": "fab fa-docker"},
+                {"label": "AWS", "icon": "fab fa-aws"},
+                {"label": "Nginx", "icon": "fas fa-network-wired"},
+            ],
+        },
+        {
+            "image": "/static/brand/images/cap_web_mobile.png",
+            "badge": "LUXURY DESIGN",
+            "icon": "fas fa-desktop",
+            "title": "Web & Mobile Ecosystems",
+            "description": "Awwwards-grade web platforms and cross-platform native mobile applications designed with Apple and Stripe design language, smooth animations, and top speed.",
+            "technologies": [
+                {"label": "React Native", "icon": "fab fa-react"},
+                {"label": "TypeScript", "icon": "fab fa-js"},
+                {"label": "Tailwind CSS", "icon": "fab fa-css3-alt"},
+            ],
+        },
+        {
+            "image": "/static/brand/images/cap_digital_trans.png",
+            "badge": "ENTERPRISE MODERNIZATION",
+            "icon": "fas fa-sync-alt",
+            "title": "Digital Transformation",
+            "description": "Modernizing manual institutional workflows for universities, NGOs, state entities, and high-growth African enterprises.",
+            "technologies": [
+                {"label": "Institutional SaaS", "icon": "fas fa-building"},
+                {"label": "Security Audits", "icon": "fas fa-shield-alt"},
+            ],
+        },
+    ]
+
+
+def default_technology_orbit():
+    return [
+        {"label": "Python", "icon": "fab fa-python"},
+        {"label": "React", "icon": "fab fa-react"},
+        {"label": "Django", "icon": "fas fa-server"},
+        {"label": "PostgreSQL", "icon": "fas fa-database"},
+        {"label": "FastAPI", "icon": "fas fa-bolt"},
+        {"label": "TypeScript", "icon": "fab fa-js"},
+        {"label": "Docker", "icon": "fab fa-docker"},
+        {"label": "Linux OS", "icon": "fab fa-linux"},
+        {"label": "Nginx", "icon": "fas fa-network-wired"},
+        {"label": "Git & GitHub", "icon": "fab fa-git-alt"},
+    ]
+
+
+def default_technology_groups():
+    return [
+        {"label": "Backend", "icon": "fab fa-python", "items": ["Python 3.13", "Django Core", "FastAPI", "Flask"]},
+        {"label": "Frontend", "icon": "fab fa-react", "items": ["React.js", "TypeScript", "JavaScript (ES6+)", "Tailwind CSS"]},
+        {"label": "Databases", "icon": "fas fa-database", "items": ["PostgreSQL", "pgvector (AI)", "MySQL", "SQLite"]},
+        {"label": "DevOps", "icon": "fab fa-docker", "items": ["Docker Containers", "Git / GitHub", "Linux Kernels", "Nginx Server"]},
+        {"label": "Platforms", "icon": "fas fa-cloud-upload-alt", "items": ["Render Cloud", "DigitalOcean", "Vercel Platform", "AWS Infra"]},
+    ]
+
+
+def default_why_cards():
+    return [
+        {
+            "image": "/static/brand/images/story_purpose_impact.png",
+            "alt": "Product-Led Engineering",
+            "badge": "PRODUCT COMPANY",
+            "title": "Product-Led Engineering",
+            "description": "We build and operate enduring technology platforms like EduShare Africa with 99.98% reliability.",
+        },
+        {
+            "image": "/static/brand/images/story_african_innovation.png",
+            "alt": "African-First Infrastructure",
+            "badge": "PAN-AFRICAN SCALE",
+            "title": "African-First Infrastructure",
+            "description": "Engineered specifically for zero-rated edge caching and low-bandwidth regional network conditions.",
+        },
+        {
+            "image": "/static/brand/images/story_human_centered_ui.png",
+            "alt": "Apple & Stripe Craftsmanship",
+            "badge": "ZERO DEV BLOAT",
+            "title": "Apple & Stripe Craftsmanship",
+            "description": "Hand-crafted Python, React, and PostgreSQL backbones built with sub-100ms response times.",
+        },
+        {
+            "image": "/static/brand/images/story_enduring_legacy.png",
+            "alt": "24/7 Strategic Partnership",
+            "badge": "LONG-TERM PARTNER",
+            "title": "24/7 Strategic Partnership",
+            "description": "Continuous active infrastructure monitoring, security patch management, and long-term feature growth.",
+        },
+    ]
+
+
+def default_journey_steps():
+    return [
+        {
+            "label": "01. Discovery & Audit",
+            "tagline": "STAGE 01 • INITIATION",
+            "title": "Discovery & Architecture Audit",
+            "summary": "We analyze institutional stakeholders, data flow parameters, legacy codebase vulnerabilities, and African network bandwidth constraints before designing your software architecture.",
+            "deliverables": ["Workflow Audits", "Data Flow Mapping", "Bandwidth Specs"],
+            "color": "#00FF94",
+            "image": "/static/brand/images/cap_digital_trans.png",
+        },
+        {
+            "label": "02. System Strategy",
+            "tagline": "STAGE 02 • STRATEGY",
+            "title": "System Strategy & Schema Design",
+            "summary": "Architecting relational database schemas, RESTful & GraphQL API contracts, and zero-rated edge caching routes tailored for your exact operational requirements.",
+            "deliverables": ["Database Schemas", "API Contracts", "Cloud Blueprints"],
+            "color": "#007AFF",
+            "image": "/static/brand/images/cap_software_dev.png",
+        },
+        {
+            "label": "03. UI/UX Design",
+            "tagline": "STAGE 03 • DESIGN",
+            "title": "Human-Centered UI/UX Design",
+            "summary": "Crafting modern Apple and Stripe-grade user interfaces with dark-mode elegance, micro-interaction fluidity, and intuitive navigation for enterprise software.",
+            "deliverables": ["Figma Prototypes", "Design System Tokens", "Micro-Animations"],
+            "color": "#A855F7",
+            "image": "/static/brand/images/story_human_centered_ui.png",
+        },
+        {
+            "label": "04. Production Build",
+            "tagline": "STAGE 04 • ENGINEERING",
+            "title": "Python, React & PostgreSQL Build",
+            "summary": "Writing clean, maintainable Python and Django backend services alongside high-performance React component trees capable of sub-100ms response times.",
+            "deliverables": ["Django Core", "React UI Components", "pgvector Search"],
+            "color": "#F59E0B",
+            "image": "/static/brand/images/hero.png",
+        },
+        {
+            "label": "05. Security & QA Audit",
+            "tagline": "STAGE 05 • VALIDATION",
+            "title": "Security & Automated QA Audits",
+            "summary": "Rigorous automated unit testing, SQL injection vulnerabilities scanning, CSRF protection validation, and simulated low-bandwidth network stress tests.",
+            "deliverables": ["Automated Unit Tests", "Penetration Scans", "Load Testing Reports"],
+            "color": "#F43F5E",
+            "image": "/static/brand/images/cap_ai_solutions.png",
+        },
+        {
+            "label": "06. Cloud Deployment",
+            "tagline": "STAGE 06 • DEPLOYMENT",
+            "title": "Zero-Downtime Cloud Deployment",
+            "summary": "Containerizing services with Docker and deploying to AWS & DigitalOcean backbones with Nginx edge routing and SSL firewall security.",
+            "deliverables": ["Docker Containers", "Nginx Caching", "Zero-Downtime Migration"],
+            "color": "#06B6D4",
+            "image": "/static/brand/images/cap_cloud_edge.png",
+        },
+        {
+            "label": "07. 24/7 Legacy Support",
+            "tagline": "STAGE 07 • STEWARDSHIP",
+            "title": "24/7 Continuous Legacy Support",
+            "summary": "Providing continuous 24/7 infrastructure uptime monitoring, security patch management, automated backups, and long-term feature expansion for decades.",
+            "deliverables": ["24/7 Monitoring Alerting", "Continuous Backups", "Quarterly Audits"],
+            "color": "#10B981",
+            "image": "/static/brand/images/story_enduring_legacy.png",
+        },
+    ]
+
+
+def default_impact_stats():
+    return [
+        {"key": "metricProjects", "value": 5, "label": "Projects Delivered"},
+        {"key": "metricClients", "value": 13, "label": "Satisfied Clients"},
+        {"key": "metricTech", "value": 18, "label": "Tech Mastered"},
+        {"key": "metricSatisfaction", "value": 99, "label": "Satisfaction %"},
+    ]
+
+
+class SiteContent(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+
+    brand_name = models.CharField(max_length=100, default="Teklora")
+    logo_url = models.CharField(max_length=500, default="/static/brand/images/logo.png")
+    header_links = models.JSONField(default=default_header_links)
+    header_cta_label = models.CharField(max_length=100, default="Book Strategy Consultation")
+    header_cta_url = models.CharField(max_length=500, default="/contacts/#book")
+
+    footer_description = models.TextField(
+        default="Innovative technology solutions for modern businesses."
+    )
+    footer_quick_heading = models.CharField(max_length=100, default="Quick Links")
+    footer_services_heading = models.CharField(max_length=100, default="Services")
+    footer_contact_heading = models.CharField(max_length=100, default="Contact")
+    footer_quick_links = models.JSONField(default=default_footer_quick_links)
+    footer_services = models.JSONField(default=default_footer_services)
+    footer_legal_links = models.JSONField(default=default_footer_legal_links)
+    footer_social_links = models.JSONField(default=default_footer_social_links)
+    contact_email = models.EmailField(default="teklorasolutionsltd@gmail.com")
+    contact_phone = models.CharField(max_length=50, default="+254 704 894220")
+    copyright_text = models.CharField(
+        max_length=200, default="© 2026 Teklora Solutions. All rights reserved."
+    )
+
+    landing_title = models.CharField(
+        max_length=200,
+        default="Teklora - Building Technology That Leaves a Lasting Legacy Across Africa",
+    )
+    landing_meta_description = models.TextField(
+        default="Teklora is a Kenyan technology company engineering custom software, cloud engines, and AI platforms built to transform businesses, universities, NGOs, and institutions across Africa."
+    )
+
+    hero_title_before = models.CharField(
+        max_length=180, default="Building Technology That Leaves a "
+    )
+    hero_title_highlight = models.CharField(max_length=120, default="Lasting Legacy")
+    hero_title_after = models.CharField(max_length=120, default=" Across Africa")
+    hero_description = models.TextField(
+        default="We don't just build websites. We engineer scalable software products, cloud platforms, and intelligent systems that solve real African challenges and empower institutions to lead."
+    )
+    hero_quote = models.CharField(
+        max_length=300,
+        default="Building technology that leaves a lasting legacy across Africa.",
+    )
+    hero_primary_label = models.CharField(max_length=100, default="Book an Appointment")
+    hero_primary_url = models.CharField(max_length=500, default="/contacts/#book")
+    hero_secondary_label = models.CharField(
+        max_length=100, default="Explore EduShare Flagship"
+    )
+    hero_secondary_url = models.CharField(
+        max_length=500, default="#flagship-edushare"
+    )
+    hero_image_url = models.CharField(
+        max_length=500, default="/static/brand/images/HEROO.png"
+    )
+    hero_scroll_label = models.CharField(max_length=100, default="Discover Our Vision")
+
+    story_label = models.CharField(max_length=100, default="Our Story & Purpose")
+    story_heading = models.CharField(
+        max_length=250, default="Africa Deserves Technology Built for African Challenges"
+    )
+    story_tabs = models.JSONField(default=default_story_tabs)
+
+    flagship_label = models.CharField(
+        max_length=120, default="Flagship Innovation Spotlight"
+    )
+    flagship_title = models.CharField(max_length=160, default="EduShare Africa")
+    flagship_description = models.TextField(
+        default="Proof of Teklora's capability to build scalable, high-impact technology products that transform African education."
+    )
+    flagship_image_url = models.CharField(
+        max_length=500, default="/static/brand/images/edushare.png"
+    )
+    flagship_badge = models.CharField(max_length=120, default="ZERO-RATED SYLLABUS CDN")
+    flagship_subtitle = models.CharField(max_length=180, default="EdTech SaaS Engine")
+    flagship_feature_heading = models.CharField(
+        max_length=250, default="Decentralized Syllabus Access for African Students"
+    )
+    flagship_problem_label = models.CharField(max_length=100, default="The Problem:")
+    flagship_problem_description = models.TextField(
+        default="Students in African universities face prohibitive data costs and slow server connections, causing syllabus access bottlenecks during exam study cycles."
+    )
+    flagship_solution_label = models.CharField(
+        max_length=120, default="The Solution & Impact:"
+    )
+    flagship_solution_description = models.TextField(
+        default="EduShare compresses and caches university study materials, reducing latency by 74% and serving over 50,000 active learners with zero offline interruptions."
+    )
+    flagship_technology_heading = models.CharField(
+        max_length=160, default="Technologies Powering EduShare:"
+    )
+    flagship_cta_label = models.CharField(max_length=120, default="Explore EduShare Africa")
+    flagship_cta_url = models.CharField(max_length=500, default="/products/#edushare")
+    flagship_technologies = models.JSONField(default=default_flagship_technologies)
+    flagship_stats = models.JSONField(default=default_flagship_stats)
+    capabilities_label = models.CharField(
+        max_length=120, default="Technical Capabilities"
+    )
+    capabilities_heading = models.CharField(
+        max_length=250, default="Services Delivered as Scalable Solutions"
+    )
+    capabilities_description = models.TextField(
+        default="Explore our specialized technology solutions engineered for maximum performance, security, and continental scale."
+    )
+    capability_cards = models.JSONField(default=default_capability_cards)
+
+    technology_label = models.CharField(max_length=120, default="Core Tech Stack")
+    technology_heading = models.CharField(
+        max_length=200, default="Technology We Build With"
+    )
+    technology_description = models.TextField(
+        default="We rely on a battle-tested Python and React stack engineered for security, speed, and massive scale."
+    )
+    technology_center_caption = models.CharField(
+        max_length=120, default="PYTHON & REACT CENTERED"
+    )
+    technology_orbit = models.JSONField(default=default_technology_orbit)
+    technology_groups = models.JSONField(default=default_technology_groups)
+
+    why_label = models.CharField(max_length=100, default="Why Teklora")
+    why_heading = models.CharField(
+        max_length=300,
+        default="We engineer long-term, scalable technology products built for continental impact, not short-term dev hand-offs.",
+    )
+    why_cards = models.JSONField(default=default_why_cards)
+
+    journey_label = models.CharField(max_length=100, default="Execution Method")
+    journey_heading = models.CharField(max_length=200, default="Our Engineering Journey")
+    journey_description = models.CharField(
+        max_length=300,
+        default="Hover over any stage below to explore our structured execution framework.",
+    )
+    journey_transparency_label = models.CharField(
+        max_length=100, default="100% TRANSPARENT"
+    )
+    journey_steps = models.JSONField(default=default_journey_steps)
+
+    impact_label = models.CharField(max_length=100, default="Impact in Numbers")
+    impact_heading = models.CharField(
+        max_length=200, default="Our Track Record Across Africa"
+    )
+    impact_stats = models.JSONField(default=default_impact_stats)
+
+    class Meta:
+        verbose_name = "site content"
+        verbose_name_plural = "site content"
+
+    def __str__(self):
+        return f"Site content — {self.brand_name}"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+        cache.delete(SITE_CONTENT_CACHE_KEY)
 
 
 class BlogPost(models.Model):
@@ -472,4 +982,3 @@ class BlogComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.user_name} on {self.post.title}"
-

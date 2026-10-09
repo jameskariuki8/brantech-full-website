@@ -6,53 +6,45 @@
       <!-- Brand -->
       <div class="space-y-6">
         <div class="flex items-center gap-3">
-          <img src="{% static 'brand/images/logo.png' %}" alt="Teklora Logo" class="h-10 w-10 object-contain rounded-lg">
-          <span class="font-bold text-xl text-gray-900 dark:text-white tracking-tight">Teklora</span>
+          <img src="{{ site_content.logo_url }}" alt="{{ site_content.brand_name }} Logo" class="h-10 w-10 object-contain rounded-lg">
+          <span class="font-bold text-xl text-gray-900 dark:text-white tracking-tight">{{ site_content.brand_name }}</span>
         </div>
         <div class="text-gray-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed space-y-4 mt-2">
-          <p>
-            <strong class="text-gray-900 dark:text-white block mb-1 font-semibold">Vision</strong>
-            To empower businesses across Africa and beyond to solve problems, innovate, and grow through technology.
-          </p>
+          <p>{{ site_content.footer_description }}</p>
         </div>
         <div class="flex gap-4">
-          <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="fab fa-linkedin"></i></a>
-          <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="fab fa-github"></i></a>
+          {% for link in site_content.footer_social_links %}
+          <a href="{{ link.url }}" aria-label="{{ link.label }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="{{ link.icon }}"></i></a>
+          {% endfor %}
         </div>
       </div>
 
       <!-- Links -->
       <div>
-        <h4 class="font-bold text-gray-900 dark:text-white mb-6">Company</h4>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-6">{{ site_content.footer_quick_heading }}</h4>
         <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
-          <li><a href="{% url 'about' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">About Us</a></li>
-          <li><a href="{% url 'careers' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Careers</a></li>
-          <li><a href="{% url 'products' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Our Work</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Solutions</a></li>
-          <li><a href="{% url 'blog' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Engineering Blog</a></li>
+          {% for link in site_content.footer_quick_links %}
+          <li><a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ link.label }}</a></li>
+          {% endfor %}
         </ul>
       </div>
 
       <!-- Services -->
       <div>
-        <h4 class="font-bold text-gray-900 dark:text-white mb-6">Services</h4>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-6">{{ site_content.footer_services_heading }}</h4>
         <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">System and Web Architecture</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">UI/UX Design</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Cloud Platforms</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Mobile Engineering</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">AI Automation</a></li>
-          <li><a href="{% url 'solutions' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Digital Strategy & Consultancy</a></li>
+          {% for link in site_content.footer_services %}
+          <li><a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ link.label }}</a></li>
+          {% endfor %}
         </ul>
       </div>
 
       <!-- Contact -->
       <div>
-        <h4 class="font-bold text-gray-900 dark:text-white mb-6">Get in Touch</h4>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-6">{{ site_content.footer_contact_heading }}</h4>
         <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
-          <li><a href="mailto:hello@teklora.com" class="hover:text-gray-900 dark:hover:text-white transition-colors">hello@teklora.com</a></li>
-          <li><a href="tel:+254704894220" class="hover:text-gray-900 dark:hover:text-white transition-colors">+254 704 894 220</a></li>
+          <li><a href="mailto:{{ site_content.contact_email }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ site_content.contact_email }}</a></li>
+          <li><a href="tel:{{ site_content.contact_phone|cut:' ' }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ site_content.contact_phone }}</a></li>
           <li class="pt-2">
             <a href="{% url 'contacts' %}" class="text-blue-600 dark:text-sky-400 font-medium hover:text-blue-800 dark:hover:text-sky-300 transition-colors">Contact Support <i class="fas fa-arrow-right text-xs ml-1"></i></a>
           </li>
@@ -63,10 +55,11 @@
 
     <!-- Bottom -->
     <div class="pt-8 border-t border-gray-100 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400 dark:text-slate-500">
-      <p>&copy; 2026 Teklora Solutions. All rights reserved.</p>
+      <p>{{ site_content.copyright_text }}</p>
       <div class="flex gap-6">
-        <a href="{% url 'privacy' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy Policy</a>
-        <a href="{% url 'terms' %}" class="hover:text-gray-900 dark:hover:text-white transition-colors">Terms of Service</a>
+        {% for link in site_content.footer_legal_links %}
+        <a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ link.label }}</a>
+        {% endfor %}
       </div>
     </div>
   </div>

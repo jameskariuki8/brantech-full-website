@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teklora - Digital Growth Partner</title>
-    <meta name="description" content="We engineer digital systems that help businesses operate smarter, grow faster, and scale across Africa and beyond.">
+    <title>{{ site_content.landing_title }}</title>
+    <meta name="description" content="{{ site_content.landing_meta_description }}">
 
-    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    <link rel="icon" href="{{ site_content.logo_url }}" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -152,7 +152,7 @@
         
         <!-- Mobile Background Image (Theme Adaptive Overlay) -->
         <div class="absolute inset-0 z-0 lg:hidden">
-            <img src="{% static 'brand/images/local_business_planning.jpg' %}" alt="Background" class="w-full h-full object-cover object-center opacity-30">
+            <img src="{{ site_content.hero_image_url }}" alt="" class="w-full h-full object-cover object-center opacity-30">
             <div class="absolute inset-0 bg-white/80 dark:bg-[#090D16]/90 backdrop-blur-[4px]"></div>
         </div>
 
@@ -170,27 +170,27 @@
                     </div>
 
                     <h1 class="font-heading font-bold text-5xl md:text-6xl lg:text-[4.5rem] leading-[1.1] tracking-tightest text-primaryText">
-                        Build. <br/>
-                        <span class="text-brandWarm">Grow.</span> <br/>
-                        Go <span class="text-brandBlue">Beyond.</span>
+                        {{ site_content.hero_title_before }}<span class="text-brandWarm">{{ site_content.hero_title_highlight }}</span>{{ site_content.hero_title_after }}
                     </h1>
 
                     <p class="text-lg md:text-xl text-secondaryText leading-relaxed max-w-lg">
-                        We architect intelligent digital systems that empower African businesses to operate smarter, accelerate growth, and scale beyond borders.
+                        {{ site_content.hero_description }}
                     </p>
+                    <p class="text-sm text-secondaryText italic max-w-lg">“{{ site_content.hero_quote }}”</p>
 
                     <div class="flex flex-col sm:flex-row gap-4 pt-4">
-                        <a href="{% url 'contacts' %}" class="btn-glass-blue px-8 py-4">
-                            Build With Us <i class="fas fa-arrow-right ml-2"></i>
+                        <a href="{{ site_content.hero_primary_url }}" class="btn-glass-blue px-8 py-4">
+                            {{ site_content.hero_primary_label }} <i class="fas fa-arrow-right ml-2"></i>
                         </a>
-                        <a href="{% url 'products' %}" class="btn-glass-white px-8 py-4">
-                            Explore Platform
+                        <a href="{{ site_content.hero_secondary_url }}" class="btn-glass-white px-8 py-4">
+                            {{ site_content.hero_secondary_label }}
                         </a>
                     </div>
                     
                     <div class="pt-8 flex flex-wrap items-center gap-6 text-sm font-medium text-secondaryText drop-shadow-sm lg:drop-shadow-none">
                         <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brandWarm"></i> Enterprise Scale</div>
                         <div class="flex items-center gap-2"><i class="fas fa-check-circle text-brandWarm"></i> Intelligent Automation</div>
+                        <span class="text-xs uppercase tracking-widest">{{ site_content.hero_scroll_label }}</span>
                     </div>
                 </div>
 
@@ -199,7 +199,7 @@
                     
                     <div class="hero-img-wrapper">
                         <!-- Main Image in Fade Shape -->
-                        <img src="{% static 'brand/images/local_business_planning.jpg' %}" alt="Local Business Innovation" class="hero-fade-shape">
+                        <img src="{{ site_content.hero_image_url }}" alt="{{ site_content.brand_name }} technology" class="hero-fade-shape">
                         
                         <!-- Floating Tech Card 1 -->
                         <div class="floating-card absolute -left-8 md:-left-12 top-12 p-4 rounded-xl z-20 flex items-center gap-4 w-48">
@@ -239,32 +239,22 @@
 
             <div class="text-center max-w-3xl mx-auto space-y-3">
                 <span class="text-xs font-bold text-brandBlue uppercase tracking-widest inline-flex items-center gap-2">
-                    <i class="fas fa-compass text-brandBlue"></i> Our Story & Purpose
+                    <i class="fas fa-compass text-brandBlue"></i> {{ site_content.story_label }}
                 </span>
                 <h2 class="text-3xl sm:text-5xl font-extrabold text-primaryText tracking-tight">
-                    Technology Built for African Challenges
+                    {{ site_content.story_heading }}
                 </h2>
             </div>
 
             <!-- Top Navigation Tabs Bar -->
             <div class="flex justify-center border-b border-borderLight overflow-x-auto no-scrollbar">
                 <div class="flex gap-2 sm:gap-8 min-w-max pb-3 font-heading text-sm font-semibold">
-                    <button onclick="switchStoryTab('purpose', this)"
-                        class="story-tab-btn active text-brandBlue border-b-2 border-brandBlue pb-3 px-3 transition-all flex items-center gap-2">
-                        <i class="fas fa-hand-holding-heart"></i> Purpose Before Profit
+                    {% for tab in site_content.story_tabs %}
+                    <button onclick="switchStoryTab('{{ forloop.counter0 }}', this)"
+                        class="story-tab-btn{% if forloop.first %} active text-brandBlue border-brandBlue{% else %} text-secondaryText hover:text-primaryText border-transparent{% endif %} border-b-2 pb-3 px-3 transition-all flex items-center gap-2">
+                        <i class="fas fa-compass"></i> {{ tab.label }}
                     </button>
-                    <button onclick="switchStoryTab('innovation', this)"
-                        class="story-tab-btn text-secondaryText hover:text-primaryText border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
-                        <i class="fas fa-globe-africa"></i> African-First Innovation
-                    </button>
-                    <button onclick="switchStoryTab('craftsmanship', this)"
-                        class="story-tab-btn text-secondaryText hover:text-primaryText border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
-                        <i class="fas fa-user-shield"></i> Human-Centered Tech
-                    </button>
-                    <button onclick="switchStoryTab('legacy', this)"
-                        class="story-tab-btn text-secondaryText hover:text-primaryText border-b-2 border-transparent pb-3 px-3 transition-all flex items-center gap-2">
-                        <i class="fas fa-award"></i> Enduring Legacy
-                    </button>
+                    {% endfor %}
                 </div>
             </div>
 
@@ -274,8 +264,8 @@
                 <!-- Left Visual Image Frame -->
                 <div class="lg:col-span-6 relative">
                     <div class="relative rounded-3xl overflow-hidden shadow-2xl group border border-borderLight bg-surface">
-                        <img id="storyTabImage" src="{% static 'brand/images/human_centered_tech.jpg' %}"
-                            alt="Story Visual"
+                        <img id="storyTabImage" src="{{ site_content.story_tabs.0.image }}"
+                            alt="{{ site_content.story_tabs.0.title }}"
                             class="w-full h-[380px] sm:h-[440px] object-cover transition-all duration-500 opacity-90">
                     </div>
                 </div>
@@ -285,10 +275,10 @@
 
                     <div class="space-y-3">
                         <h3 id="storyTabTitle" class="text-2xl sm:text-4xl font-extrabold text-primaryText tracking-tight">
-                            Technology Built for Lasting Impact
+                            {{ site_content.story_tabs.0.title }}
                         </h3>
                         <p id="storyTabDesc" class="text-sm sm:text-base text-secondaryText leading-relaxed">
-                            We exist because off-the-shelf software doesn't fit the realities of our infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep, enduring impact over quick turnarounds, engineering custom platforms that empower institutions to lead.
+                            {{ site_content.story_tabs.0.desc }}
                         </p>
                     </div>
 
@@ -299,14 +289,13 @@
                             class="fas fa-quote-left text-brandBlue/10 text-6xl absolute top-2 right-4 pointer-events-none transition-colors duration-500"></i>
                         <p id="storyTabQuote"
                             class="text-sm sm:text-base font-bold leading-relaxed relative z-10 text-primaryText">
-                            "Every application we engineer must deliver tangible, measurable value to communities and enterprises."
+                            {{ site_content.story_tabs.0.quote }}
                         </p>
                         <div
                             class="pt-3 border-t border-borderLight flex items-center justify-between text-xs font-bold uppercase tracking-wider relative z-10">
-                            <span id="storyTabAuthor" class="text-secondaryText"><i
-                                    class="fas fa-shield-alt mr-1 text-brandBlue"></i> Core Philosophy</span>
+                            <span class="text-secondaryText"><i class="fas fa-shield-alt mr-1 text-brandBlue"></i><span id="storyTabAuthor">{{ site_content.story_tabs.0.author }}</span></span>
                             <span id="storyTabBadge"
-                                class="px-3 py-1 rounded-full bg-brandBlue/10 border border-brandBlue/20 text-brandBlue font-mono text-[10px] font-bold">OUR CORE</span>
+                                class="px-3 py-1 rounded-full bg-brandBlue/10 border border-brandBlue/20 text-brandBlue font-mono text-[10px] font-bold">{{ site_content.story_tabs.0.badgeText }}</span>
                         </div>
                     </div>
 
@@ -317,45 +306,169 @@
         </div>
     </section>
 
+    <section class="py-20 bg-background">
+        <div class="container-wide px-6 mx-auto grid lg:grid-cols-2 gap-10 items-center">
+            <div class="space-y-5">
+                <span class="text-xs font-bold text-brandBlue uppercase tracking-widest">{{ site_content.flagship_label }}</span>
+                <h2 class="font-heading text-3xl sm:text-5xl font-extrabold text-primaryText">{{ site_content.flagship_title }}</h2>
+                <p class="text-secondaryText leading-relaxed">{{ site_content.flagship_description }}</p>
+                <div class="rounded-2xl border border-borderLight bg-surface p-6 space-y-4">
+                    <span class="text-xs font-mono text-brandWarm uppercase">{{ site_content.flagship_badge }} · {{ site_content.flagship_subtitle }}</span>
+                    <h3 class="text-xl font-bold text-primaryText">{{ site_content.flagship_feature_heading }}</h3>
+                    <div>
+                        <h4 class="text-sm font-semibold text-primaryText">{{ site_content.flagship_problem_label }}</h4>
+                        <p class="text-sm text-secondaryText">{{ site_content.flagship_problem_description }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-primaryText">{{ site_content.flagship_solution_label }}</h4>
+                        <p class="text-sm text-secondaryText">{{ site_content.flagship_solution_description }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-widest text-secondaryText">{{ site_content.flagship_technology_heading }}</h4>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            {% for technology in site_content.flagship_technologies %}
+                            <span class="rounded-full border border-borderLight px-3 py-1 text-xs text-primaryText"><i class="{{ technology.icon }} mr-1"></i>{{ technology.label }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <a href="{{ site_content.flagship_cta_url }}" class="inline-flex items-center gap-2 font-semibold text-brandBlue">{{ site_content.flagship_cta_label }} <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            <div class="space-y-5">
+                <img src="{{ site_content.flagship_image_url }}" alt="{{ site_content.flagship_title }}" class="w-full rounded-3xl border border-borderLight object-cover shadow-xl">
+                <div class="grid grid-cols-2 gap-3">
+                    {% for stat in site_content.flagship_stats %}
+                    <div class="rounded-xl border border-borderLight bg-surface p-4">
+                        <div class="text-2xl font-extrabold text-brandBlue">{{ stat.value }}</div>
+                        <div class="text-xs text-secondaryText">{{ stat.label }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-surface border-y border-borderLight">
+        <div class="container-wide px-6 mx-auto">
+            <div class="mx-auto mb-10 max-w-3xl text-center">
+                <span class="text-xs font-bold uppercase tracking-widest text-brandBlue">{{ site_content.capabilities_label }}</span>
+                <h2 class="mt-3 font-heading text-3xl sm:text-5xl font-extrabold text-primaryText">{{ site_content.capabilities_heading }}</h2>
+                <p class="mt-4 text-secondaryText">{{ site_content.capabilities_description }}</p>
+            </div>
+            <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {% for card in site_content.capability_cards %}
+                <article class="overflow-hidden rounded-2xl border border-borderLight bg-background">
+                    <img src="{{ card.image }}" alt="{{ card.title }}" class="h-48 w-full object-cover">
+                    <div class="p-6">
+                        <span class="text-xs font-bold uppercase tracking-widest text-brandBlue">{{ card.badge }}</span>
+                        <h3 class="mt-2 text-xl font-bold text-primaryText"><i class="{{ card.icon }} mr-2"></i>{{ card.title }}</h3>
+                        <p class="mt-3 text-sm leading-relaxed text-secondaryText">{{ card.description }}</p>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            {% for technology in card.technologies %}
+                            <span class="rounded-full border border-borderLight px-2.5 py-1 text-xs text-secondaryText"><i class="{{ technology.icon }} mr-1"></i>{{ technology.label }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-background">
+        <div class="container-wide px-6 mx-auto">
+            <div class="mx-auto mb-10 max-w-3xl text-center">
+                <span class="text-xs font-bold uppercase tracking-widest text-brandBlue">{{ site_content.technology_label }}</span>
+                <h2 class="mt-3 font-heading text-3xl sm:text-5xl font-extrabold text-primaryText">{{ site_content.technology_heading }}</h2>
+                <p class="mt-4 text-secondaryText">{{ site_content.technology_description }}</p>
+            </div>
+            <div class="mb-8 flex flex-wrap justify-center gap-3">
+                {% for technology in site_content.technology_orbit %}
+                <span class="rounded-full border border-borderLight bg-surface px-4 py-2 text-sm text-primaryText"><i class="{{ technology.icon }} mr-2 text-brandBlue"></i>{{ technology.label }}</span>
+                {% endfor %}
+            </div>
+            <p class="mb-8 text-center text-xs font-mono font-bold uppercase tracking-widest text-brandWarm">{{ site_content.technology_center_caption }}</p>
+            <div class="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                {% for category in site_content.technology_groups %}
+                <div class="rounded-2xl border border-borderLight bg-surface p-5">
+                    <h3 class="font-bold text-primaryText"><i class="{{ category.icon }} mr-2 text-brandBlue"></i>{{ category.label }}</h3>
+                    <ul class="mt-3 space-y-2 text-sm text-secondaryText">
+                        {% for item in category.items %}<li>{{ item }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-surface border-y border-borderLight">
+        <div class="container-wide px-6 mx-auto">
+            <div class="mx-auto mb-10 max-w-3xl text-center">
+                <span class="text-xs font-bold uppercase tracking-widest text-brandBlue">{{ site_content.why_label }}</span>
+                <h2 class="mt-3 font-heading text-3xl sm:text-4xl font-extrabold text-primaryText">{{ site_content.why_heading }}</h2>
+            </div>
+            <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                {% for card in site_content.why_cards %}
+                <article class="overflow-hidden rounded-2xl border border-borderLight bg-background">
+                    <img src="{{ card.image }}" alt="{{ card.alt }}" class="h-44 w-full object-cover">
+                    <div class="p-5">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-brandBlue">{{ card.badge }}</span>
+                        <h3 class="mt-2 font-bold text-primaryText">{{ card.title }}</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-secondaryText">{{ card.description }}</p>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-background">
+        <div class="container-wide px-6 mx-auto">
+            <div class="mx-auto mb-10 max-w-3xl text-center">
+                <span class="text-xs font-bold uppercase tracking-widest text-brandBlue">{{ site_content.journey_label }}</span>
+                <h2 class="mt-3 font-heading text-3xl sm:text-5xl font-extrabold text-primaryText">{{ site_content.journey_heading }}</h2>
+                <p class="mt-4 text-secondaryText">{{ site_content.journey_description }}</p>
+                <span class="mt-3 inline-block text-xs font-mono font-bold uppercase tracking-widest text-brandWarm">{{ site_content.journey_transparency_label }}</span>
+            </div>
+            <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+                {% for step in site_content.journey_steps %}
+                <article class="overflow-hidden rounded-2xl border border-borderLight bg-surface">
+                    <img src="{{ step.image }}" alt="{{ step.title }}" class="h-36 w-full object-cover">
+                    <div class="p-5">
+                        <span class="text-[10px] font-mono font-bold uppercase tracking-wider" style="color: {{ step.color }}">{{ step.tagline }}</span>
+                        <h3 class="mt-2 font-bold text-primaryText">{{ step.title }}</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-secondaryText">{{ step.summary }}</p>
+                        <ul class="mt-3 space-y-1 text-xs text-secondaryText">
+                            {% for item in step.deliverables %}<li><i class="fas fa-check mr-2" style="color: {{ step.color }}"></i>{{ item }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-surface border-y border-borderLight">
+        <div class="container-wide px-6 mx-auto text-center">
+            <span class="text-xs font-bold uppercase tracking-widest text-brandBlue">{{ site_content.impact_label }}</span>
+            <h2 class="mt-3 font-heading text-3xl sm:text-4xl font-extrabold text-primaryText">{{ site_content.impact_heading }}</h2>
+            <div class="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for stat in site_content.impact_stats %}
+                <div class="rounded-2xl border border-borderLight bg-background p-6">
+                    <div class="text-3xl font-extrabold text-brandBlue">{{ stat.value }}{% if stat.key == "metricSatisfaction" %}%{% endif %}</div>
+                    <div class="mt-2 text-sm text-secondaryText">{{ stat.label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {{ site_content.story_tabs|json_script:"storyTabsData" }}
     <script>
-        const storyTabs = {
-            purpose: {
-                title: "Technology Built for Lasting Impact",
-                desc: "We exist because off-the-shelf software doesn't fit the realities of our infrastructure, low-bandwidth environments, and rapid enterprise growth. We prioritize deep, enduring impact over quick turnarounds, engineering custom platforms that empower institutions to lead.",
-                quote: "\"Every application we engineer must deliver tangible, measurable value to communities and enterprises.\"",
-                author: "Core Philosophy",
-                color: "var(--brand-blue)",
-                badgeText: "OUR CORE",
-                image: "{% static 'brand/images/human_centered_tech.jpg' %}"
-            },
-            innovation: {
-                title: "Tailored for African Infrastructure",
-                desc: "We design systems from the ground up to thrive in low-bandwidth, high-concurrency, and mobile-first environments. Our zero-rated edge caching and offline-first architectures guarantee 99.98% reliability anywhere.",
-                quote: "\"Resilient infrastructure engineered to perform under extreme regional and bandwidth constraints.\"",
-                author: "Technical Architecture Core",
-                color: "var(--brand-warm)",
-                badgeText: "INFRASTRUCTURE",
-                image: "{% static 'brand/images/local_business_planning_1790266519966.jpg' %}"
-            },
-            craftsmanship: {
-                title: "Premium UI with Technical Rigor",
-                desc: "Great technology must be intuitive. We merge modern design aesthetics with deep engineering to make complex institutional software effortless to use.",
-                quote: "\"Craftsmanship means making high-powered software feel clean, fast, and human-centered.\"",
-                author: "UI/UX Design Principle",
-                color: "var(--brand-blue)",
-                badgeText: "CRAFTSMANSHIP",
-                image: "{% static 'brand/images/human_centered_tech.jpg' %}"
-            },
-            legacy: {
-                title: "Long-Term Support & Scale",
-                desc: "We are not chasing short-lived tech trends. We forge long-term partnerships with universities, NGOs, government agencies, and enterprises to continuously audit, scale, and maintain mission-critical software for decades.",
-                quote: "\"Building technology today that powers leaders tomorrow.\"",
-                author: "Pan-African Mission",
-                color: "var(--brand-warm)",
-                badgeText: "LEGACY",
-                image: "{% static 'brand/images/local_business_planning_1790266519966.jpg' %}"
-            }
-        };
+        const storyTabs = JSON.parse(document.getElementById('storyTabsData').textContent);
+        storyTabs.forEach((tab, index) => {
+            tab.color = index % 2 === 0 ? 'var(--brand-blue)' : 'var(--brand-warm)';
+        });
 
         function switchStoryTab(key, btnEl) {
             document.querySelectorAll('.story-tab-btn').forEach(btn => {
@@ -379,7 +492,7 @@
                     document.getElementById('storyTabTitle').textContent = data.title;
                     document.getElementById('storyTabDesc').textContent = data.desc;
                     document.getElementById('storyTabQuote').textContent = data.quote;
-                    document.getElementById('storyTabAuthor').innerHTML = `<i class="fas fa-shield-alt mr-1" style="color: ${data.color}"></i> ${data.author}`;
+                    document.getElementById('storyTabAuthor').textContent = data.author;
                     document.getElementById('storyTabBadge').textContent = data.badgeText;
                     document.getElementById('storyTabBadge').style.color = data.color;
                     document.getElementById('storyTabBadge').style.borderColor = data.color;
@@ -401,7 +514,7 @@
             if (activeBtn) {
                 const onclickStr = activeBtn.getAttribute('onclick') || '';
                 const match = onclickStr.match(/'([^']+)'/);
-                if (match && match[1]) {
+                if (match && match[1] !== undefined) {
                     switchStoryTab(match[1], activeBtn);
                 }
             }

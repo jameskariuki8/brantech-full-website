@@ -124,6 +124,7 @@ TEMPLATES = [
                 'staff.context_processors.capabilities',
                 # Turnstile site key for the widget on the public forms.
                 'brandtechsolution.turnstile.context',
+                'brand.context_processors.site_content',
             ],
         },
     },
@@ -440,4 +441,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import mimetypes
 mimetypes.add_type("text/css", ".css", True)
 mimetypes.add_type("application/javascript", ".js", True)
-
