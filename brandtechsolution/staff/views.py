@@ -173,23 +173,32 @@ def choose_handle(request):
 
 COMMON_LANGUAGES = [
     "Python", "JavaScript", "TypeScript", "HTML / CSS", "SQL",
-    "Go", "Rust", "C / C++", "Dart", "PHP", "Java", "Kotlin", "Swift"
+    "Dart", "Kotlin", "Java", "Go", "Rust", "C / C++",
+    "Bash / Shell", "PHP", "Swift", "Solidity",
 ]
 
 COMMON_FRAMEWORKS = [
-    "Django", "React", "Next.js", "Tailwind CSS", "FastAPI",
-    "PostgreSQL", "Redis", "Docker", "Flutter", "Node.js",
-    "LangGraph / LangChain", "PyTorch / TensorFlow", "Google Gemini API"
+    # Web & Backend Frameworks
+    "Django", "FastAPI", "Flask", "Django REST Framework", "Express.js", "Node.js", "Next.js", "React", "Vue.js", "Tailwind CSS", "HTMX",
+    # AI, Computer Vision & Audio
+    "OpenCV", "PyTorch", "TensorFlow", "Google Gemini API", "LangGraph / LangChain", "OpenAI / Claude APIs", "Whisper / Audio AI", "ChromaDB / Vector RAG", "Ollama / Local LLMs",
+    # Automation, Bots & Integrations
+    "Playwright", "Browser-Use", "Selenium", "BeautifulSoup / Scrapy", "Evolution API / WhatsApp Automation", "Telegram Bot API", "n8n Workflows", "M-Pesa / Daraja API",
+    # Mobile & Desktop UI
+    "Flutter", "Android SDK / Kotlin", "PySide6 / PyQt", "Electron", "Tauri",
+    # Database, Cloud & DevOps
+    "PostgreSQL", "Redis", "SQLite", "MongoDB", "Docker", "Docker Compose", "Nginx", "Linux Server Admin", "Git / GitHub Actions", "Cloudflare Tunnels",
 ]
 
 ROLE_CHOICES = [
     "Fullstack Engineer",
     "Backend Developer",
     "Frontend Engineer",
-    "AI / ML Engineer",
-    "Mobile Developer (Flutter / iOS / Android)",
+    "AI / ML & Computer Vision Engineer",
+    "Mobile Developer (Flutter / Android / iOS)",
+    "Automation & Bot Specialist",
     "DevOps & Infrastructure Engineer",
-    "QA / Automation Engineer",
+    "QA / Automation Testing Engineer",
     "Product / UI/UX Designer",
     "Technical Writer & Content Editor",
 ]
