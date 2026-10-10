@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from github import Github
 from github.GithubException import GithubException
 from django.utils import timezone
@@ -14,6 +14,56 @@ def _short(description):
     if description and len(description) > 500:
         return description[:497] + '...'
     return description
+
+
+def _clean_github_username(username: str) -> str:
+    """Normalize GitHub username by stripping whitespace and leading '@'."""
+    if not username:
+        return ""
+    return username.strip().lstrip("@")
+
+
+def _get_staff_github_mapping() -> Dict[str, Dict[str, Any]]:
+    """Return mapping of lowercased github_username -> staff metadata."""
+    from staff.models import StaffProfile
+
+    mapping = {}
+    try:
+        profiles = StaffProfile.objects.exclude(github_username="").select_related("user")
+        for p in profiles:
+            cleaned = _clean_github_username(p.github_username)
+            if cleaned:
+                full_name = p.user.get_full_name() or p.user.username
+                mapping[cleaned.lower()] = {
+                    "username": cleaned,
+                    "staff_name": full_name,
+                    "staff_id": p.user_id,
+                    "primary_role": getattr(p, "primary_role", "") or "",
+                }
+    except Exception as e:
+        logger.warning(f"Failed to load staff GitHub mapping: {e}")
+    return mapping
+
+
+def _has_permission_to_repo(repo) -> bool:
+    """
+    Check if the authenticated GitHub token has permissions to access or modify this repository.
+    Returns True if:
+      - We have push (write), admin, or maintain permissions, OR
+      - The repo is private and we have pull access.
+    """
+    perms = getattr(repo, "permissions", None)
+    if not perms:
+        return False
+    if (
+        getattr(perms, "push", False)
+        or getattr(perms, "admin", False)
+        or getattr(perms, "maintain", False)
+    ):
+        return True
+    if getattr(repo, "private", False) and getattr(perms, "pull", False):
+        return True
+    return False
 
 
 class GitHubService:
@@ -51,68 +101,137 @@ class GitHubService:
             logger.warning(f"Could not fetch commits: {e}")
         return commits_data
 
+    def _format_repo_dict(
+        self,
+        repo,
+        role: str,
+        staff_member: Optional[Dict[str, Any]],
+        synced_projects: Dict[int, Project],
+    ) -> Dict[str, Any]:
+        """Helper to format a GitHub repository into standard API dictionary format."""
+        project = synced_projects.get(repo.id)
+        is_synced = project is not None
+
+        project_data = None
+        if project:
+            project_data = {
+                'id': project.id,
+                'title': project.title,
+                'short_description': project.short_description or "",
+                'description': project.description or "",
+                'commit_count': project.commit_count or 0,
+                'last_synced_at': project.last_synced_at.isoformat() if project.last_synced_at else None,
+                'has_readme': bool(project.readme_content),
+                'readme_content': project.readme_content or "",
+                'cached_commits': project.cached_commits or [],
+                'project_url': project.project_url or "",
+                'featured': project.featured,
+            }
+
+        language = repo.language if isinstance(getattr(repo, 'language', None), str) else None
+        stars = repo.stargazers_count if isinstance(getattr(repo, 'stargazers_count', None), int) else 0
+        forks = repo.forks_count if isinstance(getattr(repo, 'forks_count', None), int) else 0
+        default_branch = repo.default_branch if isinstance(getattr(repo, 'default_branch', None), str) else 'main'
+        full_name = repo.full_name if isinstance(getattr(repo, 'full_name', None), str) else repo.name
+
+        updated_at_val = getattr(repo, 'updated_at', None)
+        updated_at = updated_at_val.isoformat() if hasattr(updated_at_val, 'isoformat') else None
+
+        perms = getattr(repo, 'permissions', None)
+        perms_data = None
+        if perms:
+            perms_data = {
+                'admin': bool(getattr(perms, 'admin', False)),
+                'push': bool(getattr(perms, 'push', False)),
+                'pull': bool(getattr(perms, 'pull', False)),
+            }
+
+        return {
+            'id': repo.id,
+            'name': repo.name,
+            'full_name': full_name,
+            'description': repo.description or "No description provided.",
+            'html_url': repo.html_url,
+            'is_private': bool(getattr(repo, 'private', False)),
+            'role': role,
+            'language': language,
+            'stargazers_count': stars,
+            'forks_count': forks,
+            'default_branch': default_branch,
+            'updated_at': updated_at,
+            'is_synced': is_synced,
+            'project': project_data,
+            'staff_member': staff_member,
+            'permissions': perms_data,
+        }
+
     # ─────────────────────────────────────────────────────────────────────────
     # Public API
     # ─────────────────────────────────────────────────────────────────────────
 
     def get_user_repositories(self) -> List[Dict[str, Any]]:
-        """Fetch all repositories the user owns or collaborates on."""
+        """
+        Fetch all repositories the user owns, collaborates on, or has access to via staff profiles.
+        Scans configured staff GitHub profiles and includes repositories where our authenticated
+        GitHub token has permissions.
+        """
         try:
-            user = self.client.get_user()
-            repos = user.get_repos(affiliation='owner,collaborator')
-
+            staff_mapping = _get_staff_github_mapping()
             synced_projects = {
                 p.github_repo_id: p
                 for p in Project.objects.filter(github_repo_id__isnull=False)
             }
             repo_list = []
+            seen_repo_ids = set()
+
+            # 1. Fetch repositories associated with the authenticated account
+            user = self.client.get_user()
+            repos = user.get_repos(affiliation='owner,collaborator,organization_member')
+
             for repo in repos:
                 owner_login = repo.owner.login if hasattr(repo, 'owner') and hasattr(repo.owner, 'login') else ''
-                role = 'owner' if owner_login == self.username else 'collaborator'
-                project = synced_projects.get(repo.id)
-                is_synced = project is not None
+                owner_lower = owner_login.lower()
+                if owner_lower == (self.username or '').lower():
+                    role = 'owner'
+                    staff_member = None
+                elif owner_lower in staff_mapping:
+                    role = 'staff'
+                    staff_member = staff_mapping[owner_lower]
+                else:
+                    role = 'collaborator'
+                    staff_member = None
 
-                project_data = None
-                if project:
-                    project_data = {
-                        'id': project.id,
-                        'title': project.title,
-                        'short_description': project.short_description or "",
-                        'description': project.description or "",
-                        'commit_count': project.commit_count or 0,
-                        'last_synced_at': project.last_synced_at.isoformat() if project.last_synced_at else None,
-                        'has_readme': bool(project.readme_content),
-                        'readme_content': project.readme_content or "",
-                        'cached_commits': project.cached_commits or [],
-                        'project_url': project.project_url or "",
-                        'featured': project.featured,
-                    }
+                seen_repo_ids.add(repo.id)
+                repo_list.append(self._format_repo_dict(
+                    repo,
+                    role=role,
+                    staff_member=staff_member,
+                    synced_projects=synced_projects,
+                ))
 
-                language = repo.language if isinstance(getattr(repo, 'language', None), str) else None
-                stars = repo.stargazers_count if isinstance(getattr(repo, 'stargazers_count', None), int) else 0
-                forks = repo.forks_count if isinstance(getattr(repo, 'forks_count', None), int) else 0
-                default_branch = repo.default_branch if isinstance(getattr(repo, 'default_branch', None), str) else 'main'
-                full_name = repo.full_name if isinstance(getattr(repo, 'full_name', None), str) else repo.name
-                
-                updated_at_val = getattr(repo, 'updated_at', None)
-                updated_at = updated_at_val.isoformat() if hasattr(updated_at_val, 'isoformat') else None
+            # 2. Scan repositories owned by configured staff members
+            for staff_lower, staff_info in staff_mapping.items():
+                if staff_lower == (self.username or '').lower():
+                    continue
+                try:
+                    staff_user = self.client.get_user(staff_info['username'])
+                    for repo in staff_user.get_repos():
+                        if repo.id in seen_repo_ids:
+                            continue
+                        if not _has_permission_to_repo(repo):
+                            continue
 
-                repo_list.append({
-                    'id': repo.id,
-                    'name': repo.name,
-                    'full_name': full_name,
-                    'description': repo.description or "No description provided.",
-                    'html_url': repo.html_url,
-                    'is_private': bool(getattr(repo, 'private', False)),
-                    'role': role,
-                    'language': language,
-                    'stargazers_count': stars,
-                    'forks_count': forks,
-                    'default_branch': default_branch,
-                    'updated_at': updated_at,
-                    'is_synced': is_synced,
-                    'project': project_data,
-                })
+                        seen_repo_ids.add(repo.id)
+                        repo_list.append(self._format_repo_dict(
+                            repo,
+                            role='staff',
+                            staff_member=staff_info,
+                            synced_projects=synced_projects,
+                        ))
+                except GithubException as e:
+                    logger.warning(f"Could not scan repos for staff user '{staff_info['username']}': {e}")
+                except Exception as e:
+                    logger.warning(f"Unexpected error scanning repos for staff user '{staff_info['username']}': {e}")
 
             return sorted(repo_list, key=lambda x: (not x['is_synced'], x['name'].lower()))
 
@@ -165,10 +284,18 @@ class GitHubService:
         errors = []
 
         try:
+            staff_mapping = _get_staff_github_mapping()
             for repo_id in repo_ids:
                 try:
                     repo = self.client.get_repo(repo_id)
-                    role = 'owner' if repo.owner.login == self.username else 'collaborator'
+                    owner_login = repo.owner.login if hasattr(repo, 'owner') and hasattr(repo.owner, 'login') else ''
+                    owner_lower = owner_login.lower()
+                    if owner_lower == (self.username or '').lower():
+                        role = 'owner'
+                    elif owner_lower in staff_mapping:
+                        role = 'staff'
+                    else:
+                        role = 'collaborator'
 
                     # Total commit count — single API call via PaginatedList.totalCount
                     try:

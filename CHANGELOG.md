@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Staff GitHub Repository Scanning & Permission Discovery**:
+  - Automatically scan repositories owned by staff members configured via `StaffProfile.github_username`.
+  - Filter repositories to only include those where the platform's authenticated GitHub account has access (push/write, admin, maintain, or private pull access).
+  - Categorize staff repositories with `role="staff"` and attach staff member attribution metadata (`username`, `staff_name`, `primary_role`).
+  - Added dedicated `Staff` filter tab, metric badge counters, and owner chips in GitHub Manager admin dashboard (`/admin-panel/?section=githubSync`).
+  - Synced staff projects automatically save with `github_role="staff"`.
 - **Staff Onboarding & Capabilities Engine**:
   - Interactive onboarding wizard (`/staff/onboarding/`) prompting staff for WhatsApp number, primary engineering role, programming languages, and frameworks.
   - Comprehensive technology catalog covering AI/Computer Vision (OpenCV, PyTorch, Whisper, Gemini, RAG), Web & Backend (Django, FastAPI, Flask, DRF, Next.js, HTMX), Automation & Bots (Playwright, Browser-Use, WhatsApp/Telegram APIs, n8n), and Mobile/Desktop (Flutter, Android SDK, PySide6/Qt, Tauri).

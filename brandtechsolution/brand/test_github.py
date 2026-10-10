@@ -14,13 +14,15 @@ from django.contrib.auth.models import Permission, User
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
+from github.GithubException import GithubException
 
 from brand.models import Project
 from brandtechsolution.config import config
+from staff.models import StaffProfile
 
 
 def fake_repo(repo_id=101, name="widget", description="A widget.", commits=3,
-              readme="# Widget", owner="teklora"):
+              readme="# Widget", owner="teklora", permissions=None, is_auth_repo=True, private=True):
     commit_list = [
         SimpleNamespace(
             sha=f"{i:040x}",
@@ -40,8 +42,10 @@ def fake_repo(repo_id=101, name="widget", description="A widget.", commits=3,
     repo.name = name
     repo.description = description
     repo.html_url = f"https://github.com/{owner}/{name}"
-    repo.private = True
+    repo.private = private
     repo.owner.login = owner
+    repo.permissions = permissions
+    repo._is_auth_repo = is_auth_repo
     # The old code stored this as last_synced_at; a week ago makes the
     # difference visible.
     repo.updated_at = timezone.now() - timedelta(days=7)
@@ -53,9 +57,28 @@ def fake_repo(repo_id=101, name="widget", description="A widget.", commits=3,
 class GitHubTestCase(TestCase):
     def setUp(self):
         self.repos = {}
+        self.staff_users = {}
         client = mock.MagicMock()
         client.get_repo.side_effect = lambda rid: self.repos[rid]
-        client.get_user.return_value.get_repos.side_effect = lambda **kw: list(self.repos.values())
+
+        def get_user_mock(login=None):
+            if login is None:
+                auth_user = mock.MagicMock()
+                auth_user.get_repos.side_effect = lambda **kw: [
+                    r for r in self.repos.values()
+                    if getattr(r, '_is_auth_repo', True)
+                ]
+                return auth_user
+            if login in self.staff_users:
+                return self.staff_users[login]
+            staff_mock = mock.MagicMock()
+            staff_mock.get_repos.side_effect = lambda **kw: [
+                r for r in self.repos.values()
+                if r.owner.login == login
+            ]
+            return staff_mock
+
+        client.get_user.side_effect = get_user_mock
         patches = [
             mock.patch("brand.github_service.Github", return_value=client),
             mock.patch.object(config, "github_access_token", "test-token"),
@@ -126,6 +149,13 @@ class SyncTests(GitHubTestCase):
         self.add(owner="someone-else")
         self.sync(101)
         self.assertEqual(Project.objects.get(github_repo_id=101).github_role, "collaborator")
+
+    def test_a_staff_repo_is_labelled_so(self):
+        staff_user = User.objects.create_user("staff-ann", password="p", first_name="Ann", last_name="Wanjiru")
+        StaffProfile.objects.create(user=staff_user, github_username="annwanjiru")
+        self.add(owner="annwanjiru")
+        self.sync(101)
+        self.assertEqual(Project.objects.get(github_repo_id=101).github_role, "staff")
 
     def test_the_command_resyncs_only_linked_projects(self):
         self.add()
@@ -221,3 +251,78 @@ class EndpointTests(GitHubTestCase):
         resp = self.client.get("/api/github/repos/101/readme/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["readme"], "# Widget Readme")
+
+    def test_staff_repositories_with_permissions_are_scanned_and_listed(self):
+        staff_user = User.objects.create_user("staff-kevin", password="p", first_name="Kevin", last_name="Otieno")
+        StaffProfile.objects.create(user=staff_user, github_username="kevin-dev", primary_role="Backend")
+
+        # 1. Main authenticated repo
+        self.add(repo_id=101, name="teklora-core", owner="teklora")
+
+        # 2. Staff repo where our token has push/collaborator permissions
+        self.add(
+            repo_id=301,
+            name="kevin-service",
+            owner="kevin-dev",
+            permissions=SimpleNamespace(admin=False, push=True, pull=True, maintain=False),
+            is_auth_repo=False,
+        )
+
+        # 3. Staff public repo where we have NO push or admin permissions (only public pull)
+        self.add(
+            repo_id=302,
+            name="kevin-hobby",
+            owner="kevin-dev",
+            permissions=SimpleNamespace(admin=False, push=False, pull=True, maintain=False),
+            private=False,
+            is_auth_repo=False,
+        )
+
+        # 4. Staff private repo where we have pull permissions
+        self.add(
+            repo_id=303,
+            name="kevin-private-tool",
+            owner="kevin-dev",
+            permissions=SimpleNamespace(admin=False, push=False, pull=True, maintain=False),
+            private=True,
+            is_auth_repo=False,
+        )
+
+        self.client.force_login(staff_with("manage_projects"))
+        resp = self.client.get("/api/github/repos/")
+        self.assertEqual(resp.status_code, 200)
+
+        results = resp.json()["results"]
+        result_ids = [r["id"] for r in results]
+
+        # 101, 301, and 303 must be included; 302 (public without elevated perms) must be excluded
+        self.assertIn(101, result_ids)
+        self.assertIn(301, result_ids)
+        self.assertIn(303, result_ids)
+        self.assertNotIn(302, result_ids)
+
+        staff_repo_301 = next(r for r in results if r["id"] == 301)
+        self.assertEqual(staff_repo_301["role"], "staff")
+        self.assertIsNotNone(staff_repo_301["staff_member"])
+        self.assertEqual(staff_repo_301["staff_member"]["username"], "kevin-dev")
+        self.assertEqual(staff_repo_301["staff_member"]["staff_name"], "Kevin Otieno")
+        self.assertTrue(staff_repo_301["permissions"]["push"])
+
+    def test_staff_repository_scan_handles_github_exception_gracefully(self):
+        staff_user = User.objects.create_user("staff-ghost", password="p")
+        StaffProfile.objects.create(user=staff_user, github_username="ghost-user")
+
+        self.add(repo_id=101, name="core", owner="teklora")
+
+        # Mock ghost-user to raise GithubException
+        ghost_mock = mock.MagicMock()
+        ghost_mock.get_repos.side_effect = GithubException(404, {"message": "User Not Found"}, {})
+        self.staff_users["ghost-user"] = ghost_mock
+
+        self.client.force_login(staff_with("manage_projects"))
+        resp = self.client.get("/api/github/repos/")
+        self.assertEqual(resp.status_code, 200)
+
+        results = resp.json()["results"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["id"], 101)

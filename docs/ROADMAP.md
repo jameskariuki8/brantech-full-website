@@ -19,19 +19,24 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 
 ---
 
-### 🧠 Milestone 2: Unified Agent Harness & Editorial Intelligence *(In Design / Spec)*
-- [ ] **Unified Model Harness**:
-  - [ ] Unify LangGraph checkpointer and newsroom services into a single reusable agent orchestrator (`docs/specs/2026-09-21-unified-agent-harness-design.md`).
-  - [ ] Centralize Gemini model configuration, retry strategies, and rate-limit backoffs.
-- [ ] **Persistent Semantic Knowledge Base**:
-  - [ ] Connect `KnowledgeDocument` vector search into active chat workflows.
-  - [ ] Dynamic episodic memory checkpointer for long-term customer interactions.
+### 🧠 Milestone 2: Unified Agent Harness & Editorial Intelligence *(Completed)*
+- [x] **Unified Model Harness**:
+  - [x] Centralize model execution, routing, and provider abstraction into `ai_workflows/harness/` (`docs/specs/2026-09-21-unified-agent-harness-design.md`).
+  - [x] Multi-provider configuration supporting Gemini, Anthropic, OpenAI, DeepSeek, OpenRouter, and Codex.
+  - [x] Unified exponential backoff, rate-limit retry policies, and automated admin failure alerts (`alerts.py`).
+  - [x] Newsroom agent migration across 6 core editorial/research agents removing isolated model clients and fallbacks.
+- [x] **Persistent Semantic Knowledge Base & Memory**:
+  - [x] Single-corpus semantic memory with per-vector model provenance (`memory.py`).
+  - [x] Scored re-embedding on model switch with vector indexing.
+  - [x] Token usage accounting, pricing catalog (`pricing.toml`), and budget tracking (`usage.py`).
 
 ---
 
-### 💻 Milestone 3: GitHub Manager & Developer Portal *(Upcoming)*
-- [ ] **GitHub Admin Panel Section** (`/admin-panel/?section=github`):
-  - [ ] Live commit feed and release tag status across Teklora repositories.
+### 💻 Milestone 3: GitHub Manager & Developer Portal *(In Progress)*
+- [ ] **GitHub Admin Panel Integration** (`/admin-panel/?section=githubSync`):
+  - [x] Live repository management dashboard with search, filtering, and project conversion.
+  - [x] Background sync, commit counts tracking, and interactive README markdown inspector (`brand/github_service.py`).
+  - [ ] Staff GitHub repository discovery: scan and import accessible repositories from configured staff GitHub profiles.
   - [ ] Automated PR status linking with Teklora Admin Tasks.
 - [ ] **Client Project Delivery Hub**:
   - [ ] Client-facing milestone tracking and deliverable inspection.

@@ -50,6 +50,8 @@
                             <span id="statOwnedCount" class="text-gray-300 font-medium">0 owned</span>
                             <span>&middot;</span>
                             <span id="statCollabCount" class="text-gray-300 font-medium">0 collab</span>
+                            <span>&middot;</span>
+                            <span id="statStaffCount" class="text-purple-400 font-medium">0 staff</span>
                         </div>
                     </div>
 
@@ -135,6 +137,9 @@
                             </button>
                             <button onclick="setGithubFilter('collaborator', this)" class="github-filter-tab px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white transition-colors">
                                 Collab <span id="filterCountCollab" class="opacity-70">(0)</span>
+                            </button>
+                            <button onclick="setGithubFilter('staff', this)" class="github-filter-tab px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white transition-colors">
+                                <i class="fas fa-user-group text-purple-400 mr-1"></i>Staff <span id="filterCountStaff" class="opacity-70">(0)</span>
                             </button>
                         </div>
 

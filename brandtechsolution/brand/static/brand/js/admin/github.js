@@ -73,6 +73,7 @@ function updateGithubDashboardMetrics(repos) {
     const unsyncedCount = totalCount - syncedCount;
     const ownedCount = repos.filter(r => r.role === 'owner').length;
     const collabCount = repos.filter(r => r.role === 'collaborator').length;
+    const staffCount = repos.filter(r => r.role === 'staff' || Boolean(r.staff_member)).length;
 
     // Calculate total commits tracked across synced projects
     const totalCommits = syncedRepos.reduce((acc, r) => {
@@ -84,6 +85,7 @@ function updateGithubDashboardMetrics(repos) {
     const elTotal = document.getElementById('statTotalRepos');
     const elOwned = document.getElementById('statOwnedCount');
     const elCollab = document.getElementById('statCollabCount');
+    const elStaff = document.getElementById('statStaffCount');
     const elSynced = document.getElementById('statSyncedProjects');
     const elPercentage = document.getElementById('statSyncPercentage');
     const elCommits = document.getElementById('statTotalCommits');
@@ -91,6 +93,7 @@ function updateGithubDashboardMetrics(repos) {
     if (elTotal) elTotal.textContent = totalCount;
     if (elOwned) elOwned.textContent = `${ownedCount} owned`;
     if (elCollab) elCollab.textContent = `${collabCount} collab`;
+    if (elStaff) elStaff.textContent = `${staffCount} staff`;
     if (elSynced) elSynced.textContent = syncedCount;
     if (elPercentage) {
         const pct = totalCount > 0 ? Math.round((syncedCount / totalCount) * 100) : 0;
@@ -104,12 +107,14 @@ function updateGithubDashboardMetrics(repos) {
     const bUnsynced = document.getElementById('filterCountUnsynced');
     const bOwned = document.getElementById('filterCountOwned');
     const bCollab = document.getElementById('filterCountCollab');
+    const bStaff = document.getElementById('filterCountStaff');
 
     if (bAll) bAll.textContent = `(${totalCount})`;
     if (bSynced) bSynced.textContent = `(${syncedCount})`;
     if (bUnsynced) bUnsynced.textContent = `(${unsyncedCount})`;
     if (bOwned) bOwned.textContent = `(${ownedCount})`;
     if (bCollab) bCollab.textContent = `(${collabCount})`;
+    if (bStaff) bStaff.textContent = `(${staffCount})`;
 }
 
 /**
@@ -138,6 +143,8 @@ function filterGithubRepos() {
         filtered = filtered.filter(r => r.role === 'owner');
     } else if (currentGithubFilter === 'collaborator') {
         filtered = filtered.filter(r => r.role === 'collaborator');
+    } else if (currentGithubFilter === 'staff') {
+        filtered = filtered.filter(r => r.role === 'staff' || Boolean(r.staff_member));
     }
 
     // Filter by Search Query
@@ -148,7 +155,9 @@ function filterGithubRepos() {
             const desc = (r.description || '').toLowerCase();
             const lang = (r.language || '').toLowerCase();
             const projTitle = (r.project && r.project.title ? r.project.title : '').toLowerCase();
-            return name.includes(query) || fullName.includes(query) || desc.includes(query) || lang.includes(query) || projTitle.includes(query);
+            const staffUser = (r.staff_member && r.staff_member.username ? r.staff_member.username : '').toLowerCase();
+            const staffName = (r.staff_member && r.staff_member.staff_name ? r.staff_member.staff_name : '').toLowerCase();
+            return name.includes(query) || fullName.includes(query) || desc.includes(query) || lang.includes(query) || projTitle.includes(query) || staffUser.includes(query) || staffName.includes(query);
         });
     }
 
@@ -191,8 +200,9 @@ function filterGithubRepos() {
 function renderGithubRepoCard(repo) {
     const isSynced = repo.is_synced;
     const project = repo.project || null;
-    const roleUpper = (repo.role || 'owner').toUpperCase();
     const isOwner = repo.role === 'owner';
+    const isStaff = repo.role === 'staff' || Boolean(repo.staff_member);
+    const roleUpper = (repo.role || (isStaff ? 'staff' : (isOwner ? 'owner' : 'collaborator'))).toUpperCase();
     const lang = repo.language || null;
     const commitsCount = (project && project.commit_count) || 0;
 
@@ -220,9 +230,25 @@ function renderGithubRepoCard(repo) {
                 <div class="flex-1 min-w-0">
                     <!-- Badges Row -->
                     <div class="flex items-center gap-2 mb-2 flex-wrap text-xs">
-                        <span class="font-bold px-2 py-0.5 rounded ${isOwner ? 'bg-blue-900/20 text-brand-blue border border-blue-500/20' : 'bg-gray-800 text-gray-300'} uppercase">
-                            ${escapeHtml(roleUpper)}
-                        </span>
+                        ${isOwner ? `
+                            <span class="font-bold px-2 py-0.5 rounded bg-blue-900/20 text-brand-blue border border-blue-500/20 uppercase">
+                                OWNER
+                            </span>
+                        ` : (isStaff ? `
+                            <span class="font-bold px-2 py-0.5 rounded bg-purple-900/30 text-purple-300 border border-purple-500/30 uppercase flex items-center gap-1">
+                                <i class="fas fa-user-group text-[10px]"></i>STAFF
+                            </span>
+                        ` : `
+                            <span class="font-bold px-2 py-0.5 rounded bg-gray-800 text-gray-300 uppercase">
+                                COLLABORATOR
+                            </span>
+                        `)}
+
+                        ${repo.staff_member ? `
+                            <span class="font-medium px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 border border-purple-500/20 flex items-center gap-1" title="Staff member: ${escapeHtml(repo.staff_member.staff_name || '')}">
+                                <i class="fab fa-github text-[10px]"></i>@${escapeHtml(repo.staff_member.username)}
+                            </span>
+                        ` : ''}
 
                         ${repo.is_private ? `
                             <span class="font-bold px-2 py-0.5 rounded bg-yellow-900/20 text-yellow-400 border border-yellow-500/20">
