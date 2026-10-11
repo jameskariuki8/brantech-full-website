@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Company & Corporate Navigation Restructuring**:
+  - Reorganized the global navigation and footer from "About" to "Company", housing all company dimensions: *About Us & Story*, *Mission & Values*, *Careers & Jobs* (`/careers/`), *CSR & Social Impact* (`/about/#csr`), and *Partnerships*.
+  - Updated [about.html](brandtechsolution/brand/templates/brand/about.html) with a direct link and action card for open roles linking directly to the full [Careers Page](brandtechsolution/brand/templates/brand/careers.html).
+- **Mobile Navigation Modal Popup & Dropdown Redesign**:
+  - Transformed mobile dropdown into a sleek, floating glassmorphism popup modal with full-screen dimming blur backdrop.
+  - Sized compactly (`max-width: 380px`, reduced paddings, concise fonts) so the popup fits comfortably on phone screens without feeling oversized.
+  - Added dedicated popup header featuring brand logo, title, and intuitive close button (`<i class="fas fa-times"></i>`).
+  - Implemented collapsible accordion cards for dropdown items with smooth rotate transitions and sublink icons.
+  - Added quick-access theme switch pill (`Dark / Light Mode`) and high-contrast consultation CTA button.
+  - Added backdrop click, `Escape` key dismiss, and automatic background scroll locking for phone UX.
+- **Careers Page & Admin Management Specification**:
+  - Authored comprehensive specification ([`2026-10-11-careers-page-admin-management-spec.md`](docs/specs/2026-10-11-careers-page-admin-management-spec.md)) detailing the `JobOpening` model architecture, dynamic querying, and `/admin-panel/?section=careers` management hub.
+  - Added Milestone 4 to [ROADMAP.md](docs/ROADMAP.md).
 - **Staff GitHub Repository Scanning & Permission Discovery**:
   - Automatically scan repositories owned by staff members configured via `StaffProfile.github_username`.
   - Filter repositories to only include those where the platform's authenticated GitHub account has access (push/write, admin, maintain, or private pull access).

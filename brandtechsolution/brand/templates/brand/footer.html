@@ -1,18 +1,18 @@
 {% load static %}
-<footer class="bg-white dark:bg-[#090D16] border-t border-gray-200 dark:border-white/10 pt-20 pb-10 mt-auto transition-colors duration-300">
+<footer class="bg-white dark:bg-[#090D16] border-t border-gray-200 dark:border-white/10 pt-16 pb-10 mt-auto transition-colors duration-300">
   <div class="container-wide px-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-12">
       
       <!-- Brand -->
-      <div class="space-y-6">
+      <div class="space-y-5">
         <div class="flex items-center gap-3">
           <img src="{{ site_content.logo_url }}" alt="{{ site_content.brand_name }} Logo" class="h-10 w-10 object-contain rounded-lg">
           <span class="font-bold text-xl text-gray-900 dark:text-white tracking-tight">{{ site_content.brand_name }}</span>
         </div>
-        <div class="text-gray-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed space-y-4 mt-2">
+        <div class="text-gray-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed space-y-3 mt-2">
           <p>{{ site_content.footer_description }}</p>
         </div>
-        <div class="flex gap-4">
+        <div class="flex gap-4 pt-1">
           {% for link in site_content.footer_social_links %}
           <a href="{{ link.url }}" aria-label="{{ link.label }}" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg"><i class="{{ link.icon }}"></i></a>
           {% endfor %}
@@ -21,32 +21,32 @@
 
       <!-- Links -->
       <div>
-        <h4 class="font-bold text-gray-900 dark:text-white mb-6">{{ site_content.footer_quick_heading }}</h4>
-        <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
+        <h4 class="font-bold text-gray-900 dark:text-white mb-5 text-sm uppercase tracking-wider">{{ site_content.footer_quick_heading }}</h4>
+        <ul class="{% if site_content.footer_quick_links|length > 6 %}grid grid-cols-2 gap-x-4 gap-y-2.5{% else %}space-y-3{% endif %} text-sm text-gray-500 dark:text-slate-400">
           {% for link in site_content.footer_quick_links %}
-          <li><a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ link.label }}</a></li>
+          <li><a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors inline-block py-0.5">{{ link.label }}</a></li>
           {% endfor %}
         </ul>
       </div>
 
       <!-- Services -->
       <div>
-        <h4 class="font-bold text-gray-900 dark:text-white mb-6">{{ site_content.footer_services_heading }}</h4>
-        <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
+        <h4 class="font-bold text-gray-900 dark:text-white mb-5 text-sm uppercase tracking-wider">{{ site_content.footer_services_heading }}</h4>
+        <ul class="space-y-3 text-sm text-gray-500 dark:text-slate-400">
           {% for link in site_content.footer_services %}
-          <li><a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ link.label }}</a></li>
+          <li><a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors inline-block py-0.5">{{ link.label }}</a></li>
           {% endfor %}
         </ul>
       </div>
 
       <!-- Contact -->
       <div>
-        <h4 class="font-bold text-gray-900 dark:text-white mb-6">{{ site_content.footer_contact_heading }}</h4>
-        <ul class="space-y-4 text-sm text-gray-500 dark:text-slate-400">
-          <li><a href="mailto:{{ site_content.contact_email }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ site_content.contact_email }}</a></li>
-          <li><a href="tel:{{ site_content.contact_phone|cut:' ' }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ site_content.contact_phone }}</a></li>
+        <h4 class="font-bold text-gray-900 dark:text-white mb-5 text-sm uppercase tracking-wider">{{ site_content.footer_contact_heading }}</h4>
+        <ul class="space-y-3 text-sm text-gray-500 dark:text-slate-400">
+          <li><a href="mailto:{{ site_content.contact_email }}" class="hover:text-gray-900 dark:hover:text-white transition-colors inline-block py-0.5">{{ site_content.contact_email }}</a></li>
+          <li><a href="tel:{{ site_content.contact_phone|cut:' ' }}" class="hover:text-gray-900 dark:hover:text-white transition-colors inline-block py-0.5">{{ site_content.contact_phone }}</a></li>
           <li class="pt-2">
-            <a href="{% url 'contacts' %}" class="text-blue-600 dark:text-sky-400 font-medium hover:text-blue-800 dark:hover:text-sky-300 transition-colors">Contact Support <i class="fas fa-arrow-right text-xs ml-1"></i></a>
+            <a href="{% url 'contacts' %}" class="text-blue-600 dark:text-sky-400 font-medium hover:text-blue-800 dark:hover:text-sky-300 transition-colors inline-flex items-center">Contact Support <i class="fas fa-arrow-right text-xs ml-1.5"></i></a>
           </li>
         </ul>
       </div>

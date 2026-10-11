@@ -126,18 +126,11 @@ header a.active {
   border-radius: 50%;
 }
 .brand {
-  font-size: 1.1rem;
-  font-weight: 700;
-  background: linear-gradient(90deg, var(--brantech-blue), purple, var(--brantech-green));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #33348E !important;
+  background: none !important;
+  -webkit-text-fill-color: #33348E !important;
 }
 
 /* === MOBILE NAV === */

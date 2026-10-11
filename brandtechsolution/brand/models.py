@@ -64,12 +64,14 @@ def default_header_links():
             ],
         },
         {
-            "label": "About",
+            "label": "Company",
             "url": "/about/",
             "children": [
+                {"label": "About Us & Story", "url": "/about/#story"},
                 {"label": "Mission & Values", "url": "/about/#mission"},
+                {"label": "Careers & Jobs", "url": "/careers/"},
+                {"label": "CSR & Social Impact", "url": "/about/#csr"},
                 {"label": "Partnerships", "url": "/about/#partnerships"},
-                {"label": "Volunteer & Learn", "url": "/about/#careers"},
             ],
         },
         {"label": "Blog", "url": "/blog/"},
@@ -80,14 +82,11 @@ def default_header_links():
 def default_footer_quick_links():
     return [
         {"label": "Home", "url": "/"},
-        {"label": "About Us", "url": "/about/"},
+        {"label": "Company", "url": "/about/"},
         {"label": "Products", "url": "/products/"},
-        {"label": "Services", "url": "/solutions/"},
         {"label": "Research", "url": "/research/"},
-        {"label": "Blog", "url": "/blog/"},
-        {"label": "Contact", "url": "/contacts/"},
-        {"label": "Terms & Conditions", "url": "/terms/"},
-        {"label": "Privacy Policy", "url": "/privacy/"},
+        {"label": "Careers", "url": "/careers/"},
+        {"label": "CSR & Impact", "url": "/about/#csr"},
     ]
 
 
@@ -530,6 +529,25 @@ class SiteContent(models.Model):
         self.pk = 1
         super().save(*args, **kwargs)
         cache.delete(SITE_CONTENT_CACHE_KEY)
+
+    # ---------------------------------------------------------------------
+    # Careers model – allows admin editing of open positions
+    # ---------------------------------------------------------------------
+    class Career(models.Model):
+        title = models.CharField(max_length=150)
+        location = models.CharField(max_length=100, default='Remote / Hybrid')
+        employment_type = models.CharField(max_length=50, default='Full-time')
+        description = models.TextField()
+        email = models.EmailField(default='careers@teklora.com')
+        posted_at = models.DateTimeField(auto_now_add=True)
+
+        class Meta:
+            ordering = ['-posted_at']
+            verbose_name = 'Career'
+            verbose_name_plural = 'Careers'
+
+        def __str__(self):
+            return self.title
 
 
 class BlogPost(models.Model):

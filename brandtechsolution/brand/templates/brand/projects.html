@@ -131,10 +131,12 @@
 
     .project-title {
       color: var(--accent-red);
-      font-size: 1.25rem;
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
       font-weight: 700;
       margin-bottom: 0.75rem;
       line-height: 1.3;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .project-description {
@@ -143,6 +145,8 @@
       line-height: 1.6;
       margin-bottom: 1.25rem;
       min-height: 3.2rem;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .project-actions {
@@ -219,9 +223,34 @@
         grid-template-columns: 1fr;
       }
 
+      .projects-container {
+        padding: 1rem 1rem 3rem 1rem;
+      }
+
       .projects-hero {
         height: 20vh;
         margin-top: 40px;
+      }
+
+      .project-content {
+        padding: 1.1rem;
+      }
+
+      .project-title {
+        font-size: 1.15rem;
+      }
+
+      .project-modal-header {
+        padding: 1rem 1.25rem;
+      }
+
+      .project-modal-title {
+        font-size: 1.2rem;
+        padding-right: 1rem;
+      }
+
+      .project-modal-body {
+        padding: 1.25rem;
       }
     }
 
@@ -463,15 +492,15 @@
         }
         return `
           <div class="project-card relative">
-            ${project.is_github_synced ? `<div class="absolute top-3 right-3 bg-[#02060c]/80 backdrop-blur text-xs px-2.5 py-1 rounded-full border border-[rgba(22,255,122,0.3)] text-[#16ff7a] flex items-center gap-1 z-10 shadow-[0_0_10px_rgba(22,255,122,0.15)]"><i class="fab fa-github"></i> <span class="uppercase font-semibold text-[10px] tracking-wider">${project.github_role || 'synced'}</span></div>` : ''}
+            ${project.is_github_synced ? `<div class="absolute top-3 right-3 bg-[#02060c]/80 backdrop-blur text-xs px-2.5 py-1 rounded-full border border-[rgba(22,255,122,0.3)] text-[#16ff7a] flex items-center gap-1 z-10 shadow-[0_0_10px_rgba(22,255,122,0.15)] max-w-[50%]"><i class="fab fa-github shrink-0"></i> <span class="uppercase font-semibold text-[10px] tracking-wider truncate">${project.github_role || 'synced'}</span></div>` : ''}
             <div class="project-image">
               <img src="${imageUrl}" alt="${project.title}">
             </div>
             <div class="project-content">
-              <h3 class="project-title">${project.title}</h3>
-              <p class="project-description">${project.short_description || project.description?.substring(0, 100) + '...' || 'No description available.'}</p>
-              ${project.is_github_synced && project.commit_count !== null ? `<div class="flex items-center text-xs text-gray-400 mb-4 bg-gray-100 w-fit px-3 py-1.5 rounded-lg border border-gray-200"><i class="fas fa-code-commit text-brand-blue mr-2"></i> <span class="font-bold text-gray-300 mr-1">${project.commit_count}</span> commits</div>` : ''}
-              <div class="project-actions">
+              <h3 class="project-title break-words leading-tight">${project.title}</h3>
+              <p class="project-description break-words leading-relaxed">${project.short_description || project.description?.substring(0, 100) + '...' || 'No description available.'}</p>
+              ${project.is_github_synced && project.commit_count !== null ? `<div class="flex items-center text-xs text-gray-400 mb-4 bg-gray-100 w-fit px-3 py-1.5 rounded-lg border border-gray-200 flex-wrap"><i class="fas fa-code-commit text-brand-blue mr-2 shrink-0"></i> <span class="font-bold text-gray-300 mr-1">${project.commit_count}</span> commits</div>` : ''}
+              <div class="project-actions flex-wrap">
                 <a href="/projects/${project.id}/" class="project-btn" title="Read More"><i class="fas fa-book-open"></i></a>
                 ${project.github_url ? `<a href="${project.github_url}" target="_blank" class="project-btn github" title="View on GitHub"><i class="fab fa-github"></i></a>` : ''}
                 ${project.project_url ? `<a href="${project.project_url}" target="_blank" class="project-btn external" title="View Live Project"><i class="fas fa-external-link-alt"></i></a>` : ''}

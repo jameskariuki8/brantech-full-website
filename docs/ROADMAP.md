@@ -43,6 +43,20 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 
 ---
 
+### 💼 Milestone 4: Careers Page & Admin Management System *(Initiated / In Progress)*
+- [ ] **Job Openings Schema & Data Architecture** (`docs/specs/2026-10-11-careers-page-admin-management-spec.md`):
+  - [ ] `JobOpening` model with department, work mode, employment type, qualifications, and active flags.
+  - [ ] Django admin registration with search and status filters.
+- [ ] **Teklora Admin Careers Management Hub** (`/admin-panel/?section=careers`):
+  - [ ] Role listing with active/draft badges and instant publish/unpublish toggles.
+  - [ ] Modal creation and editing with structured duties & requirements fields.
+- [ ] **Dynamic Public Careers Experience** (`/careers/`):
+  - [ ] Live database querying replacing hardcoded static positions in `brand/careers.html`.
+  - [ ] Department filtering, expandable position details, and pre-filled email application trigger.
+  - [ ] Empty state fallback with general resume submission prompt.
+
+---
+
 ## ✅ Completed Milestones
 
 - [x] **Statutory Compliance & Legal Engine**: KDPA 2019 & GDPR compliant Privacy Policy and Terms of Service.

@@ -72,10 +72,16 @@
         .product-card {
             scroll-margin-top: 110px;
             transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
         .product-card:hover {
             border-color: rgba(0, 255, 148, 0.35) !important;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .product-card h3, .product-card h4, .product-card p, .product-card span, .product-card li {
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .phase-tab {
@@ -102,6 +108,13 @@
         #imgLightbox.open {
             display: flex;
         }
+
+        @media (max-width: 640px) {
+            .product-card {
+                padding: 1.25rem !important;
+                border-radius: 1.25rem !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-background text-secondaryText font-sans antialiased selection:bg-[#00FF94]/30 selection:text-primaryText relative overflow-x-hidden">
@@ -115,26 +128,26 @@
 
         <!-- Hero Section -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-            <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-gray-100 border border-borderLight backdrop-blur-md max-w-[90vw]">
+            <div class="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-gray-100 border border-borderLight backdrop-blur-md max-w-full">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#00FF94] animate-pulse shrink-0"></span>
-                <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00FF94] truncate">Teklora Product Ecosystem & Roadmap</span>
+                <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00FF94] break-words text-center">Teklora Product Ecosystem & Roadmap</span>
             </div>
 
-            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight product-hero-title max-w-4xl mx-auto">
+            <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight product-hero-title max-w-4xl mx-auto break-words">
                 Engineering Impact: <br class="hidden sm:inline" />
                 <span class="text-[#00FF94]">Deployed Platforms & Spatial Vision.</span>
             </h1>
 
-            <p class="text-base sm:text-lg text-secondaryText leading-relaxed max-w-3xl mx-auto font-medium">
+            <p class="text-sm sm:text-base md:text-lg text-secondaryText leading-relaxed max-w-3xl mx-auto font-medium break-words px-2">
                 Explore our live SaaS solutions, active conversational commerce engines, and futuristic 3D spatial operating systems.
             </p>
 
             <!-- Quick Filter Bar -->
             <div class="flex flex-wrap justify-center gap-2 pt-2">
-                <button type="button" onclick="filterPhase('all')" id="btn-all" class="phase-tab active px-4 py-2 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-primaryText">
+                <button type="button" onclick="filterPhase('all')" id="btn-all" class="phase-tab active px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-borderLight bg-gray-100 text-[11px] sm:text-xs font-bold text-primaryText text-center break-words">
                     <i class="fas fa-layer-group text-brandBlue mr-1.5"></i> All Products ({{ total }})
                 </button>
-{% for group in groups %}                <button type="button" onclick="filterPhase('{{ group.key }}')" id="btn-{{ group.key }}" class="phase-tab px-4 py-2 rounded-xl border border-borderLight bg-gray-100 text-xs font-bold text-secondaryText">
+{% for group in groups %}                <button type="button" onclick="filterPhase('{{ group.key }}')" id="btn-{{ group.key }}" class="phase-tab px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-borderLight bg-gray-100 text-[11px] sm:text-xs font-bold text-secondaryText text-center break-words">
                     {% if group.icon %}<i class="{{ group.icon }} mr-1.5"></i>{% endif %}{{ group.tab_label }} ({{ group.count }})
                 </button>
 {% endfor %}
@@ -142,54 +155,54 @@
         </section>
 
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 sm:space-y-20">
 
 {% for group in groups %}
             <!-- ============================================================ -->
             <!-- {{ group.heading|upper }} -->
             <!-- ============================================================ -->
-            <div class="space-y-12 phase-group" data-phase="{{ group.key }}">
+            <div class="space-y-8 sm:space-y-12 phase-group" data-phase="{{ group.key }}">
                 <div class="flex items-center gap-3 border-b border-borderLight pb-4">
-                    <span class="w-3 h-3 rounded-full bg-[{{ group.dot }}]{% if group.dot_animation %} {{ group.dot_animation }}{% endif %}"></span>
-                    <h2 class="text-xl sm:text-2xl font-bold text-primaryText font-heading uppercase tracking-wider">
+                    <span class="w-3 h-3 rounded-full bg-[{{ group.dot }}]{% if group.dot_animation %} {{ group.dot_animation }}{% endif %} shrink-0"></span>
+                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-primaryText font-heading uppercase tracking-wider break-words min-w-0">
                         {{ group.heading }}
                     </h2>
                 </div>
 {% for product in group.items %}{% if product.is_spotlight %}
-                <article id="{{ product.slug }}" class="product-card clean-card p-6 sm:p-10 rounded-3xl border border-[{{ product.fill }}]/30 bg-gradient-to-br from-[#050811] via-[#0A1224] to-[#050811] space-y-8 shadow-[0_0_50px_rgba({{ product.glow }},0.1)]">
+                <article id="{{ product.slug }}" class="product-card clean-card p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-[{{ product.fill }}]/30 bg-gradient-to-br from-[#050811] via-[#0A1224] to-[#050811] space-y-6 sm:space-y-8 shadow-[0_0_50px_rgba({{ product.glow }},0.1)]">
 {% else %}
-                <article id="{{ product.slug }}" class="product-card clean-card p-6 sm:p-10 rounded-3xl border border-borderLight space-y-8">
+                <article id="{{ product.slug }}" class="product-card clean-card p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-borderLight space-y-6 sm:space-y-8">
 {% endif %}
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/{% if product.is_spotlight %}10{% else %}5{% endif %}">
-                        <div class="space-y-2">
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[{{ product.fill }}]/10 text-[{{ product.accent }}] border border-[{{ product.fill }}]/20 text-xs font-bold uppercase tracking-wider">
-                                <i class="{{ product.badge_icon }}"></i> {{ product.badge_label }}
+                        <div class="space-y-2 min-w-0 flex-1">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[{{ product.fill }}]/10 text-[{{ product.accent }}] border border-[{{ product.fill }}]/20 text-[11px] sm:text-xs font-bold uppercase tracking-wider max-w-full">
+                                <i class="{{ product.badge_icon }} shrink-0"></i> <span class="break-words">{{ product.badge_label }}</span>
                             </div>
-                            <h3 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
+                            <h3 class="text-xl sm:text-3xl lg:text-4xl font-bold text-primaryText font-heading break-words leading-tight">
                                 {{ product.title }}
                             </h3>
-                            <p class="text-xs sm:text-sm {% if product.is_spotlight %}text-[#BAE6FD]/80{% else %}text-secondaryText{% endif %} max-w-3xl">
+                            <p class="text-xs sm:text-sm {% if product.is_spotlight %}text-[#BAE6FD]/80{% else %}text-secondaryText{% endif %} max-w-3xl break-words leading-relaxed">
                                 {{ product.short_description }}
                             </p>
                         </div>
 {% if product.cta_label and product.project_url %}
-                        <a href="{{ product.project_url }}" target="_blank" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 flex items-center gap-2 self-start lg:self-auto{% with extra=product.style_overrides.cta_extra_classes %}{% if extra %} {{ extra }}{% endif %}{% endwith %}">
-{% if product.style_overrides.cta_icon_first %}                            <i class="{{ product.cta_icon }}"></i>
-                            <span>{{ product.cta_label }}</span>
-{% else %}                            <span>{{ product.cta_label }}</span>
-                            <i class="{{ product.cta_icon }} text-[10px]"></i>
+                        <a href="{{ product.project_url }}" target="_blank" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 flex items-center justify-center gap-2 w-full sm:w-auto self-start lg:self-auto text-center break-words{% with extra=product.style_overrides.cta_extra_classes %}{% if extra %} {{ extra }}{% endif %}{% endwith %}">
+{% if product.style_overrides.cta_icon_first %}                            <i class="{{ product.cta_icon }} shrink-0"></i>
+                            <span class="break-words">{{ product.cta_label }}</span>
+{% else %}                            <span class="break-words">{{ product.cta_label }}</span>
+                            <i class="{{ product.cta_icon }} text-[10px] shrink-0"></i>
 {% endif %}                        </a>
 {% endif %}
                     </div>
 {% if product.notes.all %}
                     <!-- Vision & Problem/Solution Specs Grid -->
-                    <div class="grid md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 {% for note in product.notes.all %}
-                        <div class="p-5 rounded-2xl bg-gray-50 border border-borderLight space-y-2">
-                            <h4 class="text-xs font-bold text-[{{ note.color|default:product.accent }}] uppercase tracking-wider flex items-center gap-2">
-                                <i class="{{ note.icon }}"></i> {{ note.heading }}
+                        <div class="p-4 sm:p-5 rounded-2xl bg-gray-50 border border-borderLight space-y-2 min-w-0">
+                            <h4 class="text-xs font-bold text-[{{ note.color|default:product.accent }}] uppercase tracking-wider flex items-start gap-2 break-words">
+                                <i class="{{ note.icon }} shrink-0 mt-0.5"></i> <span class="break-words">{{ note.heading }}</span>
                             </h4>
-                            <p class="text-xs text-secondaryText leading-relaxed">
+                            <p class="text-xs text-secondaryText leading-relaxed break-words">
                                 {{ note.body }}
                             </p>
                         </div>
@@ -199,15 +212,15 @@
 {% if product.gallery.all %}
                     <!-- Dual Image Preview Lightbox Row -->
                     <div class="space-y-3">
-                        <div class="text-xs font-bold text-primaryText uppercase tracking-wider flex items-center gap-2">
-                            <i class="fas fa-images text-[{{ product.accent }}]"></i> {{ product.gallery_heading }} (Click image to expand)
+                        <div class="text-xs font-bold text-primaryText uppercase tracking-wider flex flex-wrap items-center gap-2 break-words">
+                            <i class="fas fa-images text-[{{ product.accent }}] shrink-0"></i> <span>{{ product.gallery_heading }}</span> <span class="text-[10px] text-secondaryText font-normal">(Click image to expand)</span>
                         </div>
-                        <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 {% for image in product.gallery.all %}
-                            <div class="relative group rounded-2xl overflow-hidden border border-{% if product.is_spotlight %}[{{ product.fill }}]/30{% else %}white/10{% endif %} bg-surface {% if product.is_spotlight %}h-60 sm:h-72{% else %}h-56 sm:h-64{% endif %}" onclick="openLightbox('{{ image.expanded_src|escapejs }}', '{{ image.lightbox_title|escapejs }}')">
+                            <div class="relative group rounded-2xl overflow-hidden border border-{% if product.is_spotlight %}[{{ product.fill }}]/30{% else %}white/10{% endif %} bg-surface {% if product.is_spotlight %}h-56 sm:h-72{% else %}h-48 sm:h-64{% endif %}" onclick="openLightbox('{{ image.expanded_src|escapejs }}', '{{ image.lightbox_title|escapejs }}')">
                                 <img src="{{ image.src }}" alt="{{ image.alt }}" class="w-full h-full object-cover mockup-img" />
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-primaryText text-xs font-bold gap-2">
-                                    <i class="fas fa-search-plus"></i> {{ image.caption }}
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-primaryText text-xs font-bold gap-2 p-2 text-center break-words">
+                                    <i class="fas fa-search-plus shrink-0"></i> <span>{{ image.caption }}</span>
                                 </div>
                             </div>
 {% endfor %}
@@ -215,22 +228,22 @@
                     </div>
 {% endif %}
                     <!-- Capabilities Grid + Data Story Chart -->
-                    <div class="grid lg:grid-cols-12 gap-8 items-start">
-                        <div class="lg:col-span-6 space-y-{% if product.chip_features %}4{% else %}3{% endif %}">
-                            <h4 class="text-xs font-bold text-primaryText uppercase tracking-wider">{{ product.features_heading }}</h4>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+                        <div class="lg:col-span-6 space-y-{% if product.chip_features %}4{% else %}3{% endif %} min-w-0">
+                            <h4 class="text-xs font-bold text-primaryText uppercase tracking-wider break-words">{{ product.features_heading }}</h4>
 {% if product.chip_features %}
                             <div class="flex flex-wrap gap-2">
 {% for feature in product.chip_features %}
-                                <span class="px-2.5 py-1 rounded-lg bg-[{{ product.fill }}]/10 text-[{{ product.style_overrides.chip_text|default:product.accent }}] border border-[{{ product.fill }}]/20 text-[11px] font-bold">{{ feature.text }}</span>
+                                <span class="px-2.5 py-1 rounded-lg bg-[{{ product.fill }}]/10 text-[{{ product.style_overrides.chip_text|default:product.accent }}] border border-[{{ product.fill }}]/20 text-[11px] font-bold break-words max-w-full inline-block">{{ feature.text }}</span>
 {% endfor %}
                             </div>
 {% endif %}
 {% if product.card_features %}
                             <ul class="space-y-2.5 text-xs text-secondaryText">
 {% for feature in product.card_features %}
-                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-gray-200">
-                                    <i class="{{ feature.icon }} text-[{{ product.accent }}] mt-0.5"></i>
-                                    <span><strong>{{ feature.label }}:</strong> {{ feature.text }}</span>
+                                <li class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.02] border border-gray-200 min-w-0">
+                                    <i class="{{ feature.icon }} text-[{{ product.accent }}] mt-0.5 shrink-0"></i>
+                                    <span class="min-w-0 flex-1 break-words leading-relaxed"><strong>{{ feature.label }}:</strong> {{ feature.text }}</span>
                                 </li>
 {% endfor %}
                             </ul>
@@ -238,18 +251,18 @@
 {% if product.check_features %}
                             <ul class="space-y-2 text-xs text-secondaryText">
 {% for feature in product.check_features %}
-                                <li class="flex items-center gap-2"><i class="{{ feature.icon }} text-[{{ product.accent }}]"></i> {{ feature.text }}</li>
+                                <li class="flex items-start gap-2 min-w-0"><i class="{{ feature.icon }} text-[{{ product.accent }}] mt-0.5 shrink-0"></i> <span class="min-w-0 flex-1 break-words leading-relaxed">{{ feature.text }}</span></li>
 {% endfor %}
                             </ul>
 {% endif %}
                         </div>
 {% if product.chart_spec %}
-                        <div class="lg:col-span-6 space-y-3">
-                            <h4 class="text-xs font-bold {% if product.style_overrides.chart_heading_accent %}text-[{{ product.accent }}]{% else %}text-primaryText{% endif %} uppercase tracking-wider flex items-center gap-2">
-                                <i class="{{ product.chart_icon }}{% if not product.style_overrides.chart_heading_accent %} text-[{{ product.accent }}]{% endif %}"></i> {{ product.chart_heading }}
+                        <div class="lg:col-span-6 space-y-3 min-w-0 w-full">
+                            <h4 class="text-xs font-bold {% if product.style_overrides.chart_heading_accent %}text-[{{ product.accent }}]{% else %}text-primaryText{% endif %} uppercase tracking-wider flex items-center gap-2 break-words">
+                                <i class="{{ product.chart_icon }}{% if not product.style_overrides.chart_heading_accent %} text-[{{ product.accent }}]{% endif %} shrink-0"></i> <span class="break-words">{{ product.chart_heading }}</span>
                             </h4>
-                            <div class="p-4 rounded-2xl bg-surface border border-gray-200 flex items-center justify-center">
-                                <canvas id="chart-{{ product.slug }}" class="max-h-[200px]"></canvas>
+                            <div class="p-3 sm:p-4 rounded-2xl bg-surface border border-gray-200 flex items-center justify-center overflow-hidden">
+                                <canvas id="chart-{{ product.slug }}" class="max-h-[200px] w-full"></canvas>
                             </div>
                         </div>
 {% endif %}
@@ -260,18 +273,18 @@
 {% endfor %}
 
             <!-- Bottom CTA Banner -->
-            <section class="clean-card p-8 sm:p-12 rounded-3xl border border-borderLight text-center space-y-6">
-                <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading max-w-2xl mx-auto">
+            <section class="clean-card p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-3xl border border-borderLight text-center space-y-6">
+                <h2 class="text-xl sm:text-3xl md:text-4xl font-bold text-primaryText font-heading max-w-2xl mx-auto break-words leading-tight">
                     Partner With Teklora on Custom Engineering Projects
                 </h2>
-                <p class="text-xs sm:text-sm text-secondaryText max-w-xl mx-auto">
+                <p class="text-xs sm:text-sm text-secondaryText max-w-xl mx-auto break-words leading-relaxed">
                     Whether you need a full-scale SaaS platform, custom WhatsApp automation, or spatial software, our team delivers.
                 </p>
-                <div class="flex flex-wrap justify-center gap-4 pt-2">
-                    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary py-3 px-6 text-xs font-bold">
+                <div class="flex flex-wrap justify-center gap-3 sm:gap-4 pt-2">
+                    <a href="{% url 'contacts' %}#book" class="btn-premium btn-premium-primary py-3 px-6 text-xs font-bold w-full sm:w-auto text-center break-words">
                         Book Strategy Consultation
                     </a>
-                    <a href="{% url 'solutions' %}" class="btn-premium btn-premium-secondary py-3 px-6 text-xs font-bold">
+                    <a href="{% url 'solutions' %}" class="btn-premium btn-premium-secondary py-3 px-6 text-xs font-bold w-full sm:w-auto text-center break-words">
                         Explore Sector Solutions
                     </a>
                 </div>

@@ -8,7 +8,7 @@
   })();
 </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.8">
+<link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.3.0">
 
 <header class="premium-nav-container" id="premiumHeaderContainer">
   <nav class="premium-nav">
@@ -48,32 +48,72 @@
       <div class="hidden lg:block">
         <a href="{{ site_content.header_cta_url }}" class="btn-premium btn-premium-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">{{ site_content.header_cta_label }}</a>
       </div>
-      <button id="premiumMenuToggle" class="menu-toggle" aria-label="Toggle menu" aria-controls="premiumMobileNav" aria-expanded="false" onclick="document.getElementById('premiumMobileNav').classList.toggle('open')">
+      <button id="premiumMenuToggle" class="menu-toggle" aria-label="Open mobile navigation menu" aria-controls="premiumMobileNav" aria-expanded="false">
         <i class="fas fa-bars"></i>
       </button>
     </div>
   </nav>
 
-  <div class="mobile-nav-panel" id="premiumMobileNav">
-    <div style="display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem;">
-      {% for link in site_content.header_links %}
-      <a href="{{ link.url }}" class="mobile-nav-item" style="text-decoration: none; font-size: 1.1rem; padding: 0.6rem 0;">{{ link.label }}</a>
-        {% if link.children %}
-        <div class="mobile-submenu" style="padding-left: 1rem; border-left: 2px solid rgba(51, 52, 142, 0.15);">
-          {% for child in link.children %}
-          <a href="{{ child.url }}" style="display: block; padding: 0.4rem 0; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;">{{ child.label }}</a>
-          {% endfor %}
-        </div>
-        {% endif %}
-      {% endfor %}
-    </div>
-    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 0.75rem;">
-      <button id="themeToggleBtnMobile" type="button" aria-label="Toggle theme" class="btn-premium btn-glass-white" style="width: 100%; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
-        <i class="fas fa-moon"></i>
-        <i class="fas fa-sun"></i>
-        <span>Toggle Dark / Light Mode</span>
+  <!-- Mobile Navigation Modal Popup & Backdrop -->
+  <div class="mobile-nav-backdrop" id="premiumMobileBackdrop" aria-hidden="true"></div>
+
+  <div class="mobile-nav-popup" id="premiumMobileNav" role="dialog" aria-modal="true" aria-label="Navigation Menu">
+    <!-- Popup Header -->
+    <div class="mobile-nav-popup-header">
+      <div class="mobile-popup-brand">
+        <img src="{{ site_content.logo_url }}" alt="{{ site_content.brand_name }} Logo" class="mobile-popup-logo">
+        <span class="mobile-popup-brandname">{{ site_content.brand_name }}</span>
+      </div>
+      <button id="premiumMobileClose" type="button" class="mobile-nav-close-btn" aria-label="Close navigation menu">
+        <i class="fas fa-times"></i>
       </button>
-      <a href="{{ site_content.header_cta_url }}" class="btn-premium btn-premium-primary" style="width: 100%; text-decoration: none; text-align: center; justify-content: center;">{{ site_content.header_cta_label }}</a>
+    </div>
+
+    <!-- Popup Body / Navigation List -->
+    <div class="mobile-nav-popup-body">
+      <div class="mobile-nav-list">
+        {% for link in site_content.header_links %}
+          {% if link.children %}
+          <div class="mobile-nav-accordion" data-accordion>
+            <div class="mobile-nav-accordion-header">
+              <a href="{{ link.url }}" class="mobile-nav-accordion-link">
+                <span>{{ link.label }}</span>
+              </a>
+              <button type="button" class="mobile-accordion-toggle" aria-expanded="false" aria-label="Toggle {{ link.label }} submenu">
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
+            <div class="mobile-nav-accordion-content">
+              {% for child in link.children %}
+              <a href="{{ child.url }}" class="mobile-sublink">
+                <i class="fas fa-angle-right mobile-sublink-icon"></i>
+                <span class="mobile-sublink-title">{{ child.label }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <a href="{{ link.url }}" class="mobile-nav-single-link">
+            <span>{{ link.label }}</span>
+            <i class="fas fa-arrow-right mobile-link-arrow"></i>
+          </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Action Footer -->
+      <div class="mobile-nav-popup-footer">
+        <button id="themeToggleBtnMobile" type="button" class="mobile-theme-pill" aria-label="Toggle theme">
+          <div class="mobile-theme-icon-wrap">
+            <i class="fas fa-moon text-indigo-400 dark:hidden"></i>
+            <i class="fas fa-sun text-amber-400 hidden dark:inline"></i>
+          </div>
+          <span class="mobile-theme-label">Switch Theme</span>
+        </button>
+        <a href="{{ site_content.header_cta_url }}" class="btn-premium btn-premium-primary mobile-popup-cta">
+          <i class="fas fa-calendar-check mr-2"></i> {{ site_content.header_cta_label }}
+        </a>
+      </div>
     </div>
   </div>
 </header>
@@ -82,7 +122,9 @@
   (function initPremiumHeader() {
     const container = document.getElementById('premiumHeaderContainer');
     const panel = document.getElementById('premiumMobileNav');
+    const backdrop = document.getElementById('premiumMobileBackdrop');
     const menuToggle = document.getElementById('premiumMenuToggle');
+    const closeBtn = document.getElementById('premiumMobileClose');
 
     function toggleThemeMode() {
       const isDark = document.documentElement.classList.toggle('dark');
@@ -92,19 +134,64 @@
       window.dispatchEvent(new CustomEvent('teklora-theme-changed', { detail: { theme } }));
     }
 
+    function openMobileMenu() {
+      panel.classList.add('open');
+      backdrop.classList.add('open');
+      menuToggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+      panel.classList.remove('open');
+      backdrop.classList.remove('open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
     document.getElementById('themeToggleBtn').addEventListener('click', toggleThemeMode);
     document.getElementById('themeToggleBtnMobile').addEventListener('click', toggleThemeMode);
+    
     window.addEventListener('scroll', () => {
       container.classList.toggle('scrolled', window.scrollY > 30);
     });
-    panel.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        panel.classList.remove('open');
-        menuToggle.setAttribute('aria-expanded', 'false');
+
+    menuToggle.addEventListener('click', () => {
+      if (panel.classList.contains('open')) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeMobileMenu);
+    }
+    if (backdrop) {
+      backdrop.addEventListener('click', closeMobileMenu);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) {
+        closeMobileMenu();
+      }
+    });
+
+    // Accordion submenu toggling
+    panel.querySelectorAll('.mobile-accordion-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const accordion = btn.closest('.mobile-nav-accordion');
+        const isOpen = accordion.classList.toggle('open');
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
     });
-    menuToggle.addEventListener('click', () => {
-      menuToggle.setAttribute('aria-expanded', panel.classList.contains('open') ? 'true' : 'false');
+
+    // Close menu when clicking navigation links
+    panel.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        closeMobileMenu();
+      });
     });
   })();
 </script>

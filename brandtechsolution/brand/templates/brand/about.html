@@ -533,25 +533,30 @@
             </section>
 
             <!-- ============================================================ -->
-            <!-- SECTION 4: VOLUNTEER & LEARN FELLOWSHIP PROGRAM (#careers) -->
+            <!-- SECTION 5: CAREERS & VOLUNTEER FELLOWSHIP PROGRAM (#careers) -->
             <!-- ============================================================ -->
             <section id="careers" class="about-section-card clean-card p-6 sm:p-10 rounded-3xl border border-sky-500/30 space-y-8">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-gray-200">
                     <div class="space-y-2">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-bold uppercase tracking-wider">
-                            <i class="fas fa-hands-helping"></i> Volunteer & Learn Fellowship
+                            <i class="fas fa-briefcase"></i> Careers & Fellowship
                         </div>
                         <h2 class="text-2xl sm:text-4xl font-bold text-primaryText font-heading">
-                            Volunteer & Learn With Teklora
+                            Build Your Future at Teklora
                         </h2>
                         <p class="text-xs sm:text-sm text-secondaryText max-w-3xl">
-                            We are actively looking for passionate individuals who want to <strong>volunteer, gain hands-on experience, and learn</strong> alongside our software engineers and AI researchers on real-world production projects!
+                            Whether you are an experienced software engineer looking for high-impact enterprise roles, or a rising developer seeking our <strong>Volunteer & Learn Fellowship</strong>, Teklora offers a collaborative environment where code solves real challenges.
                         </p>
                     </div>
 
-                    <a href="{% url 'contacts' %}" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shrink-0 self-start lg:self-auto bg-sky-500 hover:bg-sky-400 text-black border-none">
-                        Apply to Volunteer & Learn →
-                    </a>
+                    <div class="flex flex-wrap items-center gap-3 shrink-0 self-start lg:self-auto">
+                        <a href="{% url 'careers' %}" class="btn-premium btn-premium-primary py-3 px-5 text-xs font-bold shadow-lg shadow-brandBlue/20">
+                            <i class="fas fa-arrow-up-right-from-square mr-1.5"></i> View Open Roles
+                        </a>
+                        <a href="{% url 'contacts' %}" class="btn-premium btn-premium-secondary py-3 px-5 text-xs font-bold">
+                            Apply to Volunteer
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Volunteer Photo Gallery Row -->
