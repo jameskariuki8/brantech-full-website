@@ -78,5 +78,6 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 - [x] **Multi-Team Real-Time Email Broadcast**: Instant email alerts to all engineering inboxes for incoming client inquiries.
 - [x] **Staff & Role-Based Access Control**: Granular capability system with immutable audit logging.
 - [x] **Staff Roster with Access Levels**: Derived Owner / Administrator / Member / No access levels, search and filters, and an editor that previews what a role combination grants.
+- [x] **Staff Scope in Onboarding**: Staff pick the area of the business they work in (Marketing, Sales, Operations and others) at onboarding and can edit it, with their other details, from the dashboard profile.
 - [x] **Multi-Assignee Task Board**: Status ladder (`Open` → `In Review` → `Done`) with per-assignee completion tracking.
 - [x] **Cloudflare Tunnel & Dockerization**: Production-ready containerized deployment configuration.

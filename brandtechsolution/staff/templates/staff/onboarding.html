@@ -43,7 +43,7 @@
                 </div>
             </div>
             <p class="text-gray-400 text-sm">
-                Let's get your profile set up so your team members know your technical stack and can reach you on WhatsApp for rapid collaboration and task assignments.
+                Tell us where you work in the business and how to reach you on WhatsApp, so the team knows who to ask and can assign you the right tasks.
             </p>
         </header>
 
@@ -78,22 +78,62 @@
                 </p>
             </div>
 
-            <!-- Section 2: Primary Role -->
+            <!-- Section 2: Scope -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span id="scopes_label" class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i class="fas fa-sitemap text-emerald-400"></i>
+                        <span>Where do you work in the business? <span class="text-red-400">*</span></span>
+                    </span>
+                    <span class="text-xs text-gray-500">Pick at least one</span>
+                </div>
+                <div class="flex flex-wrap gap-2 pt-1" role="group" aria-labelledby="scopes_label">
+                    {% for scope in scope_choices %}
+                    <div>
+                        <input type="checkbox" id="scope_{{ forloop.counter }}" name="scopes" value="{{ scope }}"
+                            class="hidden pill-checkbox"
+                            {% if scope in user_scopes %}checked{% endif %}>
+                        <label for="scope_{{ forloop.counter }}"
+                            class="cursor-pointer inline-flex items-center px-3.5 py-1.5 rounded-lg border border-white/10 bg-[#06090F] text-xs font-medium text-gray-300 hover:text-white hover:border-white/20 transition-all select-none">
+                            {{ scope }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="pt-2">
+                    <label for="custom_scopes" class="block text-xs text-gray-500 mb-1.5">Somewhere else? (comma separated):</label>
+                    <input id="custom_scopes" name="custom_scopes" type="text" placeholder="e.g. Legal, Training"
+                        class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- Section 3: Primary Role -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
                 <label for="primary_role" class="text-sm font-semibold text-white flex items-center gap-2">
                     <i class="fas fa-id-badge text-blue-400"></i>
-                    <span>Primary Engineering Role</span>
+                    <span>Primary Role</span>
                 </label>
                 <select id="primary_role" name="primary_role"
                     class="w-full bg-[#06090F] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm">
                     <option value="">Select your main focus...</option>
+                    {% if primary_role_value and primary_role_value not in role_choices %}
+                    <option value="{{ primary_role_value }}" selected>{{ primary_role_value }}</option>
+                    {% endif %}
                     {% for role in role_choices %}
                     <option value="{{ role }}" {% if primary_role_value == role %}selected{% endif %}>{{ role }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <!-- Section 3: Coding Languages -->
+            <!-- Sections 4-5: technical skills, open for engineers -->
+            <details id="techSkills" class="group"
+                {% if user_languages or user_frameworks or "Engineering" in user_scopes or "Product & Design" in user_scopes %}open{% endif %}>
+                <summary class="cursor-pointer select-none list-none flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-sm font-semibold text-white">
+                    <span><i class="fas fa-code text-amber-400 mr-2"></i>Technical skills <span class="font-normal text-gray-500">(optional, mainly for engineering and design)</span></span>
+                    <i class="fas fa-chevron-down text-xs text-gray-500 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <div class="space-y-6 mt-6">
+            <!-- Coding Languages -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
                 <label class="text-sm font-semibold text-white flex items-center gap-2">
                     <i class="fas fa-code text-amber-400"></i>
@@ -122,7 +162,7 @@
                 </div>
             </div>
 
-            <!-- Section 4: Frameworks & Tech Stack -->
+            <!-- Frameworks & Tech Stack -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
                 <label class="text-sm font-semibold text-white flex items-center gap-2">
                     <i class="fas fa-cubes text-purple-400"></i>
@@ -151,8 +191,7 @@
                 </div>
             </div>
 
-            <!-- Section 5: GitHub Handle & Bio -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- GitHub Handle -->
                 <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-2">
                     <label for="github_username" class="text-sm font-semibold text-white flex items-center gap-2">
                         <i class="fab fa-github text-gray-300"></i>
@@ -162,13 +201,17 @@
                         value="{{ github_value }}" autocomplete="off"
                         class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
                 </div>
+                </div>
+            </details>
 
+            <!-- Bio: everyone -->
+            <div class="grid grid-cols-1 gap-4">
                 <div class="bg-white/5 border border-white/10 rounded-xl p-5 space-y-2">
                     <label for="bio" class="text-sm font-semibold text-white flex items-center gap-2">
                         <i class="fas fa-signature text-gray-300"></i>
                         <span>Brief Bio / Summary</span>
                     </label>
-                    <input id="bio" type="text" name="bio" placeholder="e.g. Backend specialist & AI agent tinkerer"
+                    <input id="bio" type="text" name="bio" placeholder="e.g. Runs our social channels and partner outreach"
                         value="{{ bio_value }}" maxlength="200"
                         class="w-full bg-[#06090F] border border-white/10 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500">
                 </div>
@@ -181,5 +224,18 @@
             </button>
         </form>
     </div>
+    <script>
+        // Engineers and designers want the skills section open as soon as they say so.
+        (function () {
+            const details = document.getElementById('techSkills');
+            document.querySelectorAll('input[name="scopes"]').forEach((box) => {
+                box.addEventListener('change', () => {
+                    if (box.checked && (box.value === 'Engineering' || box.value === 'Product & Design')) {
+                        details.open = true;
+                    }
+                });
+            });
+        })();
+    </script>
 </body>
 </html>

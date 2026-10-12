@@ -91,6 +91,27 @@ class MeApiTest(TestCase):
         self.assertEqual(data["github_username"], "annai")
         self.assertEqual(data["bio"], "Building autonomous systems")
 
+    def test_scopes_are_editable_cleaned_and_offered_with_the_options(self):
+        resp = self.client.patch(
+            "/api/staff/me/",
+            {"scopes": [" Marketing ", "marketing", "Legal", ""]},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["scopes"], ["Legal", "Marketing"])
+        self.assertEqual(self.user.staff_profile.__class__.objects.get(user=self.user).scopes, ["Legal", "Marketing"])
+
+        options = self.client.get("/api/staff/me/").json()["options"]
+        self.assertIn("Marketing", options["scopes"])
+        self.assertIn("Marketing Lead", options["roles"])
+
+    def test_scopes_can_be_cleared_and_a_blank_patch_leaves_them(self):
+        self.client.patch("/api/staff/me/", {"scopes": ["Operations"]}, content_type="application/json")
+        self.client.patch("/api/staff/me/", {"bio": "Hi"}, content_type="application/json")
+        self.assertEqual(self.client.get("/api/staff/me/").json()["scopes"], ["Operations"])
+        self.client.patch("/api/staff/me/", {"scopes": []}, content_type="application/json")
+        self.assertEqual(self.client.get("/api/staff/me/").json()["scopes"], [])
+
     def test_people_list_shows_capabilities_and_phone(self):
         StaffProfile.objects.create(
             user=self.user,

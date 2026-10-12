@@ -3,7 +3,7 @@ import json
 from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 
-from staff.models import AuditEntry
+from staff.models import AuditEntry, StaffProfile
 
 
 def staff_with(*codenames, username="cap"):
@@ -48,6 +48,27 @@ class PeopleListTest(TestCase):
         )
         never.refresh_from_db()
         self.assertIsNone(never.last_login)
+
+    def test_reports_scopes_but_they_are_only_editable_by_their_owner(self):
+        admin = staff_with("manage_staff")
+        member = staff_with(username="in_marketing")
+        StaffProfile.objects.update_or_create(
+            user=member, defaults={"scopes": ["Marketing"], "is_onboarded": True}
+        )
+        self.client.force_login(admin)
+        people = {
+            p["username"]: p
+            for p in self.client.get("/api/staff/people/").json()["results"]
+        }
+        self.assertEqual(people["in_marketing"]["scopes"], ["Marketing"])
+
+        self.client.patch(
+            f"/api/staff/people/{member.pk}/",
+            data=json.dumps({"scopes": ["Finance & Admin"]}),
+            content_type="application/json",
+        )
+        member.staff_profile.refresh_from_db()
+        self.assertEqual(member.staff_profile.scopes, ["Marketing"])
 
     def test_includes_roles_and_active_state(self):
         admin = staff_with("manage_staff")

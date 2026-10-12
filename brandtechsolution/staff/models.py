@@ -131,6 +131,13 @@ class StaffProfile(models.Model):
     # follows the company default in messaging.MailSettings; 0 suspends.
     daily_mail_limit = models.PositiveIntegerField(null=True, blank=True)
 
+    # Where in the business they work (Marketing, Engineering, ...), picked
+    # at onboarding and editable from the dashboard profile.
+    scopes = models.JSONField(
+        default=list, blank=True,
+        help_text="Areas of the business, e.g. ['Marketing', 'Sales & Partnerships']",
+    )
+
     # Technical capabilities and onboarding
     primary_role = models.CharField(
         max_length=64, blank=True, default="",

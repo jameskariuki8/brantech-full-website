@@ -388,11 +388,18 @@
                         class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                     <p class="text-xs text-secondaryText mt-1.5"><i class="fab fa-whatsapp text-emerald-400 mr-1.5"></i>Use your WhatsApp number so the team can reach you quickly.</p>
                 </div>
+                <fieldset>
+                    <legend class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Where you work in the business</legend>
+                    <div id="profileScopes" class="flex flex-wrap gap-2"></div>
+                    <input id="profileCustomScopes" name="custom_scopes" type="text" placeholder="Somewhere else? e.g. Legal, Training (comma-separated)"
+                        class="mt-3 w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                </fieldset>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="profilePrimaryRole" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Primary Role</label>
-                        <input id="profilePrimaryRole" name="primary_role" type="text" placeholder="e.g. Fullstack Engineer"
+                        <input id="profilePrimaryRole" name="primary_role" type="text" list="profileRoleOptions" maxlength="64" placeholder="e.g. Marketing Lead"
                             class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                        <datalist id="profileRoleOptions"></datalist>
                     </div>
                     <div>
                         <label for="profileGithub" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">GitHub Username</label>
@@ -401,12 +408,17 @@
                     </div>
                 </div>
                 <div>
-                    <label for="profileLanguages" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Coding Languages</label>
+                    <label for="profileBio" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Brief bio</label>
+                    <input id="profileBio" name="bio" type="text" maxlength="200" placeholder="e.g. Runs our social channels and partner outreach"
+                        class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
+                </div>
+                <div>
+                    <label for="profileLanguages" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Coding Languages <span class="normal-case tracking-normal font-normal">(optional)</span></label>
                     <input id="profileLanguages" name="coding_languages" type="text" placeholder="Python, TypeScript, SQL (comma-separated)"
                         class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                 </div>
                 <div>
-                    <label for="profileFrameworks" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Frameworks & Tools</label>
+                    <label for="profileFrameworks" class="block text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Frameworks & Tools <span class="normal-case tracking-normal font-normal">(optional)</span></label>
                     <input id="profileFrameworks" name="frameworks" type="text" placeholder="Django, React, Docker, TailwindCSS (comma-separated)"
                         class="w-full bg-background border border-borderLight rounded-xl px-4 py-2.5 text-primaryText focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue text-sm transition-all">
                 </div>

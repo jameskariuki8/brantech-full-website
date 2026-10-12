@@ -61,6 +61,8 @@ class OnboardingFlowTest(TestCase):
     def test_post_valid_onboarding_saves_capabilities_and_whatsapp(self):
         resp = self.client.post("/staff/onboarding/", {
             "phone": "0712 345 678",
+            "scopes": ["Engineering", "Product & Design"],
+            "custom_scopes": "Training, engineering",
             "primary_role": "Fullstack Engineer",
             "coding_languages": ["Python", "TypeScript"],
             "custom_languages": "Rust, Go",
@@ -76,6 +78,10 @@ class OnboardingFlowTest(TestCase):
         self.assertTrue(self.profile.is_onboarded)
         self.assertEqual(self.profile.phone, "+254712345678")
         self.assertEqual(self.profile.primary_role, "Fullstack Engineer")
+        # Custom entries join the ticked ones; a repeat differing only in case is dropped.
+        self.assertEqual(
+            self.profile.scopes, ["Engineering", "Product & Design", "Training"]
+        )
         self.assertEqual(
             sorted(self.profile.coding_languages),
             ["Go", "Python", "Rust", "TypeScript"]
@@ -92,6 +98,46 @@ class OnboardingFlowTest(TestCase):
         self.assertIsNotNone(audit)
         self.assertEqual(audit.detail["phone"], "+254712345678")
         self.assertEqual(audit.detail["primary_role"], "Fullstack Engineer")
+        self.assertEqual(audit.detail["scopes"], ["Engineering", "Product & Design", "Training"])
+
+    def test_get_onboarding_offers_business_scopes(self):
+        resp = self.client.get("/staff/onboarding/")
+        for scope in ("Marketing", "Sales &amp; Partnerships", "Operations", "Finance &amp; Admin"):
+            self.assertContains(resp, scope)
+        self.assertContains(resp, "Marketing Lead")
+
+    def test_post_without_a_scope_is_refused_and_keeps_the_rest(self):
+        resp = self.client.post("/staff/onboarding/", {
+            "phone": "0712 345 678",
+            "primary_role": "Marketing Lead",
+            "bio": "Runs the socials",
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Pick at least one area you work in")
+        self.assertContains(resp, "0712 345 678")
+        self.assertContains(resp, "Runs the socials")
+        self.profile.refresh_from_db()
+        self.assertFalse(self.profile.is_onboarded)
+
+    def test_marketing_person_can_onboard_without_any_technical_skills(self):
+        resp = self.client.post("/staff/onboarding/", {
+            "phone": "0712 345 678",
+            "scopes": ["Marketing"],
+            "primary_role": "Marketing Lead",
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.profile.refresh_from_db()
+        self.assertTrue(self.profile.is_onboarded)
+        self.assertEqual(self.profile.scopes, ["Marketing"])
+        self.assertEqual(self.profile.coding_languages, [])
+
+    def test_a_failed_post_keeps_the_ticked_scopes(self):
+        resp = self.client.post("/staff/onboarding/", {
+            "phone": "nope",
+            "scopes": ["Marketing"],
+        })
+        self.assertContains(resp, 'value="Marketing"')
+        self.assertContains(resp, "checked")
 
     def test_middleware_redirects_unonboarded_user(self):
         resp = self.client.get("/admin-panel/")
@@ -124,7 +170,9 @@ class EveryoneOnboardsTest(TestCase):
         self.client.force_login(user)
         self.assertEqual(self.client.get("/staff/onboarding/").status_code, 200)
 
-        resp = self.client.post("/staff/onboarding/", {"phone": "0712345678"})
+        resp = self.client.post(
+            "/staff/onboarding/", {"phone": "0712345678", "scopes": ["Operations"]}
+        )
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(StaffProfile.objects.get(user=user).is_onboarded)
         self.assertEqual(self.client.get("/admin-panel/").status_code, 200)

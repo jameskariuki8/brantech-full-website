@@ -8,6 +8,7 @@ from .capabilities import CODENAMES
 from .models import AuditEntry, StaffInvitation
 from .handles import mailbox_address, needs_handle
 from .phone import normalize_phone
+from .profile_options import COMMON_FRAMEWORKS, COMMON_LANGUAGES, ROLE_CHOICES, SCOPE_CHOICES, clean_list
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -89,6 +90,7 @@ class PersonSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     primary_role = serializers.SerializerMethodField()
+    scopes = serializers.SerializerMethodField()
     coding_languages = serializers.SerializerMethodField()
     frameworks = serializers.SerializerMethodField()
     github_username = serializers.SerializerMethodField()
@@ -104,7 +106,7 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = [
             "id", "username", "email", "first_name", "last_name",
             "is_active", "is_superuser", "roles", "role_ids", "date_joined",
-            "last_login", "phone", "primary_role", "coding_languages",
+            "last_login", "phone", "primary_role", "scopes", "coding_languages",
             "frameworks", "github_username", "bio", "is_onboarded",
         ]
         read_only_fields = ["username", "is_superuser", "date_joined", "last_login"]
@@ -121,6 +123,10 @@ class PersonSerializer(serializers.ModelSerializer):
     def get_primary_role(self, obj):
         profile = getattr(obj, "staff_profile", None)
         return profile.primary_role if profile else ""
+
+    def get_scopes(self, obj):
+        profile = getattr(obj, "staff_profile", None)
+        return profile.scopes if profile else []
 
     def get_coding_languages(self, obj):
         profile = getattr(obj, "staff_profile", None)
@@ -194,6 +200,13 @@ class MeSerializer(serializers.ModelSerializer):
     primary_role = serializers.CharField(
         source="staff_profile.primary_role", required=False, allow_blank=True, max_length=64
     )
+    scopes = serializers.ListField(
+        child=serializers.CharField(max_length=64, allow_blank=True),
+        source="staff_profile.scopes",
+        required=False,
+        allow_empty=True,
+        max_length=30,
+    )
     coding_languages = serializers.ListField(
         child=serializers.CharField(),
         source="staff_profile.coding_languages",
@@ -216,18 +229,32 @@ class MeSerializer(serializers.ModelSerializer):
         source="staff_profile.is_onboarded", required=False
     )
     mailbox = serializers.SerializerMethodField()
+    options = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "id", "username", "email", "mailbox", "first_name", "last_name",
-            "phone", "primary_role", "coding_languages", "frameworks",
-            "github_username", "bio", "is_onboarded",
+            "phone", "primary_role", "scopes", "coding_languages", "frameworks",
+            "github_username", "bio", "is_onboarded", "options",
         ]
         read_only_fields = ["id", "username", "email"]
 
     def get_mailbox(self, obj):
         return None if needs_handle(obj) else mailbox_address(obj.username)
+
+    def get_options(self, obj):
+        # The suggestions onboarding offers, so the dashboard editor offers
+        # the same ones. They are only suggestions: values may be anything.
+        return {
+            "scopes": SCOPE_CHOICES,
+            "roles": ROLE_CHOICES,
+            "languages": COMMON_LANGUAGES,
+            "frameworks": COMMON_FRAMEWORKS,
+        }
+
+    def validate_scopes(self, value):
+        return clean_list(value)
 
     def validate_phone(self, value):
         try:
@@ -243,6 +270,7 @@ class MeSerializer(serializers.ModelSerializer):
             for field in (
                 "phone",
                 "primary_role",
+                "scopes",
                 "coding_languages",
                 "frameworks",
                 "github_username",

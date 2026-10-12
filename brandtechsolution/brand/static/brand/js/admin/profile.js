@@ -37,12 +37,49 @@
         passwordForm.reset();
     }
 
+    // Pills for the suggested scopes, plus any custom one this person already
+    // holds so editing never silently drops it. Built with DOM calls, not
+    // markup, because custom scopes are free text.
+    function renderScopes(me) {
+        const holder = document.getElementById('profileScopes');
+        const mine = Array.isArray(me.scopes) ? me.scopes : [];
+        const suggested = (me.options && me.options.scopes) || [];
+        const all = suggested.concat(mine.filter(s => !suggested.includes(s)));
+        holder.replaceChildren(...all.map((scope, i) => {
+            const wrap = document.createElement('div');
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.id = `profileScope${i}`;
+            box.value = scope;
+            box.name = 'scopes';
+            box.checked = mine.includes(scope);
+            box.className = 'sr-only peer';
+            const label = document.createElement('label');
+            label.htmlFor = box.id;
+            label.textContent = scope;
+            label.className = 'cursor-pointer inline-flex items-center px-3 py-1.5 rounded-lg border border-borderLight bg-background text-xs font-medium text-secondaryText hover:text-primaryText select-none transition-colors peer-checked:border-brandBlue peer-checked:text-brandBlue peer-checked:bg-brandBlue/10 peer-focus-visible:ring-2 peer-focus-visible:ring-brandBlue';
+            wrap.append(box, label);
+            return wrap;
+        }));
+        profileForm.custom_scopes.value = '';
+    }
+
     function fill(me) {
         document.getElementById('profileEmail').textContent = me.email || me.username;
         document.getElementById('profileMailbox').textContent = me.mailbox || 'Not chosen yet';
         profileForm.first_name.value = me.first_name || '';
         profileForm.last_name.value = me.last_name || '';
         profileForm.phone.value = me.phone || '';
+        renderScopes(me);
+        const roleList = document.getElementById('profileRoleOptions');
+        if (me.options && me.options.roles) {
+            roleList.replaceChildren(...me.options.roles.map((role) => {
+                const option = document.createElement('option');
+                option.value = role;
+                return option;
+            }));
+        }
+        profileForm.bio.value = me.bio || '';
         if (profileForm.primary_role) profileForm.primary_role.value = me.primary_role || '';
         if (profileForm.github_username) profileForm.github_username.value = me.github_username || '';
         if (profileForm.coding_languages) {
@@ -96,6 +133,11 @@
                 first_name: profileForm.first_name.value.trim(),
                 last_name: profileForm.last_name.value.trim(),
                 phone: profileForm.phone.value.trim(),
+                scopes: [
+                    ...Array.from(profileForm.querySelectorAll('input[name="scopes"]:checked')).map(box => box.value),
+                    ...parseList(profileForm.custom_scopes.value),
+                ],
+                bio: profileForm.bio.value.trim(),
                 primary_role: profileForm.primary_role ? profileForm.primary_role.value.trim() : undefined,
                 github_username: profileForm.github_username ? profileForm.github_username.value.trim() : undefined,
                 coding_languages: profileForm.coding_languages ? parseList(profileForm.coding_languages.value) : undefined,

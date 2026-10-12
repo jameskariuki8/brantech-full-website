@@ -279,7 +279,7 @@ async function loadActivity() {
 
 function personMatches(person, query) {
     if (!query) return true;
-    const haystack = [personName(person), person.username, person.email, person.primary_role, ...person.roles]
+    const haystack = [personName(person), person.username, person.email, person.primary_role, ...(person.scopes || []), ...person.roles]
         .join(' ').toLowerCase();
     return query.toLowerCase().split(/\s+/).filter(Boolean).every(word => haystack.includes(word));
 }
@@ -322,6 +322,7 @@ function personRow(person) {
                 ${person.is_onboarded ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">Setup pending</span>'}
             </span>
             <span class="block text-xs text-gray-400 mt-0.5 truncate">${escapeHtml(person.email || person.username)}</span>
+            ${(person.scopes || []).length ? `<span class="block text-xs text-gray-500 mt-0.5">${escapeHtml(person.scopes.join(', '))}</span>` : ''}
             <span class="flex flex-wrap items-center gap-1.5 mt-2">${roleChips}</span>
             <span class="block text-xs text-gray-500 mt-2 sm:hidden">${escapeHtml(lastSeen)}</span>
         </span>
@@ -540,9 +541,10 @@ function personEditorHtml(person, viewer) {
             <div class="text-white font-medium">${escapeHtml(personName(person))}</div>
             <div class="text-xs text-gray-400 truncate">${escapeHtml(person.email || person.username)}</div>
             ${person.primary_role ? `<div class="text-xs text-gray-500 mt-0.5">${escapeHtml(person.primary_role)}</div>` : ''}
+            ${(person.scopes || []).length ? `<div class="text-xs text-gray-500 mt-0.5">Works in ${escapeHtml(person.scopes.join(', '))}</div>` : ''}
             <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(lastSeen)}${joined ? `, joined ${escapeHtml(joined)}` : ''}</div>
             ${contact ? `<div class="text-xs mt-1.5">${contact}</div>` : ''}
-            ${person.is_onboarded ? '' : '<div class="text-xs text-amber-300 mt-1.5">Has not finished setup: contact details and skills are missing.</div>'}
+            ${person.is_onboarded ? '' : '<div class="text-xs text-amber-300 mt-1.5">Has not finished setup: contact details, area of work and skills are missing.</div>'}
         </div>
     </div>
 

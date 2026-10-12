@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Area of work ("scope") in staff onboarding and profile** (`docs/specs/2026-10-12-staff-scope-onboarding-spec.md`):
+  - New `StaffProfile.scopes` (migration `staff.0019`): the parts of the business a person works in, such as Marketing, Sales & Partnerships, Operations, or anything they type themselves.
+  - Onboarding asks for at least one scope, offers non-engineering roles (Marketing Lead, Operations Manager and others), and collapses the languages, frameworks and GitHub fields into an optional "Technical skills" section that opens for Engineering and Product & Design.
+  - The dashboard "My profile" form can now edit scope and bio as well as the existing details, using the same suggestions as onboarding (served as `options` by `GET /api/staff/me/`).
+  - Staff & Roles shows each person's scopes and searches by them; `GET /api/staff/people/` includes read-only `scopes`.
+
 ### Changed
 - **Contact UI & Interactive Experience Refinement**:
   - Unified the visual language of [`contacts.html`](brandtechsolution/brand/templates/brand/contacts.html) with modern dark/light glassmorphic tokens, ambient glow gradients, and cohesive `#007AFF` / `#00FF94` brand palettes.
