@@ -19,6 +19,7 @@ from github.GithubException import GithubException
 from brand.models import Project
 from brandtechsolution.config import config
 from staff.models import StaffProfile
+from staff.tests.helpers import onboarded
 
 
 def fake_repo(repo_id=101, name="widget", description="A widget.", commits=3,
@@ -170,7 +171,7 @@ class SyncTests(GitHubTestCase):
 
 
 def staff_with(*codenames):
-    user = User.objects.create_user(f"staff-{'-'.join(codenames) or 'none'}", password="p", is_staff=True)
+    user = onboarded(User.objects.create_user(f"staff-{'-'.join(codenames) or 'none'}", password="p", is_staff=True))
     user.user_permissions.add(*Permission.objects.filter(
         codename__in=codenames, content_type__app_label="staff",
     ))

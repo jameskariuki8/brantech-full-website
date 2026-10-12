@@ -103,3 +103,43 @@ class OnboardingFlowTest(TestCase):
         self.profile.save()
         resp = self.client.get("/admin-panel/")
         self.assertEqual(resp.status_code, 200)
+
+
+class EveryoneOnboardsTest(TestCase):
+    """Nobody who works here skips onboarding, whatever row they happen to have."""
+
+    def test_staff_without_a_profile_is_sent_to_onboarding(self):
+        # Accounts older than the feature, or made by createsuperuser or
+        # /admin/, have no StaffProfile row at all.
+        user = User.objects.create_user("old.hand", password="p", is_staff=True)
+        self.assertFalse(StaffProfile.objects.filter(user=user).exists())
+        self.client.force_login(user)
+        for path in ("/admin-panel/", "/appointments/", "/editorial/"):
+            resp = self.client.get(path)
+            self.assertEqual(resp.status_code, 302, path)
+            self.assertTrue(resp["Location"].startswith("/staff/onboarding/?next="), path)
+
+    def test_staff_without_a_profile_can_complete_onboarding(self):
+        user = User.objects.create_user("old.hand", password="p", is_staff=True)
+        self.client.force_login(user)
+        self.assertEqual(self.client.get("/staff/onboarding/").status_code, 200)
+
+        resp = self.client.post("/staff/onboarding/", {"phone": "0712345678"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(StaffProfile.objects.get(user=user).is_onboarded)
+        self.assertEqual(self.client.get("/admin-panel/").status_code, 200)
+
+    def test_superuser_without_staff_flag_is_sent_to_onboarding(self):
+        # The panel admits a superuser on either flag, so the gate must too.
+        user = User.objects.create_user("owner", password="p", is_superuser=True)
+        self.client.force_login(user)
+        resp = self.client.get("/admin-panel/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp["Location"].startswith("/staff/onboarding/?next="))
+        self.assertEqual(self.client.get("/staff/onboarding/").status_code, 200)
+
+    def test_people_without_staff_or_superuser_are_left_alone(self):
+        user = User.objects.create_user("public", password="p")
+        self.client.force_login(user)
+        self.assertEqual(self.client.get("/staff/onboarding/").status_code, 302)
+        self.assertNotIn("/staff/onboarding/", self.client.get("/staff/onboarding/")["Location"])

@@ -207,7 +207,7 @@ ROLE_CHOICES = [
 @login_required
 def onboarding(request):
     """Guided onboarding for staff to declare coding capabilities and WhatsApp."""
-    if not request.user.is_staff:
+    if not (request.user.is_staff or request.user.is_superuser):
         return redirect("/")
 
     if needs_handle(request.user):

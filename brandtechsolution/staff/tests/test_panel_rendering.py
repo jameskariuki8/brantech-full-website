@@ -1,9 +1,10 @@
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
+from staff.tests.helpers import onboarded
 
 
 def staff_with(*codenames, username="cap"):
-    user = User.objects.create_user(username, password="p", is_staff=True)
+    user = onboarded(User.objects.create_user(username, password="p", is_staff=True))
     if codenames:
         user.user_permissions.add(
             *Permission.objects.filter(
@@ -39,7 +40,7 @@ class NavGatingTest(TestCase):
         self.assertNotContains(resp, 'id="nav-campaigns"')
 
     def test_superuser_sees_everything(self):
-        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        self.client.force_login(onboarded(User.objects.create_superuser("root", password="p")))
         resp = self.client.get("/admin-panel/")
         self.assertContains(resp, 'id="nav-staff"')
         self.assertContains(resp, 'id="nav-campaigns"')
@@ -144,7 +145,7 @@ class TemplateCommentTest(TestCase):
     """
 
     def _panel(self):
-        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        self.client.force_login(onboarded(User.objects.create_superuser("root", password="p")))
         return self.client.get("/admin-panel/")
 
     def test_no_template_comment_syntax_reaches_the_page(self):

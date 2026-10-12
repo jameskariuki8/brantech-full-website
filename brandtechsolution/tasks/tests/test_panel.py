@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
+from staff.tests.helpers import onboarded
 
 
 class TaskSectionVisibilityTest(TestCase):
@@ -11,7 +12,7 @@ class TaskSectionVisibilityTest(TestCase):
     """
 
     def test_section_renders_for_a_staff_member_with_no_capabilities(self):
-        user = User.objects.create_user("nobody", password="pw", is_staff=True)
+        user = onboarded(User.objects.create_user("nobody", password="pw", is_staff=True))
         self.client.force_login(user)
 
         response = self.client.get("/admin-panel/")
@@ -22,7 +23,7 @@ class TaskSectionVisibilityTest(TestCase):
         self.assertContains(response, 'id="nav-inbox"')
 
     def test_manage_tasks_is_not_leaked_to_someone_without_it(self):
-        user = User.objects.create_user("nobody", password="pw", is_staff=True)
+        user = onboarded(User.objects.create_user("nobody", password="pw", is_staff=True))
         self.client.force_login(user)
 
         response = self.client.get("/admin-panel/")
@@ -32,7 +33,7 @@ class TaskSectionVisibilityTest(TestCase):
         self.assertNotContains(response, "manage_tasks")
 
     def test_capability_is_advertised_to_a_holder(self):
-        user = User.objects.create_user("boss", password="pw", is_staff=True)
+        user = onboarded(User.objects.create_user("boss", password="pw", is_staff=True))
         group = Group.objects.create(name="Leads")
         group.permissions.add(
             Permission.objects.get(
@@ -58,7 +59,7 @@ class NavGatingTest(TestCase):
     """
 
     def _staff(self, *capabilities):
-        user = User.objects.create_user("u", password="pw", is_staff=True)
+        user = onboarded(User.objects.create_user("u", password="pw", is_staff=True))
         if capabilities:
             group = Group.objects.create(name="role")
             group.permissions.set([

@@ -11,15 +11,22 @@ GATED_PREFIXES = ("/admin-panel/", "/appointments/", "/editorial/")
 
 
 def needs_onboarding(user):
-    """True for a staff account that has an uncompleted onboarding profile."""
-    if not (user.is_authenticated and user.is_staff):
+    """True for a staff account that has not completed onboarding.
+
+    A staff account with no StaffProfile row has not onboarded either. Rows
+    only exist for people who accepted an invitation after onboarding
+    shipped, so treating "no row" as "nothing to do" let every older account,
+    and every account made through createsuperuser or /admin/, skip it. The
+    onboarding view creates the row on first visit.
+    """
+    # is_superuser as well as is_staff: the panel lets a superuser in on
+    # either flag (brand.views.is_admin), so the gate must not skip one.
+    if not (user.is_authenticated and (user.is_staff or user.is_superuser)):
         return False
     if needs_handle(user):
         return False
     profile = getattr(user, "staff_profile", None)
-    if profile is not None and not profile.is_onboarded:
-        return True
-    return False
+    return profile is None or not profile.is_onboarded
 
 
 class HandleRequiredMiddleware:

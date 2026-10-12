@@ -2,13 +2,14 @@ from datetime import date, time, timedelta
 
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
+from staff.tests.helpers import onboarded
 from django.urls import reverse
 
 from appointments.models import Appointment
 
 
 def staff_with(*codenames):
-    user = User.objects.create_user("cap", password="p", is_staff=True)
+    user = onboarded(User.objects.create_user("cap", password="p", is_staff=True))
     if codenames:
         user.user_permissions.add(
             *Permission.objects.filter(
@@ -44,7 +45,7 @@ class AppointmentsListCapabilityTest(TestCase):
         self.assertIn("/login/", resp["Location"])
 
     def test_superuser_is_allowed(self):
-        self.client.force_login(User.objects.create_superuser("root", password="p"))
+        self.client.force_login(onboarded(User.objects.create_superuser("root", password="p")))
         self.assertEqual(self.client.get("/appointments/").status_code, 200)
 
     def test_non_staff_with_the_capability_is_denied(self):

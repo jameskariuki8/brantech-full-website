@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
+from staff.tests.helpers import onboarded
 
 
 class AdminPanelRenderTests(TestCase):
@@ -8,7 +9,7 @@ class AdminPanelRenderTests(TestCase):
         # is_staff flag, so this fixture holds the ones the panel's content
         # sections require. The capability-less case is asserted separately
         # below.
-        self.staff = User.objects.create_user("staff", password="p", is_staff=True)
+        self.staff = onboarded(User.objects.create_user("staff", password="p", is_staff=True))
         self.staff.user_permissions.add(
             *Permission.objects.filter(
                 content_type__app_label="staff",
@@ -49,7 +50,7 @@ class AdminPanelRenderTests(TestCase):
         """A staff account with no capabilities still gets a working shell:
         dashboard and their own mail, with every script still loaded. Each script guards
         itself against the elements its section would have provided."""
-        bare = User.objects.create_user("bare", password="p", is_staff=True)
+        bare = onboarded(User.objects.create_user("bare", password="p", is_staff=True))
         self.client.force_login(bare)
         resp = self.client.get("/admin-panel/")
         self.assertEqual(resp.status_code, 200)

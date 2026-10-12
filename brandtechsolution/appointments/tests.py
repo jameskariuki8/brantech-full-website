@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
+from staff.tests.helpers import onboarded
 from django.utils import timezone
 from datetime import datetime, timedelta, date, time
 from .models import Appointment
@@ -99,6 +100,7 @@ class AppointmentViewsTest(TestCase):
             password='staffpass123',
             is_staff=True
         )
+        onboarded(self.staff_user)
         self.staff_user.user_permissions.add(
             *Permission.objects.filter(
                 codename="manage_appointments", content_type__app_label="staff"

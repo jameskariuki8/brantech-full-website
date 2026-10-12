@@ -8,6 +8,7 @@ again.
 """
 from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
+from staff.tests.helpers import onboarded
 
 from editorial.models import EditorialArticle
 
@@ -45,7 +46,7 @@ HTML_ENDPOINTS = [
 
 
 def staff_with(*codenames):
-    user = User.objects.create_user("u", password="pw", is_staff=True)
+    user = onboarded(User.objects.create_user("u", password="pw", is_staff=True))
     if codenames:
         group = Group.objects.create(name="role")
         group.permissions.set([

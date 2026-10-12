@@ -9,12 +9,13 @@ from unittest import mock
 
 from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
+from staff.tests.helpers import onboarded
 
 from editorial.models import EditorialArticle, EditorialPipelineRun
 
 
 def publisher():
-    user = User.objects.create_user("editor", password="pw", is_staff=True)
+    user = onboarded(User.objects.create_user("editor", password="pw", is_staff=True))
     group = Group.objects.create(name="publishers")
     group.permissions.set([
         Permission.objects.get(codename=c, content_type__app_label="staff")

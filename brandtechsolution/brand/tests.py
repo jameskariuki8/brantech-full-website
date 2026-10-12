@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.db import connection
 from django.test.utils import override_settings
 from brand.models import BlogPost, Project
+from staff.tests.helpers import onboarded
 from datetime import datetime
 import json
 
@@ -312,6 +313,7 @@ class BrandViewsTest(TestCase):
             is_staff=True,
             is_superuser=True
         )
+        onboarded(self.admin_user)
     
     def test_index_view(self):
         """Test home page view"""
