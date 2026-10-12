@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Project, ProjectFeature, ProjectImage, ProjectNote
+from .models import Project, ProjectFeature, ProjectImage, ProjectNote, Career
 
 
 class ProjectImageInline(admin.TabularInline):
@@ -65,3 +65,9 @@ class ProjectAdmin(admin.ModelAdmin):
     )
     # Written by the sync job, not by hand.
     readonly_fields = ('last_synced_at',)
+
+@admin.register(Career)
+class CareerAdmin(admin.ModelAdmin):
+    list_display = ('title', 'location', 'employment_type', 'posted_at')
+    search_fields = ('title', 'description')
+    ordering = ('-posted_at',)

@@ -106,52 +106,25 @@
                 <p>Find where you fit in. Don't see a role for you? Drop us a line anyway.</p>
             </div>
 
-            <!-- Roles List -->
-            <div class="space-y-4">
-                
-                <!-- Role 1 -->
-                <div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
-                    <div class="space-y-2">
-                        <h3 class="text-xl font-bold text-primaryText">Senior Backend Engineer (Python/Django)</h3>
-                        <div class="flex flex-wrap gap-3 text-sm">
-                            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> Remote / Hybrid</span>
-                            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> Full-time</span>
-                        </div>
-                    </div>
-                    <a href="mailto:careers@teklora.com?subject=Application for Senior Backend Engineer" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
-                        Apply Now
-                    </a>
-                </div>
+{% for career in career_list %}
+<div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
+    <div class="space-y-2">
+        <h3 class="text-xl font-bold text-primaryText">{{ career.title }}</h3>
+        <div class="flex flex-wrap gap-3 text-sm">
+            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> {{ career.location }}</span>
+            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> {{ career.employment_type }}</span>
+        </div>
+        <p class="text-base text-secondaryText">{{ career.description|linebreaksbr }}</p>
+        {% if career.document %}
+        <a href="{{ career.document.url }}" class="text-brandBlue hover:underline" target="_blank">Download Job Document</a>
+        {% endif %}
+    </div>
+    <a href="mailto:{{ career.email }}?subject=Application for {{ career.title|urlencode }}" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
+        Apply Now
+    </a>
+</div>
+{% endfor %}
 
-                <!-- Role 2 -->
-                <div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
-                    <div class="space-y-2">
-                        <h3 class="text-xl font-bold text-primaryText">UI/UX Product Designer</h3>
-                        <div class="flex flex-wrap gap-3 text-sm">
-                            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> Remote</span>
-                            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> Full-time</span>
-                        </div>
-                    </div>
-                    <a href="mailto:careers@teklora.com?subject=Application for UI/UX Product Designer" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
-                        Apply Now
-                    </a>
-                </div>
-
-                <!-- Role 3 -->
-                <div class="clean-card flex flex-col md:flex-row md:items-center justify-between gap-6 p-6">
-                    <div class="space-y-2">
-                        <h3 class="text-xl font-bold text-primaryText">Data Scientist (Machine Learning)</h3>
-                        <div class="flex flex-wrap gap-3 text-sm">
-                            <span class="px-3 py-1 bg-gray-100 text-secondaryText rounded-full"><i class="fas fa-location-dot mr-1"></i> Nairobi Office / Hybrid</span>
-                            <span class="px-3 py-1 bg-blue-50 text-brandBlue rounded-full"><i class="fas fa-briefcase mr-1"></i> Full-time</span>
-                        </div>
-                    </div>
-                    <a href="mailto:careers@teklora.com?subject=Application for Data Scientist" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
-                        Apply Now
-                    </a>
-                </div>
-
-            </div>
             
             <div class="mt-8 text-center text-sm p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
                 <p>Not seeing a perfect match? Send your resume to <a href="mailto:careers@teklora.com" class="text-brandBlue font-semibold hover:underline">careers@teklora.com</a> and tell us how you can help.</p>

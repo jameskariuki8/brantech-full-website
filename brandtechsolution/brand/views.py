@@ -14,7 +14,7 @@ from django.core.cache import cache
 
 from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
-from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent
+from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career
 from .forms import SiteContentForm
 from .markdown_utils import render_markdown
 
@@ -95,8 +95,9 @@ def about(request):
 
 
 def careers(request):
-    """Careers page view"""
-    return render(request, 'brand/careers.html')
+    """Careers page view – now pulls open positions from the admin"""
+    career_list = Career.objects.all()
+    return render(request, 'brand/careers.html', {'career_list': career_list})
 
 
 def products(request):

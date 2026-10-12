@@ -533,21 +533,22 @@ class SiteContent(models.Model):
     # ---------------------------------------------------------------------
     # Careers model – allows admin editing of open positions
     # ---------------------------------------------------------------------
-    class Career(models.Model):
-        title = models.CharField(max_length=150)
-        location = models.CharField(max_length=100, default='Remote / Hybrid')
-        employment_type = models.CharField(max_length=50, default='Full-time')
-        description = models.TextField()
-        email = models.EmailField(default='careers@teklora.com')
-        posted_at = models.DateTimeField(auto_now_add=True)
+class Career(models.Model):
+    title = models.CharField(max_length=150)
+    location = models.CharField(max_length=100, default='Remote / Hybrid')
+    employment_type = models.CharField(max_length=50, default='Full-time')
+    description = models.TextField()
+    email = models.EmailField(default='careers@teklora.com')
+    document = models.FileField(upload_to='career_docs/', blank=True, null=True, help_text='Upload a PDF or document for the job posting.')
+    posted_at = models.DateTimeField(auto_now_add=True)
 
-        class Meta:
-            ordering = ['-posted_at']
-            verbose_name = 'Career'
-            verbose_name_plural = 'Careers'
+    class Meta:
+        ordering = ['-posted_at']
+        verbose_name = 'Career'
+        verbose_name_plural = 'Careers'
 
-        def __str__(self):
-            return self.title
+    def __str__(self):
+        return self.title
 
 
 class BlogPost(models.Model):
