@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto px-5 py-8 lg:px-10">
   <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8">
     <div>
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-green mb-2">Content management</p>
+      <div class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-green mb-2">Content management</div>
       <h1 class="text-3xl font-bold text-white">Site content</h1>
       <p class="text-gray-400 mt-2 max-w-2xl">Update the shared header and footer, plus the copy, images, cards, technology lists, statistics, and journey steps on the existing landing page.</p>
     </div>
@@ -26,11 +26,11 @@
       </div>
     </div>
     <div class="flex gap-2 shrink-0">
-      <a href="/admin/brand/partnershiptype/" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition-colors">
+      <a href="{% url 'admin-partnerships' %}?tab=tracks" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition-colors">
         <i class="fas fa-list-check text-[10px]"></i> Partnership Tracks
       </a>
-      <a href="/admin/brand/partnerorganisation/" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition-colors">
-        <i class="fas fa-building text-[10px]"></i> Partner Logos &amp; People
+      <a href="{% url 'admin-partnerships' %}?tab=partners" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition-colors">
+        <i class="fas fa-building text-[10px]"></i> Partners
       </a>
     </div>
   </div>
@@ -68,7 +68,7 @@
           <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-semibold text-gray-200">{{ field.label }}</label>
           {{ field }}
           {% if field.help_text %}<p class="mt-2 text-xs leading-relaxed text-gray-500">{{ field.help_text }}</p>{% endif %}
-          {% for error in field.errors %}<p class="mt-2 text-sm text-red-300">{{ error }}</p>{% endfor %}
+          {% for error in field.errors %}<div class="mt-2 text-sm text-red-300">{{ error }}</div>{% endfor %}
         </div>
         {% endfor %}
       </div>

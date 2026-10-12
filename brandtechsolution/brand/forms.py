@@ -2,8 +2,9 @@ import re
 from urllib.parse import urlsplit
 
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
 
-from .models import SiteContent
+from .models import Career, PartnerOrganisation, PartnershipType, SiteContent
 
 
 def _safe_content_url(value, line_number):
@@ -705,3 +706,184 @@ class SiteContentForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+# ---------------------------------------------------------------------------
+# Partnerships & People: the panel's editors for the records behind
+# /partnerships/ and /careers/.
+# ---------------------------------------------------------------------------
+
+# Theme-variable classes, so the editors follow the panel's light and dark
+# themes. An opacity suffix on these (bg-surface/50) draws nothing: Tailwind
+# cannot add alpha to a colour defined as a CSS variable.
+PANEL_INPUT_CLASS = (
+    "w-full rounded-xl border border-borderLight bg-background px-4 py-3 text-sm text-primaryText "
+    "placeholder:text-secondaryText focus:border-brandBlue focus:outline-none focus:ring-2 "
+    "focus:ring-sky-500/20"
+)
+PANEL_FILE_CLASS = (
+    "block w-full text-sm text-secondaryText file:mr-3 file:rounded-lg file:border-0 "
+    "file:bg-black/5 dark:file:bg-white/10 file:px-4 file:py-2 file:text-sm file:font-semibold "
+    "file:text-primaryText hover:file:bg-black/10 dark:hover:file:bg-white/20"
+)
+PANEL_CHECKBOX_CLASS = "h-4 w-4 rounded border-borderLight accent-sky-500"
+
+ICON_PATTERN = re.compile(r"^(fas|far|fab|fa-solid|fa-regular|fa-brands) fa-[a-z0-9-]+$")
+ACCENT_CHOICES = [
+    ("blue", "Blue"),
+    ("amber", "Amber"),
+    ("emerald", "Emerald"),
+    ("purple", "Purple"),
+    ("rose", "Rose"),
+]
+LOGO_MAX_BYTES = 2 * 1024 * 1024
+DOCUMENT_MAX_BYTES = 10 * 1024 * 1024
+DOCUMENT_EXTENSIONS = (".pdf", ".doc", ".docx")
+
+
+def _web_url(value):
+    """Allow only http(s) links: these end up in public href and src attributes."""
+    if value and urlsplit(value).scheme.lower() not in ("http", "https"):
+        raise forms.ValidationError("Use a link starting with https:// or http://.")
+    return value
+
+
+class PanelFormMixin:
+    """Gives every widget the panel's dark input styling."""
+
+    def style_fields(self):
+        for field in self.fields.values():
+            widget = field.widget
+            if isinstance(widget, forms.CheckboxInput):
+                css = PANEL_CHECKBOX_CLASS
+            elif isinstance(widget, forms.ClearableFileInput):
+                css = PANEL_FILE_CLASS
+            else:
+                css = PANEL_INPUT_CLASS
+            widget.attrs.setdefault("class", css)
+
+
+class PartnershipTypeForm(PanelFormMixin, forms.ModelForm):
+    accent = forms.ChoiceField(
+        choices=ACCENT_CHOICES, help_text="Colours the icon and summary on the track card."
+    )
+
+    class Meta:
+        model = PartnershipType
+        fields = [
+            "title", "tagline", "description", "benefits", "requirements",
+            "status", "icon", "accent", "order",
+        ]
+        labels = {
+            "title": "Track name",
+            "tagline": "One-line summary",
+            "benefits": "What partners get",
+            "requirements": "Who can apply",
+            "order": "Display order",
+        }
+        help_texts = {
+            "tagline": "Shown under the track name on the card.",
+            "benefits": "One per line.",
+            "requirements": "One per line.",
+            "icon": "A Font Awesome class, for example fas fa-university. Shown on the track card.",
+            "order": "Lower numbers are shown first.",
+            "status": "Closed tracks are listed separately as not recruiting.",
+        }
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 5}),
+            "benefits": forms.Textarea(attrs={"rows": 5}),
+            "requirements": forms.Textarea(attrs={"rows": 5}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.style_fields()
+
+    def clean_icon(self):
+        icon = " ".join(self.cleaned_data["icon"].split())
+        if not ICON_PATTERN.match(icon):
+            raise forms.ValidationError("Use a Font Awesome class such as fas fa-handshake.")
+        return icon
+
+
+class PartnerOrganisationForm(PanelFormMixin, forms.ModelForm):
+    class Meta:
+        model = PartnerOrganisation
+        fields = [
+            "name", "sector", "website", "joined_at", "description", "logo",
+            "logo_url", "order", "featured",
+        ]
+        labels = {
+            "logo": "Logo upload",
+            "logo_url": "Or a logo link",
+            "featured": "Show in the partners strip",
+            "order": "Display order",
+            "joined_at": "Partner since",
+        }
+        help_texts = {
+            "logo": "PNG, JPG or WebP, up to 2 MB. An upload is used before a logo link.",
+            "website": "",
+            "joined_at": "",
+            "featured": "Untick to keep the partner saved but off the public page.",
+            "logo_url": "Used only when no logo is uploaded.",
+            "description": "A short line about the partner.",
+            "order": "Lower numbers are shown first.",
+        }
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "joined_at": forms.DateInput(
+                attrs={"type": "date", "class": PANEL_INPUT_CLASS + " dark:[color-scheme:dark]"},
+                format="%Y-%m-%d",
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.style_fields()
+
+    def clean_website(self):
+        return _web_url(self.cleaned_data["website"])
+
+    def clean_logo_url(self):
+        return _web_url(self.cleaned_data["logo_url"])
+
+    def clean_logo(self):
+        logo = self.cleaned_data.get("logo")
+        # Only a new upload is checked; the stored file was accepted earlier.
+        if isinstance(logo, UploadedFile) and logo.size > LOGO_MAX_BYTES:
+            raise forms.ValidationError("The logo is larger than 2 MB.")
+        return logo
+
+
+class CareerForm(PanelFormMixin, forms.ModelForm):
+    class Meta:
+        model = Career
+        fields = ["title", "employment_type", "location", "email", "description", "document"]
+        labels = {
+            "title": "Job title",
+            "employment_type": "Type",
+            "email": "Applications go to",
+            "document": "Job description file",
+        }
+        help_texts = {
+            "employment_type": "For example Full-time, Part-time, Contract or Internship.",
+            "document": "Optional. PDF, DOC or DOCX, up to 10 MB.",
+            "description": "Line breaks are kept on the careers page.",
+        }
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 8}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.style_fields()
+
+    def clean_document(self):
+        document = self.cleaned_data.get("document")
+        # Only a new upload is checked; the stored file was accepted earlier.
+        if isinstance(document, UploadedFile):
+            if not document.name.lower().endswith(DOCUMENT_EXTENSIONS):
+                raise forms.ValidationError("Upload a PDF, DOC or DOCX file.")
+            if document.size > DOCUMENT_MAX_BYTES:
+                raise forms.ValidationError("The file is larger than 10 MB.")
+        return document

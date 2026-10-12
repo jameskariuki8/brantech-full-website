@@ -297,7 +297,7 @@ async function loadTasks() {
         await loadTaskPage(taskQueryString(), false);
     } catch (e) {
         document.getElementById('taskList').innerHTML =
-            `<p class="text-red-400 text-sm">${escapeHtml(e.message)}</p>`;
+            `<div class="text-red-400 text-sm">${escapeHtml(e.message)}</div>`;
     }
 }
 

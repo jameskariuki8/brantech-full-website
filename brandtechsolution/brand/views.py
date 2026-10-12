@@ -7,15 +7,18 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import models
 from django.db.models import F, Count
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
 from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career, PartnershipType, PartnerOrganisation
-from .forms import SiteContentForm
+from .forms import CareerForm, PartnerOrganisationForm, PartnershipTypeForm, SiteContentForm
 from .markdown_utils import render_markdown
 
 
@@ -310,6 +313,98 @@ def admin_site_content(request):
     else:
         form = SiteContentForm(instance=content)
     return render(request, 'brand/admin_site_content.html', {'form': form})
+
+
+# Partnerships & People: one tab per record type behind /partnerships/ and
+# /careers/. The slug is the tab name in the URL.
+PARTNERSHIP_KINDS = {
+    'tracks': {
+        'model': PartnershipType, 'form': PartnershipTypeForm,
+        'tab': 'Partnership tracks', 'short': 'Tracks', 'noun': 'track', 'icon': 'fa-route',
+        'public_url': '/partnerships/',
+    },
+    'partners': {
+        'model': PartnerOrganisation, 'form': PartnerOrganisationForm,
+        'tab': 'Partners', 'short': 'Partners', 'noun': 'partner', 'icon': 'fa-building',
+        'public_url': '/partnerships/',
+    },
+    'jobs': {
+        'model': Career, 'form': CareerForm,
+        'tab': 'Job openings', 'short': 'Jobs', 'noun': 'job opening', 'icon': 'fa-briefcase',
+        'public_url': '/careers/',
+    },
+}
+
+
+def _partnership_kind(request, kind):
+    """Refuse anyone Website Content would refuse, then resolve the tab."""
+    if not can_manage_site_content(request.user):
+        raise PermissionDenied
+    try:
+        return PARTNERSHIP_KINDS[kind]
+    except KeyError:
+        raise Http404('Unknown section')
+
+
+def _record_name(record):
+    # PartnershipType.__str__ appends its status, which reads oddly in a message.
+    return getattr(record, 'title', None) or record.name
+
+
+def _partnerships_url(kind):
+    return f"{reverse('admin-partnerships')}?tab={kind}"
+
+
+@login_required(login_url='/login/')
+def admin_partnerships(request):
+    """List partnership tracks, partners or job openings, one tab at a time."""
+    kind = request.GET.get('tab', 'tracks')
+    if kind not in PARTNERSHIP_KINDS:
+        kind = 'tracks'
+    config = _partnership_kind(request, kind)
+    tabs = [
+        {'slug': slug, 'label': c['tab'], 'short': c['short'], 'icon': c['icon'], 'count': c['model'].objects.count()}
+        for slug, c in PARTNERSHIP_KINDS.items()
+    ]
+    return render(request, 'brand/admin_partnerships.html', {
+        'kind': kind,
+        'config': config,
+        'tabs': tabs,
+        'records': config['model'].objects.all(),
+    })
+
+
+@login_required(login_url='/login/')
+def admin_partnership_edit(request, kind, pk=None):
+    """Add a record when pk is None, otherwise edit it."""
+    config = _partnership_kind(request, kind)
+    instance = get_object_or_404(config['model'], pk=pk) if pk else None
+    if request.method == 'POST':
+        form = config['form'](request.POST, request.FILES, instance=instance)
+        if form.is_valid():
+            record = form.save()
+            verb = 'saved' if instance else 'added'
+            messages.success(request, f'"{_record_name(record)}" {verb}.')
+            return redirect(_partnerships_url(kind))
+    else:
+        form = config['form'](instance=instance)
+    return render(request, 'brand/admin_partnership_form.html', {
+        'kind': kind,
+        'config': config,
+        'form': form,
+        'record': instance,
+    })
+
+
+@login_required(login_url='/login/')
+@require_POST
+def admin_partnership_delete(request, kind, pk):
+    config = _partnership_kind(request, kind)
+    record = get_object_or_404(config['model'], pk=pk)
+    name = _record_name(record)
+    record.delete()
+    messages.success(request, f'"{name}" deleted.')
+    return redirect(_partnerships_url(kind))
 
 
 def projects(request):

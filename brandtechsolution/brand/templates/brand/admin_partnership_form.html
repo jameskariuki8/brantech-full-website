@@ -1,0 +1,73 @@
+{% extends 'brand/admin_base.html' %}
+
+{% block title %}{% if record %}Edit {{ config.noun }}{% else %}Add {{ config.noun }}{% endif %} · Teklora Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-10">
+  <a href="{% url 'admin-partnerships' %}?tab={{ kind }}" class="inline-flex items-center gap-2 text-sm text-secondaryText hover:text-primaryText mb-5">
+    <i class="fas fa-arrow-left text-xs" aria-hidden="true"></i> {{ config.tab }}
+  </a>
+
+  <h1 class="text-2xl font-bold text-primaryText">{% if record %}{% firstof record.title record.name %}{% else %}Add {{ config.noun }}{% endif %}</h1>
+  <p class="text-sm text-secondaryText mt-1 mb-6">Changes appear on <a href="{{ config.public_url }}" target="_blank" rel="noopener noreferrer" class="text-brandBlue hover:underline">{{ config.public_url }}</a> as soon as you save.</p>
+
+  {% if form.non_field_errors %}
+  <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-200 mb-5">{{ form.non_field_errors }}</div>
+  {% elif form.errors %}
+  <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-200 mb-5" role="alert">Some fields need fixing. They are marked below.</div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="rounded-2xl border border-dark-border bg-dark-card p-5 sm:p-7 grid gap-5 sm:grid-cols-2">
+      {% for field in form %}
+      {% with widget=field.field.widget.input_type %}
+      <div class="{% if field.field.widget.attrs.rows or widget == 'file' or field.name == 'description' %}sm:col-span-2{% endif %}">
+        {% if widget == 'checkbox' %}
+        <label for="{{ field.id_for_label }}" class="flex items-center gap-3 rounded-xl border border-borderLight bg-background px-4 py-3 cursor-pointer">
+          {{ field }}
+          <span class="text-sm font-semibold text-primaryText">{{ field.label }}</span>
+        </label>
+        {% else %}
+        <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-semibold text-primaryText">
+          {{ field.label }}{% if not field.field.required %} <span class="font-normal text-secondaryText">(optional)</span>{% endif %}
+        </label>
+        {% if field.name == 'icon' %}
+        <div class="flex items-center gap-3">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5 text-primaryText" aria-hidden="true"><i id="iconPreview" class="{{ field.value|default:'fas fa-handshake' }}"></i></span>
+          {{ field }}
+        </div>
+        {% elif widget == 'file' %}
+        <div class="rounded-xl border border-borderLight bg-background px-4 py-3 text-sm text-secondaryText [&_a]:text-brandBlue [&_a]:break-all [&_input[type=checkbox]]:mx-1.5 [&_input[type=file]]:mt-2">{{ field }}</div>
+        {% else %}
+        {{ field }}
+        {% endif %}
+        {% endif %}
+        {% if field.help_text %}<p class="mt-2 text-xs leading-relaxed text-secondaryText">{{ field.help_text }}</p>{% endif %}
+        {% for error in field.errors %}<span class="mt-2 block text-sm text-red-600 dark:text-red-300">{{ error }}</span>{% endfor %}
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+
+    <div class="sticky bottom-0 -mx-4 mt-6 flex flex-col-reverse gap-3 border-t border-borderLight bg-background px-4 py-4 backdrop-blur sm:mx-0 sm:flex-row sm:justify-end sm:rounded-xl sm:border sm:px-6">
+      <a href="{% url 'admin-partnerships' %}?tab={{ kind }}" class="inline-flex items-center justify-center rounded-lg border border-borderLight px-5 py-3 text-sm font-semibold text-primaryText hover:bg-black/5 dark:hover:bg-white/5">Cancel</a>
+      <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-brandBlue px-6 py-3 text-sm font-bold text-white shadow-lg hover:opacity-90">
+        <i class="fas fa-floppy-disk" aria-hidden="true"></i> {% if record %}Save changes{% else %}Add {{ config.noun }}{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Live preview of the Font Awesome class typed into the icon field.
+  (function () {
+    const input = document.getElementById('id_icon');
+    const preview = document.getElementById('iconPreview');
+    if (!input || !preview) return;
+    input.addEventListener('input', () => { preview.className = input.value.trim(); });
+  })();
+</script>
+{% endblock %}

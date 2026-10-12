@@ -283,11 +283,11 @@ function _draftBody(c) {
             <label class="flex items-center gap-2 text-sm text-gray-200 flex-wrap"><input type="radio" name="cdWhen" value="later" class="accent-[#10B981]"> At
                 <input type="datetime-local" id="cdSendAt" class="bg-[#06090F] border border-dark-border rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-blue [color-scheme:dark]"></label>
         </fieldset>
-        <p class="text-xs mt-3 ${fits ? 'text-gray-500' : 'text-yellow-300'}">
+        <div class="text-xs mt-3 ${fits ? 'text-gray-500' : 'text-yellow-300'}">
             ${fits ? `Uses ${c.total.toLocaleString()} of the ${headroom.toLocaleString()} recipients left this month.`
                    : `This audience is larger than the ${headroom.toLocaleString()} recipients left this month. Trim it or raise the cap under Mail, Sending limits.`}
             Sending runs at about 50 a minute.
-        </p>
+        </div>
         <div class="flex justify-end mt-4">
             <button type="button" data-cd="queue" class="bg-brand-green hover:bg-green-500 text-black font-semibold text-sm px-5 py-2.5 rounded-lg disabled:opacity-50" ${c.total && c.template ? '' : 'disabled'}>Queue campaign</button>
         </div>` : `<p class="text-sm text-gray-400">When it is ready, an administrator with the send permission queues it.</p>`}`;
