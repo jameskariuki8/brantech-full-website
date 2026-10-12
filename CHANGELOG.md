@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Contact UI & Interactive Experience Refinement**:
+  - Unified the visual language of [`contacts.html`](brandtechsolution/brand/templates/brand/contacts.html) with modern dark/light glassmorphic tokens, ambient glow gradients, and cohesive `#007AFF` / `#00FF94` brand palettes.
+  - Re-architected interactive Strategy Calendar modal with dynamic date initialization (`new Date()`), real-time day/slot selections, and touch-optimized controls.
+  - Aligned global footer container in [`footer.html`](brandtechsolution/brand/templates/brand/footer.html) with standard `max-w-7xl` layout and enhanced mobile responsiveness for columns, legal links, and copyright notices.
+
+### Fixed
+- **Contact Page Layout & Modal Hierarchy**:
+  - Resolved malformed DOM hierarchy in [`contacts.html`](brandtechsolution/brand/templates/brand/contacts.html) where modal bodies, turnstiles, and scripts were fragmented outside the document body.
+  - Eliminated duplicate Strategy Calendar CTA buttons and repaired modal backdrop, dismissal triggers, and keyboard `Escape` bindings.
+
 ### Added
 - **Company & Corporate Navigation Restructuring**:
   - Reorganized the global navigation and footer from "About" to "Company", housing all company dimensions: *About Us & Story*, *Mission & Values*, *Careers & Jobs* (`/careers/`), *CSR & Social Impact* (`/about/#csr`), and *Partnerships*.

@@ -1,7 +1,7 @@
 {% load static %}
 <footer class="bg-white dark:bg-[#090D16] border-t border-gray-200 dark:border-white/10 pt-16 pb-10 mt-auto transition-colors duration-300">
-  <div class="container-wide px-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-12">
       
       <!-- Brand -->
       <div class="space-y-5">
@@ -54,9 +54,9 @@
     </div>
 
     <!-- Bottom -->
-    <div class="pt-8 border-t border-gray-100 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400 dark:text-slate-500">
+    <div class="pt-8 border-t border-gray-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400 dark:text-slate-500 text-center sm:text-left">
       <p>{{ site_content.copyright_text }}</p>
-      <div class="flex gap-6">
+      <div class="flex flex-wrap justify-center sm:justify-end gap-4 sm:gap-6">
         {% for link in site_content.footer_legal_links %}
         <a href="{{ link.url }}" class="hover:text-gray-900 dark:hover:text-white transition-colors">{{ link.label }}</a>
         {% endfor %}

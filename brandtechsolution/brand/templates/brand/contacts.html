@@ -3,8 +3,9 @@
 <html lang="en" class="overflow-x-hidden">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contact Us - Teklora</title>
+    <meta name="description" content="Connect directly with our engineering team or schedule a strategy session with our technical directors." />
     
     <!-- Favicon -->
     <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
@@ -41,7 +42,7 @@
         }
     </script>
     
-    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.2.9" />
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.3.0" />
     <link rel="stylesheet" href="{% static 'brand/css/chat-assistant.css' %}" />
     <link rel="stylesheet" href="{% static 'brand/css/toast.css' %}" />
     <script src="{% static 'brand/js/toast.js' %}"></script>
@@ -107,36 +108,27 @@
             cursor: not-allowed;
             background: transparent !important;
         }
-
-        .faq-card {
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .faq-card:hover {
-            border-color: rgba(0, 122, 255, 0.3) !important;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
     </style>
 </head>
-<body class="bg-background text-secondaryText font-sans antialiased selection:bg-[#007AFF]/30 selection:text-primaryText relative overflow-x-hidden">
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-[#007AFF]/30 selection:text-primaryText relative overflow-x-hidden min-h-screen flex flex-col">
 
-    <!-- Header Inheritance -->
+    <!-- Global Header Navigation -->
     {% include 'brand/header.html' %}
 
     <!-- Background Ambient Glow Effects -->
     <div class="ambient-glow-1"></div>
     <div class="ambient-glow-2"></div>
 
-    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-40 pb-16 space-y-12 sm:space-y-20 overflow-x-hidden">
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-40 pb-16 space-y-12 sm:space-y-16 flex-grow w-full">
         
         <!-- Hero Section -->
         <section class="text-center space-y-4 sm:space-y-6 max-w-3xl mx-auto px-2">
-            <div class="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-gray-100 border border-borderLight backdrop-blur-md">
+            <div class="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-surface border border-borderLight backdrop-blur-md">
                 <span class="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse"></span>
                 <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#00FF94]">Direct Communication Channels</span>
             </div>
             
-            <h1 class="text-2xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight contact-hero-title">
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight contact-hero-title">
                 Let's Build Something <br class="hidden sm:inline" />
                 <span class="contact-hero-accent">Extraordinary.</span>
             </h1>
@@ -144,8 +136,7 @@
             <p class="text-xs sm:text-base lg:text-lg text-secondaryText leading-relaxed max-w-2xl mx-auto font-medium">
                 Connect directly with our engineering team or schedule a strategy session with our technical directors.
             </p>
-
-            </section>
+        </section>
 
         <!-- Main Split Panel (Contact Info + Inquiry Form) -->
         <section class="grid lg:grid-cols-12 gap-6 sm:gap-8 items-start">
@@ -161,37 +152,37 @@
                     </h3>
 
                     <!-- Phone channel -->
-                    <div class="p-3.5 sm:p-4 rounded-2xl bg-white/[0.02] border border-gray-200 flex items-center justify-between gap-2.5">
+                    <div class="p-3.5 sm:p-4 rounded-2xl bg-surface/50 border border-borderLight flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs sm:text-sm shrink-0">
                                 <i class="fas fa-phone"></i>
                             </div>
                             <div class="min-w-0">
-                                <div class="text-[10px] sm:text-[11px] text-gray-500 font-semibold">Enterprise Hotline</div>
+                                <div class="text-[10px] sm:text-[11px] text-secondaryText font-semibold">Enterprise Hotline</div>
                                 <a href="tel:+254704894220" class="text-xs font-bold text-primaryText hover:text-[#00FF94] transition-colors truncate block">
                                     +254 704 894220
                                 </a>
                             </div>
                         </div>
-                        <button type="button" onclick="copyText('+254704894220', 'Phone number copied to clipboard!')" class="px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-white/10 text-xs font-medium text-primaryText transition-all shrink-0">
+                        <button type="button" onclick="copyText('+254704894220', 'Phone number copied to clipboard!')" class="px-2.5 py-1.5 rounded-lg bg-surface hover:bg-white/10 text-xs font-medium text-primaryText border border-borderLight transition-all shrink-0">
                             <i class="fas fa-copy text-[10px] sm:mr-1"></i> <span class="hidden sm:inline">Copy</span>
                         </button>
                     </div>
 
                     <!-- Email channel -->
-                    <div class="p-3.5 sm:p-4 rounded-2xl bg-white/[0.02] border border-gray-200 flex items-center justify-between gap-2.5">
+                    <div class="p-3.5 sm:p-4 rounded-2xl bg-surface/50 border border-borderLight flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xs sm:text-sm shrink-0">
                                 <i class="fas fa-envelope"></i>
                             </div>
                             <div class="min-w-0">
-                                <div class="text-[10px] sm:text-[11px] text-gray-500 font-semibold">Official Email</div>
+                                <div class="text-[10px] sm:text-[11px] text-secondaryText font-semibold">Official Email</div>
                                 <a href="mailto:teklorasolutionsltd@gmail.com" class="text-xs font-bold text-primaryText hover:text-[#007AFF] transition-colors truncate block">
                                     teklorasolutionsltd@gmail.com
                                 </a>
                             </div>
                         </div>
-                        <button type="button" onclick="copyText('teklorasolutionsltd@gmail.com', 'Email address copied to clipboard!')" class="px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-white/10 text-xs font-medium text-primaryText transition-all shrink-0">
+                        <button type="button" onclick="copyText('teklorasolutionsltd@gmail.com', 'Email address copied to clipboard!')" class="px-2.5 py-1.5 rounded-lg bg-surface hover:bg-white/10 text-xs font-medium text-primaryText border border-borderLight transition-all shrink-0">
                             <i class="fas fa-copy text-[10px] sm:mr-1"></i> <span class="hidden sm:inline">Copy</span>
                         </button>
                     </div>
@@ -207,22 +198,22 @@
 
                 <!-- Social & Connect Card -->
                 <div class="clean-card p-5 sm:p-8 rounded-3xl space-y-3.5 border border-borderLight shadow-xl">
-                    <h3 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <h3 class="text-[11px] font-bold text-secondaryText uppercase tracking-wider">
                         Enterprise Channels & Updates
                     </h3>
 
                     <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
-                        <a href="https://www.linkedin.com/company/brantech-solutions-ke/" target="_blank" rel="noopener noreferrer" class="p-2.5 sm:p-3 rounded-2xl bg-white/[0.02] border border-gray-200 hover:border-blue-500/40 hover:bg-blue-500/10 flex flex-col items-center justify-center gap-1 transition-all text-primaryText group">
+                        <a href="https://www.linkedin.com/company/brantech-solutions-ke/" target="_blank" rel="noopener noreferrer" class="p-2.5 sm:p-3 rounded-2xl bg-surface/50 border border-borderLight hover:border-blue-500/40 hover:bg-blue-500/10 flex flex-col items-center justify-center gap-1 transition-all text-primaryText group">
                             <i class="fab fa-linkedin-in text-base sm:text-lg text-blue-400 group-hover:scale-110 transition-transform"></i>
                             <span class="text-[10px] sm:text-[11px] font-semibold text-secondaryText group-hover:text-primaryText">LinkedIn</span>
                         </a>
 
-                        <a href="https://whatsapp.com/channel/0029Vb6Apwr7oQhe7bynyU0o" target="_blank" rel="noopener noreferrer" class="p-2.5 sm:p-3 rounded-2xl bg-white/[0.02] border border-gray-200 hover:border-emerald-500/40 hover:bg-emerald-500/10 flex flex-col items-center justify-center gap-1 transition-all text-primaryText group">
+                        <a href="https://whatsapp.com/channel/0029Vb6Apwr7oQhe7bynyU0o" target="_blank" rel="noopener noreferrer" class="p-2.5 sm:p-3 rounded-2xl bg-surface/50 border border-borderLight hover:border-emerald-500/40 hover:bg-emerald-500/10 flex flex-col items-center justify-center gap-1 transition-all text-primaryText group">
                             <i class="fab fa-whatsapp text-base sm:text-lg text-emerald-400 group-hover:scale-110 transition-transform"></i>
                             <span class="text-[10px] sm:text-[11px] font-semibold text-secondaryText group-hover:text-primaryText">WhatsApp</span>
                         </a>
 
-                        <a href="https://www.instagram.com/brantech_solutions" target="_blank" rel="noopener noreferrer" class="p-2.5 sm:p-3 rounded-2xl bg-white/[0.02] border border-gray-200 hover:border-pink-500/40 hover:bg-pink-500/10 flex flex-col items-center justify-center gap-1 transition-all text-primaryText group">
+                        <a href="https://www.instagram.com/brantech_solutions" target="_blank" rel="noopener noreferrer" class="p-2.5 sm:p-3 rounded-2xl bg-surface/50 border border-borderLight hover:border-pink-500/40 hover:bg-pink-500/10 flex flex-col items-center justify-center gap-1 transition-all text-primaryText group">
                             <i class="fab fa-instagram text-base sm:text-lg text-pink-400 group-hover:scale-110 transition-transform"></i>
                             <span class="text-[10px] sm:text-[11px] font-semibold text-secondaryText group-hover:text-primaryText">Instagram</span>
                         </a>
@@ -231,11 +222,11 @@
 
             </div>
 
-            <!-- Right Form Panel (Interactive Inquiry Form) -->
-            <div class="lg:col-span-7">
+            <!-- Right Form Panel (Interactive Inquiry Form + Calendar Trigger) -->
+            <div class="lg:col-span-7 space-y-6">
                 <div class="clean-card p-5 sm:p-8 lg:p-10 rounded-3xl border border-borderLight shadow-2xl relative">
                     
-                    <div class="flex items-center justify-between mb-5 pb-3.5 border-b border-gray-200">
+                    <div class="flex items-center justify-between mb-5 pb-3.5 border-b border-borderLight">
                         <div>
                             <h3 class="text-lg sm:text-2xl font-bold text-primaryText" style="font-family: var(--font-heading);">Submit Technical Inquiry</h3>
                             <p class="text-[11px] sm:text-xs text-secondaryText mt-0.5">Our lead solutions architect will review your project scope.</p>
@@ -254,19 +245,19 @@
                         <div class="space-y-1.5">
                             <label class="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-secondaryText">Select Scope / Topic</label>
                             <div class="flex flex-wrap gap-1.5 sm:gap-2" id="topicPills">
-                                <button type="button" onclick="selectTopic(this, 'Enterprise AI')" class="topic-pill active px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
+                                <button type="button" onclick="selectTopic(this, 'Enterprise AI')" class="topic-pill active px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-surface text-xs text-secondaryText hover:text-primaryText">
                                     <i class="fas fa-robot text-purple-500 mr-1.5"></i> Enterprise AI
                                 </button>
-                                <button type="button" onclick="selectTopic(this, 'Custom Software')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
+                                <button type="button" onclick="selectTopic(this, 'Custom Software')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-surface text-xs text-secondaryText hover:text-primaryText">
                                     <i class="fas fa-laptop-code text-blue-500 mr-1.5"></i> Custom Software
                                 </button>
-                                <button type="button" onclick="selectTopic(this, 'Cloud Infrastructure')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
+                                <button type="button" onclick="selectTopic(this, 'Cloud Infrastructure')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-surface text-xs text-secondaryText hover:text-primaryText">
                                     <i class="fas fa-cloud text-sky-500 mr-1.5"></i> Cloud Infrastructure
                                 </button>
-                                <button type="button" onclick="selectTopic(this, 'Strategy Consultation')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
+                                <button type="button" onclick="selectTopic(this, 'Strategy Consultation')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-surface text-xs text-secondaryText hover:text-primaryText">
                                     <i class="fas fa-bullseye text-amber-500 mr-1.5"></i> Strategy Consultation
                                 </button>
-                                <button type="button" onclick="selectTopic(this, 'General Inquiry')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-gray-100 text-xs text-secondaryText hover:text-primaryText">
+                                <button type="button" onclick="selectTopic(this, 'General Inquiry')" class="topic-pill px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl border border-borderLight bg-surface text-xs text-secondaryText hover:text-primaryText">
                                     <i class="fas fa-envelope text-emerald-500 mr-1.5"></i> General Inquiry
                                 </button>
                             </div>
@@ -278,8 +269,8 @@
                             <div class="space-y-1">
                                 <label for="nameInput" class="block text-xs font-semibold text-primaryText">Full Name <span class="text-[#00FF94]">*</span></label>
                                 <div class="relative rounded-xl border border-borderLight bg-surface input-group-focus transition-all flex items-center px-3">
-                                    <i class="fas fa-user text-xs text-gray-500 mr-2 shrink-0"></i>
-                                    <input type="text" name="name" id="nameInput" required class="w-full py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm text-primaryText placeholder-[#64748B] focus:outline-none" placeholder="e.g. Sarah Jenkins" />
+                                    <i class="fas fa-user text-xs text-secondaryText mr-2 shrink-0"></i>
+                                    <input type="text" name="name" id="nameInput" required class="w-full py-2.5 sm:py-3 bg-transparent text-sm text-primaryText placeholder-secondaryText/60 focus:outline-none" placeholder="e.g. Sarah Jenkins" />
                                 </div>
                             </div>
 
@@ -287,18 +278,18 @@
                             <div class="space-y-1">
                                 <label for="emailInput" class="block text-xs font-semibold text-primaryText">Email Address <span class="text-[#00FF94]">*</span></label>
                                 <div class="relative rounded-xl border border-borderLight bg-surface input-group-focus transition-all flex items-center px-3">
-                                    <i class="fas fa-envelope text-xs text-gray-500 mr-2 shrink-0"></i>
-                                    <input type="email" name="email" id="emailInput" required class="w-full py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm text-primaryText placeholder-[#64748B] focus:outline-none" placeholder="name@company.com" />
+                                    <i class="fas fa-envelope text-xs text-secondaryText mr-2 shrink-0"></i>
+                                    <input type="email" name="email" id="emailInput" required class="w-full py-2.5 sm:py-3 bg-transparent text-sm text-primaryText placeholder-secondaryText/60 focus:outline-none" placeholder="name@company.com" />
                                 </div>
                             </div>
                         </div>
 
                         <!-- Phone Input -->
                         <div class="space-y-1">
-                            <label for="phoneInput" class="block text-xs font-semibold text-primaryText">Phone / WhatsApp <span class="text-gray-500 font-normal">(Optional)</span></label>
+                            <label for="phoneInput" class="block text-xs font-semibold text-primaryText">Phone / WhatsApp <span class="text-secondaryText font-normal">(Optional)</span></label>
                             <div class="relative rounded-xl border border-borderLight bg-surface input-group-focus transition-all flex items-center px-3">
-                                <i class="fas fa-phone text-xs text-gray-500 mr-2 shrink-0"></i>
-                                <input type="tel" name="phone" id="phoneInput" class="w-full py-2.5 sm:py-3 bg-transparent text-xs sm:text-sm text-primaryText placeholder-[#64748B] focus:outline-none" placeholder="+254 700 000 000" />
+                                <i class="fas fa-phone text-xs text-secondaryText mr-2 shrink-0"></i>
+                                <input type="tel" name="phone" id="phoneInput" class="w-full py-2.5 sm:py-3 bg-transparent text-sm text-primaryText placeholder-secondaryText/60 focus:outline-none" placeholder="+254 700 000 000" />
                             </div>
                         </div>
 
@@ -306,10 +297,10 @@
                         <div class="space-y-1">
                             <div class="flex items-center justify-between">
                                 <label for="messageInput" class="block text-xs font-semibold text-primaryText">Project Scope & Details <span class="text-[#00FF94]">*</span></label>
-                                <span class="text-[10px] sm:text-[11px] font-mono text-gray-500"><span id="charCount">0</span> / 1000</span>
+                                <span class="text-[10px] sm:text-[11px] font-mono text-secondaryText"><span id="charCount">0</span> / 1000</span>
                             </div>
                             <div class="relative rounded-xl border border-borderLight bg-surface input-group-focus transition-all p-3">
-                                <textarea name="message" id="messageInput" required rows="4" maxlength="1000" oninput="updateCharCount(this)" class="w-full bg-transparent text-xs sm:text-sm text-primaryText placeholder-[#64748B] focus:outline-none resize-none" placeholder="Describe your technical goals, timeline, or inquiries..."></textarea>
+                                <textarea name="message" id="messageInput" required rows="4" maxlength="1000" oninput="updateCharCount(this)" class="w-full bg-transparent text-sm text-primaryText placeholder-secondaryText/60 focus:outline-none resize-none" placeholder="Describe your technical goals, timeline, or inquiries..."></textarea>
                             </div>
                         </div>
 
@@ -329,30 +320,143 @@
                     </form>
                 </div>
 
-<div class="mt-8 text-center pt-6 border-t border-borderLight">
-    <p class="text-xs text-secondaryText mb-3">Or prefer to speak directly with an architect?</p>
-    <button type="button" onclick="openCalendarModal()" class="btn-premium btn-premium-secondary py-3 px-6 rounded-xl font-bold text-xs sm:text-sm shadow-lg border border-borderLight flex items-center justify-center gap-2 w-full mx-auto sm:w-auto">
-        <i class="fas fa-calendar-alt text-[#007AFF]"></i> Open Strategy Calendar
-    </button>
-</div>
-
-
-
-    <p class="text-xs text-secondaryText mb-3">Or prefer to speak directly with an architect?</p>
-    <button type="button" onclick="openCalendarModal()" class="btn-premium btn-premium-secondary py-3 px-6 rounded-xl font-bold text-xs sm:text-sm shadow-lg border border-borderLight flex items-center justify-center gap-2 w-full mx-auto sm:w-auto">
-        <i class="fas fa-calendar-alt text-[#007AFF]"></i> Open Strategy Calendar
-    </button>
-</div>
+                <!-- Calendar Trigger Card -->
+                <div class="clean-card p-5 sm:p-6 rounded-3xl border border-borderLight shadow-md text-center space-y-3">
+                    <p class="text-xs sm:text-sm text-secondaryText font-medium">Or prefer to speak directly with an architect?</p>
+                    <button type="button" onclick="openCalendarModal()" class="btn-premium btn-premium-secondary py-3 px-6 rounded-xl font-bold text-xs sm:text-sm shadow-sm border border-borderLight flex items-center justify-center gap-2 w-full sm:w-auto mx-auto transition-transform hover:scale-[1.02]">
+                        <i class="fas fa-calendar-alt text-[#007AFF]"></i> Open Strategy Calendar
+                    </button>
+                </div>
 
             </div>
 
         </section>
 
-        </main>
+    </main>
 
-    
+    <!-- Full Calendar Modal -->
+    <div id="calendarModal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto transition-opacity duration-300" onclick="if(event.target === this) closeCalendarModal()">
+        
+        <div class="max-w-3xl w-full relative my-auto rounded-3xl shadow-2xl bg-surface/95 dark:bg-[#090D16]/95 backdrop-blur-2xl border border-borderLight max-h-[92vh] flex flex-col overflow-hidden">
+            
+            <div class="p-4 sm:p-6 lg:p-8 relative overflow-y-auto space-y-6">
+                <button type="button" onclick="closeCalendarModal()" aria-label="Close Calendar" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface hover:bg-red-500/10 text-secondaryText hover:text-red-400 flex items-center justify-center text-xs z-50 transition-all border border-borderLight shadow-sm">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <!-- Book Strategy Consultation Section Header -->
+                <div class="text-center space-y-2 max-w-lg mx-auto px-2">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/20 text-[10px] font-bold uppercase tracking-wider">
+                        <i class="fas fa-calendar-check"></i> Sync Your Schedule
+                    </div>
+                    <h2 class="text-xl sm:text-3xl font-extrabold text-primaryText" style="font-family: var(--font-heading);">
+                        Book a Strategy Session
+                    </h2>
+                    <p class="text-xs sm:text-sm text-secondaryText font-medium">
+                        Connect with our technical directors for a 30-minute virtual consultation.
+                    </p>
+                </div>
 
-            <div class="my-4">
+                <!-- Calendar & Time Slot Container -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start pt-2 border-t border-borderLight">
+                    
+                    <!-- Date Picker (7 Cols on desktop) -->
+                    <div class="md:col-span-7 space-y-3">
+                        <!-- Month Header Controls -->
+                        <div class="flex items-center justify-between bg-surface/50 p-2.5 rounded-xl border border-borderLight shadow-sm">
+                            <button type="button" onclick="navigateMonth(-1)" aria-label="Previous Month" class="w-8 h-8 rounded-lg bg-surface hover:bg-white/10 text-secondaryText hover:text-primaryText flex items-center justify-center text-xs transition-all border border-borderLight">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="calendarMonthTitle" class="font-bold text-sm text-primaryText font-heading">July 2026</span>
+                            <button type="button" onclick="navigateMonth(1)" aria-label="Next Month" class="w-8 h-8 rounded-lg bg-surface hover:bg-white/10 text-secondaryText hover:text-primaryText flex items-center justify-center text-xs transition-all border border-borderLight">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Days Header -->
+                        <div class="grid grid-cols-7 gap-1 text-center font-bold text-[10px] text-secondaryText uppercase tracking-widest py-1">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+
+                        <!-- Dynamic Days Grid -->
+                        <div class="grid grid-cols-7 gap-1.5 text-center text-xs font-bold text-primaryText" id="calendarDaysGrid">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Time Slot Picker (5 Cols on desktop) -->
+                    <div class="md:col-span-5 space-y-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="font-bold text-[11px] text-secondaryText uppercase tracking-widest">Available Slots</h4>
+                            <span class="text-[9px] font-mono text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded border border-[#007AFF]/20 font-bold">EAT (UTC+3)</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-1 gap-2" id="timeSlotsContainer">
+                            <button type="button" onclick="selectTimeSlot('09:00 AM EAT', this)" class="p-2.5 sm:p-3 border border-borderLight bg-surface/50 rounded-xl text-xs font-bold text-primaryText hover:text-[#007AFF] hover:border-[#007AFF] hover:bg-[#007AFF]/10 transition-all text-left flex items-center justify-between group shadow-sm">
+                                <span>09:00 AM</span>
+                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#007AFF] text-[10px] transition-all transform -translate-x-1 group-hover:translate-x-0"></i>
+                            </button>
+                            <button type="button" onclick="selectTimeSlot('11:00 AM EAT', this)" class="p-2.5 sm:p-3 border border-borderLight bg-surface/50 rounded-xl text-xs font-bold text-primaryText hover:text-[#007AFF] hover:border-[#007AFF] hover:bg-[#007AFF]/10 transition-all text-left flex items-center justify-between group shadow-sm">
+                                <span>11:00 AM</span>
+                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#007AFF] text-[10px] transition-all transform -translate-x-1 group-hover:translate-x-0"></i>
+                            </button>
+                            <button type="button" onclick="selectTimeSlot('02:00 PM EAT', this)" class="p-2.5 sm:p-3 border border-borderLight bg-surface/50 rounded-xl text-xs font-bold text-primaryText hover:text-[#007AFF] hover:border-[#007AFF] hover:bg-[#007AFF]/10 transition-all text-left flex items-center justify-between group shadow-sm">
+                                <span>02:00 PM</span>
+                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#007AFF] text-[10px] transition-all transform -translate-x-1 group-hover:translate-x-0"></i>
+                            </button>
+                            <button type="button" onclick="selectTimeSlot('04:00 PM EAT', this)" class="p-2.5 sm:p-3 border border-borderLight bg-surface/50 rounded-xl text-xs font-bold text-primaryText hover:text-[#007AFF] hover:border-[#007AFF] hover:bg-[#007AFF]/10 transition-all text-left flex items-center justify-between group shadow-sm">
+                                <span>04:00 PM</span>
+                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#007AFF] text-[10px] transition-all transform -translate-x-1 group-hover:translate-x-0"></i>
+                            </button>
+                        </div>
+
+                        <!-- Selected slot info box -->
+                        <div class="p-3 bg-surface/60 border border-borderLight rounded-xl space-y-3 mt-2">
+                            <div class="text-[11px] sm:text-xs text-secondaryText font-medium flex items-start gap-1.5" id="bookingStatusText">
+                                <i class="fas fa-info-circle text-[#007AFF] mt-0.5"></i>
+                                <span>Please choose a date and time slot above.</span>
+                            </div>
+
+                            <button type="button" onclick="openBookingModal()" id="confirmBookBtn" disabled class="w-full btn-premium btn-premium-primary py-2.5 rounded-lg text-xs font-bold opacity-50 cursor-not-allowed transition-all duration-300 shadow-sm flex items-center justify-center gap-2">
+                                Confirm Consultation <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Booking Modal -->
+    <div id="bookingModal" class="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeBookingModal()">
+        <div class="clean-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-borderLight space-y-6 relative shadow-2xl bg-surface">
+            <button type="button" onclick="closeBookingModal()" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-surface hover:bg-white/10 text-secondaryText hover:text-primaryText flex items-center justify-center text-xs border border-borderLight">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="space-y-2">
+                <div class="w-10 h-10 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-lg">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3 class="text-xl font-bold text-primaryText" style="font-family: var(--font-heading);">Confirm Consultation</h3>
+                <p class="text-xs text-secondaryText" id="modalSlotSummary">Selected Slot: --</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-primaryText">Your Name <span class="text-[#00FF94]">*</span></label>
+                    <input type="text" id="bookingName" class="w-full px-3.5 py-2.5 rounded-xl border border-borderLight bg-surface text-sm text-primaryText focus:outline-none focus:border-[#007AFF]" placeholder="e.g. John Doe" />
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-primaryText">Email Address for Calendar Invite <span class="text-[#00FF94]">*</span></label>
+                    <input type="email" id="bookingEmail" class="w-full px-3.5 py-2.5 rounded-xl border border-borderLight bg-surface text-sm text-primaryText focus:outline-none focus:border-[#007AFF]" placeholder="john@company.com" />
+                </div>
+            </div>
+
+            <div class="my-3">
                 {% include 'brand/_turnstile.html' with widget_id="bookingTurnstile" %}
             </div>
 
@@ -363,9 +467,27 @@
         </div>
     </div>
 
-    <!-- Submission Success Modal -->
-    <div id="successModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="clean-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-[#00FF94]/30 text-center space-y-6">
+    <!-- Booking Success Modal Card -->
+    <div id="bookingSuccessModal" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="clean-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-[#00FF94]/30 text-center space-y-6 shadow-2xl bg-surface">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#00FF94]/20 text-[#00FF94] flex items-center justify-center text-xl sm:text-2xl mx-auto border border-[#00FF94]/30 animate-bounce">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="space-y-2.5">
+                <h3 class="text-xl sm:text-2xl font-bold text-primaryText" style="font-family: var(--font-heading);">Consultation Booked!</h3>
+                <p class="text-xs text-secondaryText leading-relaxed" id="bookingSuccessDetails">
+                    Thank you! Your strategy consultation has been successfully confirmed.
+                </p>
+            </div>
+            <button type="button" onclick="closeBookingSuccessModal()" class="w-full btn-premium btn-premium-primary py-3 rounded-xl text-xs font-bold">
+                Done / Return to Site
+            </button>
+        </div>
+    </div>
+
+    <!-- Inquiry Submission Success Modal -->
+    <div id="successModal" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="clean-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-[#00FF94]/30 text-center space-y-6 shadow-2xl bg-surface">
             <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#00FF94]/20 text-[#00FF94] flex items-center justify-center text-xl sm:text-2xl mx-auto border border-[#00FF94]/30 animate-bounce">
                 <i class="fas fa-check"></i>
             </div>
@@ -381,9 +503,7 @@
         </div>
     </div>
 
-    
-
-    <!-- Footer Inheritance -->
+    <!-- Synchronized Global Footer -->
     {% include 'brand/footer.html' %}
 
     <script>
@@ -484,11 +604,32 @@
             window.location.href = "{% url 'index' %}";
         }
 
-        // Interactive Calendar Logic
-        let currentYear = 2026;
-        let currentMonth = 6; // 0-indexed: 6 = July
+        function openCalendarModal() {
+            var modal = document.getElementById('calendarModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        function closeCalendarModal() {
+            var modal = document.getElementById('calendarModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openBookingModal() {
+            if (!selectedCalendarDate || !selectedTimeSlotStr) return;
+            document.getElementById('modalSlotSummary').textContent = `Slot: ${selectedCalendarDate} @ ${selectedTimeSlotStr}`;
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+        }
+
+        // Interactive Calendar Logic initialized with dynamic current date
+        const todayDate = new Date();
+        let currentYear = todayDate.getFullYear();
+        let currentMonth = todayDate.getMonth();
         let selectedCalendarDate = null;
         let selectedTimeSlotStr = null;
+        let selectedDayNum = null;
 
         const monthNames = [
             "January", "February", "March", "April", "May", "June",
@@ -515,14 +656,16 @@
 
             // Days of the month
             const today = new Date();
+            const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
             for (let d = 1; d <= daysInMonth; d++) {
                 const dayBtn = document.createElement('button');
                 dayBtn.type = 'button';
                 
                 const thisDate = new Date(currentYear, currentMonth, d);
-                const isPast = thisDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const isPast = thisDate < todayZero;
 
-                dayBtn.className = 'calendar-day-btn h-7 sm:h-9 w-full flex items-center justify-center rounded-lg sm:rounded-xl border border-gray-200 text-primaryText hover:border-[#007AFF] hover:bg-[#007AFF]/20 transition-all font-medium text-[11px] sm:text-xs focus:outline-none';
+                dayBtn.className = 'calendar-day-btn h-7 sm:h-9 w-full flex items-center justify-center rounded-lg sm:rounded-xl border border-borderLight text-primaryText hover:border-[#007AFF] hover:bg-[#007AFF]/20 transition-all font-medium text-[11px] sm:text-xs focus:outline-none';
                 dayBtn.textContent = d;
 
                 if (isPast) {
@@ -534,7 +677,7 @@
                 // Restore selection state
                 const dateStr = `${monthNames[currentMonth]} ${d}, ${currentYear}`;
                 if (selectedCalendarDate === dateStr) {
-                    dayBtn.classList.add('bg-[#007AFF]', 'border-[#007AFF]', 'text-primaryText', 'shadow-md');
+                    dayBtn.classList.add('bg-[#007AFF]', 'border-[#007AFF]', 'text-white', 'shadow-md');
                 }
 
                 grid.appendChild(dayBtn);
@@ -553,15 +696,14 @@
             renderCalendar();
         }
 
-        let selectedDayNum = null;
         function selectCalendarDate(dayNum, btnEl) {
             selectedDayNum = dayNum;
             selectedCalendarDate = `${monthNames[currentMonth]} ${dayNum}, ${currentYear}`;
 
             document.querySelectorAll('#calendarDaysGrid button').forEach(b => {
-                b.classList.remove('bg-[#007AFF]', 'border-[#007AFF]', 'shadow-md');
+                b.classList.remove('bg-[#007AFF]', 'border-[#007AFF]', 'text-white', 'shadow-md');
             });
-            btnEl.classList.add('bg-[#007AFF]', 'border-[#007AFF]', 'shadow-md');
+            btnEl.classList.add('bg-[#007AFF]', 'border-[#007AFF]', 'text-white', 'shadow-md');
 
             updateBookingStatus();
         }
@@ -590,16 +732,6 @@
             } else if (selectedTimeSlotStr) {
                 statusEl.innerHTML = `<i class="fas fa-clock text-[#007AFF] mr-1"></i> Slot: <strong class="text-[#00FF94]">${selectedTimeSlotStr}</strong>. Select a date.`;
             }
-        }
-
-        function openBookingModal() {
-            if (!selectedCalendarDate || !selectedTimeSlotStr) return;
-            document.getElementById('modalSlotSummary').textContent = `Slot: ${selectedCalendarDate} @ ${selectedTimeSlotStr}`;
-            document.getElementById('bookingModal').classList.remove('hidden');
-        }
-
-        function closeBookingModal() {
-            document.getElementById('bookingModal').classList.add('hidden');
         }
 
         async function submitBooking() {
@@ -642,9 +774,7 @@
                 email: email,
                 phone: phone,
                 full_name: name,
-                // The server sets status itself and ignores anything sent
-                // here, so it is no longer part of the payload.
-                'cf-turnstile-response': turnstileToken('bookingTurnstile')
+                'cf-turnstile-response': typeof turnstileToken === 'function' ? turnstileToken('bookingTurnstile') : ''
             };
 
             try {
@@ -658,11 +788,11 @@
                 });
 
                 const data = await res.json();
-                // The token is spent either way - a retry with the same one
-                // is rejected as a replay.
-                resetTurnstile('bookingTurnstile');
+                if (typeof resetTurnstile === 'function') resetTurnstile('bookingTurnstile');
+
                 if (res.ok || data.success) {
                     closeBookingModal();
+                    closeCalendarModal();
                     document.getElementById('bookingSuccessDetails').textContent = `Thank you, ${name}! Your strategy consultation is confirmed for ${selectedCalendarDate} at ${selectedTimeSlotStr}. A calendar invite has been sent to ${email} and our technical directors have been notified.`;
                     document.getElementById('bookingSuccessModal').classList.remove('hidden');
                     
@@ -681,180 +811,36 @@
                     toast.error(data.error || 'The appointment could not be saved.');
                 }
             } catch (err) {
-                toastApiError(err, 'The appointment could not be saved. Please try again.');
+                if (typeof toastApiError === 'function') {
+                    toastApiError(err, 'The appointment could not be saved. Please try again.');
+                } else {
+                    toast.error('The appointment could not be saved. Please try again.');
+                }
             }
         }
 
-        // Initialize Calendar
-        renderCalendar();
+        // Initialize Calendar and Hash Listener
+        document.addEventListener("DOMContentLoaded", function() {
+            renderCalendar();
+            if (window.location.hash === "#book") {
+                openCalendarModal();
+            }
+        });
+
+        // Global Escape Key Listener for Modals
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                closeCalendarModal();
+                closeBookingModal();
+            }
+        });
     </script>
 
     {% if turnstile_enabled %}
     {% load static %}
-    {# Loaded once for both widgets on this page - the contact form and the #}
-    {# booking modal. Cloudflare serves api.js from a versionless URL that   #}
-    {# it updates in place, so there is no stable hash to pin it with.       #}
     <script src="{% static 'brand/js/turnstile.js' %}"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     {% endif %}
 
-
-<!-- Full Calendar Modal -->
-<div id="calendarModal" class="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto transition-opacity duration-300" onclick="if(event.target === this) closeCalendarModal()">
-    
-    <div class="max-w-3xl w-full relative my-auto rounded-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15)] transform transition-all duration-300 scale-100 bg-white/95 backdrop-blur-2xl border border-white" style="max-height: 95vh;">
-        
-        <div class="w-full h-full rounded-3xl p-4 sm:p-6 lg:p-8 relative overflow-y-auto">
-            <button type="button" onclick="closeCalendarModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 flex items-center justify-center text-xs z-50 transition-all duration-300 border border-gray-200 hover:border-red-200 shadow-sm">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <!-- Book Strategy Consultation Section -->
-            <section id="book" class="space-y-4 sm:space-y-6 max-w-2xl mx-auto relative z-10">
-                <div class="text-center space-y-2 max-w-lg mx-auto px-2">
-                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#33348E]/10 text-[#33348E] border border-[#33348E]/20 text-[10px] font-bold uppercase tracking-wider">
-                        <i class="fas fa-calendar-check"></i> Sync Your Schedule
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900" style="font-family: var(--font-heading);">
-                        Book a Strategy Session
-                    </h2>
-                    <p class="text-xs sm:text-sm text-gray-500 font-medium">
-                        Connect with our technical directors for a 30-minute virtual consultation.
-                    </p>
-                </div>
-
-                <!-- Calendar & Time Slot Container -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start pt-4 border-t border-gray-100">
-                    
-                    <!-- Date Picker (7 Cols on desktop) -->
-                    <div class="md:col-span-7 space-y-3">
-                        <!-- Month Header Controls -->
-                        <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm">
-                            <button type="button" onclick="navigateMonth(-1)" class="w-8 h-8 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center text-xs transition-all">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <span id="calendarMonthTitle" class="font-bold text-sm text-gray-800 font-heading">July 2026</span>
-                            <button type="button" onclick="navigateMonth(1)" class="w-8 h-8 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center text-xs transition-all">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-
-                        <!-- Days Header -->
-                        <div class="grid grid-cols-7 gap-1 text-center font-bold text-[10px] text-gray-400 uppercase tracking-widest py-1">
-                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                        </div>
-
-                        <!-- Dynamic Days Grid -->
-                        <div class="grid grid-cols-7 gap-1.5 text-center text-xs font-bold text-gray-700" id="calendarDaysGrid">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-
-                    <!-- Time Slot Picker (5 Cols on desktop) -->
-                    <div class="md:col-span-5 space-y-3">
-                        <div class="flex items-center justify-between mb-1">
-                            <h4 class="font-bold text-[11px] text-gray-500 uppercase tracking-widest">Available Slots</h4>
-                            <span class="text-[9px] font-mono text-[#33348E] bg-[#33348E]/10 px-2 py-0.5 rounded border border-[#33348E]/20 font-bold">EAT (UTC+3)</span>
-                        </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-1 gap-2" id="timeSlotsContainer">
-                            <button type="button" onclick="selectTimeSlot('09:00 AM EAT', this)" class="p-2.5 sm:p-3 border border-gray-200 bg-white rounded-xl text-xs font-bold text-gray-700 hover:text-[#33348E] hover:border-[#33348E] hover:bg-[#33348E]/5 transition-all duration-200 text-left flex items-center justify-between group shadow-sm">
-                                <span>09:00 AM</span>
-                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#33348E] text-[10px] transition-all transform translate-x-[-5px] group-hover:translate-x-0"></i>
-                            </button>
-                            <button type="button" onclick="selectTimeSlot('11:00 AM EAT', this)" class="p-2.5 sm:p-3 border border-gray-200 bg-white rounded-xl text-xs font-bold text-gray-700 hover:text-[#33348E] hover:border-[#33348E] hover:bg-[#33348E]/5 transition-all duration-200 text-left flex items-center justify-between group shadow-sm">
-                                <span>11:00 AM</span>
-                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#33348E] text-[10px] transition-all transform translate-x-[-5px] group-hover:translate-x-0"></i>
-                            </button>
-                            <button type="button" onclick="selectTimeSlot('02:00 PM EAT', this)" class="p-2.5 sm:p-3 border border-gray-200 bg-white rounded-xl text-xs font-bold text-gray-700 hover:text-[#33348E] hover:border-[#33348E] hover:bg-[#33348E]/5 transition-all duration-200 text-left flex items-center justify-between group shadow-sm">
-                                <span>02:00 PM</span>
-                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#33348E] text-[10px] transition-all transform translate-x-[-5px] group-hover:translate-x-0"></i>
-                            </button>
-                            <button type="button" onclick="selectTimeSlot('04:00 PM EAT', this)" class="p-2.5 sm:p-3 border border-gray-200 bg-white rounded-xl text-xs font-bold text-gray-700 hover:text-[#33348E] hover:border-[#33348E] hover:bg-[#33348E]/5 transition-all duration-200 text-left flex items-center justify-between group shadow-sm">
-                                <span>04:00 PM</span>
-                                <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 text-[#33348E] text-[10px] transition-all transform translate-x-[-5px] group-hover:translate-x-0"></i>
-                            </button>
-                        </div>
-
-                        <!-- Selected slot info box -->
-                        <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-3 mt-2">
-                            <div class="text-[11px] sm:text-xs text-gray-600 font-medium flex items-start gap-1.5" id="bookingStatusText">
-                                <i class="fas fa-info-circle text-[#33348E] mt-0.5"></i>
-                                <span>Please choose a date and time slot above.</span>
-                            </div>
-
-                            <button type="button" onclick="openBookingModal()" id="confirmBookBtn" disabled class="w-full bg-[#33348E] hover:bg-[#252670] text-white py-2.5 rounded-lg text-xs font-bold opacity-50 cursor-not-allowed transition-all duration-300 shadow-sm flex items-center justify-center gap-2">
-                                Confirm Consultation <i class="fas fa-check"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-        </div>
-    </div>
-</div>
-
-<!-- Interactive Booking Modal -->
-    <div id="bookingModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="glass-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-white/10 space-y-6 relative">
-            <button type="button" onclick="closeBookingModal()" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center justify-center text-xs">
-                <i class="fas fa-times"></i>
-            </button>
-
-            <div class="space-y-2">
-                <div class="w-10 h-10 rounded-xl bg-[#00FF94]/10 text-[#00FF94] flex items-center justify-center text-lg">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white" style="font-family: var(--font-heading);">Confirm Consultation</h3>
-                <p class="text-xs text-[#94A3B8]" id="modalSlotSummary">Selected Slot: --</p>
-            </div>
-
-            <div class="space-y-4">
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-white">Your Name</label>
-                    <input type="text" id="bookingName" class="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#0A0F1D] text-sm text-white focus:outline-none focus:border-[#007AFF]" placeholder="e.g. John Doe" />
-                </div>
-
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-white">Email Address for Meet Invite</label>
-                    <input type="email" id="bookingEmail" class="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#0A0F1D] text-sm text-white focus:outline-none focus:border-[#007AFF]" placeholder="john@company.com" />
-                </div>
-            </div>
-<!-- Booking Success Modal Card -->
-    <div id="bookingSuccessModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="glass-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-[#00FF94]/30 text-center space-y-6">
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#00FF94]/20 text-[#00FF94] flex items-center justify-center text-xl sm:text-2xl mx-auto border border-[#00FF94]/30 animate-bounce">
-                <i class="fas fa-calendar-check"></i>
-            </div>
-            <div class="space-y-2.5">
-                <h3 class="text-xl sm:text-2xl font-bold text-white" style="font-family: var(--font-heading);">Consultation Booked!</h3>
-                <p class="text-xs text-[#94A3B8] leading-relaxed" id="bookingSuccessDetails">
-                    Thank you! Your strategy consultation has been successfully confirmed.
-                </p>
-            </div>
-            <button type="button" onclick="closeBookingSuccessModal()" class="w-full btn-premium btn-premium-primary py-3 rounded-xl text-xs font-bold">
-                Done / Return to Site
-            </button>
-        </div>
-    </div>
-
-
-
-<script>
-    function openCalendarModal() {
-        var modal = document.getElementById('calendarModal');
-        if (modal) modal.classList.remove('hidden');
-    }
-    function closeCalendarModal() {
-        var modal = document.getElementById('calendarModal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    document.addEventListener("DOMContentLoaded", function() {
-        if (window.location.hash === "#book") {
-            openCalendarModal();
-        }
-    });
-</script>
+</body>
 </html>
