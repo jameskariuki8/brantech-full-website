@@ -3,6 +3,36 @@ from django.contrib import admin
 from .models import Project, ProjectFeature, ProjectImage, ProjectNote, Career, PartnershipType, PartnerOrganisation
 
 
+class ManageStaffAdminMixin:
+    """Let staff who hold the Manage staff capability use these admin pages.
+
+    Django's admin checks per-model permissions (brand.change_career and so
+    on), which the panel's roles never carry: roles hold only staff.*
+    capabilities. Without this the "Partnerships & People" link, shown to
+    everyone with Manage staff, opened a 403 for every non-superuser. This is
+    the same rule that gates Website Content, so the link and the page agree.
+    """
+
+    def _allowed(self, request):
+        user = request.user
+        return user.is_active and user.is_staff and user.has_perm("staff.manage_staff")
+
+    def has_module_permission(self, request):
+        return self._allowed(request)
+
+    def has_view_permission(self, request, obj=None):
+        return self._allowed(request)
+
+    def has_add_permission(self, request):
+        return self._allowed(request)
+
+    def has_change_permission(self, request, obj=None):
+        return self._allowed(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return self._allowed(request)
+
+
 class ProjectImageInline(admin.TabularInline):
     model = ProjectImage
     extra = 0
@@ -67,14 +97,14 @@ class ProjectAdmin(admin.ModelAdmin):
     readonly_fields = ('last_synced_at',)
 
 @admin.register(Career)
-class CareerAdmin(admin.ModelAdmin):
+class CareerAdmin(ManageStaffAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'location', 'employment_type', 'posted_at')
     search_fields = ('title', 'description')
     ordering = ('-posted_at',)
 
 
 @admin.register(PartnershipType)
-class PartnershipTypeAdmin(admin.ModelAdmin):
+class PartnershipTypeAdmin(ManageStaffAdminMixin, admin.ModelAdmin):
     """Admin for partnership categories shown on /partnerships/."""
     list_display  = ('title', 'tagline', 'status', 'order', 'created_at')
     list_filter   = ('status',)
@@ -93,7 +123,7 @@ class PartnershipTypeAdmin(admin.ModelAdmin):
 
 
 @admin.register(PartnerOrganisation)
-class PartnerOrganisationAdmin(admin.ModelAdmin):
+class PartnerOrganisationAdmin(ManageStaffAdminMixin, admin.ModelAdmin):
     """Admin for the partner logos showcase strip."""
     list_display  = ('name', 'sector', 'featured', 'order', 'joined_at', 'created_at')
     list_filter   = ('featured', 'sector')
