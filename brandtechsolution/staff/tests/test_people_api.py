@@ -31,6 +31,24 @@ class PeopleListTest(TestCase):
         self.assertIn("cap", usernames)
         self.assertNotIn("public_signup", usernames)
 
+    def test_reports_last_sign_in_and_cannot_be_written(self):
+        admin = staff_with("manage_staff")
+        never = staff_with(username="never_in")
+        self.client.force_login(admin)  # stamps admin's last_login
+        people = {
+            p["username"]: p
+            for p in self.client.get("/api/staff/people/").json()["results"]
+        }
+        self.assertIsNone(people["never_in"]["last_login"])
+
+        self.client.patch(
+            f"/api/staff/people/{never.pk}/",
+            data=json.dumps({"last_login": "2020-01-01T00:00:00Z"}),
+            content_type="application/json",
+        )
+        never.refresh_from_db()
+        self.assertIsNone(never.last_login)
+
     def test_includes_roles_and_active_state(self):
         admin = staff_with("manage_staff")
         Group.objects.get(name="Editor").user_set.add(admin)

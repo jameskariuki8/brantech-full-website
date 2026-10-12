@@ -16,11 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Aligned global footer container in [`footer.html`](brandtechsolution/brand/templates/brand/footer.html) with standard `max-w-7xl` layout and enhanced mobile responsiveness for columns, legal links, and copyright notices.
   - Sized and refined the Partnership Application modal card (`#applyModalCard`) in [`partnerships.html`](brandtechsolution/brand/templates/brand/partnerships.html) with compact bounds (`max-w-lg`, `max-h-[85vh]`), dynamic track badge pill, reduced form paddings, and smooth inner scroll container to eliminate oversized vertical height on mobile and desktop viewports.
   - Fixed overlay ordering for strategic consultation modals: raised `calendarModal` and `bookingModal` z-index to `2000` to sit above the glassmorphic header, and added semi‑transparent `bg-surface/95` (light) / `dark:bg-[#090D16]/95` (dark) to the booking card for clearer visibility in light mode.
+- **Staff & Roles panel redesigned around access levels** (`docs/specs/2026-10-12-staff-roster-access-levels-spec.md`):
+  - People roster shows each person's derived level (Owner, Administrator, Member, No access), role chips, last sign-in, and setup/deactivated status, with search and filter chips that carry counts.
+  - Person editor shows what each role grants, a live preview of the resulting access, and explains why controls are locked (editing yourself or an owner) instead of failing on save.
+  - Roles tab lists the capabilities each role grants and links to the people who hold it.
+  - Invitations waiting are separated from the roster; the editor becomes a bottom sheet on phones.
+  - `GET /api/staff/people/` now includes read-only `last_login`.
 
 ### Fixed
 - **Contact Page Layout & Modal Hierarchy**:
   - Resolved malformed DOM hierarchy in [`contacts.html`](brandtechsolution/brand/templates/brand/contacts.html) where modal bodies, turnstiles, and scripts were fragmented outside the document body.
   - Eliminated duplicate Strategy Calendar CTA buttons and repaired modal backdrop, dismissal triggers, and keyboard `Escape` bindings.
+- **Onboarding now reaches every staff member**: the gate in `staff/middleware.py` skipped any staff account with no `StaffProfile` row, which covered everyone who existed before onboarding shipped and anyone created through `createsuperuser` or `/admin/`. A missing profile now counts as not onboarded, the onboarding page creates it on first visit, and superusers without `is_staff` (admitted to the panel by `brand.views.is_admin`) are gated and can complete it too.
 
 ### Added
 - **Dedicated Partnerships & CSR Page (`/partnerships/`)**:

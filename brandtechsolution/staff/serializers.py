@@ -104,10 +104,10 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = [
             "id", "username", "email", "first_name", "last_name",
             "is_active", "is_superuser", "roles", "role_ids", "date_joined",
-            "phone", "primary_role", "coding_languages", "frameworks",
-            "github_username", "bio", "is_onboarded",
+            "last_login", "phone", "primary_role", "coding_languages",
+            "frameworks", "github_username", "bio", "is_onboarded",
         ]
-        read_only_fields = ["username", "is_superuser", "date_joined"]
+        read_only_fields = ["username", "is_superuser", "date_joined", "last_login"]
 
     def get_roles(self, obj):
         return sorted(g.name for g in obj.groups.all())
