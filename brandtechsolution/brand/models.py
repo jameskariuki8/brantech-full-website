@@ -70,8 +70,7 @@ def default_header_links():
                 {"label": "About Us & Story", "url": "/about/#story"},
                 {"label": "Mission & Values", "url": "/about/#mission"},
                 {"label": "Careers & Jobs", "url": "/careers/"},
-                {"label": "CSR & Social Impact", "url": "/about/#csr"},
-                {"label": "Partnerships", "url": "/about/#partnerships"},
+                {"label": "Partnerships & CSR", "url": "/partnerships/"},
             ],
         },
         {"label": "Blog", "url": "/blog/"},
@@ -86,7 +85,7 @@ def default_footer_quick_links():
         {"label": "Products", "url": "/products/"},
         {"label": "Research", "url": "/research/"},
         {"label": "Careers", "url": "/careers/"},
-        {"label": "CSR & Impact", "url": "/about/#csr"},
+        {"label": "Partnerships & CSR", "url": "/partnerships/"},
     ]
 
 
@@ -448,7 +447,7 @@ class SiteContent(models.Model):
     flagship_image_url = models.CharField(
         max_length=500, default="/static/brand/images/edushare.png"
     )
-    flagship_badge = models.CharField(max_length=120, default="ZERO-RATED SYLLABUS CDN")
+    flagship_badge = models.CharField(max_length=120, default="DECENTRALIZED SYLLABUS CDN")
     flagship_subtitle = models.CharField(max_length=180, default="EdTech SaaS Engine")
     flagship_feature_heading = models.CharField(
         max_length=250, default="Decentralized Syllabus Access for African Students"
@@ -458,10 +457,10 @@ class SiteContent(models.Model):
         default="Students in African universities face prohibitive data costs and slow server connections, causing syllabus access bottlenecks during exam study cycles."
     )
     flagship_solution_label = models.CharField(
-        max_length=120, default="The Solution & Impact:"
+        max_length=120, default="The Solution & Vision:"
     )
     flagship_solution_description = models.TextField(
-        default="EduShare compresses and caches university study materials, reducing latency by 74% and serving over 50,000 active learners with zero offline interruptions."
+        default="EduShare compresses and caches university study materials, reducing latency by 74%. We are actively seeking partnerships with telcos, governments, and education foundations to make EduShare fully zero-rated across Kenya and the African continent."
     )
     flagship_technology_heading = models.CharField(
         max_length=160, default="Technologies Powering EduShare:"
@@ -551,7 +550,100 @@ class Career(models.Model):
         return self.title
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Partnerships – admin-editable partnership types and featured partners
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PartnershipType(models.Model):
+    """Represents a category of partnership the organisation is open to.
+
+    Examples: Technology Partner, Academic Partner, NGO & Impact Partner.
+    Admins create/edit these through Django admin so the partnerships page
+    always reflects the current openings without a code change.
+    """
+
+    STATUS_OPEN   = 'open'
+    STATUS_CLOSED = 'closed'
+    STATUS_CHOICES = [
+        (STATUS_OPEN,   'Open – Accepting Applications'),
+        (STATUS_CLOSED, 'Closed – Not Currently Recruiting'),
+    ]
+
+    title       = models.CharField(max_length=150, help_text="e.g. Technology Partner")
+    icon        = models.CharField(
+        max_length=80, default='fas fa-handshake',
+        help_text="Font Awesome class, e.g. fas fa-university"
+    )
+    accent      = models.CharField(
+        max_length=30, default='blue',
+        help_text="Tailwind colour name: blue | amber | emerald | purple | rose"
+    )
+    tagline     = models.CharField(max_length=200, help_text="One-line description shown on the card")
+    description = models.TextField(help_text="Full paragraph describing what this partnership involves")
+    benefits    = models.TextField(
+        blank=True,
+        help_text="Newline-separated list of benefits for this partner type"
+    )
+    requirements = models.TextField(
+        blank=True,
+        help_text="Newline-separated eligibility requirements"
+    )
+    status      = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_OPEN, db_index=True)
+    order       = models.PositiveSmallIntegerField(default=0, db_index=True, help_text="Lower = shown first")
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'title']
+        verbose_name        = 'Partnership Type'
+        verbose_name_plural = 'Partnership Types'
+
+    def __str__(self):
+        return f"{self.title} ({self.get_status_display()})"
+
+    def benefits_list(self):
+        return [b.strip() for b in self.benefits.splitlines() if b.strip()]
+
+    def requirements_list(self):
+        return [r.strip() for r in self.requirements.splitlines() if r.strip()]
+
+
+class PartnerOrganisation(models.Model):
+    """A current or past partner displayed in the 'Our Partners' showcase strip."""
+
+    name        = models.CharField(max_length=150)
+    logo        = models.ImageField(
+        upload_to='partner_logos/', blank=True, null=True,
+        help_text="Upload partner logo (PNG/SVG recommended)"
+    )
+    logo_url    = models.URLField(
+        blank=True,
+        help_text="External logo URL (used if no uploaded logo)"
+    )
+    website     = models.URLField(blank=True, help_text="Partner's website")
+    sector      = models.CharField(max_length=100, blank=True, help_text="e.g. Education, Government")
+    description = models.TextField(blank=True, help_text="Short blurb shown on hover/expand")
+    featured    = models.BooleanField(default=True, help_text="Show in the partners showcase strip")
+    order       = models.PositiveSmallIntegerField(default=0, db_index=True)
+    joined_at   = models.DateField(blank=True, null=True, help_text="Partnership start date")
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name        = 'Partner Organisation'
+        verbose_name_plural = 'Partner Organisations'
+
+    def __str__(self):
+        return self.name
+
+    def get_logo(self):
+        """Return the best available logo URL."""
+        if self.logo:
+            return self.logo.url
+        return self.logo_url or ''
+
+
 class BlogPost(models.Model):
+
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     excerpt = models.TextField(max_length=300)

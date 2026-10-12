@@ -335,7 +335,7 @@
     </main>
 
     <!-- Full Calendar Modal -->
-    <div id="calendarModal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto transition-opacity duration-300" onclick="if(event.target === this) closeCalendarModal()">
+    <div id="calendarModal" class="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto transition-opacity duration-300" onclick="if(event.target === this) closeCalendarModal()">
         
         <div class="max-w-3xl w-full relative my-auto rounded-3xl shadow-2xl bg-surface/95 dark:bg-[#090D16]/95 backdrop-blur-2xl border border-borderLight max-h-[92vh] flex flex-col overflow-hidden">
             
@@ -430,9 +430,9 @@
     </div>
 
     <!-- Interactive Booking Modal -->
-    <div id="bookingModal" class="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeBookingModal()">
-        <div class="clean-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-borderLight space-y-6 relative shadow-2xl bg-surface">
-            <button type="button" onclick="closeBookingModal()" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-surface hover:bg-white/10 text-secondaryText hover:text-primaryText flex items-center justify-center text-xs border border-borderLight">
+    <div id="bookingModal" class="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeBookingModal()">
+        <div class="clean-card max-w-md w-full p-6 sm:p-8 rounded-3xl border border-borderLight space-y-6 relative shadow-2xl bg-white/95 dark:bg-[#090D16]/95 text-primaryText dark:text-white">
+            <button type="button" onclick="closeBookingModal()" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/20 dark:bg-[#090D16]/60 hover:bg-white/30 dark:hover:bg-[#090D16]/70 text-secondaryText hover:text-primaryText flex items-center justify-center text-xs border border-borderLight">
                 <i class="fas fa-times"></i>
             </button>
 

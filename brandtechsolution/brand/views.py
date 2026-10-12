@@ -14,7 +14,7 @@ from django.core.cache import cache
 
 from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
-from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career
+from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career, PartnershipType, PartnerOrganisation
 from .forms import SiteContentForm
 from .markdown_utils import render_markdown
 
@@ -98,6 +98,25 @@ def careers(request):
     """Careers page view – now pulls open positions from the admin"""
     career_list = Career.objects.all()
     return render(request, 'brand/careers.html', {'career_list': career_list})
+
+
+def partnerships(request):
+    """Standalone Partnerships page.
+
+    Fetches all partnership types (ordered by status then order field) and
+    featured partner organisations so admins can control everything without
+    touching code.
+    """
+    open_types   = PartnershipType.objects.filter(status=PartnershipType.STATUS_OPEN)
+    closed_types = PartnershipType.objects.filter(status=PartnershipType.STATUS_CLOSED)
+    featured_partners = PartnerOrganisation.objects.filter(featured=True)
+    all_partners      = PartnerOrganisation.objects.all()
+    return render(request, 'brand/partnerships.html', {
+        'open_types':       open_types,
+        'closed_types':     closed_types,
+        'featured_partners': featured_partners,
+        'all_partners':      all_partners,
+    })
 
 
 def products(request):

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Unified the visual language of [`contacts.html`](brandtechsolution/brand/templates/brand/contacts.html) with modern dark/light glassmorphic tokens, ambient glow gradients, and cohesive `#007AFF` / `#00FF94` brand palettes.
   - Re-architected interactive Strategy Calendar modal with dynamic date initialization (`new Date()`), real-time day/slot selections, and touch-optimized controls.
   - Aligned global footer container in [`footer.html`](brandtechsolution/brand/templates/brand/footer.html) with standard `max-w-7xl` layout and enhanced mobile responsiveness for columns, legal links, and copyright notices.
+  - Sized and refined the Partnership Application modal card (`#applyModalCard`) in [`partnerships.html`](brandtechsolution/brand/templates/brand/partnerships.html) with compact bounds (`max-w-lg`, `max-h-[85vh]`), dynamic track badge pill, reduced form paddings, and smooth inner scroll container to eliminate oversized vertical height on mobile and desktop viewports.
+  - Fixed overlay ordering for strategic consultation modals: raised `calendarModal` and `bookingModal` z-index to `2000` to sit above the glassmorphic header, and added semi‑transparent `bg-surface/95` (light) / `dark:bg-[#090D16]/95` (dark) to the booking card for clearer visibility in light mode.
 
 ### Fixed
 - **Contact Page Layout & Modal Hierarchy**:
@@ -21,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminated duplicate Strategy Calendar CTA buttons and repaired modal backdrop, dismissal triggers, and keyboard `Escape` bindings.
 
 ### Added
+- **Dedicated Partnerships & CSR Page (`/partnerships/`)**:
+  - Engineered standalone, glassmorphic Partnerships and Corporate Social Responsibility hub (`brand/templates/brand/partnerships.html`) showcasing active partnership tracks, collaborative workflow, CSR pillars, partner logos, and an interactive application modal.
+  - Replaced all emojis, font icon glyphs, and bullet symbols with exact, crisp inline vector `<svg>` elements across all badges, lifecycle steps, track cards, benefit/requirement checklists, and CSR feature cards.
+  - Implemented dynamic database models `PartnershipType` and `PartnerOrganisation` supporting real-time admin management for open/closed tracks, benefits, criteria, and partner organizations.
+  - Dedicated CSR mandate to organizations touching the lives of children (orphanages, rescue shelters, digital literacy, child safety) and ministries spreading the Gospel of Jesus Christ (churches, missionary societies, congregation tools).
+  - Clarified EduShare status across the platform: explicitly established that EduShare is not currently zero-rated, launching a public call and partnership track for telecommunications carriers (Safaricom, Airtel, MTN) and educational donors to sponsor student data and zero-rate syllabus access across Kenya's 47 counties and the African continent.
+  - Positioned CSR under the Partnerships ecosystem and wired global header dropdown and footer quick links directly to `/partnerships/`.
+  - Added full Django Admin management interfaces with list filtering, ordering, and quick-access management buttons from the Teklora Admin panel (`admin_base.html` and `admin_site_content.html`).
 - **Company & Corporate Navigation Restructuring**:
   - Reorganized the global navigation and footer from "About" to "Company", housing all company dimensions: *About Us & Story*, *Mission & Values*, *Careers & Jobs* (`/careers/`), *CSR & Social Impact* (`/about/#csr`), and *Partnerships*.
   - Updated [about.html](brandtechsolution/brand/templates/brand/about.html) with a direct link and action card for open roles linking directly to the full [Careers Page](brandtechsolution/brand/templates/brand/careers.html).

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Project, ProjectFeature, ProjectImage, ProjectNote, Career
+from .models import Project, ProjectFeature, ProjectImage, ProjectNote, Career, PartnershipType, PartnerOrganisation
 
 
 class ProjectImageInline(admin.TabularInline):
@@ -71,3 +71,32 @@ class CareerAdmin(admin.ModelAdmin):
     list_display = ('title', 'location', 'employment_type', 'posted_at')
     search_fields = ('title', 'description')
     ordering = ('-posted_at',)
+
+
+@admin.register(PartnershipType)
+class PartnershipTypeAdmin(admin.ModelAdmin):
+    """Admin for partnership categories shown on /partnerships/."""
+    list_display  = ('title', 'tagline', 'status', 'order', 'created_at')
+    list_filter   = ('status',)
+    list_editable = ('status', 'order')
+    search_fields = ('title', 'tagline', 'description')
+    ordering      = ('order', 'title')
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'icon', 'accent', 'tagline', 'description', 'status', 'order'),
+        }),
+        ('Benefits & Requirements', {
+            'description': 'Enter each item on its own line.',
+            'fields': ('benefits', 'requirements'),
+        }),
+    )
+
+
+@admin.register(PartnerOrganisation)
+class PartnerOrganisationAdmin(admin.ModelAdmin):
+    """Admin for the partner logos showcase strip."""
+    list_display  = ('name', 'sector', 'featured', 'order', 'joined_at', 'created_at')
+    list_filter   = ('featured', 'sector')
+    list_editable = ('featured', 'order')
+    search_fields = ('name', 'sector', 'description')
+    ordering      = ('order', 'name')

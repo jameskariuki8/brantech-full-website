@@ -57,6 +57,21 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 
 ---
 
+### 🤝 Milestone 5: Dedicated Partnerships & CSR Platform *(Completed)*
+- [x] **Standalone Partnerships & CSR Hub** (`/partnerships/`):
+  - [x] Dedicated route and template (`partnerships.html`) styled with glassmorphism and Tailwind tokens.
+  - [x] 4-step collaborative framework outlining how organisations and people can partner with Teklora.
+  - [x] Interactive modal application form with prefilled track metadata and WhatsApp direct liaison.
+- [x] **Embedded CSR Ecosystem**:
+  - [x] Dedicated Corporate Social Responsibility mandate: touching the lives of vulnerable children (orphanages, rescue shelters, digital literacy), and ministries spreading the Gospel of Jesus Christ (churches, evangelism, congregation tech).
+  - [x] EduShare Zero-Rating Alliance: Public campaign inviting telcos (Safaricom, Airtel, MTN) and educational donors to partner with Teklora to sponsor student bandwidth and zero-rate syllabus access across Kenya and Africa.
+- [x] **Admin-Managed Partnership Pipeline**:
+  - [x] `PartnershipType` and `PartnerOrganisation` database models with automatic migrations.
+  - [x] Open / Closed status filtering, custom ordering, and list-editable controls.
+  - [x] Direct navigation shortcuts from Teklora Admin (`admin_base.html` and `admin_site_content.html`).
+
+---
+
 ## ✅ Completed Milestones
 
 - [x] **Statutory Compliance & Legal Engine**: KDPA 2019 & GDPR compliant Privacy Policy and Terms of Service.

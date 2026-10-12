@@ -1,0 +1,878 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partnerships & CSR - {{ site_content.brand_name }}</title>
+    <meta name="description" content="Explore partnership opportunities and Corporate Social Responsibility (CSR) initiatives with {{ site_content.brand_name }}. Collaborate with us to build transformative African technology.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'brand/images/logo.png' %}" type="image/png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: 'var(--bg-primary)',
+                        surface: 'var(--bg-card)',
+                        primaryText: 'var(--text-primary)',
+                        secondaryText: 'var(--text-secondary)',
+                        brandBlue: 'var(--brand-blue)',
+                        brandWarm: 'var(--brand-warm)',
+                        borderLight: 'var(--border-color)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- UI/UX CSS -->
+    <link rel="stylesheet" href="{% static 'brand/css/redesign.css' %}?v=2.3.0" />
+</head>
+<body class="bg-background text-secondaryText font-sans antialiased selection:bg-brandBlue selection:text-white pt-24 min-h-screen flex flex-col">
+
+    <!-- Global Navigation Header -->
+    {% include 'brand/header.html' %}
+
+    <!-- HERO SECTION -->
+    <section class="relative py-20 lg:py-28 overflow-hidden bg-background border-b border-borderLight/40">
+        <!-- Ambient decorative glow -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-sky-500/15 via-blue-600/10 to-teal-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+        <div class="absolute -top-12 right-10 w-80 h-80 bg-brandWarm/10 blur-[100px] rounded-full pointer-events-none -z-10"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <!-- Badge with Exact SVG -->
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-400 text-xs sm:text-sm font-semibold tracking-wide uppercase mb-6 backdrop-blur-md">
+                <svg class="w-4 h-4 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Strategic Ecosystem &amp; Social Impact</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-primaryText font-heading tracking-tight max-w-4xl mx-auto leading-[1.15]">
+                Partner With Us to Engineer <br class="hidden sm:inline" />
+                <span class="text-gradient">Lasting African Impact.</span>
+            </h1>
+
+            <p class="mt-6 text-lg sm:text-xl text-secondaryText max-w-2xl mx-auto leading-relaxed">
+                We team up with telcos, education sponsors, churches, Gospel ministries, and child welfare organisations across Kenya and Africa. Partner with us to help zero-rate EduShare for every student and touch lives where it matters most.
+            </p>
+
+            <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <a href="#open-tracks" class="btn-premium btn-premium-primary px-7 py-3.5 rounded-xl font-bold inline-flex items-center gap-2.5 shadow-lg shadow-sky-500/15">
+                    <span>Explore Open Tracks</span>
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </a>
+                <a href="#csr-section" class="btn-premium px-7 py-3.5 rounded-xl font-semibold border border-borderLight hover:border-brandBlue/50 text-primaryText inline-flex items-center gap-2.5 bg-surface/60 backdrop-blur-md transition-all">
+                    <svg class="w-4 h-4 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                    <span>Our CSR Initiatives</span>
+                </a>
+            </div>
+
+            <!-- Key Metric Pillars -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 max-w-5xl mx-auto pt-8 border-t border-borderLight/30 text-left">
+                <div class="p-4 rounded-xl bg-surface/40 border border-borderLight/30">
+                    <div class="text-2xl font-extrabold text-primaryText font-heading">EduShare</div>
+                    <div class="text-xs text-secondaryText mt-1">Ready to Zero-Rate Across Kenya &amp; Africa</div>
+                </div>
+                <div class="p-4 rounded-xl bg-surface/40 border border-borderLight/30">
+                    <div class="text-2xl font-extrabold text-primaryText font-heading">Children</div>
+                    <div class="text-xs text-secondaryText mt-1">Uplifting Vulnerable Children &amp; Homes</div>
+                </div>
+                <div class="p-4 rounded-xl bg-surface/40 border border-borderLight/30">
+                    <div class="text-2xl font-extrabold text-primaryText font-heading">Gospel</div>
+                    <div class="text-xs text-secondaryText mt-1">Empowering Ministries Spreading the Gospel</div>
+                </div>
+                <div class="p-4 rounded-xl bg-surface/40 border border-borderLight/30">
+                    <div class="text-2xl font-extrabold text-primaryText font-heading">Pan-African</div>
+                    <div class="text-xs text-secondaryText mt-1">Continental Reach Across 47 Counties</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW ORGANISATIONS & PEOPLE CAN PARTNER WITH US -->
+    <section class="py-20 bg-surface/30 border-b border-borderLight/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-brandBlue">Structured Framework</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-primaryText font-heading mt-2">
+                    How We Collaborate
+                </h2>
+                <p class="text-secondaryText text-base sm:text-lg mt-3">
+                    Whether you are an institution, a startup, a corporate sponsor, or an individual technologist, our collaborative process is transparent, structured, and outcome-oriented.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-6 relative">
+                <!-- Step 1 -->
+                <div class="clean-card p-6 rounded-2xl relative border border-borderLight flex flex-col justify-between group hover:border-sky-500/50 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center text-lg font-bold font-heading mb-5">
+                            01
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText mb-2 group-hover:text-sky-400 transition-colors">Shared Discovery</h3>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            We align on strategic goals, mutual capabilities, and measurable impact milestones to ensure high mutual value from day one.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/30 text-xs text-sky-400 flex items-center gap-2 font-medium">
+                        <svg class="w-4 h-4 shrink-0 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                        </svg>
+                        <span>Alignment &amp; Scoping</span>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="clean-card p-6 rounded-2xl relative border border-borderLight flex flex-col justify-between group hover:border-brandWarm/50 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg font-bold font-heading mb-5">
+                            02
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText mb-2 group-hover:text-emerald-400 transition-colors">Synergy &amp; Co-Design</h3>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            Our engineering teams interface directly with your stakeholders to build integrations, curriculums, or joint operational pilots.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/30 text-xs text-emerald-400 flex items-center gap-2 font-medium">
+                        <svg class="w-4 h-4 shrink-0 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                        </svg>
+                        <span>Technical Integration</span>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="clean-card p-6 rounded-2xl relative border border-borderLight flex flex-col justify-between group hover:border-purple-500/50 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-lg font-bold font-heading mb-5">
+                            03
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText mb-2 group-hover:text-purple-400 transition-colors">Deployment &amp; Scale</h3>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            We deploy on resilient cloud infrastructure, pilot with African institutions, and co-market the initiative to institutional networks.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/30 text-xs text-purple-400 flex items-center gap-2 font-medium">
+                        <svg class="w-4 h-4 shrink-0 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                            <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                        </svg>
+                        <span>Field Execution</span>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="clean-card p-6 rounded-2xl relative border border-borderLight flex flex-col justify-between group hover:border-amber-500/50 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-lg font-bold font-heading mb-5">
+                            04
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText mb-2 group-hover:text-amber-400 transition-colors">Sustained Growth</h3>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            Long-term governance, impact metrics reporting, recurring joint development cycles, and regional community expansion.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/30 text-xs text-amber-400 flex items-center gap-2 font-medium">
+                        <svg class="w-4 h-4 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                            <polyline points="16 7 22 7 22 13"/>
+                        </svg>
+                        <span>Continental Scale</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- OPEN PARTNERSHIP OPPORTUNITIES (DYNAMIC FROM DATABASE) -->
+    <section id="open-tracks" class="py-20 bg-background scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-sky-400">Current Openings</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-primaryText font-heading mt-2">
+                        Active Partnership Tracks
+                    </h2>
+                    <p class="text-secondaryText text-sm sm:text-base mt-2 max-w-xl">
+                        These tracks are actively open for institutions, technical collaborators, and sponsors. Updated in real time by our administration.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Accepting Applications</span>
+                    </span>
+                </div>
+            </div>
+
+            {% if open_types %}
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for track in open_types %}
+                <div class="clean-card rounded-2xl p-7 border border-borderLight flex flex-col justify-between hover:border-sky-500/40 transition-all duration-300 shadow-xl bg-surface/70 group">
+                    <div>
+                        <!-- Header with dynamic SVG icon matching the track type -->
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-sky-500/20 transition-all">
+                                {% if "University" in track.title or "Academic" in track.title or "Education" in track.title %}
+                                <svg class="w-7 h-7 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m2 7 10-5 10 5-10 5z"/>
+                                    <path d="M12 22V12"/>
+                                    <path d="M22 10v6"/>
+                                    <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+                                </svg>
+                                {% elif "Tech" in track.title or "Cloud" in track.title or "Developer" in track.title %}
+                                <svg class="w-7 h-7 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect width="18" height="12" x="3" y="4" rx="2"/>
+                                    <line x1="2" x2="22" y1="20" y2="20"/>
+                                    <polyline points="8 9 6 11 8 13"/>
+                                    <polyline points="16 9 18 11 16 13"/>
+                                </svg>
+                                {% elif "NGO" in track.title or "Civil" in track.title or "Impact" in track.title %}
+                                <svg class="w-7 h-7 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                                    <path d="M2 12h20"/>
+                                </svg>
+                                {% elif "CSR" in track.title or "Sponsor" in track.title %}
+                                <svg class="w-7 h-7 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                </svg>
+                                {% else %}
+                                <svg class="w-7 h-7 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                {% endif %}
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Open Track
+                            </span>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-primaryText font-heading mb-2 group-hover:text-sky-400 transition-colors">
+                            {{ track.title }}
+                        </h3>
+                        <p class="text-sm font-medium text-sky-400/90 mb-4">{{ track.tagline }}</p>
+
+                        <p class="text-sm text-secondaryText leading-relaxed mb-6">
+                            {{ track.description }}
+                        </p>
+
+                        <!-- Key Benefits with SVG bullets -->
+                        {% if track.benefits_list %}
+                        <div class="mb-5 pt-4 border-t border-borderLight/40">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-primaryText mb-2.5 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                                <span>Value &amp; Mutual Benefits</span>
+                            </h4>
+                            <ul class="space-y-2 text-xs text-secondaryText">
+                                {% for benefit in track.benefits_list %}
+                                <li class="flex items-start gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    <span>{{ benefit }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Requirements with SVG bullets -->
+                        {% if track.requirements_list %}
+                        <div class="mb-6 pt-3 border-t border-borderLight/30">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-primaryText mb-2.5 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect width="18" height="14" x="3" y="5" rx="2"/>
+                                    <line x1="7" x2="17" y1="10" y2="10"/>
+                                    <line x1="7" x2="13" y1="14" y2="14"/>
+                                </svg>
+                                <span>Eligibility Criteria</span>
+                            </h4>
+                            <ul class="space-y-2 text-xs text-secondaryText">
+                                {% for req in track.requirements_list %}
+                                <li class="flex items-start gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-sky-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="m9 12 2 2 4-4"/>
+                                    </svg>
+                                    <span>{{ req }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pt-6 border-t border-borderLight/40 flex items-center justify-between gap-3">
+                        <button type="button" 
+                                onclick="openApplyModal('{{ track.title|escapejs }}')" 
+                                class="btn-premium btn-premium-primary w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                            <span>Apply for Track</span>
+                            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Fallback Default Open Tracks if none yet in DB -->
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Track 1: EduShare Zero-Rating Alliance -->
+                <div class="clean-card rounded-2xl p-7 border border-borderLight flex flex-col justify-between shadow-xl bg-surface/70">
+                    <div>
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m2 7 10-5 10 5-10 5z"/>
+                                    <path d="M12 22V12"/>
+                                    <path d="M22 10v6"/>
+                                    <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+                                </svg>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Open Track
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-primaryText font-heading mb-2">EduShare Zero-Rating Alliance</h3>
+                        <p class="text-sm font-medium text-sky-400 mb-4">Partner with us to zero-rate syllabus access across Kenya and Africa.</p>
+                        <p class="text-sm text-secondaryText leading-relaxed mb-6">
+                            EduShare caches decentralized university syllabus content. While currently standard-rated, we invite telcos (Safaricom, Airtel, MTN), governments, and philanthropies to partner with us to sponsor reverse-billing and make EduShare fully zero-rated for students.
+                        </p>
+                        <div class="mb-5 pt-4 border-t border-borderLight/40">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-primaryText mb-2">Key Value &amp; Mutual Benefits</h4>
+                            <ul class="space-y-2 text-xs text-secondaryText">
+                                <li class="flex items-center gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Eliminate student mobile data costs across all 47 Kenyan counties and Africa</span>
+                                </li>
+                                <li class="flex items-center gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Verified ESG impact data and prominent institutional co-branding</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openApplyModal('EduShare Zero-Rating Alliance')" class="btn-premium btn-premium-primary w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                        <span>Partner to Zero-Rate EduShare</span>
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+
+                <!-- Track 2: Gospel Outreach & Faith Ministries -->
+                <div class="clean-card rounded-2xl p-7 border border-borderLight flex flex-col justify-between shadow-xl bg-surface/70">
+                    <div>
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+                                    <path d="M6 6h10"/>
+                                    <path d="M6 10h10"/>
+                                </svg>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Open Track
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-primaryText font-heading mb-2">Gospel Outreach &amp; Faith Ministries</h3>
+                        <p class="text-sm font-medium text-amber-400 mb-4">Equipping churches and mission bodies spreading the Gospel of Jesus Christ.</p>
+                        <p class="text-sm text-secondaryText leading-relaxed mb-6">
+                            We collaborate with churches, Christian ministries, and evangelistic missions to provide pro-bono digital systems, sermon streaming platforms, and SMS community communication engines (DOMMaterdei).
+                        </p>
+                        <div class="mb-5 pt-4 border-t border-borderLight/40">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-primaryText mb-2">Key Value &amp; Mutual Benefits</h4>
+                            <ul class="space-y-2 text-xs text-secondaryText">
+                                <li class="flex items-center gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Subsidized &amp; pro-bono church management and congregation portals</span>
+                                </li>
+                                <li class="flex items-center gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Digital evangelism tools to reach seekers and unreached communities</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openApplyModal('Gospel Outreach & Faith Ministries')" class="btn-premium btn-premium-primary w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                        <span>Apply as Gospel Partner</span>
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+
+                <!-- Track 3: Touching the Lives of Children -->
+                <div class="clean-card rounded-2xl p-7 border border-borderLight flex flex-col justify-between shadow-xl bg-surface/70">
+                    <div>
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                    <circle cx="12" cy="7" r="2.5"/>
+                                </svg>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Open Track
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-primaryText font-heading mb-2">Touching the Lives of Children</h3>
+                        <p class="text-sm font-medium text-rose-400 mb-4">Uplifting orphanages, children's homes, and child welfare initiatives.</p>
+                        <p class="text-sm text-secondaryText leading-relaxed mb-6">
+                            We collaborate with registered children's shelters, rescue centers, and charities to provide digital learning setups, nutrition program tracking, and administrative systems for vulnerable children.
+                        </p>
+                        <div class="mb-5 pt-4 border-t border-borderLight/40">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-primaryText mb-2">Key Value &amp; Mutual Benefits</h4>
+                            <ul class="space-y-2 text-xs text-secondaryText">
+                                <li class="flex items-center gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Free computer station setup &amp; foundational digital literacy for kids</span>
+                                </li>
+                                <li class="flex items-center gap-2.5">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span>Secure donor management, child safety records, and volunteer pairing</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openApplyModal('Touching the Lives of Children')" class="btn-premium btn-premium-primary w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+                        <span>Apply for Child Welfare Track</span>
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+
+            <!-- Closed / Archival Tracks (If any) -->
+            {% if closed_types %}
+            <div class="mt-16 pt-10 border-t border-borderLight/40">
+                <details class="group cursor-pointer">
+                    <summary class="flex items-center justify-between font-bold text-primaryText text-lg list-none">
+                        <span class="flex items-center gap-2.5">
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="21 8 21 21 3 21 3 8"/>
+                                <rect x="1" y="3" width="22" height="5"/>
+                                <line x1="10" y1="12" x2="14" y2="12"/>
+                            </svg>
+                            <span>Archived / Completed Partnership Tracks ({{ closed_types|length }})</span>
+                        </span>
+                        <svg class="w-4 h-4 text-secondaryText group-open:rotate-180 transition-transform shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </summary>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                        {% for ctrack in closed_types %}
+                        <div class="p-5 rounded-xl bg-surface/30 border border-borderLight/30 opacity-70">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-bold text-primaryText">{{ ctrack.title }}</h4>
+                                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-white/5 text-gray-400">Closed</span>
+                            </div>
+                            <p class="text-xs text-secondaryText">{{ ctrack.tagline }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- CORPORATE SOCIAL RESPONSIBILITY (CSR) SECTION -->
+    <section id="csr-section" class="py-20 lg:py-28 bg-surface/40 border-y border-borderLight/40 scroll-mt-28 lg:scroll-mt-32 relative overflow-hidden">
+        <!-- Subtle background accent glow -->
+        <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-rose-500/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
+        <div class="absolute top-10 right-10 w-96 h-96 bg-brandBlue/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <!-- CSR Badge with Heart SVG -->
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs font-semibold tracking-wide uppercase mb-3">
+                    <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                    <span>Corporate Social Responsibility (CSR)</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primaryText font-heading tracking-tight">
+                    Touching Children's Lives &amp; Spreading the Gospel
+                </h2>
+                <p class="text-secondaryText text-base sm:text-lg mt-4 leading-relaxed">
+                    At Teklora, engineering is fundamentally an act of service. Our CSR mandate is purposefully dedicated to organisations touching the lives of children and ministries spreading the Gospel of Jesus Christ. In addition, while EduShare is not currently zero-rated, we actively invite partners and telcos to collaborate with us to make it zero-rated across Kenya and the African continent.
+                </p>
+            </div>
+
+            <!-- CSR Pillars Grid with Exact SVGs -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                <!-- CSR 1: Touching Children's Lives -->
+                <div class="clean-card p-6 rounded-2xl border border-borderLight/60 bg-surface/80 flex flex-col justify-between hover:border-rose-500/40 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-5">
+                            <svg class="w-6 h-6 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                <circle cx="12" cy="7" r="2.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText font-heading mb-2">Touching Children's Lives</h3>
+                        <p class="text-xs text-rose-400 font-semibold uppercase tracking-wider mb-3">Orphanages &amp; Vulnerable Care</p>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            Providing direct technical backing, safe computer spaces, learning hardware, and educational mentorship to children's homes, rescue shelters, and vulnerable boys and girls across Kenya.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/40 flex items-center justify-between text-xs text-secondaryText">
+                        <span>Mandate:</span>
+                        <span class="font-bold text-primaryText">Child Upliftment</span>
+                    </div>
+                </div>
+
+                <!-- CSR 2: Spreading the Gospel -->
+                <div class="clean-card p-6 rounded-2xl border border-borderLight/60 bg-surface/80 flex flex-col justify-between hover:border-amber-500/40 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-5">
+                            <svg class="w-6 h-6 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+                                <path d="M6 6h10"/>
+                                <path d="M6 10h10"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText font-heading mb-2">Spreading the Gospel</h3>
+                        <p class="text-xs text-amber-400 font-semibold uppercase tracking-wider mb-3">Churches &amp; Evangelistic Missions</p>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            Equipping churches, missionary organisations, and evangelical outreaches with pro-bono portals, sermon streaming systems, and congregation communication tools (DOMMaterdei) to proclaim Christ.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/40 flex items-center justify-between text-xs text-secondaryText">
+                        <span>Mission:</span>
+                        <span class="font-bold text-primaryText">Continental Evangelism</span>
+                    </div>
+                </div>
+
+                <!-- CSR 3: EduShare Zero-Rating Alliance -->
+                <div class="clean-card p-6 rounded-2xl border border-borderLight/60 bg-surface/80 flex flex-col justify-between hover:border-sky-500/40 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center mb-5">
+                            <svg class="w-6 h-6 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m2 7 10-5 10 5-10 5z"/>
+                                <path d="M12 22V12"/>
+                                <path d="M22 10v6"/>
+                                <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText font-heading mb-2">EduShare Zero-Rating Drive</h3>
+                        <p class="text-xs text-sky-400 font-semibold uppercase tracking-wider mb-3">Not Zero-Rated Yet &bull; Partner With Us</p>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            EduShare is currently not zero-rated. We invite telcos (Safaricom, Airtel, MTN) and foundations to partner with us to sponsor student data and zero-rate syllabus access across Kenya and all of Africa.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/40 flex items-center justify-between text-xs text-secondaryText">
+                        <span>Goal:</span>
+                        <span class="font-bold text-primaryText">100% Free Data for Learners</span>
+                    </div>
+                </div>
+
+                <!-- CSR 4: Child Safety & Digital Inclusion -->
+                <div class="clean-card p-6 rounded-2xl border border-borderLight/60 bg-surface/80 flex flex-col justify-between hover:border-emerald-500/40 transition-all duration-300">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
+                            <svg class="w-6 h-6 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="m9 12 2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-primaryText font-heading mb-2">Child Safety &amp; Inclusion</h3>
+                        <p class="text-xs text-emerald-400 font-semibold uppercase tracking-wider mb-3">Safe Learning Environments</p>
+                        <p class="text-sm text-secondaryText leading-relaxed">
+                            Implementing KDPA-compliant child privacy protections, clean online educational spaces, and foundational computing skills to safeguard and prepare younger generations.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-borderLight/40 flex items-center justify-between text-xs text-secondaryText">
+                        <span>Standard:</span>
+                        <span class="font-bold text-primaryText">KDPA Safe &amp; Inclusive</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSR Co-Sponsorship Banner with Exact SVG -->
+            <div class="p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-sky-950/40 via-surface to-blue-950/40 border border-sky-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-2 text-center md:text-left">
+                    <h3 class="text-2xl font-bold text-primaryText font-heading">
+                        Partner to Touch Children's Lives, Spread the Gospel, or Zero-Rate EduShare
+                    </h3>
+                    <p class="text-sm text-secondaryText max-w-2xl">
+                        Whether you are a children's shelter, Christian ministry, telecommunication provider willing to zero-rate educational traffic, or philanthropic foundation, we welcome you to partner with us.
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <button type="button" 
+                            onclick="openApplyModal('CSR Collaboration (Children, Gospel, or EduShare)')" 
+                            class="btn-premium btn-premium-primary px-6 py-3 rounded-xl font-bold inline-flex items-center gap-2.5 whitespace-nowrap">
+                        <svg class="w-4 h-4 text-rose-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        </svg>
+                        <span>Propose CSR Collaboration</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- OUR PARTNERS SHOWCASE STRIP (DYNAMIC OR CURATED) -->
+    <section class="py-20 bg-background border-b border-borderLight/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-brandWarm">Network &amp; Collaborators</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-primaryText font-heading mt-1">
+                    Featured Partners &amp; Ecosystem Allies
+                </h2>
+                <p class="text-xs sm:text-sm text-secondaryText mt-2">
+                    Organisations that build with us, mentor African talent, and power continental technology.
+                </p>
+            </div>
+
+            {% if featured_partners %}
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 items-center">
+                {% for partner in featured_partners %}
+                <a href="{{ partner.website|default:'#' }}" target="_blank" rel="noopener noreferrer" 
+                   class="clean-card p-5 rounded-2xl flex flex-col items-center justify-center text-center group hover:border-sky-500/40 transition-all">
+                    {% if partner.get_logo %}
+                    <img src="{{ partner.get_logo }}" alt="{{ partner.name }}" class="h-12 max-w-full object-contain filter grayscale group-hover:grayscale-0 transition-all mb-2" />
+                    {% else %}
+                    <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primaryText font-bold font-heading mb-2">
+                        {{ partner.name|slice:":2"|upper }}
+                    </div>
+                    {% endif %}
+                    <span class="text-xs font-bold text-primaryText truncate max-w-full">{{ partner.name }}</span>
+                    {% if partner.sector %}
+                    <span class="text-[10px] text-secondaryText mt-0.5 truncate">{{ partner.sector }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Curated default ecosystem badges with Exact SVGs -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 items-center">
+                <div class="clean-card p-6 rounded-2xl text-center border border-borderLight/40 bg-surface/40 flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m2 7 10-5 10 5-10 5z"/>
+                            <path d="M12 22V12"/>
+                            <path d="M22 10v6"/>
+                            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-bold text-primaryText">Academic Institutions</div>
+                    <div class="text-[11px] text-secondaryText mt-1">University Innovation Labs</div>
+                </div>
+
+                <div class="clean-card p-6 rounded-2xl text-center border border-borderLight/40 bg-surface/40 flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+                            <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+                            <line x1="6" x2="6.01" y1="6" y2="6"/>
+                            <line x1="6" x2="6.01" y1="18" y2="18"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-bold text-primaryText">Cloud &amp; Infrastructure</div>
+                    <div class="text-[11px] text-secondaryText mt-1">CDN &amp; Data Centers</div>
+                </div>
+
+                <div class="clean-card p-6 rounded-2xl text-center border border-borderLight/40 bg-surface/40 flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                            <path d="M2 12h20"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-bold text-primaryText">Non-Profit Foundations</div>
+                    <div class="text-[11px] text-secondaryText mt-1">Community Digital Inclusion</div>
+                </div>
+
+                <div class="clean-card p-6 rounded-2xl text-center border border-borderLight/40 bg-surface/40 flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="16" y="16" width="6" height="6" rx="1"/>
+                            <rect x="2" y="16" width="6" height="6" rx="1"/>
+                            <rect x="9" y="2" width="6" height="6" rx="1"/>
+                            <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/>
+                            <path d="M12 12V8"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-bold text-primaryText">Enterprise SaaS Providers</div>
+                    <div class="text-[11px] text-secondaryText mt-1">FinTech &amp; Logistics APIs</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Admin Notice for Staff / Admins -->
+            <div class="mt-12 text-center">
+                <a href="/admin-panel/?section=staff" class="text-xs text-secondaryText hover:text-sky-400 transition-colors inline-flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>Administrators can update partnership tracks, people, and partner organisations via the Teklora Admin panel</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- INQUIRY & APPLICATION MODAL -->
+    <div id="applyModal" style="z-index: 2000;" class="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 pt-20 sm:pt-24 pb-8 bg-black/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="clean-card w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-5 sm:p-6 bg-surface border border-sky-500/30 shadow-2xl relative transform scale-95 transition-all duration-300 my-auto" id="applyModalCard">
+            <!-- Close Button with Exact SVG -->
+            <button type="button" onclick="closeApplyModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors" aria-label="Close modal">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <!-- Compact Modal Header -->
+            <div class="mb-4 pr-7">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-[11px] font-semibold mb-1">
+                    <svg class="w-3 h-3 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Partnership Proposal</span>
+                </div>
+                <h3 class="text-xl sm:text-2xl font-bold text-primaryText font-heading" id="modalTrackTitle">
+                    Apply for Partnership
+                </h3>
+                <div class="mt-1.5 flex items-center gap-1.5 text-xs">
+                    <span class="text-secondaryText text-[11px]">Selected Track:</span>
+                    <span id="displayTrackBadge" class="px-2.5 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/30 text-sky-300 font-semibold text-xs truncate max-w-[260px]">General Partnership</span>
+                </div>
+            </div>
+
+            <form action="{% url 'contacts' %}" method="GET" class="space-y-3.5">
+                <input type="hidden" name="track" id="modalTrackInput" value="">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-secondaryText uppercase tracking-wider mb-1">Your Name / Rep *</label>
+                        <input type="text" required placeholder="e.g. Dr. Jane Kamau" class="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-borderLight text-primaryText text-xs sm:text-sm focus:border-sky-500 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-secondaryText uppercase tracking-wider mb-1">Organisation Name *</label>
+                        <input type="text" required placeholder="e.g. Acme Corp / Ministry" class="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-borderLight text-primaryText text-xs sm:text-sm focus:border-sky-500 focus:outline-none transition-colors">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-secondaryText uppercase tracking-wider mb-1">Work Email *</label>
+                        <input type="email" required placeholder="partner@org.ac.ke" class="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-borderLight text-primaryText text-xs sm:text-sm focus:border-sky-500 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-secondaryText uppercase tracking-wider mb-1">Phone Number (E.164) *</label>
+                        <input type="tel" required placeholder="+254 700 000000" class="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-borderLight text-primaryText text-xs sm:text-sm focus:border-sky-500 focus:outline-none transition-colors">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-secondaryText uppercase tracking-wider mb-1">Collaboration Scope / Goals *</label>
+                    <textarea rows="2.5" required placeholder="Briefly outline collaboration goals, expected beneficiaries, or target regions..." class="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-borderLight text-primaryText text-xs sm:text-sm focus:border-sky-500 focus:outline-none transition-colors resize-none"></textarea>
+                </div>
+
+                <div class="pt-1.5 flex flex-col sm:flex-row gap-2.5">
+                    <button type="submit" class="btn-premium btn-premium-primary flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+                        <span>Submit Partnership Dossier</span>
+                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                    <a href="https://wa.me/254714156907?text=Hello%20Teklora%20Partnerships%20Desk,%20we%20are%20interested%20in%20partnering." target="_blank" rel="noopener noreferrer" class="py-2.5 px-4 rounded-xl font-semibold border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap transition-colors">
+                        <svg class="w-3.5 h-3.5 shrink-0 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.889-9.884 9.889m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                        <span>WhatsApp Us</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Global Footer -->
+    {% include 'brand/footer.html' %}
+
+    <!-- Script for Modal and Interactivity -->
+    <script>
+        function openApplyModal(trackTitle) {
+            const modal = document.getElementById('applyModal');
+            const card = document.getElementById('applyModalCard');
+            const titleElem = document.getElementById('modalTrackTitle');
+            const badgeElem = document.getElementById('displayTrackBadge');
+            const inputHidden = document.getElementById('modalTrackInput');
+
+            if (titleElem) titleElem.textContent = 'Partner With Teklora';
+            if (badgeElem) badgeElem.textContent = trackTitle || 'General Partnership';
+            if (inputHidden) inputHidden.value = trackTitle || 'General Partnership';
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeApplyModal() {
+            const modal = document.getElementById('applyModal');
+            const card = document.getElementById('applyModalCard');
+
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.add('scale-95');
+            document.body.style.overflow = '';
+        }
+
+        // Close when clicking backdrop
+        document.getElementById('applyModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeApplyModal();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeApplyModal();
+            }
+        });
+    </script>
+</body>
+</html>
