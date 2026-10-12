@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Booking calendar unreadable in light theme**: the "Book a Strategy Session" modal on the contact page used `bg-surface/95` and `bg-surface/50`. Tailwind cannot add transparency to a colour defined as a CSS variable, so no background was drawn and dark text sat on the dark overlay. The card is now solid white (near-black in dark theme) and its inner panels use slate-50 / white-5%. The contact info cards and social tiles on the same page had the same see-through `bg-surface/50` and now use the solid `bg-surface` card colour.
 - **"Partnerships & People" opened Access denied for administrators**: the link is shown to anyone holding Manage staff, but it opens Django admin, which checks per-model permissions that panel roles never carry, so only superusers got in. The Career, Partnership type and Partner organisation admin pages now allow staff who hold Manage staff, the same rule as Website Content.
 - **Careers missing from stored header menus**: the header menu is saved in `SiteContent.header_links`, so sites created before the careers page never received its default link. Migration `brand.0019` adds "Careers & Jobs" to the About / Company submenu of each stored menu, and leaves a menu alone if it already links to `/careers/` or has no such submenu.
 
