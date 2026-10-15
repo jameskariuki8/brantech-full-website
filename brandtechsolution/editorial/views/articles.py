@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from staff.decorators import capability_required, capability_required_api
 from editorial.models import EditorialArticle
-from approval.services.workflow import HumanApprovalWorkflow
+from editorial.services.approval import HumanApprovalWorkflow
 from publishing.services.publisher import PublishingAgent
 
 

@@ -4,6 +4,7 @@ from editorial.models.memory import EditorialMemory
 from editorial.models.runs import EditorialPipelineRun
 from editorial.models.media import MediaAsset
 from editorial.models.analytics import ContentAnalytics, FeedbackLoopRecord
+from editorial.models.approval import ApprovalNotification
 
 __all__ = [
     'EditorialArticle',
@@ -13,4 +14,5 @@ __all__ = [
     'MediaAsset',
     'ContentAnalytics',
     'FeedbackLoopRecord',
+    'ApprovalNotification',
 ]

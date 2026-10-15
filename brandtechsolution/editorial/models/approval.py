@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from editorial.models import EditorialArticle
+from editorial.models.article import EditorialArticle
 
 
 class ApprovalNotification(models.Model):
@@ -21,3 +21,6 @@ class ApprovalNotification(models.Model):
 
     def __str__(self):
         return f"[{self.get_channel_display()}] Notification for '{self.article.title}'"
+
+    class Meta:
+        app_label = 'approval'

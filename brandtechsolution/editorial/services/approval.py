@@ -13,7 +13,7 @@ from typing import Dict, Any
 from django.core.mail import send_mail
 from django.conf import settings
 from editorial.models import EditorialArticle
-from approval.models import ApprovalNotification
+from editorial.models import ApprovalNotification
 from staff.emails import capability_holder_emails
 from brandtechsolution.config import config
 

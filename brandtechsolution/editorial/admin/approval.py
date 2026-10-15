@@ -1,5 +1,5 @@
 from django.contrib import admin
-from approval.models import ApprovalNotification
+from editorial.models import ApprovalNotification
 
 
 @admin.register(ApprovalNotification)

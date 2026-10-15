@@ -3,7 +3,7 @@ from django.contrib.auth.models import Permission, User
 from django.core import mail
 from django.test import TestCase, override_settings
 
-from approval.services.workflow import HumanApprovalWorkflow
+from editorial.services.approval import HumanApprovalWorkflow
 from editorial.models import EditorialArticle
 
 
@@ -62,7 +62,7 @@ class NotifyEditorsTest(TestCase):
     def test_no_recipients_sends_nothing_but_still_advances_the_article(self):
         """The draft must still reach review_pending and be visible on the
         dashboard -- the notification is a convenience, not the workflow."""
-        with self.assertLogs("approval.services.workflow", level="WARNING") as logs:
+        with self.assertLogs("editorial.services.approval", level="WARNING") as logs:
             self.workflow.notify_editors(self.article)
 
         self.assertEqual(mail.outbox, [])

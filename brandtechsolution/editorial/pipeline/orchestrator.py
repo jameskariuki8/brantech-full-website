@@ -23,7 +23,7 @@ from editorial.services.memory import EditorialMemoryAgent
 from editorial.models import EditorialArticle
 from editorial.services.seo import SEOIntelligenceAgent
 from editorial.services.visual import VisualIntelligenceAgent
-from approval.services.workflow import HumanApprovalWorkflow
+from editorial.services.approval import HumanApprovalWorkflow
 from publishing.services.publisher import PublishingAgent
 from editorial.services.analytics import AnalyticsIntelligenceAgent
 
