@@ -20,3 +20,4 @@ class EditorialMemoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'updated_at')
 
 from editorial.admin import media  # noqa: E402,F401
+from editorial.admin import analytics  # noqa: E402,F401

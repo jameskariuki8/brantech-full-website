@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from editorial.models import EditorialArticle
+from editorial.models.article import EditorialArticle
 
 
 class ContentAnalytics(models.Model):
@@ -20,6 +20,9 @@ class ContentAnalytics(models.Model):
     def __str__(self):
         return f"Analytics ({self.views_count} views, Score: {self.engagement_score}): {self.article.title}"
 
+    class Meta:
+        app_label = 'analytics'
+
 
 class FeedbackLoopRecord(models.Model):
     """Stores AI self-learning feedback records fed into Trend Intelligence Agent."""
@@ -31,3 +34,6 @@ class FeedbackLoopRecord(models.Model):
 
     def __str__(self):
         return f"Feedback Loop for {self.category} ({self.created_at.strftime('%Y-%m-%d')})"
+
+    class Meta:
+        app_label = 'analytics'

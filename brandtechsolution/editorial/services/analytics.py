@@ -8,7 +8,7 @@ Feeds these insights back into the Trend Intelligence Agent to continuously impr
 import logging
 from typing import Dict, Any
 from editorial.models import EditorialArticle
-from analytics.models import ContentAnalytics, FeedbackLoopRecord
+from editorial.models import ContentAnalytics, FeedbackLoopRecord
 
 logger = logging.getLogger(__name__)
 

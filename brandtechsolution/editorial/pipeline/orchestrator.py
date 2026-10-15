@@ -25,7 +25,7 @@ from editorial.services.seo import SEOIntelligenceAgent
 from editorial.services.visual import VisualIntelligenceAgent
 from approval.services.workflow import HumanApprovalWorkflow
 from publishing.services.publisher import PublishingAgent
-from analytics.services.analytics import AnalyticsIntelligenceAgent
+from editorial.services.analytics import AnalyticsIntelligenceAgent
 
 logger = logging.getLogger(__name__)
 
