@@ -1,5 +1,5 @@
 from django.contrib import admin
-from trends.models import TrendTopic, CompetitorSource, CompetitorArticle, TrendPrediction
+from editorial.models.trends import TrendTopic, CompetitorSource, CompetitorArticle, TrendPrediction
 
 
 @admin.register(TrendTopic)

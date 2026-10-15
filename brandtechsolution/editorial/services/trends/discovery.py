@@ -12,7 +12,7 @@ import urllib.error
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any
 from django.utils import timezone
-from trends.models import TrendTopic
+from editorial.models.trends import TrendTopic
 
 logger = logging.getLogger(__name__)
 

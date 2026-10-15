@@ -9,11 +9,11 @@ import logging
 from typing import Any, Callable, Dict, List, Optional
 from ai_workflows.harness.errors import AgentError
 from ai_workflows.harness.steps import StepCache
-from trends.services.discovery import TrendDiscoveryEngine
-from trends.services.intelligence import TrendIntelligenceAgent
-from trends.services.competitor import CompetitorIntelligenceAgent
-from trends.services.prediction import TrendPredictionAgent
-from trends.models import TrendTopic
+from editorial.services.trends.discovery import TrendDiscoveryEngine
+from editorial.services.trends.intelligence import TrendIntelligenceAgent
+from editorial.services.trends.competitor import CompetitorIntelligenceAgent
+from editorial.services.trends.prediction import TrendPredictionAgent
+from editorial.models.trends import TrendTopic
 from research.services.investigator import ResearchAgent
 from research.services.fact_verifier import FactVerificationAgent
 from editorial.services.strategy import EditorialStrategyAgent

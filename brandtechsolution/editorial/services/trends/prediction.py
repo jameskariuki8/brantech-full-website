@@ -18,7 +18,7 @@ from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
 from ai_workflows.harness.contract import AgentOutput
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
-from trends.models import TrendPrediction, TrendTopic
+from editorial.models.trends import TrendPrediction, TrendTopic
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from staff.decorators import capability_required
-from trends.models import TrendTopic, CompetitorArticle, TrendPrediction
+from editorial.models.trends import TrendTopic, CompetitorArticle, TrendPrediction
 from editorial.models import EditorialArticle
 from knowledge_base.models import KnowledgeDocument
 

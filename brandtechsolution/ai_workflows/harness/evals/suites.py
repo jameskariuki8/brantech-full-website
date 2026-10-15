@@ -14,7 +14,7 @@ Live cases cost money and are opt-in (`run_evals --live`).
 """
 from research.models import ResearchDossier
 from research.services.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
-from trends.models import TrendTopic
+from editorial.models.trends import TrendTopic
 
 from ai_workflows.harness.evals.cases import EvalCase, registry
 from ai_workflows.harness.evals.graders import (

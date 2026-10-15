@@ -2,8 +2,8 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from trends.models import TrendTopic
-from trends.services.intelligence import TrendIntelligenceAgent
+from editorial.models.trends import TrendTopic
+from editorial.services.trends.intelligence import TrendIntelligenceAgent
 from research.services.investigator import ResearchAgent
 from research.services.fact_verifier import FactVerificationAgent
 from editorial.models import EditorialArticle

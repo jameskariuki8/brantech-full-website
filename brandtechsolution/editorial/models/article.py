@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
-from research.models import VerifiedFactReport, TrendTopic
+from research.models import VerifiedFactReport
+from editorial.models.trends import TrendTopic
 
 
 class EditorialArticle(models.Model):

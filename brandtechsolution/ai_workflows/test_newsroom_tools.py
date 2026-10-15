@@ -571,7 +571,7 @@ class WiringTests(TestCase):
     def test_the_verifier_gathers_before_it_judges(self):
         from research.models import ResearchDossier
         from research.services.fact_verifier import FactVerificationAgent
-        from trends.models import TrendTopic
+        from editorial.models.trends import TrendTopic
 
         topic = TrendTopic.objects.create(
             title="A topic", summary="A summary.", source="HN",
@@ -592,7 +592,7 @@ class WiringTests(TestCase):
 
     def test_the_researcher_gathers_before_it_writes_anything_down(self):
         from research.services.investigator import ResearchAgent
-        from trends.models import TrendTopic
+        from editorial.models.trends import TrendTopic
 
         topic = TrendTopic.objects.create(
             title="A topic", summary="A summary.", source="HN",
@@ -611,7 +611,7 @@ class WiringTests(TestCase):
         gets back in after the verifier removed it."""
         from editorial.services.writer import AIWriterAgent
         from research.models import ResearchDossier, VerifiedFactReport
-        from trends.models import TrendTopic
+        from editorial.models.trends import TrendTopic
 
         topic = TrendTopic.objects.create(
             title="A topic", summary="A summary.", source="HN", category="AI",

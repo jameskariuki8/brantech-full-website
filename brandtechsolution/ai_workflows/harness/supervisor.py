@@ -95,8 +95,8 @@ def load_agents(target=registry):
     from editorial.services.writer import AIWriterAgent
     from research.services.fact_verifier import FactVerificationAgent
     from research.services.investigator import ResearchAgent
-    from trends.services.intelligence import TrendIntelligenceAgent
-    from trends.services.prediction import TrendPredictionAgent
+    from editorial.services.trends.intelligence import TrendIntelligenceAgent
+    from editorial.services.trends.prediction import TrendPredictionAgent
 
     for agent_class in (
         TrendIntelligenceAgent, TrendPredictionAgent, ResearchAgent,

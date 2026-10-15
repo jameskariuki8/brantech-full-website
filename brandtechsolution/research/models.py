@@ -1,11 +1,10 @@
 from django.db import models
 from django.utils import timezone
-from trends.models import TrendTopic
 
 
 class ResearchDossier(models.Model):
     """Stores structured research dossiers compiled by Research Agent (Module 3)."""
-    topic = models.OneToOneField(TrendTopic, on_delete=models.CASCADE, related_name='dossier')
+    topic = models.OneToOneField('trends.TrendTopic', on_delete=models.CASCADE, related_name='dossier')
     
     key_concepts = models.JSONField(default=list, help_text="Core concepts and definitions")
     timeline = models.JSONField(default=list, help_text="Historical milestones and developments")

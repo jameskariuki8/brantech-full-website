@@ -6,8 +6,8 @@ content gaps and emerging topics not yet covered by Teklora.
 """
 import logging
 from typing import List, Dict, Any
-from trends.models import CompetitorSource, CompetitorArticle, TrendTopic
-from trends.services.discovery import TrendDiscoveryEngine
+from editorial.models.trends import CompetitorSource, CompetitorArticle, TrendTopic
+from editorial.services.trends.discovery import TrendDiscoveryEngine
 
 logger = logging.getLogger(__name__)
 

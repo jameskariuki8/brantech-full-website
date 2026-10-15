@@ -24,9 +24,9 @@ from editorial.services.writer import AIWriterAgent
 from research.models import ResearchDossier, VerifiedFactReport
 from research.services.fact_verifier import FactVerificationAgent
 from research.services.investigator import ResearchAgent
-from trends.models import TrendPrediction, TrendTopic
-from trends.services.intelligence import TrendIntelligenceAgent
-from trends.services.prediction import TrendPredictionAgent
+from editorial.models.trends import TrendPrediction, TrendTopic
+from editorial.services.trends.intelligence import TrendIntelligenceAgent
+from editorial.services.trends.prediction import TrendPredictionAgent
 
 AGENTS = [
     TrendIntelligenceAgent, TrendPredictionAgent, ResearchAgent,
