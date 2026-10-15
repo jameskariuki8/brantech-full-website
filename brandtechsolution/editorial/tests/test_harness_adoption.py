@@ -811,7 +811,7 @@ class OverlongMetadataTests(TestCase):
     def test_the_visuals_fit_a_title_at_its_limit(self):
         """Alt text and captions wrap the title in fixed text, so a title that
         just fits its own column overflows theirs."""
-        from media_generation.services.visual_engine import VisualIntelligenceAgent
+        from editorial.services.visual import VisualIntelligenceAgent
 
         article = self._write({"title": "x" * 300})
         VisualIntelligenceAgent().generate_visual_package(article)

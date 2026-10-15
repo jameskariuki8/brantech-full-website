@@ -18,3 +18,5 @@ class SocialPackageAdmin(admin.ModelAdmin):
 @admin.register(EditorialMemory)
 class EditorialMemoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'updated_at')
+
+from editorial.admin import media  # noqa: E402,F401

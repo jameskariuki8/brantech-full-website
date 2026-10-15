@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any
 from editorial.models import EditorialArticle
 from editorial.utils.text import fit_to_column
-from media_generation.models import MediaAsset
+from editorial.models import MediaAsset
 
 logger = logging.getLogger(__name__)
 

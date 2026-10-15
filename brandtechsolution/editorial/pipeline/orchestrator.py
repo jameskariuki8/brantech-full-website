@@ -22,7 +22,7 @@ from editorial.services.social import MultiPlatformContentAgent
 from editorial.services.memory import EditorialMemoryAgent
 from editorial.models import EditorialArticle
 from editorial.services.seo import SEOIntelligenceAgent
-from media_generation.services.visual_engine import VisualIntelligenceAgent
+from editorial.services.visual import VisualIntelligenceAgent
 from approval.services.workflow import HumanApprovalWorkflow
 from publishing.services.publisher import PublishingAgent
 from analytics.services.analytics import AnalyticsIntelligenceAgent

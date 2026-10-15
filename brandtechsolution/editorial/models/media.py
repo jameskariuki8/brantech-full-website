@@ -1,5 +1,5 @@
 from django.db import models
-from editorial.models import EditorialArticle
+from editorial.models.article import EditorialArticle
 
 
 class MediaAsset(models.Model):
@@ -22,3 +22,6 @@ class MediaAsset(models.Model):
 
     def __str__(self):
         return f"[{self.get_asset_type_display()}] for {self.article.title}"
+
+    class Meta:
+        app_label = 'media_generation'

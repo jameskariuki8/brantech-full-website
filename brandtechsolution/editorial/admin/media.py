@@ -1,5 +1,5 @@
 from django.contrib import admin
-from media_generation.models import MediaAsset
+from editorial.models import MediaAsset
 
 
 @admin.register(MediaAsset)
