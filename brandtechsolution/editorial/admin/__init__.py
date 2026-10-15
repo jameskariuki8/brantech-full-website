@@ -22,3 +22,4 @@ class EditorialMemoryAdmin(admin.ModelAdmin):
 from editorial.admin import media  # noqa: E402,F401
 from editorial.admin import analytics  # noqa: E402,F401
 from editorial.admin import approval  # noqa: E402,F401
+from editorial.admin import publishing  # noqa: E402,F401

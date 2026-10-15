@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from editorial.models import EditorialArticle
 from brand.models import BlogPost
-from publishing.models import PublishingLog
+from editorial.models import PublishingLog
 
 logger = logging.getLogger(__name__)
 

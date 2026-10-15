@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from editorial.models import EditorialArticle
+from editorial.models.article import EditorialArticle
 from brand.models import BlogPost
 
 
@@ -15,3 +15,6 @@ class PublishingLog(models.Model):
 
     def __str__(self):
         return f"Published: '{self.article.title}' -> BlogPost #{self.blog_post_id}"
+
+    class Meta:
+        app_label = 'publishing'

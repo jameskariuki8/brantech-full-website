@@ -5,6 +5,7 @@ from editorial.models.runs import EditorialPipelineRun
 from editorial.models.media import MediaAsset
 from editorial.models.analytics import ContentAnalytics, FeedbackLoopRecord
 from editorial.models.approval import ApprovalNotification
+from editorial.models.publishing import PublishingLog
 
 __all__ = [
     'EditorialArticle',
@@ -15,4 +16,5 @@ __all__ = [
     'ContentAnalytics',
     'FeedbackLoopRecord',
     'ApprovalNotification',
+    'PublishingLog',
 ]

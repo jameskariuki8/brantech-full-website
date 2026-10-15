@@ -1,5 +1,5 @@
 from django.contrib import admin
-from publishing.models import PublishingLog
+from editorial.models import PublishingLog
 
 
 @admin.register(PublishingLog)

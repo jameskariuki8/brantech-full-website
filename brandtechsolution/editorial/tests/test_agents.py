@@ -15,7 +15,7 @@ from editorial.tests.fakes import fake_gemini, unavailable_model
 from editorial.services.seo import SEOIntelligenceAgent
 from editorial.services.visual import VisualIntelligenceAgent
 from editorial.services.approval import HumanApprovalWorkflow
-from publishing.services.publisher import PublishingAgent
+from editorial.services.publishing import PublishingAgent
 from brand.models import BlogPost
 from research.models import ResearchDossier
 from ai_workflows.harness.errors import AgentOutputInvalid, ModelUnavailable

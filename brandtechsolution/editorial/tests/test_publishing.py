@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from brand.models import BlogPost
 from editorial.models import EditorialArticle
-from publishing.services.publisher import PublishingAgent
+from editorial.services.publishing import PublishingAgent
 
 
 class SlugCollisionTest(TestCase):

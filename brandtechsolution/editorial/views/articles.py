@@ -3,7 +3,7 @@ from django.http import JsonResponse, HttpResponse
 from staff.decorators import capability_required, capability_required_api
 from editorial.models import EditorialArticle
 from editorial.services.approval import HumanApprovalWorkflow
-from publishing.services.publisher import PublishingAgent
+from editorial.services.publishing import PublishingAgent
 
 
 @capability_required_api('manage_blog')
