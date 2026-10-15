@@ -7,7 +7,7 @@ social graphics, YouTube thumbnails, image captions, and accessibility alt text 
 import logging
 from typing import Dict, Any
 from editorial.models import EditorialArticle
-from editorial.text import fit_to_column
+from editorial.utils.text import fit_to_column
 from media_generation.models import MediaAsset
 
 logger = logging.getLogger(__name__)

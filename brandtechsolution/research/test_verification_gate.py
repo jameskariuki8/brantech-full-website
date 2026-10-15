@@ -11,8 +11,8 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from editorial.llm_fakes import fake_gemini
-from editorial.orchestrator import EditorialPipelineOrchestrator
+from editorial.tests.fakes import fake_gemini
+from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
 from research.models import ResearchDossier, VerifiedFactReport
 from research.services.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
 from research.services.investigator import ResearchAgent

@@ -561,7 +561,7 @@ class WiringTests(TestCase):
 
     def _gathered(self, agent_class, build):
         """The brief an agent actually sends to its tools, or None."""
-        from editorial.llm_fakes import fake_gemini
+        from editorial.tests.fakes import fake_gemini
 
         with patch.object(agent_class, "gather_evidence", return_value="") as gather:
             with fake_gemini():

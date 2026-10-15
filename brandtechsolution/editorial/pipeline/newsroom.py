@@ -59,7 +59,7 @@ class NewsroomAgent(Agent):
         them to ignore the alerts. An agent that *failed* inside the pipeline
         has already recorded its own health on the way past.
         """
-        from editorial.orchestrator import EditorialPipelineOrchestrator
+        from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
 
         payload = request.payload
         orchestrator = EditorialPipelineOrchestrator(

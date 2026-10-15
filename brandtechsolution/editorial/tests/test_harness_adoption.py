@@ -16,7 +16,7 @@ from ai_workflows.harness.alerts import ALERT_CAPABILITY
 from ai_workflows.harness.base import AgentRequest
 from ai_workflows.harness.errors import MemoryUnavailable, ModelUnavailable
 from ai_workflows.models import AgentHealth, AgentProfile
-from editorial.llm_fakes import fake_gemini, unavailable_model
+from editorial.tests.fakes import fake_gemini, unavailable_model
 from editorial.models import EditorialArticle
 from editorial.services.memory import DUPLICATE_SIMILARITY, EditorialMemoryAgent
 from editorial.services.social import MultiPlatformContentAgent
@@ -245,7 +245,7 @@ class OrchestratorRoutingTests(TestCase):
         self.topic = _topic(status="prioritized", priority_score=9.0)
 
     def _run(self, **stub):
-        from editorial.orchestrator import EditorialPipelineOrchestrator
+        from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
 
         with fake_gemini(stub or None):
             orchestrator = EditorialPipelineOrchestrator()
@@ -269,7 +269,7 @@ class OrchestratorRoutingTests(TestCase):
         The article is written, verified and reviewable; the package is
         downstream of it and can be regenerated on its own.
         """
-        from editorial.orchestrator import EditorialPipelineOrchestrator
+        from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
 
         with fake_gemini():
             orchestrator = EditorialPipelineOrchestrator()
@@ -284,8 +284,8 @@ class OrchestratorRoutingTests(TestCase):
         self.assertEqual(articles[0].status, "review_pending")
 
     def test_an_agent_failure_loses_the_topic_not_the_cycle(self):
-        from editorial.llm_fakes import fake_embeddings
-        from editorial.orchestrator import EditorialPipelineOrchestrator
+        from editorial.tests.fakes import fake_embeddings
+        from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
 
         # Embeddings stubbed but chat unavailable, so the failure lands on the
         # research agent rather than on the duplicate check. Nesting
@@ -831,7 +831,7 @@ class PipelineResumeTests(TestCase):
     """
 
     def _orchestrator(self, **kwargs):
-        from editorial.orchestrator import EditorialPipelineOrchestrator
+        from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
 
         return EditorialPipelineOrchestrator(**kwargs)
 
@@ -886,7 +886,7 @@ class PipelineResumeTests(TestCase):
         from unittest.mock import patch
 
         from ai_workflows.harness.base import AgentRequest
-        from editorial.newsroom import NewsroomAgent
+        from editorial.pipeline.newsroom import NewsroomAgent
 
         seen = {}
 
@@ -897,7 +897,7 @@ class PipelineResumeTests(TestCase):
             def run_full_autonomous_cycle(self, **kwargs):
                 return []
 
-        with patch("editorial.orchestrator.EditorialPipelineOrchestrator",
+        with patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator",
                    FakeOrchestrator):
             NewsroomAgent().run(AgentRequest(payload={"resume": False}))
 

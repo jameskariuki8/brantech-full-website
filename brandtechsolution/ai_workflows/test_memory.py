@@ -384,7 +384,7 @@ class ScopeTests(TestCase):
     """
 
     def setUp(self):
-        from editorial.llm_fakes import FakeEmbedder
+        from editorial.tests.fakes import FakeEmbedder
 
         self.embedder = FakeEmbedder()
         self.editorial = Memory(embedder=self.embedder, scope="editorial")

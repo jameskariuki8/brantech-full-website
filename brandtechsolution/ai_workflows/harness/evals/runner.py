@@ -81,7 +81,7 @@ class EvalRunner:
 
     @staticmethod
     def _default_stub(response):
-        from editorial.llm_fakes import fake_gemini
+        from editorial.tests.fakes import fake_gemini
 
         return fake_gemini(response)
 

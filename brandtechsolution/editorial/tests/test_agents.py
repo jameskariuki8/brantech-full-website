@@ -11,7 +11,7 @@ from editorial.services.strategy import EditorialStrategyAgent
 from editorial.services.writer import AIWriterAgent
 from editorial.services.social import MultiPlatformContentAgent
 from editorial.services.memory import EditorialMemoryAgent
-from editorial.llm_fakes import fake_gemini, unavailable_model
+from editorial.tests.fakes import fake_gemini, unavailable_model
 from seo.services.seo_engine import SEOIntelligenceAgent
 from media_generation.services.visual_engine import VisualIntelligenceAgent
 from approval.services.workflow import HumanApprovalWorkflow

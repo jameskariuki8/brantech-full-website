@@ -90,7 +90,7 @@ def load_agents(target=registry):
         return target
 
     from ai_workflows.service import ChatAssistant
-    from editorial.newsroom import NewsroomAgent
+    from editorial.pipeline.newsroom import NewsroomAgent
     from editorial.services.social import MultiPlatformContentAgent
     from editorial.services.writer import AIWriterAgent
     from research.services.fact_verifier import FactVerificationAgent

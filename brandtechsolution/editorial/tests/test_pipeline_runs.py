@@ -33,7 +33,7 @@ class TriggerTest(TestCase):
         # captureOnCommitCallbacks: the view queues via transaction.on_commit
         # so the worker cannot see the task before the run row is committed,
         # and TestCase rolls back rather than committing.
-        with mock.patch("editorial.views.run_editorial_pipeline_task") as task:
+        with mock.patch("editorial.views.pipeline.run_editorial_pipeline_task") as task:
             with self.captureOnCommitCallbacks(execute=True):
                 response = self.client.post(
                     "/editorial/api/run-pipeline/",
@@ -48,7 +48,7 @@ class TriggerTest(TestCase):
         task.delay.assert_called_once_with(body["run_id"])
 
     def test_the_run_records_who_started_it(self):
-        with mock.patch("editorial.views.run_editorial_pipeline_task"):
+        with mock.patch("editorial.views.pipeline.run_editorial_pipeline_task"):
             response = self.client.post("/editorial/api/run-pipeline/")
 
         run = EditorialPipelineRun.objects.get(pk=response.json()["run_id"])
@@ -59,7 +59,7 @@ class TriggerTest(TestCase):
         topics, doubling the model spend for duplicate output."""
         existing = EditorialPipelineRun.objects.create(status="running")
 
-        with mock.patch("editorial.views.run_editorial_pipeline_task") as task:
+        with mock.patch("editorial.views.pipeline.run_editorial_pipeline_task") as task:
             with self.captureOnCommitCallbacks(execute=True):
                 response = self.client.post("/editorial/api/run-pipeline/")
 
@@ -71,13 +71,13 @@ class TriggerTest(TestCase):
     def test_a_finished_run_does_not_block_the_next_one(self):
         EditorialPipelineRun.objects.create(status="success")
 
-        with mock.patch("editorial.views.run_editorial_pipeline_task"):
+        with mock.patch("editorial.views.pipeline.run_editorial_pipeline_task"):
             response = self.client.post("/editorial/api/run-pipeline/")
 
         self.assertEqual(response.status_code, 202)
 
     def test_limit_is_clamped(self):
-        with mock.patch("editorial.views.run_editorial_pipeline_task"):
+        with mock.patch("editorial.views.pipeline.run_editorial_pipeline_task"):
             response = self.client.post(
                 "/editorial/api/run-pipeline/",
                 data='{"limit": 500}',
@@ -130,7 +130,7 @@ class TaskTest(TestCase):
         run = EditorialPipelineRun.objects.create()
         article = EditorialArticle.objects.create(title="Made", slug="made")
 
-        with mock.patch("editorial.orchestrator.EditorialPipelineOrchestrator") as orch:
+        with mock.patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator") as orch:
             orch.return_value.run_full_autonomous_cycle.return_value = [article]
             run_editorial_pipeline_task(run.pk)
 
@@ -147,7 +147,7 @@ class TaskTest(TestCase):
 
         run = EditorialPipelineRun.objects.create()
 
-        with mock.patch("editorial.orchestrator.EditorialPipelineOrchestrator") as orch:
+        with mock.patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator") as orch:
             orch.return_value.run_full_autonomous_cycle.side_effect = RuntimeError("nope")
             with self.assertRaises(RuntimeError):
                 run_editorial_pipeline_task(run.pk)
@@ -218,7 +218,7 @@ class NewsroomHealthTests(TestCase):
 
         run = EditorialPipelineRun.objects.create()
 
-        with mock.patch("editorial.orchestrator.EditorialPipelineOrchestrator") as orch:
+        with mock.patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator") as orch:
             orch.return_value.run_full_autonomous_cycle.side_effect = ModelUnavailable(
                 "no key", provider="gemini"
             )
@@ -243,7 +243,7 @@ class NewsroomHealthTests(TestCase):
 
         run = EditorialPipelineRun.objects.create()
 
-        with mock.patch("editorial.orchestrator.EditorialPipelineOrchestrator") as orch:
+        with mock.patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator") as orch:
             orch.return_value.run_full_autonomous_cycle.return_value = []
             run_editorial_pipeline_task(run.pk)
 
