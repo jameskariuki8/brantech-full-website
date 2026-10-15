@@ -4,8 +4,8 @@ from django.test import TestCase
 
 from editorial.models.trends import TrendTopic
 from editorial.services.trends.intelligence import TrendIntelligenceAgent
-from research.services.investigator import ResearchAgent
-from research.services.fact_verifier import FactVerificationAgent
+from editorial.services.research.investigator import ResearchAgent
+from editorial.services.research.fact_verifier import FactVerificationAgent
 from editorial.models import EditorialArticle
 from editorial.services.strategy import EditorialStrategyAgent
 from editorial.services.writer import AIWriterAgent
@@ -17,7 +17,7 @@ from editorial.services.visual import VisualIntelligenceAgent
 from editorial.services.approval import HumanApprovalWorkflow
 from editorial.services.publishing import PublishingAgent
 from brand.models import BlogPost
-from research.models import ResearchDossier
+from editorial.models.research import ResearchDossier
 from ai_workflows.harness.errors import AgentOutputInvalid, ModelUnavailable
 
 

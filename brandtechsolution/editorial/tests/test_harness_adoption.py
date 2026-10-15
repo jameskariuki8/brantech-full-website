@@ -21,9 +21,9 @@ from editorial.models import EditorialArticle
 from editorial.services.memory import DUPLICATE_SIMILARITY, EditorialMemoryAgent
 from editorial.services.social import MultiPlatformContentAgent
 from editorial.services.writer import AIWriterAgent
-from research.models import ResearchDossier, VerifiedFactReport
-from research.services.fact_verifier import FactVerificationAgent
-from research.services.investigator import ResearchAgent
+from editorial.models.research import ResearchDossier, VerifiedFactReport
+from editorial.services.research.fact_verifier import FactVerificationAgent
+from editorial.services.research.investigator import ResearchAgent
 from editorial.models.trends import TrendPrediction, TrendTopic
 from editorial.services.trends.intelligence import TrendIntelligenceAgent
 from editorial.services.trends.prediction import TrendPredictionAgent
@@ -91,7 +91,7 @@ class DeclarationTests(TestCase):
     def test_an_agent_can_be_constructed_without_a_credential(self):
         """They used to build a live client in __init__.
 
-        That is why `research/test_verification_gate.py` has to construct the
+        That is why `editorial/tests/test_research.py` has to construct the
         orchestrator inside the patch, and why a first version of that test
         made a 149-second live API call before failing. Resolution is lazy now.
         """
@@ -608,7 +608,7 @@ class VerificationEvidenceTests(TestCase):
     def test_no_evidence_leaves_the_prompt_unchanged(self):
         """An agent with no tools must not be handed an empty evidence header
         that reads as "you checked and found nothing"."""
-        from research.services.fact_verifier import VERIFICATION_PROMPT
+        from editorial.services.research.fact_verifier import VERIFICATION_PROMPT
 
         rendered = VERIFICATION_PROMPT.format(
             title="T", technical_explanations="E", african_opportunities="A",

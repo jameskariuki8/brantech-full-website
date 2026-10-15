@@ -1,4 +1,5 @@
 from editorial.models.trends import TrendTopic, CompetitorSource, CompetitorArticle, TrendPrediction
+from editorial.models.research import ResearchDossier, VerifiedFactReport
 from editorial.models.article import EditorialArticle
 from editorial.models.social import SocialPackage
 from editorial.models.memory import EditorialMemory
@@ -13,6 +14,8 @@ __all__ = [
     'CompetitorSource',
     'CompetitorArticle',
     'TrendPrediction',
+    'ResearchDossier',
+    'VerifiedFactReport',
     'EditorialArticle',
     'SocialPackage',
     'EditorialMemory',

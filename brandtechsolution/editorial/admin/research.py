@@ -1,5 +1,5 @@
 from django.contrib import admin
-from research.models import ResearchDossier, VerifiedFactReport
+from editorial.models.research import ResearchDossier, VerifiedFactReport
 
 
 @admin.register(ResearchDossier)

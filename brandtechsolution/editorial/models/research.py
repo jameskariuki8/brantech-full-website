@@ -1,10 +1,11 @@
 from django.db import models
 from django.utils import timezone
+from editorial.models.trends import TrendTopic
 
 
 class ResearchDossier(models.Model):
     """Stores structured research dossiers compiled by Research Agent (Module 3)."""
-    topic = models.OneToOneField('trends.TrendTopic', on_delete=models.CASCADE, related_name='dossier')
+    topic = models.OneToOneField(TrendTopic, on_delete=models.CASCADE, related_name='dossier')
     
     key_concepts = models.JSONField(default=list, help_text="Core concepts and definitions")
     timeline = models.JSONField(default=list, help_text="Historical milestones and developments")
@@ -20,6 +21,7 @@ class ResearchDossier(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = 'research'
         ordering = ['-created_at']
 
     def __str__(self):
@@ -59,6 +61,7 @@ class VerifiedFactReport(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
+        app_label = 'research'
         ordering = ['-created_at']
 
     def __str__(self):

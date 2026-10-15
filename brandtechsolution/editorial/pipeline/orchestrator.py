@@ -14,8 +14,8 @@ from editorial.services.trends.intelligence import TrendIntelligenceAgent
 from editorial.services.trends.competitor import CompetitorIntelligenceAgent
 from editorial.services.trends.prediction import TrendPredictionAgent
 from editorial.models.trends import TrendTopic
-from research.services.investigator import ResearchAgent
-from research.services.fact_verifier import FactVerificationAgent
+from editorial.services.research.investigator import ResearchAgent
+from editorial.services.research.fact_verifier import FactVerificationAgent
 from editorial.services.strategy import EditorialStrategyAgent
 from editorial.services.writer import AIWriterAgent
 from editorial.services.social import MultiPlatformContentAgent

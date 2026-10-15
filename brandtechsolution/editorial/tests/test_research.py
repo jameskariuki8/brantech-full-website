@@ -13,9 +13,9 @@ from django.test import TestCase
 
 from editorial.tests.fakes import fake_gemini
 from editorial.pipeline.orchestrator import EditorialPipelineOrchestrator
-from research.models import ResearchDossier, VerifiedFactReport
-from research.services.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
-from research.services.investigator import ResearchAgent
+from editorial.models.research import ResearchDossier, VerifiedFactReport
+from editorial.services.research.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
+from editorial.services.research.investigator import ResearchAgent
 from editorial.models.trends import TrendTopic
 
 

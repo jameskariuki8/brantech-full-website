@@ -93,8 +93,8 @@ def load_agents(target=registry):
     from editorial.pipeline.newsroom import NewsroomAgent
     from editorial.services.social import MultiPlatformContentAgent
     from editorial.services.writer import AIWriterAgent
-    from research.services.fact_verifier import FactVerificationAgent
-    from research.services.investigator import ResearchAgent
+    from editorial.services.research.fact_verifier import FactVerificationAgent
+    from editorial.services.research.investigator import ResearchAgent
     from editorial.services.trends.intelligence import TrendIntelligenceAgent
     from editorial.services.trends.prediction import TrendPredictionAgent
 

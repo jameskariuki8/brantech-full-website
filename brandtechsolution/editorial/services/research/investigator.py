@@ -20,7 +20,7 @@ from ai_workflows.harness.base import Agent, AgentRequest, AgentResult
 from ai_workflows.harness.contract import AgentOutput, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
-from research.models import ResearchDossier
+from editorial.models.research import ResearchDossier
 from editorial.models.trends import TrendTopic
 
 logger = logging.getLogger(__name__)

@@ -24,3 +24,4 @@ from editorial.admin import analytics  # noqa: E402,F401
 from editorial.admin import approval  # noqa: E402,F401
 from editorial.admin import publishing  # noqa: E402,F401
 from editorial.admin import trends  # noqa: E402,F401
+from editorial.admin import research  # noqa: E402,F401

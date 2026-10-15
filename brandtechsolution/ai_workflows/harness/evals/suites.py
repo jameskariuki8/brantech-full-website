@@ -12,8 +12,8 @@ cases are below, and most of them are *live* -- they make a real call and grade
 what comes back, because no stub will invent a statistic on the agent's behalf.
 Live cases cost money and are opt-in (`run_evals --live`).
 """
-from research.models import ResearchDossier
-from research.services.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
+from editorial.models.research import ResearchDossier
+from editorial.services.research.fact_verifier import MIN_CONFIDENCE, FactVerificationAgent
 from editorial.models.trends import TrendTopic
 
 from ai_workflows.harness.evals.cases import EvalCase, registry
@@ -346,7 +346,7 @@ def _report(body, *, removed=(), confidence=0.9, title=None):
     about what the *writer* does with a given report. Letting the verifier
     generate it would make the input vary run to run.
     """
-    from research.models import VerifiedFactReport
+    from editorial.models.research import VerifiedFactReport
 
     return VerifiedFactReport.objects.create(
         dossier=_dossier(body, title or "Autonomous AI Multi-Agent Orchestration"),
