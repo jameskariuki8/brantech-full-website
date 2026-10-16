@@ -22,6 +22,3 @@ class MediaAsset(models.Model):
 
     def __str__(self):
         return f"[{self.get_asset_type_display()}] for {self.article.title}"
-
-    class Meta:
-        app_label = 'media_generation'

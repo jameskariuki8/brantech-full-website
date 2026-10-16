@@ -41,7 +41,6 @@ class TrendTopic(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'trends'
         ordering = ['-priority_score', '-created_at']
         indexes = [
             models.Index(fields=['status', '-priority_score']),
@@ -62,9 +61,6 @@ class CompetitorSource(models.Model):
     last_scraped_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        app_label = 'trends'
-
     def __str__(self):
         return self.name
 
@@ -79,7 +75,6 @@ class CompetitorArticle(models.Model):
     content_gap_score = models.FloatField(default=0.0, help_text="Opportunity score for Teklora")
 
     class Meta:
-        app_label = 'trends'
         ordering = ['-published_at']
 
     def __str__(self):
@@ -103,7 +98,6 @@ class TrendPrediction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'trends'
         ordering = ['-confidence_score', '-created_at']
 
     def __str__(self):

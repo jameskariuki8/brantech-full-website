@@ -21,6 +21,3 @@ class ApprovalNotification(models.Model):
 
     def __str__(self):
         return f"[{self.get_channel_display()}] Notification for '{self.article.title}'"
-
-    class Meta:
-        app_label = 'approval'

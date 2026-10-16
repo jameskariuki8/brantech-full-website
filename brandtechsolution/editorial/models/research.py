@@ -21,7 +21,6 @@ class ResearchDossier(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'research'
         ordering = ['-created_at']
 
     def __str__(self):
@@ -61,7 +60,6 @@ class VerifiedFactReport(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        app_label = 'research'
         ordering = ['-created_at']
 
     def __str__(self):

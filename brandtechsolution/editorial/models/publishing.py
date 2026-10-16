@@ -15,6 +15,3 @@ class PublishingLog(models.Model):
 
     def __str__(self):
         return f"Published: '{self.article.title}' -> BlogPost #{self.blog_post_id}"
-
-    class Meta:
-        app_label = 'publishing'
