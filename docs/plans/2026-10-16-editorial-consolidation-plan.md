@@ -2,6 +2,8 @@
 
 Branch: `refactor/editorial-consolidation`
 Date: 2026-10-16
+Status: **Done.** Phase 1 in 1ddba8d..edc41ea, Phase 2 in 1bb285d, Phase 3 (docs) in the commit after it.
+The paths below describe the starting state; the apps they name no longer exist.
 
 ## Why
 

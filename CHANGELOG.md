@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Staff & Roles shows each person's scopes and searches by them; `GET /api/staff/people/` includes read-only `scopes`.
 
 ### Changed
+- **Editorial pipeline consolidated into one app** (`docs/plans/2026-10-16-editorial-consolidation-plan.md`): the pipeline had been scaffolded as one Django app per "Module N" agent. Seven of those apps existed only to serve `editorial`, and most imported `editorial.models` back. `trends`, `research`, `seo`, `media_generation`, `analytics`, `approval` and `publishing` are now domains inside `editorial/`:
+  - Models live in `editorial/models/<domain>.py`, views in `editorial/views/`, agents in `editorial/services/` (with `trends/` and `research/` sub-packages), the orchestrator, newsroom and Celery tasks in `editorial/pipeline/`, and tests in `editorial/tests/`.
+  - `from editorial.models import X` and `from editorial.tasks import ...` still work, and Celery task names are unchanged.
+  - Migrations: editorial's history is squashed into `0001_squashed_consolidation`, which existing databases treat as already applied. `0002` relabels the 11 moved models' content types to `editorial`, so permissions, admin history and memory documents stay attached. `0003` renames their tables from `trends_*`, `research_*` etc. to `editorial_*`. Row counts were verified unchanged on a copy of the dev database. Deploying needs only `manage.py migrate`.
+  - `knowledge_base` stays its own app: it is the vector store used by `ai_workflows` beyond the newsroom.
 - **Contact UI & Interactive Experience Refinement**:
   - Unified the visual language of [`contacts.html`](brandtechsolution/brand/templates/brand/contacts.html) with modern dark/light glassmorphic tokens, ambient glow gradients, and cohesive `#007AFF` / `#00FF94` brand palettes.
   - Re-architected interactive Strategy Calendar modal with dynamic date initialization (`new Date()`), real-time day/slot selections, and touch-optimized controls.

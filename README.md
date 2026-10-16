@@ -64,6 +64,17 @@ The platform includes an automated AI Editorial engine (`editorial/` & `ai_workf
    - Users with `manage_blog` can create and edit post contents.
    - Users with `publish_blog` can transition posts from `draft` to `published`, making them instantly available on the public site and updating the vector store embeddings.
 
+The whole pipeline is one Django app, with each agent's domain kept apart by package rather than by app:
+
+| Path | Contents |
+|---|---|
+| `editorial/models/` | One module per domain: `article`, `trends`, `research`, `social`, `media`, `approval`, `publishing`, `analytics`, `memory`, `runs` |
+| `editorial/services/` | The agents: `trends/`, `research/`, `strategy`, `writer`, `seo`, `visual`, `social`, `approval`, `publishing`, `analytics`, `memory` |
+| `editorial/pipeline/` | `orchestrator`, `newsroom` (the supervisor-facing agent) and the Celery `tasks` |
+| `editorial/views/`, `admin/`, `tests/` | Split by the same domains |
+
+A new agent goes into `editorial/services/` with its models in `editorial/models/`, not into a new app. The vector store (`knowledge_base/`) is a separate app because `ai_workflows` uses it beyond the newsroom.
+
 ---
 
 ## 📅 Streamlined Appointment Booking System
