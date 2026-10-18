@@ -1,7 +1,7 @@
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.models import Group, User
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -14,6 +14,7 @@ from .capabilities import CAPABILITY_GROUPS
 from .emails import send_invitation
 from .models import AuditEntry, StaffInvitation, StaffProfile
 from .permissions import enforce_grantable_roles, has_capability
+from .signups import TAKEN as ACCOUNT_TAKEN, account_for
 from .serializers import (
     AuditEntrySerializer,
     InvitationSerializer,
@@ -125,10 +126,10 @@ class PersonViewSet(
 ):
     """Staff accounts. Creation happens through invitations, not here.
 
-    ?include=signups adds accounts made through the public /signup/ form.
-    They are not staff, so without it the roster could never find them, and
-    an invitation to the same address is refused because the email is taken.
-    Granting such an account a role promotes it to staff (see perform_update).
+    ?include=signups adds accounts made through the public /signup/ form to
+    the list, so the roster can find them. They are list-only: nothing here
+    can edit one, since the sign-up never proved its address. An invitation
+    to that address is how one becomes staff (see staff/signups.py).
     """
 
     serializer_class = PersonSerializer
@@ -141,10 +142,9 @@ class PersonViewSet(
         ).prefetch_related("groups").order_by(
             "username"
         )
-        # Detail routes reach sign-up accounts too, so one can be promoted.
-        if self.action == "list" and self.request.query_params.get("include") != "signups":
-            queryset = queryset.filter(is_staff=True)
-        return queryset
+        if self.action == "list" and self.request.query_params.get("include") == "signups":
+            return queryset
+        return queryset.filter(is_staff=True)
 
     def perform_update(self, serializer):
         actor = self.request.user
@@ -182,19 +182,6 @@ class PersonViewSet(
             was_active = target.is_active
             person = serializer.save()
             after_roles = sorted(g.name for g in person.groups.all())
-
-            # A role only means something inside the panel, which is staff
-            # only, so giving one to a sign-up account is what makes it staff.
-            # The onboarding gate then catches them on their next sign-in.
-            if after_roles and not person.is_staff:
-                person.is_staff = True
-                person.save(update_fields=["is_staff"])
-                record(
-                    actor=actor,
-                    action="user_promoted",
-                    summary=f"{actor} made {person} a staff account",
-                    target_user=person,
-                )
 
             if after_roles != before_roles:
                 record(
@@ -297,12 +284,10 @@ class InvitationViewSet(
         # The address may have been registered through the public /signup/
         # page since the invitation was issued, in which case accepting it
         # cannot succeed - so resending would only mail a link that dead-ends.
-        if User.objects.filter(
-            Q(username__iexact=invitation.email) | Q(email__iexact=invitation.email)
-        ).exists():
+        if account_for(invitation.email) is ACCOUNT_TAKEN:
             raise ValidationError(
-                "An account now exists for this address. Revoke this invitation "
-                "and edit that person's roles instead."
+                "A staff account now exists for this address. Revoke this "
+                "invitation and edit that person's roles instead."
             )
 
         # Mirrors perform_create: a mail failure is reported and audited, not

@@ -6,7 +6,7 @@ from django.core import mail, signing
 from django.test import TestCase
 from django.utils import timezone
 
-from staff.models import AuditEntry, StaffInvitation
+from staff.models import AuditEntry, StaffInvitation, StaffProfile
 from staff.tokens import make_invitation_token
 
 
@@ -247,8 +247,8 @@ class InvitationResendTest(TestCase):
 
 
 class AcceptanceCollisionTest(TestCase):
-    """The invited address may be registered through the public /signup/
-    page between the invitation being issued and being accepted."""
+    """The invited address may be taken by a staff account between the
+    invitation being issued and being accepted."""
 
     def setUp(self):
         self.invitation = StaffInvitation.objects.create(email="new@example.com")
@@ -262,22 +262,87 @@ class AcceptanceCollisionTest(TestCase):
 
     def test_a_taken_username_is_refused_cleanly(self):
         # Previously an unhandled IntegrityError - a 500, not a 409.
-        User.objects.create_user("new@example.com", password="x")
+        User.objects.create_user("new@example.com", password="x", is_staff=True)
         self.assertEqual(self._accept().status_code, 409)
 
     def test_a_taken_email_on_another_username_is_refused(self):
         # Two accounts sharing one address would make password reset ambiguous.
-        User.objects.create_user("someone", email="new@example.com", password="x")
+        User.objects.create_user(
+            "someone", email="new@example.com", password="x", is_staff=True
+        )
+        self.assertEqual(self._accept().status_code, 409)
+
+    def test_two_signup_accounts_on_one_address_are_refused(self):
+        User.objects.create_user("new@example.com", password="x")
+        User.objects.create_user("other", email="new@example.com", password="x")
         self.assertEqual(self._accept().status_code, 409)
 
     def test_a_refused_acceptance_does_not_burn_the_invitation(self):
-        user = User.objects.create_user("new@example.com", password="x")
+        user = User.objects.create_user("new@example.com", password="x", is_staff=True)
         self.assertEqual(self._accept().status_code, 409)
         self.invitation.refresh_from_db()
         self.assertIsNone(self.invitation.accepted_at)
         # Once the colliding account is gone the original link still works.
         user.delete()
         self.assertEqual(self._accept().status_code, 302)
+
+
+class SignupTakeoverTest(TestCase):
+    """A /signup/ account on the invited address is taken over on acceptance,
+    since the emailed link is the first proof anyone holds that inbox."""
+
+    def setUp(self):
+        self.signup = User.objects.create_user(
+            "new@example.com", email="new@example.com", password="Signup-Pass-77"
+        )
+        self.invitation = StaffInvitation.objects.create(email="new@example.com")
+        self.role = Group.objects.create(name="plain-role")
+        self.invitation.groups.add(self.role)
+        self.token = make_invitation_token(self.invitation.pk)
+
+    def _accept(self):
+        return self.client.post(
+            f"/staff/invite/{self.token}/",
+            {"password1": "Sunfish-Bracket-41", "password2": "Sunfish-Bracket-41"},
+        )
+
+    def test_the_signup_account_becomes_staff_with_the_invited_roles(self):
+        self.assertEqual(self._accept().status_code, 302)
+        self.assertEqual(User.objects.filter(email__iexact="new@example.com").count(), 1)
+        self.signup.refresh_from_db()
+        self.assertTrue(self.signup.is_staff)
+        self.assertEqual(list(self.signup.groups.all()), [self.role])
+        self.assertTrue(StaffProfile.objects.filter(user=self.signup).exists())
+        entry = AuditEntry.objects.get(action="invite_accepted", target_user=self.signup)
+        self.assertTrue(entry.detail["took_over_signup"])
+
+    def test_the_signup_password_stops_working(self):
+        self._accept()
+        self.signup.refresh_from_db()
+        self.assertFalse(self.signup.check_password("Signup-Pass-77"))
+        self.assertTrue(self.signup.check_password("Sunfish-Bracket-41"))
+
+    def test_a_session_from_before_the_takeover_is_signed_out(self):
+        squatter = self.client_class()
+        squatter.force_login(self.signup)
+        self.assertTrue(squatter.get("/").wsgi_request.user.is_authenticated)
+        self._accept()
+        self.assertFalse(squatter.get("/").wsgi_request.user.is_authenticated)
+
+    def test_an_invitation_to_a_signup_address_can_be_created_and_resent(self):
+        admin = staff_with("manage_staff", username="admin")
+        self.client.force_login(admin)
+        User.objects.create_user("other@example.com", password="x")
+        resp = self.client.post(
+            "/api/staff/invitations/",
+            json.dumps({"email": "other@example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(
+            self.client.post(f"/api/staff/invitations/{self.invitation.pk}/resend/").status_code,
+            200,
+        )
 
 
 class PasswordPolicyTest(TestCase):
@@ -341,7 +406,7 @@ class ResendCollisionTest(TestCase):
         # Resending here would mail a link that can only ever 409.
         admin = staff_with("manage_staff", username="admin")
         invitation = StaffInvitation.objects.create(email="new@example.com")
-        User.objects.create_user("new@example.com", password="x")
+        User.objects.create_user("new@example.com", password="x", is_staff=True)
         self.client.force_login(admin)
         resp = self.client.post(f"/api/staff/invitations/{invitation.pk}/resend/")
         self.assertEqual(resp.status_code, 400)

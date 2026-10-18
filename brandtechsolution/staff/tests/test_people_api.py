@@ -357,47 +357,28 @@ class RolePaginationTest(TestCase):
         self.assertEqual(list(person.groups.all()), [])
 
 
-class SignupPromotionTest(TestCase):
-    """A /signup/ account cannot be invited (its email is taken), so giving
-    it a role from the roster is the way it becomes staff."""
+class SignupAccountsAreListOnlyTest(TestCase):
+    """A /signup/ account never proved its address, so the people API must
+    not edit it - not its roles, and not its email, which would let an admin
+    point it at an inbox they hold and then claim it by invitation."""
 
     def setUp(self):
         self.admin = staff_with("manage_staff", username="admin")
-        self.signup = User.objects.create_user("new@example.com", password="p")
+        self.signup = User.objects.create_user(
+            "new@example.com", email="new@example.com", password="p"
+        )
         self.client.force_login(self.admin)
 
-    def patch(self, body):
-        return self.client.patch(
-            f"/api/staff/people/{self.signup.pk}/",
-            json.dumps(body), content_type="application/json",
-        )
-
-    def test_granting_a_role_makes_the_account_staff(self):
+    def test_detail_routes_do_not_reach_a_signup_account(self):
+        url = f"/api/staff/people/{self.signup.pk}/"
+        self.assertEqual(self.client.get(url).status_code, 404)
         role = Group.objects.create(name="plain-role")
-        resp = self.patch({"role_ids": [role.pk]})
-        self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json()["is_staff"])
-        self.signup.refresh_from_db()
-        self.assertTrue(self.signup.is_staff)
-        self.assertTrue(
-            AuditEntry.objects.filter(action="user_promoted", target_user=self.signup).exists()
+        resp = self.client.patch(
+            url, json.dumps({"role_ids": [role.pk], "email": "mine@evil.test"}),
+            content_type="application/json",
         )
-
-    def test_saving_without_a_role_leaves_it_non_staff(self):
-        self.assertEqual(self.patch({"role_ids": [], "is_active": True}).status_code, 200)
+        self.assertEqual(resp.status_code, 404)
         self.signup.refresh_from_db()
         self.assertFalse(self.signup.is_staff)
-
-    def test_is_staff_cannot_be_written_directly(self):
-        self.patch({"is_staff": True})
-        self.signup.refresh_from_db()
-        self.assertFalse(self.signup.is_staff)
-
-    def test_cannot_grant_a_role_the_actor_does_not_hold(self):
-        role = Group.objects.create(name="powerful")
-        role.permissions.add(
-            Permission.objects.get(codename="manage_tasks", content_type__app_label="staff")
-        )
-        self.assertEqual(self.patch({"role_ids": [role.pk]}).status_code, 403)
-        self.signup.refresh_from_db()
-        self.assertFalse(self.signup.is_staff)
+        self.assertEqual(self.signup.email, "new@example.com")
+        self.assertFalse(self.signup.groups.exists())

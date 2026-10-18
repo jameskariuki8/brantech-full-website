@@ -550,13 +550,9 @@ function personEditorHtml(person, viewer) {
             ${(person.scopes || []).length ? `<div class="text-xs text-gray-500 mt-0.5">Works in ${escapeHtml(person.scopes.join(', '))}</div>` : ''}
             <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(lastSeen)}${joined ? `, joined ${escapeHtml(joined)}` : ''}</div>
             ${contact ? `<div class="text-xs mt-1.5">${contact}</div>` : ''}
-            ${person.is_onboarded || !person.is_staff ? '' : '<div class="text-xs text-amber-300 mt-1.5">Has not finished setup: contact details, area of work and skills are missing.</div>'}
+            ${person.is_onboarded ? '' : '<div class="text-xs text-amber-300 mt-1.5">Has not finished setup: contact details, area of work and skills are missing.</div>'}
         </div>
     </div>
-
-    ${person.is_staff ? '' : `<div class="mb-5 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs text-sky-200">
-        <i class="fas fa-user-plus mr-1.5"></i>This account was made with the public sign-up form, so it cannot open the panel yet.
-        Give it a role to make it a staff account. Anyone can sign up, so check the email address really belongs to this person first.</div>`}
 
     ${locked ? `<div class="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-200">
         <i class="fas fa-lock mr-1.5"></i>${escapeHtml(locked)}</div>` : ''}
@@ -625,20 +621,62 @@ function openPersonEditor(person) {
             if (!confirmed) return;
         }
         save.disabled = true;
-        const roleIds = selectedRoleIds();
         try {
             await staffFetch(`/people/${person.id}/`, {
                 method: 'PATCH',
-                body: JSON.stringify({ role_ids: roleIds, is_active: active.checked }),
+                body: JSON.stringify({ role_ids: selectedRoleIds(), is_active: active.checked }),
             });
             closeStaffModal();
-            toast.success(!person.is_staff && roleIds.length
-                ? `${personName(person)} is now staff. They will finish setup when they next sign in.`
-                : 'Changes saved.');
+            toast.success('Changes saved.');
             await Promise.all([loadPeople(), loadRoles(), loadActivity()]);
         } catch (e) {
             save.disabled = false;
             toastApiError(e, 'The changes could not be saved.');
+        }
+    });
+}
+
+// A /signup/ account never proved it owns its address, so it is not edited in
+// place. It is invited like anyone else, and accepting the emailed link takes
+// the account over (staff/signups.py).
+function openSignupInvite(person) {
+    const email = person.email || person.username;
+    const joined = person.date_joined ? new Date(person.date_joined).toLocaleDateString() : '';
+    openStaffModal(personName(person), `
+    <div class="flex items-start gap-3 mb-5">
+        <span class="shrink-0 w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-semibold text-gray-300 font-heading" aria-hidden="true">${escapeHtml(initialsOf(person))}</span>
+        <div class="min-w-0">
+            <div class="text-white font-medium">${escapeHtml(personName(person))}</div>
+            <div class="text-xs text-gray-400 truncate">${escapeHtml(email)}</div>
+            ${joined ? `<div class="text-xs text-gray-500 mt-0.5">Signed up ${escapeHtml(joined)}</div>` : ''}
+        </div>
+    </div>
+    <div class="mb-5 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs text-sky-200">
+        <i class="fas fa-user-plus mr-1.5"></i>This account was made with the public sign-up form, so it cannot open the panel.
+        Send an invitation to its address. When they accept it from that inbox, this account becomes staff with the roles below
+        and they choose a new password.</div>
+    <fieldset class="mb-5">
+        <legend class="text-sm font-medium text-white mb-2">Roles</legend>
+        <div class="space-y-2">${roleCards([])}</div>
+    </fieldset>
+    <div class="sticky bottom-0 -mx-5 sm:-mx-6 -mb-5 px-5 sm:px-6 py-4 bg-dark-card border-t border-dark-border">
+        <button type="button" id="inviteSignupBtn" class="${PRIMARY_BUTTON}">Send staff invitation</button>
+    </div>`);
+
+    const send = document.getElementById('inviteSignupBtn');
+    send.addEventListener('click', async () => {
+        send.disabled = true;
+        try {
+            await staffFetch('/invitations/', {
+                method: 'POST',
+                body: JSON.stringify({ email, role_ids: selectedRoleIds() }),
+            });
+            closeStaffModal();
+            await Promise.all([loadPeople(), loadActivity()]);
+            toast.success(`Invitation sent to ${email}.`);
+        } catch (e) {
+            send.disabled = false;
+            toastApiError(e, 'The invitation could not be sent.');
         }
     });
 }
@@ -813,6 +851,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (button.dataset.action === 'edit-person') {
+            const row = PEOPLE.find(p => p.id === id);
+            if (row && !row.is_staff) { openSignupInvite(row); return; }
             // Fetch fresh rather than reuse the roster row: the editor decides
             // what to lock from it, and the roster may be a few minutes old.
             let person;

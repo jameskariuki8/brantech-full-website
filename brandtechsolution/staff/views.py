@@ -16,6 +16,7 @@ from messaging.mailbox import claim_unmatched
 from .audit import record
 from .handles import mailbox_address, needs_handle, suggest_handles, validate_handle
 from .models import StaffInvitation
+from .signups import TAKEN as ACCOUNT_TAKEN, account_for
 from .profile_options import (
     COMMON_FRAMEWORKS,
     COMMON_LANGUAGES,
@@ -91,23 +92,32 @@ def accept_invitation(request, token):
         if not claimed:
             return HttpResponse(GONE, status=410)
 
-        # The address was free when the invitation was issued, but /signup/ is
-        # public and creates users with username=email, so it may have been
-        # taken since. Roll the claim back rather than burning the invitation
-        # on a request that cannot succeed.
-        if _email_is_taken(invitation.email):
+        # A staff account may have taken the address since the invitation was
+        # issued. Roll the claim back rather than burning the invitation on a
+        # request that cannot succeed. A /signup/ account is taken over
+        # instead: reaching this point proves the person holds the inbox,
+        # which the sign-up never did (see staff/signups.py).
+        existing = account_for(invitation.email)
+        if existing is ACCOUNT_TAKEN:
             transaction.set_rollback(True)
             return HttpResponse(TAKEN, status=409)
 
-        try:
-            user = User.objects.create_user(
-                username=invitation.email, email=invitation.email, is_staff=True
-            )
-        except IntegrityError:
-            # Lost the race against a signup between the check above and here.
-            transaction.set_rollback(True)
-            return HttpResponse(TAKEN, status=409)
+        if existing is None:
+            try:
+                user = User.objects.create_user(
+                    username=invitation.email, email=invitation.email, is_staff=True
+                )
+            except IntegrityError:
+                # Lost the race against a signup between the check above and here.
+                transaction.set_rollback(True)
+                return HttpResponse(TAKEN, status=409)
+        else:
+            user = User.objects.select_for_update().get(pk=existing.pk)
+            user.is_staff = True
+            user.email = invitation.email
 
+        # On a taken-over sign-up the new password also changes the session
+        # auth hash, so anyone already signed in to it is signed out.
         user.set_password(password1)
         user.save()
         user.groups.set(invitation.groups.all())
@@ -120,7 +130,10 @@ def accept_invitation(request, token):
             action="invite_accepted",
             summary=f"{invitation.email} accepted their invitation",
             target_user=user,
-            detail={"roles": sorted(g.name for g in user.groups.all())},
+            detail={
+                "roles": sorted(g.name for g in user.groups.all()),
+                "took_over_signup": existing is not None,
+            },
         )
 
     return redirect("login")

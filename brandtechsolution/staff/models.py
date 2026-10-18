@@ -38,7 +38,6 @@ class AuditEntry(models.Model):
         ("roles_changed", "Roles changed"),
         ("user_deactivated", "Account deactivated"),
         ("user_reactivated", "Account reactivated"),
-        ("user_promoted", "Sign-up made staff"),
         ("group_created", "Role created"),
         ("group_updated", "Role updated"),
         ("group_deleted", "Role deleted"),
