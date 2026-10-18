@@ -2,6 +2,7 @@ import re
 from urllib.parse import urlsplit
 
 from django import forms
+from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 
 from .models import Career, PartnerOrganisation, PartnershipType, SiteContent
@@ -858,7 +859,7 @@ class PartnerOrganisationForm(PanelFormMixin, forms.ModelForm):
 class CareerForm(PanelFormMixin, forms.ModelForm):
     class Meta:
         model = Career
-        fields = ["title", "employment_type", "location", "email", "description", "document"]
+        fields = ["title", "employment_type", "location", "email", "status", "description", "document"]
         labels = {
             "title": "Job title",
             "employment_type": "Type",
@@ -869,6 +870,10 @@ class CareerForm(PanelFormMixin, forms.ModelForm):
             "employment_type": "For example Full-time, Part-time, Contract or Internship.",
             "document": "Optional. PDF, DOC or DOCX, up to 10 MB.",
             "description": "Line breaks are kept on the careers page.",
+            "email": f"Must end in @{settings.MAILBOX_DOMAIN}: only mail that reaches us can be "
+                     "answered automatically once the role closes.",
+            "status": "Closed roles leave the careers page, and anyone who still applies "
+                      "gets an email saying applications have closed.",
         }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 8}),

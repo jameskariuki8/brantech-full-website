@@ -119,15 +119,20 @@
         <a href="{{ career.document.url }}" class="text-brandBlue hover:underline" target="_blank">Download Job Document</a>
         {% endif %}
     </div>
-    <a href="mailto:{{ career.email }}?subject=Application for {{ career.title|urlencode }}" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
+    <a href="mailto:{{ career.email }}?subject={{ career.application_subject|urlencode }}" class="btn-premium btn-premium-secondary px-5 py-2 rounded-lg font-bold inline-flex items-center justify-center whitespace-nowrap">
         Apply Now
     </a>
+</div>
+{% empty %}
+<div class="clean-card p-8 text-center space-y-2">
+    <h3 class="text-lg font-bold text-primaryText">No open roles right now</h3>
+    <p class="text-sm text-secondaryText">We are not hiring for a specific position at the moment. You are still welcome to send us your CV.</p>
 </div>
 {% endfor %}
 
             
             <div class="mt-8 text-center text-sm p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
-                <p>Not seeing a perfect match? Send your resume to <a href="mailto:careers@teklora.com" class="text-brandBlue font-semibold hover:underline">careers@teklora.com</a> and tell us how you can help.</p>
+                <p>Not seeing a perfect match? Send your resume to <a href="mailto:{{ careers_email }}" class="text-brandBlue font-semibold hover:underline">{{ careers_email }}</a> and tell us how you can help.</p>
             </div>
         </div>
     </section>

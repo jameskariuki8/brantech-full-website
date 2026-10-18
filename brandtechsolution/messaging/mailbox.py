@@ -298,12 +298,9 @@ class SendError(Exception):
     pass
 
 
-def send(user, *, mailbox, owner, to, cc, subject, body, thread=None, attachments=()):
-    """Send from a mailbox and file the copy in it. Raises SendError when the
-    provider refuses, in which case nothing is recorded.
-
-    attachments are uploaded files, already checked by attachment_problem.
-    They are stored only once the provider has accepted the message."""
+def _reply_headers(thread):
+    """(message_id, in_reply_to, references, headers) for a new message,
+    threaded onto the latest message in thread when there is one."""
     message_id = email.utils.make_msgid(domain=settings.MAILBOX_DOMAIN)
     headers = {"Message-ID": message_id}
     in_reply_to = ""
@@ -316,6 +313,56 @@ def send(user, *, mailbox, owner, to, cc, subject, body, thread=None, attachment
             references = " ".join(f"<{i}>" for i in chain[-20:])
             headers["In-Reply-To"] = f"<{in_reply_to}>"
             headers["References"] = references
+    return message_id, in_reply_to, references, headers
+
+
+def send_automatic(thread, *, from_address, to, subject, body):
+    """Send a reply nobody wrote, such as an applications-closed notice, and
+    file it in thread like any sent mail. Marked Auto-Submitted so the other
+    side's own auto-responder does not answer it. Raises SendError when the
+    provider refuses, in which case nothing is recorded."""
+    message_id, in_reply_to, references, headers = _reply_headers(thread)
+    headers["Auto-Submitted"] = "auto-replied"
+    message = EmailMultiAlternatives(
+        subject=subject,
+        body=body,
+        from_email=email.utils.formataddr((ORG_NAME, from_address)),
+        to=to,
+        headers=headers,
+    )
+    message.attach_alternative(_html_body(body), "text/html")
+    try:
+        message.send(fail_silently=False)
+    except Exception as exc:  # the backend raises RuntimeError or a network error
+        raise SendError(str(exc)) from exc
+
+    with transaction.atomic():
+        # Left unread: someone may still want to see who applied late.
+        thread.snippet = snippet_of(body)
+        thread.last_message_at = timezone.now()
+        thread.save(update_fields=["snippet", "last_message_at"])
+        return MailMessage.objects.create(
+            thread=thread,
+            direction="out",
+            from_name=ORG_NAME,
+            from_email=from_address,
+            to=to,
+            subject=subject[:500],
+            body_text=body,
+            message_id=_clean_id(message_id),
+            in_reply_to=in_reply_to,
+            references=references,
+            status="sent",
+        )
+
+
+def send(user, *, mailbox, owner, to, cc, subject, body, thread=None, attachments=()):
+    """Send from a mailbox and file the copy in it. Raises SendError when the
+    provider refuses, in which case nothing is recorded.
+
+    attachments are uploaded files, already checked by attachment_problem.
+    They are stored only once the provider has accepted the message."""
+    message_id, in_reply_to, references, headers = _reply_headers(thread)
 
     message = EmailMultiAlternatives(
         subject=subject,

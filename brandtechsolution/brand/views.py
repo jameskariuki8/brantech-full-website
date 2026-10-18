@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
 from staff.context_processors import held_capabilities
-from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career, PartnershipType, PartnerOrganisation
+from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career, PartnershipType, PartnerOrganisation, careers_address
 from .forms import CareerForm, PartnerOrganisationForm, PartnershipTypeForm, SiteContentForm
 from .markdown_utils import render_markdown
 
@@ -99,8 +99,11 @@ def about(request):
 
 def careers(request):
     """Careers page view – now pulls open positions from the admin"""
-    career_list = Career.objects.all()
-    return render(request, 'brand/careers.html', {'career_list': career_list})
+    career_list = Career.objects.filter(status=Career.STATUS_OPEN)
+    return render(request, 'brand/careers.html', {
+        'career_list': career_list,
+        'careers_email': careers_address(),
+    })
 
 
 def partnerships(request):
@@ -394,6 +397,35 @@ def admin_partnership_edit(request, kind, pk=None):
         'form': form,
         'record': instance,
     })
+
+
+@login_required(login_url='/login/')
+@require_POST
+def admin_partnership_status(request, kind, pk):
+    """Close a track or job opening, or reopen it; hide a partner, or show it.
+
+    A closed track moves to the archived list on /partnerships/, a closed job
+    leaves /careers/ and answers anyone who still applies with an
+    applications-closed email, and a hidden partner leaves the partners strip.
+    """
+    config = _partnership_kind(request, kind)
+    record = get_object_or_404(config['model'], pk=pk)
+    name = _record_name(record)
+    if kind == 'partners':
+        record.featured = not record.featured
+        record.save(update_fields=['featured'])
+        done = 'shown on the partnerships page' if record.featured else 'hidden from the partnerships page'
+    else:
+        record.status = record.STATUS_CLOSED if record.status == record.STATUS_OPEN else record.STATUS_OPEN
+        record.save()
+        if record.status == record.STATUS_OPEN:
+            done = f'reopened and back on {config["public_url"]}'
+        elif kind == 'jobs':
+            done = 'closed. Anyone who still applies is told applications have closed'
+        else:
+            done = 'closed and moved to the archived tracks'
+    messages.success(request, f'"{name}" {done}.')
+    return redirect(_partnerships_url(kind))
 
 
 @login_required(login_url='/login/')
