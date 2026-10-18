@@ -452,6 +452,7 @@ def mailgun_inbound_webhook(request):
         sender_email=sender_email,
         threads=threads,
         header=lambda name: _payload_header(payload, name),
+        payload=payload,
     )
 
     inquiry = None
