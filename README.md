@@ -402,6 +402,13 @@ else.
 | `DEFAULT_FROM_EMAIL` | Public From address. Defaults to `noreply@$MAILGUN_DOMAIN`. |
 | `EDITORIAL_REVIEW_EMAIL` | Optional fallback only — see below. |
 | `EMAIL_TIMEOUT` | Per-request timeout on the Mailgun call. |
+| `MAIL_ATTACHMENTS_ROOT` | Where staff mail attachments are stored. Defaults to `brandtechsolution/private/mail_attachments`. Keep it outside `MEDIA_ROOT`, which is served publicly; Docker mounts `./data/private` here. |
+
+Staff mail supports attachments in both directions. Files received through the
+inbound webhook are kept, and compose and reply accept up to 10 files totalling
+20 MB, with executable types refused. Downloads go through
+`/api/messaging/mail/attachments/<id>/`, which applies the same access rule as
+the conversation itself.
 
 The From address must sit inside the sending domain. Anything else — a
 `gmail.com` address in particular — fails SPF and DKIM alignment and lands in

@@ -8,21 +8,80 @@ too, so mail to a typo or a departed colleague is never silently dropped.
 
 import email.utils
 import html
+import mimetypes
+import os
 import re
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.utils import timezone
 
 from staff.handles import SHARED_MAILBOXES, mailbox_address
 
-from .models import BlockedSender, MailMessage, MailThread
+from .models import BlockedSender, MailAttachment, MailMessage, MailThread, attachment_path
 
 OTHER = "other"
 SHARED = (*SHARED_MAILBOXES, OTHER)
 ORG_NAME = "Teklora"
+
+
+# Mailgun takes up to 25 MB a message; this leaves room for the encoding.
+MAX_ATTACHMENTS = 10
+MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
+# Providers refuse these outright, so refuse them before the send rather
+# than report a delivery failure afterwards.
+BLOCKED_EXTENSIONS = {
+    ".ade", ".adp", ".apk", ".app", ".bat", ".cab", ".chm", ".cmd", ".com", ".cpl",
+    ".dll", ".dmg", ".exe", ".hta", ".ins", ".isp", ".jar", ".js", ".jse", ".lib",
+    ".lnk", ".mde", ".msc", ".msi", ".msp", ".mst", ".pif", ".ps1", ".scr", ".sct",
+    ".shb", ".sys", ".vb", ".vbe", ".vbs", ".vxd", ".wsc", ".wsf", ".wsh",
+}
+
+
+def attachment_problem(files):
+    """Why these outgoing files cannot be sent, or None when they can."""
+    if len(files) > MAX_ATTACHMENTS:
+        return f"Attach at most {MAX_ATTACHMENTS} files."
+    for f in files:
+        ext = os.path.splitext(f.name or "")[1].lower()
+        if ext in BLOCKED_EXTENSIONS:
+            return f"{f.name}: {ext} files are blocked by mail providers. Zip it or share a link."
+    if sum(f.size or 0 for f in files) > MAX_ATTACHMENT_BYTES:
+        return "Attachments can total at most 20 MB. Share larger files as a link."
+    return None
+
+
+def _content_type(upload):
+    given = (getattr(upload, "content_type", "") or "").strip()
+    if given:
+        return given[:150]
+    return mimetypes.guess_type(upload.name or "")[0] or "application/octet-stream"
+
+
+def store_inbound_files(uploads):
+    """Save received files once. Returns descriptions deliver_inbound turns
+    into MailAttachment rows for every mailbox copy of the message."""
+    storage = MailAttachment._meta.get_field("file").storage
+    stored = []
+    for upload in uploads:
+        name = os.path.basename(upload.name or "") or "attachment"
+        path = storage.save(attachment_path(None, name), upload)
+        stored.append({
+            "file": path,
+            "name": name[:255],
+            "content_type": _content_type(upload),
+            "size": upload.size or 0,
+        })
+    return stored
+
+
+def discard_stored_files(stored):
+    storage = MailAttachment._meta.get_field("file").storage
+    for info in stored:
+        storage.delete(info["file"])
 
 
 def _clean_id(value):
@@ -92,6 +151,7 @@ def deliver_inbound(
     in_reply_to="",
     references="",
     attachments=None,
+    stored_files=None,
     snippet_text="",
 ):
     """File one received message into one mailbox. Returns the MailMessage,
@@ -124,7 +184,7 @@ def deliver_inbound(
         thread.last_message_at = now
         thread.save()
 
-        return MailMessage.objects.create(
+        message = MailMessage.objects.create(
             thread=thread,
             direction="in",
             from_name=from_name[:200],
@@ -141,6 +201,10 @@ def deliver_inbound(
             attachments=attachments or [],
             status="received",
         )
+        MailAttachment.objects.bulk_create(
+            MailAttachment(message=message, **info) for info in stored_files or []
+        )
+        return message
 
 
 def claim_unmatched(user):
@@ -228,9 +292,12 @@ class SendError(Exception):
     pass
 
 
-def send(user, *, mailbox, owner, to, cc, subject, body, thread=None):
+def send(user, *, mailbox, owner, to, cc, subject, body, thread=None, attachments=()):
     """Send from a mailbox and file the copy in it. Raises SendError when the
-    provider refuses, in which case nothing is recorded."""
+    provider refuses, in which case nothing is recorded.
+
+    attachments are uploaded files, already checked by attachment_problem.
+    They are stored only once the provider has accepted the message."""
     message_id = email.utils.make_msgid(domain=settings.MAILBOX_DOMAIN)
     headers = {"Message-ID": message_id}
     in_reply_to = ""
@@ -253,6 +320,13 @@ def send(user, *, mailbox, owner, to, cc, subject, body, thread=None):
         headers=headers,
     )
     message.attach_alternative(_html_body(body), "text/html")
+    files = []
+    for upload in attachments:
+        name = os.path.basename(upload.name or "") or "attachment"
+        upload.seek(0)
+        files.append((name[:255], upload.read(), _content_type(upload)))
+    for name, content, content_type in files:
+        message.attach(name, content, content_type)
     try:
         message.send(fail_silently=False)
     except Exception as exc:  # the backend raises RuntimeError or a network error
@@ -274,7 +348,7 @@ def send(user, *, mailbox, owner, to, cc, subject, body, thread=None):
         thread.archived = False
         thread.last_message_at = now
         thread.save()
-        return MailMessage.objects.create(
+        sent = MailMessage.objects.create(
             thread=thread,
             direction="out",
             from_name=(user.get_full_name() or user.username)[:200],
@@ -290,3 +364,10 @@ def send(user, *, mailbox, owner, to, cc, subject, body, thread=None):
             sent_by=user,
             status="sent",
         )
+        for name, content, content_type in files:
+            row = MailAttachment(
+                message=sent, name=name, content_type=content_type, size=len(content)
+            )
+            row.file.save(name, ContentFile(content), save=False)
+            row.save()
+        return sent

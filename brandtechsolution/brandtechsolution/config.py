@@ -244,6 +244,9 @@ class AppSettings(BaseSettings):
     # ============================================================
     static_root: str = str(BASE_DIR / "staticfiles")
     media_root: str = str(BASE_DIR / "media")
+    # Mail attachments are private and must never sit under media_root,
+    # which is served to anyone.
+    mail_attachments_root: str = str(BASE_DIR / "private" / "mail_attachments")
 
 
 # Create global config instance
