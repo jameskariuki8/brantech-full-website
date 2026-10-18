@@ -312,6 +312,15 @@ class SignupTakeoverTest(TestCase):
         self.signup.refresh_from_db()
         self.assertTrue(self.signup.is_staff)
         self.assertEqual(list(self.signup.groups.all()), [self.role])
+
+    def test_a_deactivated_signup_is_switched_on(self):
+        # /signup/ creates accounts deactivated; acceptance is what opens them.
+        self.signup.is_active = False
+        self.signup.save()
+        self.assertEqual(self._accept().status_code, 302)
+        self.signup.refresh_from_db()
+        self.assertTrue(self.signup.is_active)
+        self.assertTrue(self.signup.is_staff)
         self.assertTrue(StaffProfile.objects.filter(user=self.signup).exists())
         entry = AuditEntry.objects.get(action="invite_accepted", target_user=self.signup)
         self.assertTrue(entry.detail["took_over_signup"])

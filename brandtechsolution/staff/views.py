@@ -114,6 +114,8 @@ def accept_invitation(request, token):
         else:
             user = User.objects.select_for_update().get(pk=existing.pk)
             user.is_staff = True
+            # /signup/ creates accounts deactivated; accepting switches them on.
+            user.is_active = True
             user.email = invitation.email
 
         # On a taken-over sign-up the new password also changes the session

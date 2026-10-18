@@ -5,7 +5,8 @@ sign-up account must not be made staff directly: anyone could register a new
 hire's address first and be handed their access. Instead it is invited like
 anyone else, and accepting the emailed link - proof the person holds that
 inbox - takes the account over: a new password, which also signs out every
-session the sign-up had, then staff status and the invited roles.
+session the sign-up had, then staff status, the invited roles, and an active
+account (sign-ups start deactivated).
 """
 
 from django.contrib.auth.models import User

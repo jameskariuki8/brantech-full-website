@@ -742,12 +742,12 @@ project's configured `AUTH_PASSWORD_VALIDATORS`.
   same reason, rather than mailing a link that would dead-end.
 - **Sign-up accounts.** The login pages no longer link to `/signup/`, but the
   page still exists, and it never checks that the address belongs to whoever
-  typed it. Accounts made there are not staff. The roster lists them only when
-  searched for or under the **Signed up, not staff** filter
+  typed it. Accounts made there start **deactivated** and are not staff. The
+  roster lists them for `manage_staff` holders, marked **Not staff yet**
   (`/api/staff/people/?include=signups`), and the people API cannot edit them.
   Opening one offers **Send staff invitation**: a normal invitation to its
   address. Accepting it from that inbox takes the account over: a new password
-  (which signs out any existing session), `is_staff`, and the invited roles
+  (which signs out any existing session), `is_active`, `is_staff`, and the invited roles
   (`took_over_signup` in the `invite_accepted` activity entry). Two accounts
   sharing the address are still refused. See `staff/signups.py`.
 - The email is sent directly rather than through the campaign outbox, so it

@@ -99,21 +99,20 @@ const TIERS = {
     },
 };
 
-// Accounts from the public /signup/ form are loaded too, so they can be found
-// and given a role. They stay out of the roster until searched for or picked
-// through their own filter, since anyone can create one.
+// Normal (non-staff) accounts are loaded too, so whoever manages staff can see
+// them and invite them in. Opening one sends an invitation (openSignupInvite).
 const PEOPLE_FILTERS = [
-    { key: 'all', label: 'Everyone', test: p => p.is_staff || !!peopleView.query },
+    { key: 'all', label: 'Everyone', test: () => true },
     { key: 'owner', label: 'Owners', test: p => p.is_staff && personTier(p) === 'owner' },
     { key: 'administrator', label: 'Administrators', test: p => p.is_staff && personTier(p) === 'administrator' },
     { key: 'member', label: 'Members', test: p => p.is_staff && personTier(p) === 'member' },
     { key: 'none', label: 'No access', test: p => p.is_staff && personTier(p) === 'none' },
     { key: 'pending', label: 'Setup pending', test: p => p.is_staff && !p.is_onboarded },
     { key: 'inactive', label: 'Deactivated', test: p => p.is_staff && !p.is_active },
-    { key: 'signups', label: 'Signed up, not staff', test: p => !p.is_staff },
+    { key: 'signups', label: 'Not staff yet', test: p => !p.is_staff },
 ];
 
-const SIGNUP_BADGE = '<span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">Signed up, not staff</span>';
+const SIGNUP_BADGE = '<span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">Not staff yet</span>';
 
 let PEOPLE = [];
 const peopleView = { query: '', filter: 'all' };
@@ -318,13 +317,13 @@ function personRow(person) {
             : '<span class="text-xs text-gray-500">No roles yet</span>');
     return `
     <button type="button" data-action="edit-person" data-id="${escapeHtml(person.id)}"
-        class="w-full text-left flex items-start gap-3 p-4 hover:bg-white/[0.03] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-blue ${person.is_active ? '' : 'opacity-60'}">
+        class="w-full text-left flex items-start gap-3 p-4 hover:bg-white/[0.03] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-blue ${person.is_active || !person.is_staff ? '' : 'opacity-60'}">
         <span class="shrink-0 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-sm font-semibold text-gray-300 font-heading" aria-hidden="true">${escapeHtml(initialsOf(person))}</span>
         <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span class="text-white font-medium">${escapeHtml(personName(person))}</span>
                 ${person.is_staff ? tierBadge(tierKey) : SIGNUP_BADGE}
-                ${person.is_active ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/20">Deactivated</span>'}
+                ${person.is_active || !person.is_staff ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/20">Deactivated</span>'}
                 ${person.is_onboarded || !person.is_staff ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">Setup pending</span>'}
             </span>
             <span class="block text-xs text-gray-400 mt-0.5 truncate">${escapeHtml(person.email || person.username)}</span>
@@ -652,9 +651,9 @@ function openSignupInvite(person) {
         </div>
     </div>
     <div class="mb-5 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs text-sky-200">
-        <i class="fas fa-user-plus mr-1.5"></i>This account was made with the public sign-up form, so it cannot open the panel.
-        Send an invitation to its address. When they accept it from that inbox, this account becomes staff with the roles below
-        and they choose a new password.</div>
+        <i class="fas fa-user-plus mr-1.5"></i>This is a normal account, not staff, so it cannot open the panel.
+        Send an invitation to its address. When they accept it from that inbox, this account becomes an active staff account
+        with the roles below, and they choose a new password.</div>
     <fieldset class="mb-5">
         <legend class="text-sm font-medium text-white mb-2">Roles</legend>
         <div class="space-y-2">${roleCards([])}</div>
