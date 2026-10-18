@@ -561,7 +561,7 @@ class WiringTests(TestCase):
 
     def _gathered(self, agent_class, build):
         """The brief an agent actually sends to its tools, or None."""
-        from editorial.llm_fakes import fake_gemini
+        from editorial.tests.fakes import fake_gemini
 
         with patch.object(agent_class, "gather_evidence", return_value="") as gather:
             with fake_gemini():
@@ -569,9 +569,9 @@ class WiringTests(TestCase):
         return gather.call_args[0][0] if gather.call_args else None
 
     def test_the_verifier_gathers_before_it_judges(self):
-        from research.models import ResearchDossier
-        from research.services.fact_verifier import FactVerificationAgent
-        from trends.models import TrendTopic
+        from editorial.models.research import ResearchDossier
+        from editorial.services.research.fact_verifier import FactVerificationAgent
+        from editorial.models.trends import TrendTopic
 
         topic = TrendTopic.objects.create(
             title="A topic", summary="A summary.", source="HN",
@@ -591,8 +591,8 @@ class WiringTests(TestCase):
         self.assertIn("https://example.com/s", brief)
 
     def test_the_researcher_gathers_before_it_writes_anything_down(self):
-        from research.services.investigator import ResearchAgent
-        from trends.models import TrendTopic
+        from editorial.services.research.investigator import ResearchAgent
+        from editorial.models.trends import TrendTopic
 
         topic = TrendTopic.objects.create(
             title="A topic", summary="A summary.", source="HN",
@@ -610,8 +610,8 @@ class WiringTests(TestCase):
         match: new facts at the drafting stage are how an unsupported claim
         gets back in after the verifier removed it."""
         from editorial.services.writer import AIWriterAgent
-        from research.models import ResearchDossier, VerifiedFactReport
-        from trends.models import TrendTopic
+        from editorial.models.research import ResearchDossier, VerifiedFactReport
+        from editorial.models.trends import TrendTopic
 
         topic = TrendTopic.objects.create(
             title="A topic", summary="A summary.", source="HN", category="AI",

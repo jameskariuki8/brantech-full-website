@@ -1,1 +1,0 @@
-# Trends app package

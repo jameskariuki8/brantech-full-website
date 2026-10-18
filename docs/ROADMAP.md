@@ -25,6 +25,7 @@ This document serves as the high-level roadmap and strategic milestone tracker f
   - [x] Multi-provider configuration supporting Gemini, Anthropic, OpenAI, DeepSeek, OpenRouter, and Codex.
   - [x] Unified exponential backoff, rate-limit retry policies, and automated admin failure alerts (`alerts.py`).
   - [x] Newsroom agent migration across 6 core editorial/research agents removing isolated model clients and fallbacks.
+  - [x] Consolidate the seven per-agent pipeline apps into domain packages inside `editorial/` (`docs/plans/2026-10-16-editorial-consolidation-plan.md`).
 - [x] **Persistent Semantic Knowledge Base & Memory**:
   - [x] Single-corpus semantic memory with per-vector model provenance (`memory.py`).
   - [x] Scored re-embedding on model switch with vector indexing.

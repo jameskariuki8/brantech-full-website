@@ -76,15 +76,8 @@ INSTALLED_APPS = [
     'staff',
     'tasks',
 
-    'trends',
-    'research',
     'editorial',
-    'seo',
-    'media_generation',
     'knowledge_base',
-    'approval',
-    'publishing',
-    'analytics',
 
 ]
 

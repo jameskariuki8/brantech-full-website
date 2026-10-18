@@ -257,9 +257,9 @@ class RealAgentTests(TestCase):
 
     def test_a_cycle_that_produced_nothing_abstains_rather_than_failing(self):
         """Nothing prioritised this week is an ordinary Tuesday."""
-        from editorial.newsroom import NewsroomAgent
+        from editorial.pipeline.newsroom import NewsroomAgent
 
-        with patch("editorial.orchestrator.EditorialPipelineOrchestrator"
+        with patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator"
                    ".run_full_autonomous_cycle", return_value=[]):
             result = NewsroomAgent().run(AgentRequest(payload={"limit": 1}))
 
@@ -267,10 +267,10 @@ class RealAgentTests(TestCase):
         self.assertEqual(AgentHealth.objects.filter(agent="newsroom").count(), 0)
 
     def test_the_newsroom_reports_the_articles_it_made(self):
-        from editorial.newsroom import NewsroomAgent
+        from editorial.pipeline.newsroom import NewsroomAgent
 
         article = type("A", (), {"id": 42})()
-        with patch("editorial.orchestrator.EditorialPipelineOrchestrator"
+        with patch("editorial.pipeline.orchestrator.EditorialPipelineOrchestrator"
                    ".run_full_autonomous_cycle", return_value=[article]):
             result = NewsroomAgent().run(AgentRequest(payload={}))
 

@@ -21,8 +21,8 @@ from ai_workflows.harness.contract import AgentOutput, OutputStatus, require
 from ai_workflows.harness.llm import ModelRole
 from ai_workflows.harness.persona import Persona
 from editorial.models import EditorialArticle
-from editorial.text import fit_to_column
-from research.models import VerifiedFactReport
+from editorial.utils.text import fit_to_column
+from editorial.models.research import VerifiedFactReport
 
 logger = logging.getLogger(__name__)
 

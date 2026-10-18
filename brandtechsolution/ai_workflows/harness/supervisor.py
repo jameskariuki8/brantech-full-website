@@ -90,13 +90,13 @@ def load_agents(target=registry):
         return target
 
     from ai_workflows.service import ChatAssistant
-    from editorial.newsroom import NewsroomAgent
+    from editorial.pipeline.newsroom import NewsroomAgent
     from editorial.services.social import MultiPlatformContentAgent
     from editorial.services.writer import AIWriterAgent
-    from research.services.fact_verifier import FactVerificationAgent
-    from research.services.investigator import ResearchAgent
-    from trends.services.intelligence import TrendIntelligenceAgent
-    from trends.services.prediction import TrendPredictionAgent
+    from editorial.services.research.fact_verifier import FactVerificationAgent
+    from editorial.services.research.investigator import ResearchAgent
+    from editorial.services.trends.intelligence import TrendIntelligenceAgent
+    from editorial.services.trends.prediction import TrendPredictionAgent
 
     for agent_class in (
         TrendIntelligenceAgent, TrendPredictionAgent, ResearchAgent,

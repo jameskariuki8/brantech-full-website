@@ -7,7 +7,7 @@ Also provides personalized article variant parameters.
 """
 import logging
 from typing import Dict, Any
-from research.models import VerifiedFactReport
+from editorial.models.research import VerifiedFactReport
 
 logger = logging.getLogger(__name__)
 

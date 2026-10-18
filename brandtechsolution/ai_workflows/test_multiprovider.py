@@ -306,7 +306,7 @@ class AgentThreadingTests(TestCase):
     """`allow_fallback` spent four steps as a field nobody read."""
 
     def test_an_agents_flag_reaches_the_resolver(self):
-        from research.services.fact_verifier import FactVerificationAgent
+        from editorial.services.research.fact_verifier import FactVerificationAgent
 
         with _candidates('{"confidence_level": 0.9, "sanitized_text": "x"}') as get:
             FactVerificationAgent().ask("check this", _FakeSchema)
