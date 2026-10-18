@@ -54,7 +54,8 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 - [ ] **Dynamic Public Careers Experience** (`/careers/`):
   - [ ] Live database querying replacing hardcoded static positions in `brand/careers.html`.
   - [ ] Department filtering, expandable position details, and pre-filled email application trigger.
-  - [ ] Empty state fallback with general resume submission prompt.
+  - [x] Empty state fallback with general resume submission prompt.
+- [x] **Closing roles, tracks and partners**: Close / Reopen for jobs and tracks, Hide / Show for partners, in the panel; closed roles leave `/careers/` and late applicants get an automatic applications-closed reply.
 
 ---
 

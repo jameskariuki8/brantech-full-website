@@ -1,4 +1,8 @@
+import re
+
+from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -532,13 +536,28 @@ class SiteContent(models.Model):
     # ---------------------------------------------------------------------
     # Careers model – allows admin editing of open positions
     # ---------------------------------------------------------------------
+def careers_address():
+    # On our own domain, so mail to it reaches the inbound webhook and a
+    # closed role can answer for itself.
+    return f"careers@{settings.MAILBOX_DOMAIN}"
+
+
 class Career(models.Model):
+    STATUS_OPEN = 'open'
+    STATUS_CLOSED = 'closed'
+    STATUS_CHOICES = [
+        (STATUS_OPEN, 'Open – Accepting applications'),
+        (STATUS_CLOSED, 'Closed – No longer accepting applications'),
+    ]
+
     title = models.CharField(max_length=150)
     location = models.CharField(max_length=100, default='Remote / Hybrid')
     employment_type = models.CharField(max_length=50, default='Full-time')
     description = models.TextField()
-    email = models.EmailField(default='careers@teklora.com')
+    email = models.EmailField(default=careers_address)
     document = models.FileField(upload_to='career_docs/', blank=True, null=True, help_text='Upload a PDF or document for the job posting.')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_OPEN, db_index=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
     posted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -548,6 +567,61 @@ class Career(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def is_open(self):
+        return self.status == self.STATUS_OPEN
+
+    @property
+    def reference(self):
+        """Put in the subject of the Apply link, so a later application can be
+        matched to this role even when two roles share an inbox."""
+        return f"JOB-{self.pk}"
+
+    @property
+    def application_subject(self):
+        return f"Application for {self.title} ({self.reference})"
+
+    def clean(self):
+        super().clean()
+        # Mail to any other domain never reaches the inbound webhook, so a
+        # closed role could not answer its late applicants.
+        domain = settings.MAILBOX_DOMAIN.lower()
+        if self.email and self.email.strip().lower().rpartition('@')[2] != domain:
+            raise ValidationError({
+                'email': f'Use an address ending in @{domain}, such as {careers_address()}. '
+                         f'Applications to other addresses never reach us, so they cannot be answered.'
+            })
+
+    def save(self, *args, **kwargs):
+        if self.is_open:
+            self.closed_at = None
+        elif self.closed_at is None:
+            self.closed_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def closed_role_for(cls, subject, recipients):
+        """The closed role an email applies to, or None.
+
+        recipients are the addresses it was delivered to; the role's own
+        address must be among them. The JOB-<id> reference decides, and
+        without one the subject must name the role, which is how the Apply
+        link wrote it before references were added.
+        """
+        recipients = {r.strip().lower() for r in recipients if r}
+        subject = (subject or '').strip()
+        match = re.search(r'\bJOB-(\d+)\b', subject, re.IGNORECASE)
+        if match:
+            role = cls.objects.filter(pk=int(match.group(1))).first()
+            if role and not role.is_open and role.email.lower() in recipients:
+                return role
+            return None
+        lowered = subject.lower()
+        for role in cls.objects.filter(status=cls.STATUS_CLOSED):
+            if role.email.lower() in recipients and f'application for {role.title.lower()}' in lowered:
+                return role
+        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

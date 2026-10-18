@@ -98,7 +98,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Career)
 class CareerAdmin(ManageStaffAdminMixin, admin.ModelAdmin):
-    list_display = ('title', 'location', 'employment_type', 'posted_at')
+    list_display = ('title', 'location', 'employment_type', 'status', 'posted_at')
+    list_filter = ('status',)
     search_fields = ('title', 'description')
     ordering = ('-posted_at',)
 

@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
@@ -102,7 +103,8 @@ class PartnershipsPanelEditingTests(TestCase):
             "title": "Field Sales Lead",
             "employment_type": "Full-time",
             "location": "Nairobi",
-            "email": "careers@example.com",
+            "email": f"careers@{settings.MAILBOX_DOMAIN}",
+            "status": "open",
             "description": "Grow our school partnerships.",
         }
         bad = SimpleUploadedFile("run.exe", b"MZ", content_type="application/octet-stream")
@@ -140,7 +142,7 @@ class PartnershipsPanelUploadTests(TestCase):
             pdf = SimpleUploadedFile("role.pdf", b"%PDF-1.4 test", content_type="application/pdf")
             response = self.client.post(f"{LIST}jobs/new/", {
                 "title": "Designer", "employment_type": "Contract", "location": "Remote",
-                "email": "careers@example.com", "description": "Design things.", "document": pdf,
+                "email": f"careers@{settings.MAILBOX_DOMAIN}", "status": "open", "description": "Design things.", "document": pdf,
             })
             self.assertEqual(response.status_code, 302)
             self.assertTrue(Career.objects.get().document.name.startswith("career_docs/role"))
@@ -152,3 +154,56 @@ class PublicTrackCardTests(TestCase):
         response = self.client.get("/partnerships/")
         self.assertContains(response, '<i class="fas fa-microchip" aria-hidden="true"></i>')
         self.assertContains(response, "text-emerald-500 mb-4")
+
+
+class PartnershipStatusToggleTests(TestCase):
+    """Close / Reopen on tracks and Hide / Show on partners, from the list."""
+
+    def setUp(self):
+        self.client.force_login(onboarded(staff_user("boss", "manage_staff")))
+
+    def test_closing_a_track_moves_it_to_the_archived_list(self):
+        track = PartnershipType.objects.create(**{**TRACK, "order": 1})
+        url = f"{LIST}tracks/{track.pk}/status/"
+        response = self.client.post(url)
+        self.assertRedirects(response, f"{LIST}?tab=tracks", fetch_redirect_response=False)
+        track.refresh_from_db()
+        self.assertEqual(track.status, PartnershipType.STATUS_CLOSED)
+        page = self.client.get("/partnerships/")
+        self.assertIn(track, page.context["closed_types"])
+        self.assertNotIn(track, page.context["open_types"])
+        self.assertContains(self.client.get(LIST, {"tab": "tracks"}), "Reopen")
+
+        self.client.post(url)
+        track.refresh_from_db()
+        self.assertEqual(track.status, PartnershipType.STATUS_OPEN)
+
+    def test_hiding_a_partner_takes_it_off_the_partnerships_page(self):
+        partner = PartnerOrganisation.objects.create(name="Acme Schools")
+        url = f"{LIST}partners/{partner.pk}/status/"
+        self.client.post(url)
+        partner.refresh_from_db()
+        self.assertFalse(partner.featured)
+        self.assertNotIn(partner, self.client.get("/partnerships/").context["featured_partners"])
+        self.assertContains(self.client.get(LIST, {"tab": "partners"}), "Show")
+
+        self.client.post(url)
+        partner.refresh_from_db()
+        self.assertTrue(partner.featured)
+
+    def test_toggle_is_post_only_and_refused_without_manage_staff(self):
+        track = PartnershipType.objects.create(**{**TRACK, "order": 1})
+        url = f"{LIST}tracks/{track.pk}/status/"
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.force_login(onboarded(staff_user("writer", "manage_blog")))
+        self.assertEqual(self.client.post(url).status_code, 403)
+        track.refresh_from_db()
+        self.assertEqual(track.status, PartnershipType.STATUS_OPEN)
+
+    def test_tracks_and_partners_can_be_deleted(self):
+        track = PartnershipType.objects.create(**{**TRACK, "order": 1})
+        partner = PartnerOrganisation.objects.create(name="Acme Schools")
+        self.client.post(f"{LIST}tracks/{track.pk}/delete/")
+        self.client.post(f"{LIST}partners/{partner.pk}/delete/")
+        self.assertFalse(PartnershipType.objects.exists())
+        self.assertFalse(PartnerOrganisation.objects.exists())

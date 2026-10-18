@@ -19,6 +19,7 @@ from brandtechsolution import turnstile
 from brandtechsolution.mail import send_mail_each
 from staff.emails import superuser_emails
 from staff.handles import mailbox_address
+from .autoreply import answer_closed_role
 from .mailbox import deliver_inbound, discard_stored_files, local_parts, resolve_mailbox, store_inbound_files
 from .models import BlockedSender, CampaignRecipient, InboundEmail, Inquiry, Suppression
 from .tokens import read_unsubscribe_token
@@ -411,6 +412,8 @@ def mailgun_inbound_webhook(request):
     locals_ = local_parts(raw_recipient) or local_parts(header_to)
     shared_hit = False
     delivered = 0
+    # Each address it was filed under, for an automatic reply to answer in.
+    threads = {}
     for local in locals_:
         mailbox, owner = resolve_mailbox(local)
         message = deliver_inbound(
@@ -433,12 +436,23 @@ def mailgun_inbound_webhook(request):
         )
         if message is not None:
             delivered += 1
+            threads[mailbox_address(local).lower()] = message.thread
             # Spam from a blocked sender is filed, but raises nothing.
             shared_hit = shared_hit or (owner is None and not message.thread.spam)
     if not delivered:
         # A retried webhook or mail to no address of ours: nothing refers to
         # the files just saved.
         discard_stored_files(stored_files)
+
+    # Only freshly filed mail is answered, so a retried webhook is not.
+    answer_closed_role(
+        subject=subject,
+        recipients=list(threads),
+        sender_name=sender_name,
+        sender_email=sender_email,
+        threads=threads,
+        header=lambda name: _payload_header(payload, name),
+    )
 
     inquiry = None
     if shared_hit:
