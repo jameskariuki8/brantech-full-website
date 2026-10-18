@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from django.core.mail import send_mail
+from brandtechsolution.mail import send_mail_each
 
 from staff.emails import capability_holder_emails
 
@@ -27,7 +27,7 @@ def notify_review_ready(task, request=None):
     who = ", ".join(sorted(a.user.username for a in task.assignments.all()))
 
     try:
-        send_mail(
+        send_mail_each(
             subject=f"[Teklora] Ready for review: {task.title}",
             message=(
                 f"{who or 'Nobody'} finished work on \"{task.title}\".\n\n"

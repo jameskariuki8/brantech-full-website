@@ -31,18 +31,20 @@ class InquiryInboxApiTests(TestCase):
             message="Initial question about software consulting.",
             status="new",
         )
-        self.view_user = staff_with_capabilities("view_inbox", username="viewer")
-        self.handler_user = staff_with_capabilities("view_inbox", "handle_inquiries", username="handler")
+        # Inquiries are the superuser's alone; any other staff account is the
+        # read-nothing case, whatever it holds.
+        self.view_user = staff_with_capabilities("manage_campaigns", username="viewer")
+        self.handler_user = User.objects.create_superuser("handler", "h@example.com", "p")
 
-    def test_view_inbox_can_list_and_search(self):
-        self.client.force_authenticate(user=self.view_user)
+    def test_superuser_can_list_and_search(self):
+        self.client.force_authenticate(user=self.handler_user)
 
         response = self.client.get("/api/messaging/inquiries/?q=Alice")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data), 1)
 
-    def test_view_inbox_only_cannot_reply(self):
+    def test_other_staff_cannot_reply(self):
         self.client.force_authenticate(user=self.view_user)
 
         response = self.client.post(

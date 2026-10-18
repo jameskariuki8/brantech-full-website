@@ -8,6 +8,16 @@ from django.utils import timezone
 from .tokens import make_invitation_token
 
 
+def superuser_emails():
+    """Email addresses of the active superusers: the people website
+    inquiries, bookings and shared-mailbox mail are reported to."""
+    return sorted(set(
+        User.objects.filter(is_superuser=True, is_active=True)
+        .exclude(email="")
+        .values_list("email", flat=True)
+    ))
+
+
 def capability_holder_emails(codename):
     """Email addresses of every staff account holding `codename`.
 

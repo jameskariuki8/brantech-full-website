@@ -16,7 +16,7 @@ HANDLE_RE = re.compile(r"^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 MIN_LENGTH = 3
 MAX_LENGTH = 30
 
-# Team addresses anyone with view_inbox reads. Reserved so nobody can
+# Team addresses only the superuser reads. Reserved so nobody can
 # claim one as a personal handle.
 SHARED_MAILBOXES = ("info", "hello", "support")
 

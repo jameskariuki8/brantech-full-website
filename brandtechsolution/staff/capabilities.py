@@ -18,12 +18,12 @@ CAPABILITY_GROUPS = [
     (
         "Communications",
         [
-            ("view_inbox", "View inbox"),
-            # Every staff member reads their own mailbox without a capability.
-            # This one opens every mailbox, sent mail included, for oversight.
-            ("view_all_mail", "Read every staff mailbox"),
+            # Everyone reads their own mailbox and nothing else. Shared
+            # mailboxes, website inquiries and oversight of other people's
+            # mail belong to the superuser and are deliberately not
+            # capabilities: view_inbox, handle_inquiries and view_all_mail
+            # were removed (staff.0020) so no role can hand them out again.
             ("manage_mail_limits", "Set mail sending limits"),
-            ("handle_inquiries", "Reply to and archive inquiries"),
             ("manage_templates", "Manage email templates"),
             ("manage_campaigns", "Create and edit campaigns"),
             ("manage_recipients", "Manage campaign recipients"),

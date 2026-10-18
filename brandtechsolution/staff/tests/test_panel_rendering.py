@@ -48,11 +48,11 @@ class NavGatingTest(TestCase):
 
 class CapabilityExposureTest(TestCase):
     def test_capabilities_are_exposed_to_javascript(self):
-        self.client.force_login(staff_with("manage_blog", "view_inbox"))
+        self.client.force_login(staff_with("manage_blog", "manage_appointments"))
         resp = self.client.get("/admin-panel/")
         self.assertContains(resp, "window.CAPABILITIES")
         self.assertContains(resp, "manage_blog")
-        self.assertContains(resp, "view_inbox")
+        self.assertContains(resp, "manage_appointments")
 
     def test_capabilities_not_held_are_absent(self):
         self.client.force_login(staff_with("manage_blog"))
@@ -129,7 +129,7 @@ class SectionGatingTest(TestCase):
         self.assertContains(resp, 'id="staffPeopleList"')
 
     def test_blog_section_absent_without_manage_blog(self):
-        self.client.force_login(staff_with("view_inbox"))
+        self.client.force_login(staff_with("manage_projects"))
         resp = self.client.get("/admin-panel/")
         self.assertNotContains(resp, 'id="blogsList"')
 

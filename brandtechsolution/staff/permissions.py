@@ -67,3 +67,14 @@ def has_capability(codename):
 
     _HasCapability.__name__ = f"HasCapability_{codename}"
     return _HasCapability
+
+
+class IsSuperuser(BasePermission):
+    """The superuser only. For what belongs to the owner alone (shared mail,
+    website inquiries) rather than to a capability anyone could be given."""
+
+    message = "Only the administrator can do this."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and user.is_active and user.is_superuser)

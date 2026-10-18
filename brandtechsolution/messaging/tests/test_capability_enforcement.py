@@ -18,36 +18,38 @@ def staff_with(*codenames):
 
 
 class InquiryCapabilityTest(TestCase):
+    """Website inquiries are the superuser's alone; no capability opens them."""
+
     def setUp(self):
         Inquiry.objects.create(name="n", email="a@b.com", message="m")
 
-    def test_view_inbox_allows_reading(self):
-        self.client.force_login(staff_with("view_inbox"))
-        self.assertEqual(self.client.get("/api/messaging/inquiries/").status_code, 200)
-
-    def test_no_capability_cannot_read(self):
-        self.client.force_login(staff_with())
-        self.assertEqual(self.client.get("/api/messaging/inquiries/").status_code, 403)
-
-    def test_view_inbox_alone_cannot_write(self):
+    def test_superuser_can_read_and_write(self):
         inquiry = Inquiry.objects.first()
-        self.client.force_login(staff_with("view_inbox"))
-        resp = self.client.patch(
-            f"/api/messaging/inquiries/{inquiry.pk}/",
-            {"status": "archived"},
-            content_type="application/json",
+        self.client.force_login(
+            User.objects.create_superuser("owner", "owner@example.com", "p")
         )
-        self.assertEqual(resp.status_code, 403)
-
-    def test_handle_inquiries_can_write(self):
-        inquiry = Inquiry.objects.first()
-        self.client.force_login(staff_with("view_inbox", "handle_inquiries"))
+        self.assertEqual(self.client.get("/api/messaging/inquiries/").status_code, 200)
         resp = self.client.patch(
             f"/api/messaging/inquiries/{inquiry.pk}/",
             {"status": "archived"},
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, 200)
+
+    def test_no_capability_cannot_read(self):
+        self.client.force_login(staff_with())
+        self.assertEqual(self.client.get("/api/messaging/inquiries/").status_code, 403)
+
+    def test_other_staff_cannot_read_or_write_whatever_they_hold(self):
+        inquiry = Inquiry.objects.first()
+        self.client.force_login(staff_with("manage_staff", "manage_campaigns", "manage_appointments"))
+        self.assertEqual(self.client.get("/api/messaging/inquiries/").status_code, 403)
+        resp = self.client.patch(
+            f"/api/messaging/inquiries/{inquiry.pk}/",
+            {"status": "archived"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403)
 
 
 class TemplateCapabilityTest(TestCase):

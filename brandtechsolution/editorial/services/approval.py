@@ -10,7 +10,7 @@ import logging
 import io
 import docx
 from typing import Dict, Any
-from django.core.mail import send_mail
+from brandtechsolution.mail import send_mail_each
 from django.conf import settings
 from editorial.models import EditorialArticle
 from editorial.models import ApprovalNotification
@@ -55,7 +55,7 @@ class HumanApprovalWorkflow:
                 recipients = [settings.EDITORIAL_REVIEW_EMAIL]
 
             if recipients:
-                send_mail(
+                send_mail_each(
                     subject=f"[Teklora Editorial Review] {article.title}",
                     message=preview_summary,
                     from_email=settings.DEFAULT_FROM_EMAIL,

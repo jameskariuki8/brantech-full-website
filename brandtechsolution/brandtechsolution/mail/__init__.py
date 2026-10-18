@@ -10,6 +10,6 @@ It borrows two functions from there rather than reimplementing them:
 `inline_email_css`, because Outlook and Gmail ignore <style> blocks, and
 `html_to_text` for the plain-text alternative.
 """
-from brandtechsolution.mail.shell import render_mail, send_mail_html
+from brandtechsolution.mail.shell import render_mail, send_mail_each, send_mail_html
 
-__all__ = ["render_mail", "send_mail_html"]
+__all__ = ["render_mail", "send_mail_each", "send_mail_html"]

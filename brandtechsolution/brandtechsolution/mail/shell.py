@@ -14,7 +14,7 @@ Three rules, each for a reason the existing code already documents:
 import logging
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import render_to_string
 
 from messaging.emailhtml import inline_email_css
@@ -52,12 +52,47 @@ def send_mail_html(subject, template, context, recipients, *, fail_silently=Fals
         return 0
 
     html, text = render_mail(template, context)
-
-    message = EmailMultiAlternatives(
+    return send_mail_each(
         subject=subject,
-        body=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=list(recipients),
+        message=text,
+        html_message=html,
+        recipient_list=recipients,
+        fail_silently=fail_silently,
     )
-    message.attach_alternative(html, "text/html")
-    return message.send(fail_silently=fail_silently)
+
+
+def send_mail_each(subject, message, recipient_list, *, from_email=None,
+                   html_message=None, fail_silently=False):
+    """send_mail(), but one message per recipient.
+
+    Staff notifications go to the personal addresses of everyone holding a
+    capability. Sent as one message, every recipient saw every other
+    recipient's address on the To line, so each person now gets their own.
+
+    Every recipient is attempted even when one fails. Returns how many were
+    sent; with fail_silently=False the first error is raised afterwards.
+    """
+    recipients = list(dict.fromkeys(r for r in recipient_list or [] if r))
+    if not recipients:
+        return 0
+    connection = get_connection(fail_silently=fail_silently)
+    sent = 0
+    first_error = None
+    for recipient in recipients:
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=message,
+            from_email=from_email or settings.DEFAULT_FROM_EMAIL,
+            to=[recipient],
+            connection=connection,
+        )
+        if html_message:
+            email.attach_alternative(html_message, "text/html")
+        try:
+            sent += email.send(fail_silently=fail_silently)
+        except Exception as exc:
+            logger.warning("[mail] %r to %s failed: %s", subject, recipient, exc)
+            first_error = first_error or exc
+    if first_error is not None:
+        raise first_error
+    return sent

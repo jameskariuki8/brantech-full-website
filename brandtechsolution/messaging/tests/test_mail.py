@@ -22,6 +22,12 @@ def staff(username, *codenames, **extra):
     return user
 
 
+def admin(username):
+    """The superuser: the only account that reads shared mailboxes and
+    other people's mail."""
+    return User.objects.create_superuser(username, f"{username}@personal.example", "pw")
+
+
 def inbound(client, recipient, subject="Hello", **extra):
     payload = {
         "from": "Client Person <client@example.com>",
@@ -110,8 +116,9 @@ class MailAccessTest(TestCase):
     def setUp(self):
         self.ann = staff("ann")
         self.bob = staff("bob")
-        self.support = staff("sue", "view_inbox")
-        self.boss = staff("boss", "view_all_mail")
+        # sue holds every capability there is and still sees only her own.
+        self.support = staff("sue", "manage_staff", "manage_mail_limits", "receive_alerts")
+        self.boss = admin("boss")
         inbound(self.client, "ann@teklora.co.ke")
         inbound(self.client, "info@teklora.co.ke")
         self.ann_thread = MailThread.objects.get(mailbox="ann")
@@ -130,11 +137,16 @@ class MailAccessTest(TestCase):
             self.client.get(f"/api/messaging/mail/threads/{self.ann_thread.id}/").status_code, 404
         )
 
-    def test_shared_mailboxes_need_view_inbox(self):
+    def test_shared_mailboxes_are_the_superusers_only(self):
         self.assertEqual(self.ids(self.ann, "info")[0], 403)
-        self.assertEqual(self.ids(self.support, "info"), (200, [self.info_thread.id]))
+        self.assertEqual(self.ids(self.support, "info")[0], 403)
+        self.assertEqual(self.ids(self.boss, "info"), (200, [self.info_thread.id]))
+        self.client.force_login(self.support)
+        self.assertEqual(
+            self.client.get(f"/api/messaging/mail/threads/{self.info_thread.id}/").status_code, 404
+        )
 
-    def test_all_mail_needs_view_all_mail(self):
+    def test_all_mail_is_the_superusers_only(self):
         self.assertEqual(self.ids(self.support, "all")[0], 403)
         status, ids = self.ids(self.boss, "all")
         self.assertEqual(status, 200)
@@ -246,8 +258,8 @@ class SendingTest(TestCase):
 class SpamAndDeleteTest(TestCase):
     def setUp(self):
         self.ann = staff("ann")
-        self.support = staff("sue", "view_inbox", "handle_inquiries")
-        self.boss = staff("boss", "view_all_mail")
+        self.support = staff("sue")
+        self.boss = admin("boss")
         inbound(self.client, "ann@teklora.co.ke")
         self.thread = MailThread.objects.get()
 
@@ -423,3 +435,27 @@ class SendingLimitTest(TestCase):
         bad = self.client.patch("/api/messaging/mail/limits/", {"monthly_cap": -1},
                                 content_type="application/json")
         self.assertEqual(bad.status_code, 400)
+
+
+@override_settings(
+    MAILBOX_DOMAIN="teklora.co.ke",
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+)
+class SharedMailNotificationTest(TestCase):
+    """Mail to info@ used to be emailed, on one To line, to everyone holding
+    handle_inquiries -- which the seeded Support role gave the whole team."""
+
+    def setUp(self):
+        self.owners = [admin("owner"), admin("cofounder")]
+        self.team = [staff(name, "manage_appointments", "manage_staff") for name in ("ann", "bob")]
+
+    def notices(self):
+        return [m for m in mail.outbox if m.subject.startswith("[Inbound Email]")]
+
+    def test_only_superusers_are_emailed_each_separately(self):
+        inbound(self.client, "info@teklora.co.ke", subject="Verify your email")
+        self.assertCountEqual(
+            [m.to for m in self.notices()],
+            [["owner@personal.example"], ["cofounder@personal.example"]],
+        )
+        self.assertTrue(MailThread.objects.filter(mailbox="info").exists())

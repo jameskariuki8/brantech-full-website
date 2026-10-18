@@ -6,9 +6,8 @@ from messaging.tests import grant_all_capabilities
 
 class InquiryApiTests(TestCase):
     def setUp(self):
-        self.staff = grant_all_capabilities(
-            User.objects.create_user("staff", password="p", is_staff=True)
-        )
+        # Inquiries are the superuser's alone.
+        self.staff = User.objects.create_superuser("staff", "staff@example.com", "p")
         self.inq = Inquiry.objects.create(name="A", email="a@x.com", message="m")
 
     def test_anonymous_cannot_list(self):
