@@ -227,7 +227,7 @@ class GrantRestrictionTest(TestCase):
     themselves hold; removing roles remains unrestricted de-escalation."""
 
     def setUp(self):
-        self.admin = staff_with("manage_staff", "view_inbox", username="admin")
+        self.admin = staff_with("manage_staff", "manage_projects", username="admin")
         self.target = staff_with(username="target")
         self.client.force_login(self.admin)
 
@@ -248,7 +248,7 @@ class GrantRestrictionTest(TestCase):
         inbox_role = Group.objects.create(name="Inbox Viewer")
         inbox_role.permissions.add(
             Permission.objects.get(
-                codename="view_inbox", content_type__app_label="staff"
+                codename="manage_projects", content_type__app_label="staff"
             )
         )
         resp = self.client.patch(

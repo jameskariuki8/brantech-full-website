@@ -112,22 +112,20 @@ def create_appointment(request: HttpRequest):
             full_name=full_name
         )
 
-        # Notify whoever currently holds manage_appointments, rather than a
-        # list of addresses compiled into this module. Enrolling a new team
-        # member is a panel action; nobody has to remember to edit this.
+        # Notify the superuser only, not everyone who can manage bookings.
         try:
-            from django.core.mail import send_mail
             from django.conf import settings
-            from staff.emails import capability_holder_emails
+            from brandtechsolution.mail import send_mail_each
+            from staff.emails import superuser_emails
 
-            recipients = capability_holder_emails("manage_appointments")
+            recipients = superuser_emails()
             if not recipients:
                 logger.warning(
-                    "No manage_appointments holder has an email address; "
+                    "No superuser has an email address; "
                     "appointment #%s saved with nobody notified.",
                     appointment.id,
                 )
-            send_mail(
+            send_mail_each(
                 subject=f"New Strategy Session Booking: {title} ({full_name})",
                 message=(
                     f"New Strategy Session Booking on Teklora:\n\n"

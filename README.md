@@ -435,10 +435,11 @@ what `User.has_perm()` and `staff.decorators` consult. Granting or revoking a
 capability in the panel therefore changes who is notified, with nothing to keep
 in step by hand.
 
-| Notification | Capability |
+| Notification | Sent to |
 |---|---|
-| Contact form inquiry | `handle_inquiries` |
-| Strategy session booking | `manage_appointments` |
+| Contact form inquiry | Superusers only |
+| Mail to a shared mailbox (info@, hello@, support@) | Superusers only |
+| Strategy session booking | Superusers only |
 | Task ready for review | `manage_tasks` |
 | Editorial draft ready for review | `publish_blog` |
 
@@ -446,6 +447,17 @@ in step by hand.
 yet, so a fresh deployment's first drafts are not reviewed by nobody; once a
 single account has the capability the fallback is never used. Note that
 superusers hold every capability implicitly, so they receive all of these.
+
+Every notification is sent as a separate message to each recipient, so no one
+sees another person's address.
+
+### Mail access
+
+Each staff member reads only their own mailbox (`<handle>@` the mail domain).
+Shared mailboxes, mail to unclaimed addresses, website inquiries and other
+people's mailboxes belong to superusers alone. This is a fixed rule, not a
+capability, so no role can hand it out. The `view_inbox`, `handle_inquiries`
+and `view_all_mail` capabilities were removed in `staff.0020`.
 
 ### Team seeding
 
@@ -677,8 +689,6 @@ Capabilities are never granted to a person directly. They are ticked into a
 | `publish_blog` | Publish blog posts | Changing a post's status — both draft → published and published → draft. Creating a post straight into `published` counts as a publish and needs it too. Also every newsroom action that decides what reaches the public site: approving an article (which publishes it), rejecting one, and triggering the pipeline, since it can auto-publish |
 | `manage_projects` | Manage projects | Creating, editing and deleting projects |
 | `manage_appointments` | Manage appointments | The appointments list and the admin appointment management views |
-| `view_inbox` | View inbox | Reading inquiries |
-| `handle_inquiries` | Reply to and archive inquiries | Any write to an inquiry — replying, archiving, deleting |
 | `manage_templates` | Manage email templates | Creating, editing and deleting email templates |
 | `manage_campaigns` | Create and edit campaigns | Creating and editing campaigns; the default gate for every campaign action not listed below |
 | `manage_recipients` | Manage campaign recipients | Building a campaign's audience and adding or removing individual recipients |
@@ -699,7 +709,7 @@ them, re-tick their capabilities, delete them, or add your own.
 |---|---|
 | **Editor** | `manage_blog`, `publish_blog`, `manage_projects` |
 | **Marketing** | `manage_templates`, `manage_campaigns`, `manage_recipients` |
-| **Support** | `view_inbox`, `handle_inquiries`, `manage_appointments` |
+| **Support** | `manage_appointments` |
 | **Administrator** | All twelve |
 
 **Marketing deliberately does not include `send_campaigns`.** Sending is the

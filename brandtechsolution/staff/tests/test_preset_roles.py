@@ -9,7 +9,9 @@ from staff.capabilities import CODENAMES
 EXPECTED = {
     "Editor": {"manage_blog", "publish_blog", "manage_projects"},
     "Marketing": {"manage_templates", "manage_campaigns", "manage_recipients"},
-    "Support": {"view_inbox", "handle_inquiries", "manage_appointments"},
+    # Shared mail and inquiries are the superuser's, not a capability, so
+    # Support keeps only bookings (staff.0020).
+    "Support": {"manage_appointments"},
     "Administrator": set(CODENAMES),
 }
 
@@ -76,5 +78,6 @@ class PresetRoleTest(TestCase):
                 actual = set(
                     group.permissions.values_list("codename", flat=True)
                 )
-                self.assertEqual(actual, set(codenames))
+                # Less any capability since removed from the registry.
+                self.assertEqual(actual, set(codenames) & set(CODENAMES))
                 self.assertTrue(actual, f"{name} came out empty")

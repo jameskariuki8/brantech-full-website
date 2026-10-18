@@ -12,7 +12,7 @@ import logging
 from datetime import timedelta
 
 from django.core.cache import cache
-from django.core.mail import send_mail
+from brandtechsolution.mail import send_mail_each
 from django.conf import settings
 from django.utils import timezone
 
@@ -116,7 +116,7 @@ def _notify_admins(user, used, limit):
         return
     name = user.get_full_name() or user.username
     try:
-        send_mail(
+        send_mail_each(
             subject=f"{name} reached their daily mail limit",
             message=(
                 f"{name} ({user.username}) has sent to {used} of their {limit} "

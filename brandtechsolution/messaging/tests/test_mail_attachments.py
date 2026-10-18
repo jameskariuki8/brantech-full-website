@@ -9,7 +9,7 @@ from django.test import TestCase, override_settings
 
 from messaging.models import MailAttachment, MailMessage, MailThread
 
-from .test_mail import inbound, staff
+from .test_mail import admin, inbound, staff
 
 ROOT = tempfile.mkdtemp(prefix="mail-attachments-test-")
 
@@ -41,7 +41,7 @@ class MailAttachmentTest(TestCase):
         os.makedirs(ROOT)
         self.ann = staff("ann")
         self.bob = staff("bob")
-        self.boss = staff("boss", "view_all_mail")
+        self.boss = admin("boss")
 
     def receive(self, recipient="ann@teklora.co.ke", **files):
         return inbound(self.client, recipient, **files)

@@ -48,21 +48,21 @@ class ContactSubmitTests(TestCase):
         # fail for reasons unrelated to the notification.
         TURNSTILE_SECRET_KEY="",
     )
-    def test_valid_submission_notifies_handle_inquiries_holders(self):
-        """Recipients come from the capability, not from a list in the view."""
+    def test_valid_submission_notifies_the_superuser_only(self):
+        """Inquiries are the owner's. Staff who can do everything else in the
+        panel still get nothing."""
+        User.objects.create_superuser("owner", "owner@example.com", "pw")
         handler = User.objects.create_user(
             "handler", "handler@example.com", "pw", is_staff=True
         )
         handler.user_permissions.add(
-            Permission.objects.get(
-                content_type__app_label="staff", codename="handle_inquiries"
-            )
+            *Permission.objects.filter(content_type__app_label="staff")
         )
 
         self._post()
 
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, ["handler@example.com"])
+        self.assertEqual(mail.outbox[0].to, ["owner@example.com"])
         self.assertIn("grace@example.com", mail.outbox[0].body)
 
     @override_settings(
@@ -72,7 +72,7 @@ class ContactSubmitTests(TestCase):
     def test_the_inquiry_is_saved_even_when_nobody_can_be_notified(self):
         """The panel's inbox is the record; the email is only an alert.
 
-        A team with nobody holding handle_inquiries must still capture leads.
+        A deployment whose superuser has no email address must still capture leads.
         """
         self._post()
 

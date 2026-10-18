@@ -1,9 +1,11 @@
 """Staff mailboxes: routing inbound mail to them and sending from them.
 
 A mailbox is the local part of <mailbox>@MAILBOX_DOMAIN. Staff handles are
-personal mailboxes; SHARED_MAILBOXES are read by everyone holding view_inbox,
-and anything addressed to a name nobody owns lands in OTHER, which is shared
-too, so mail to a typo or a departed colleague is never silently dropped.
+personal mailboxes, and each person sees only their own. SHARED_MAILBOXES,
+and OTHER (anything addressed to a name nobody owns, so mail to a typo or a
+departed colleague is never silently dropped), belong to the superuser, who
+also reads every mailbox for oversight. That is a fixed rule, not a
+capability: it cannot be handed out by giving someone a role.
 """
 
 import email.utils
@@ -229,12 +231,16 @@ def own_mailbox(user):
     return user.username
 
 
+def is_admin(user):
+    """The superuser: shared mailboxes, every inquiry, and oversight of
+    every mailbox are theirs alone."""
+    return bool(user and user.is_active and user.is_superuser)
+
+
 def can_read(user, thread):
     if thread.owner_id is not None and thread.owner_id == user.pk:
         return True
-    if thread.owner_id is None and user.has_perm("staff.view_inbox"):
-        return True
-    return user.has_perm("staff.view_all_mail")
+    return is_admin(user)
 
 
 def can_act(user, thread):
@@ -244,7 +250,7 @@ def can_act(user, thread):
         return False
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
-    return user.has_perm("staff.handle_inquiries")
+    return is_admin(user)
 
 
 def set_spam(user, thread, spam):
@@ -266,7 +272,7 @@ def set_spam(user, thread, spam):
 def marks_read_on_open(user, thread):
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
-    return user.has_perm("staff.view_inbox")
+    return is_admin(user)
 
 
 # --- sending ---------------------------------------------------------------

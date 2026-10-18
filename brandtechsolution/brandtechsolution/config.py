@@ -82,9 +82,8 @@ class AppSettings(BaseSettings):
         "leonmusungu138@gmail.com",
         "davidnjihia536@gmail.com",
     ]
-    # The preset role a seeded invitation carries: view_inbox,
-    # handle_inquiries and manage_appointments -- exactly the capabilities the
-    # contact-form and booking notifications are addressed by.
+    # The preset role a seeded invitation carries. Inquiry, booking and
+    # shared-mail emails go to the superuser only, whatever the role.
     team_seed_role: str = "Support"
 
     # ============================================================

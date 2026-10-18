@@ -157,14 +157,15 @@ class SeedTeamInvitationsTest(TestCase):
 
 @override_settings(TEAM_SEED_EMAILS=SEED, TEAM_SEED_ROLE="Support")
 class SeededAccountReceivesNotificationsTest(TestCase):
-    """The point of the exercise: accepting an invitation is what enrols
-    someone into the notifications, with no code change."""
+    """Accepting an invitation enrols someone into the work their role
+    covers, with no code change -- but never into the lead emails, which
+    are the superuser's alone."""
 
-    def test_accepting_a_seeded_invitation_earns_the_contact_notifications(self):
-        from staff.emails import capability_holder_emails
+    def test_accepting_a_seeded_invitation_earns_bookings_work_not_lead_emails(self):
+        from staff.emails import capability_holder_emails, superuser_emails
 
         call_command("seed_team_invitations", verbosity=0)
-        self.assertEqual(capability_holder_emails("handle_inquiries"), [])
+        self.assertEqual(capability_holder_emails("manage_appointments"), [])
 
         # What accept_invitation does: create the user and apply the roles.
         invitation = StaffInvitation.objects.get(email="one@example.com")
@@ -174,18 +175,15 @@ class SeededAccountReceivesNotificationsTest(TestCase):
         user.groups.set(invitation.groups.all())
 
         self.assertEqual(
-            capability_holder_emails("handle_inquiries"), ["one@example.com"]
-        )
-        self.assertEqual(
             capability_holder_emails("manage_appointments"), ["one@example.com"]
         )
+        self.assertEqual(superuser_emails(), [])
 
     def test_someone_who_never_accepts_is_never_notified(self):
         from staff.emails import capability_holder_emails
 
         call_command("seed_team_invitations", verbosity=0)
 
-        self.assertEqual(capability_holder_emails("handle_inquiries"), [])
         self.assertEqual(capability_holder_emails("manage_appointments"), [])
 
 
@@ -215,18 +213,17 @@ class CoverageReportTest(TestCase):
 
         self.assertEqual(self._run(), "")
 
-    def test_the_warning_names_the_capability_to_fix(self):
-        self.assertIn("handle_inquiries", self._run())
+    def test_the_warning_names_what_to_fix(self):
+        self.assertIn("inquiries, bookings and shared mail (a superuser)", self._run())
 
 
-class SupportRoleCoversTheLeadNotificationsTest(TestCase):
-    def test_the_seeded_role_holds_both_notification_capabilities(self):
-        """If this drifts, seeded members land without the notifications the
-        whole exercise exists to deliver."""
+class SupportRoleCoversTheLeadWorkTest(TestCase):
+    def test_the_seeded_role_works_bookings_and_nothing_mail_related(self):
+        """Shared mail and inquiries are the superuser's alone (staff.0020),
+        so the role every seeded member gets carries bookings only."""
         held = set(
             Group.objects.get(name="Support").permissions.values_list(
                 "codename", flat=True
             )
         )
-        self.assertIn("handle_inquiries", held)
-        self.assertIn("manage_appointments", held)
+        self.assertEqual(held, {"manage_appointments"})

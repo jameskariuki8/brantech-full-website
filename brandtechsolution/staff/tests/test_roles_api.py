@@ -63,7 +63,7 @@ class RoleWriteTest(TestCase):
         # capability to a role is a grant, and grants are restricted to what
         # the actor holds (see CapabilityGrantRestrictionTest). Mirrors the
         # same fixture fix in test_people_api.py's RoleAssignmentTest.
-        self.admin = staff_with("manage_staff", "manage_blog", "view_inbox")
+        self.admin = staff_with("manage_staff", "manage_blog", "manage_projects")
         self.client.force_login(self.admin)
 
     def test_create_a_role(self):
@@ -92,16 +92,16 @@ class RoleWriteTest(TestCase):
         group = Group.objects.get(name="Editor")
         resp = self.client.put(
             f"/api/staff/roles/{group.pk}/",
-            json.dumps({"name": "Editor", "capabilities": ["view_inbox"]}),
+            json.dumps({"name": "Editor", "capabilities": ["manage_projects"]}),
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
-            list(group.permissions.values_list("codename", flat=True)), ["view_inbox"]
+            list(group.permissions.values_list("codename", flat=True)), ["manage_projects"]
         )
         entry = AuditEntry.objects.get(action="group_updated")
         self.assertIn("manage_blog", entry.detail["before"])
-        self.assertEqual(entry.detail["after"], ["view_inbox"])
+        self.assertEqual(entry.detail["after"], ["manage_projects"])
 
     def test_unknown_capability_is_rejected(self):
         resp = self.client.post(

@@ -10,14 +10,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.core import signing
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
-from staff.emails import capability_holder_emails
+from brandtechsolution.mail import send_mail_each
+from staff.emails import superuser_emails
 from staff.handles import mailbox_address
 from .mailbox import deliver_inbound, discard_stored_files, local_parts, resolve_mailbox, store_inbound_files
 from .models import BlockedSender, CampaignRecipient, InboundEmail, Inquiry, Suppression
@@ -130,19 +130,17 @@ def contact_submit(request):
         body_text=f"{message}\n\nPhone / WhatsApp: {phone}" if phone else message,
     )
 
-    # Whoever currently holds handle_inquiries, rather than a list of addresses
-    # compiled into this module. Someone leaving the team stops receiving
-    # customer contact details the moment their capability is revoked.
-    recipients = capability_holder_emails("handle_inquiries")
+    # The superuser only. Inquiries are the owner's, not the whole team's.
+    recipients = superuser_emails()
     if not recipients:
         logger.warning(
-            "No handle_inquiries holder has an email address; inquiry #%s "
+            "No superuser has an email address; inquiry #%s "
             "saved with nobody notified.",
             inquiry.pk,
         )
 
     try:
-        send_mail(
+        send_mail_each(
             subject=f"New Contact Inquiry from {name}",
             message=(
                 f"New Contact Form Submission on Teklora:\n\n"
@@ -367,7 +365,7 @@ def mailgun_inbound_webhook(request):
     Each address it was sent to is filed in that mailbox: a staff member's
     own, a shared one, or "other". The raw InboundEmail is kept as the record
     of what arrived. Only mail to shared mailboxes becomes an Inquiry and
-    notifies handle_inquiries holders; personal mail stays personal.
+    notifies the superuser; personal mail stays personal.
     """
     payload = _parse_mailgun_payload(request)
 
@@ -451,10 +449,10 @@ def mailgun_inbound_webhook(request):
             phone="",
             message=f"[Email to {raw_recipient}]\nSubject: {subject}\n\n{stripped_text or body_plain}",
         )
-        recipients = capability_holder_emails("handle_inquiries")
+        recipients = superuser_emails()
         if recipients:
             try:
-                send_mail(
+                send_mail_each(
                     subject=f"[Inbound Email] {subject or 'New Customer Message'} from {display_name}",
                     message=(
                         f"New email in a shared mailbox:\n\n"

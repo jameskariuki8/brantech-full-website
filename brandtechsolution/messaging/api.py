@@ -14,7 +14,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from staff.handles import mailbox_address
-from staff.permissions import has_capability
+from staff.permissions import IsSuperuser, has_capability
 
 from . import audience, quota
 from . import campaigns as campaign_rules
@@ -56,9 +56,9 @@ class InquiryViewSet(viewsets.ModelViewSet):
         return qs.order_by("-created_at")
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
-            return [has_capability("view_inbox")()]
-        return [has_capability("handle_inquiries")()]
+        # Website inquiries are the owner's alone, like the shared mailboxes
+        # they arrive in.
+        return [IsSuperuser()]
 
     @action(detail=True, methods=["post"])
     def reply(self, request, pk=None):
