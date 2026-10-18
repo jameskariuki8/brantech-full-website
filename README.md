@@ -741,6 +741,13 @@ project's configured `AUTH_PASSWORD_VALIDATORS`.
   than failing obscurely — grant that existing account the roles instead. A
   resend is refused for the same reason, rather than mailing a link that would
   dead-end.
+- **Sign-up accounts.** The login pages no longer link to `/signup/`, but the
+  page still exists. Accounts made there are not staff, so the roster hides
+  them until you search for them or pick the **Signed up, not staff** filter
+  (the panel loads `/api/staff/people/?include=signups`). Giving such an
+  account any role makes it a staff account (`user_promoted` in the activity
+  log), and onboarding catches them on their next sign-in. Anyone can sign up,
+  so check the address really belongs to the person first.
 - The email is sent directly rather than through the campaign outbox, so it
   never queues behind a bulk send. If delivery fails the invitation row is
   kept so it can be resent, and the failure is written to the audit log.

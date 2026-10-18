@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **People who used the "Sign up" link could never get into the panel**: both login pages linked to the public `/signup/` form, which creates ordinary non-staff accounts. The panel turned them away without a message, Staff & Roles could not find them, and inviting the same email was refused because the address was taken. Now:
+  - The login pages say staff accounts are created by invitation instead of linking to sign-up.
+  - Staff & Roles search finds sign-up accounts, marked "Signed up, not staff", and they have their own filter.
+  - Giving one a role makes it a staff account, recorded as `user_promoted` in the activity log; onboarding follows on their next sign-in.
 - **Staff could read shared mail and inquiries, and everyone was emailed every lead**: team invitations hand out the Support role, which carried `view_inbox` and `handle_inquiries`, so every staff member could read info@ and the other shared mailboxes. Every website inquiry, booking and email to info@ also went to the whole team's personal inboxes, including third-party mail such as account verification links. Now:
   - Each person sees only their own mailbox.
   - Shared mailboxes, mail to unclaimed addresses, website inquiries and oversight of other mailboxes are for superusers only, by a fixed rule in `messaging/mailbox.py` (`is_admin`) and `staff.permissions.IsSuperuser`.

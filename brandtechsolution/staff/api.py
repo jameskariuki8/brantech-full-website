@@ -123,18 +123,28 @@ class PersonViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Staff accounts. Creation happens through invitations, not here."""
+    """Staff accounts. Creation happens through invitations, not here.
+
+    ?include=signups adds accounts made through the public /signup/ form.
+    They are not staff, so without it the roster could never find them, and
+    an invitation to the same address is refused because the email is taken.
+    Granting such an account a role promotes it to staff (see perform_update).
+    """
 
     serializer_class = PersonSerializer
     permission_classes = [has_capability("manage_staff")]
     pagination_class = StaffPagination
 
     def get_queryset(self):
-        return User.objects.filter(is_staff=True).select_related(
+        queryset = User.objects.select_related(
             "staff_profile"
         ).prefetch_related("groups").order_by(
             "username"
         )
+        # Detail routes reach sign-up accounts too, so one can be promoted.
+        if self.action == "list" and self.request.query_params.get("include") != "signups":
+            queryset = queryset.filter(is_staff=True)
+        return queryset
 
     def perform_update(self, serializer):
         actor = self.request.user
@@ -172,6 +182,19 @@ class PersonViewSet(
             was_active = target.is_active
             person = serializer.save()
             after_roles = sorted(g.name for g in person.groups.all())
+
+            # A role only means something inside the panel, which is staff
+            # only, so giving one to a sign-up account is what makes it staff.
+            # The onboarding gate then catches them on their next sign-in.
+            if after_roles and not person.is_staff:
+                person.is_staff = True
+                person.save(update_fields=["is_staff"])
+                record(
+                    actor=actor,
+                    action="user_promoted",
+                    summary=f"{actor} made {person} a staff account",
+                    target_user=person,
+                )
 
             if after_roles != before_roles:
                 record(

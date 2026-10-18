@@ -99,15 +99,21 @@ const TIERS = {
     },
 };
 
+// Accounts from the public /signup/ form are loaded too, so they can be found
+// and given a role. They stay out of the roster until searched for or picked
+// through their own filter, since anyone can create one.
 const PEOPLE_FILTERS = [
-    { key: 'all', label: 'Everyone', test: () => true },
-    { key: 'owner', label: 'Owners', test: p => personTier(p) === 'owner' },
-    { key: 'administrator', label: 'Administrators', test: p => personTier(p) === 'administrator' },
-    { key: 'member', label: 'Members', test: p => personTier(p) === 'member' },
-    { key: 'none', label: 'No access', test: p => personTier(p) === 'none' },
-    { key: 'pending', label: 'Setup pending', test: p => !p.is_onboarded },
-    { key: 'inactive', label: 'Deactivated', test: p => !p.is_active },
+    { key: 'all', label: 'Everyone', test: p => p.is_staff || !!peopleView.query },
+    { key: 'owner', label: 'Owners', test: p => p.is_staff && personTier(p) === 'owner' },
+    { key: 'administrator', label: 'Administrators', test: p => p.is_staff && personTier(p) === 'administrator' },
+    { key: 'member', label: 'Members', test: p => p.is_staff && personTier(p) === 'member' },
+    { key: 'none', label: 'No access', test: p => p.is_staff && personTier(p) === 'none' },
+    { key: 'pending', label: 'Setup pending', test: p => p.is_staff && !p.is_onboarded },
+    { key: 'inactive', label: 'Deactivated', test: p => p.is_staff && !p.is_active },
+    { key: 'signups', label: 'Signed up, not staff', test: p => !p.is_staff },
 ];
+
+const SIGNUP_BADGE = '<span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">Signed up, not staff</span>';
 
 let PEOPLE = [];
 const peopleView = { query: '', filter: 'all' };
@@ -264,7 +270,7 @@ async function loadStaff() {
 }
 
 async function loadPeople() {
-    const [people] = await Promise.all([staffFetchAll('/people/'), loadList('invitations')]);
+    const [people] = await Promise.all([staffFetchAll('/people/?include=signups'), loadList('invitations')]);
     PEOPLE = people;
     renderPeople();
 }
@@ -317,9 +323,9 @@ function personRow(person) {
         <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span class="text-white font-medium">${escapeHtml(personName(person))}</span>
-                ${tierBadge(tierKey)}
+                ${person.is_staff ? tierBadge(tierKey) : SIGNUP_BADGE}
                 ${person.is_active ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/20">Deactivated</span>'}
-                ${person.is_onboarded ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">Setup pending</span>'}
+                ${person.is_onboarded || !person.is_staff ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">Setup pending</span>'}
             </span>
             <span class="block text-xs text-gray-400 mt-0.5 truncate">${escapeHtml(person.email || person.username)}</span>
             ${(person.scopes || []).length ? `<span class="block text-xs text-gray-500 mt-0.5">${escapeHtml(person.scopes.join(', '))}</span>` : ''}
@@ -544,9 +550,13 @@ function personEditorHtml(person, viewer) {
             ${(person.scopes || []).length ? `<div class="text-xs text-gray-500 mt-0.5">Works in ${escapeHtml(person.scopes.join(', '))}</div>` : ''}
             <div class="text-xs text-gray-500 mt-0.5">${escapeHtml(lastSeen)}${joined ? `, joined ${escapeHtml(joined)}` : ''}</div>
             ${contact ? `<div class="text-xs mt-1.5">${contact}</div>` : ''}
-            ${person.is_onboarded ? '' : '<div class="text-xs text-amber-300 mt-1.5">Has not finished setup: contact details, area of work and skills are missing.</div>'}
+            ${person.is_onboarded || !person.is_staff ? '' : '<div class="text-xs text-amber-300 mt-1.5">Has not finished setup: contact details, area of work and skills are missing.</div>'}
         </div>
     </div>
+
+    ${person.is_staff ? '' : `<div class="mb-5 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs text-sky-200">
+        <i class="fas fa-user-plus mr-1.5"></i>This account was made with the public sign-up form, so it cannot open the panel yet.
+        Give it a role to make it a staff account. Anyone can sign up, so check the email address really belongs to this person first.</div>`}
 
     ${locked ? `<div class="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-200">
         <i class="fas fa-lock mr-1.5"></i>${escapeHtml(locked)}</div>` : ''}
@@ -615,13 +625,16 @@ function openPersonEditor(person) {
             if (!confirmed) return;
         }
         save.disabled = true;
+        const roleIds = selectedRoleIds();
         try {
             await staffFetch(`/people/${person.id}/`, {
                 method: 'PATCH',
-                body: JSON.stringify({ role_ids: selectedRoleIds(), is_active: active.checked }),
+                body: JSON.stringify({ role_ids: roleIds, is_active: active.checked }),
             });
             closeStaffModal();
-            toast.success('Changes saved.');
+            toast.success(!person.is_staff && roleIds.length
+                ? `${personName(person)} is now staff. They will finish setup when they next sign in.`
+                : 'Changes saved.');
             await Promise.all([loadPeople(), loadRoles(), loadActivity()]);
         } catch (e) {
             save.disabled = false;

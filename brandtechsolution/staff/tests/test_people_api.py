@@ -31,6 +31,18 @@ class PeopleListTest(TestCase):
         self.assertIn("cap", usernames)
         self.assertNotIn("public_signup", usernames)
 
+    def test_include_signups_lists_public_signup_accounts(self):
+        admin = staff_with("manage_staff")
+        User.objects.create_user("public_signup", password="p")  # not staff
+        self.client.force_login(admin)
+        people = {
+            p["username"]: p
+            for p in self.client.get("/api/staff/people/?include=signups").json()["results"]
+        }
+        self.assertFalse(people["public_signup"]["is_staff"])
+        self.assertTrue(people["cap"]["is_staff"])
+
+
     def test_reports_last_sign_in_and_cannot_be_written(self):
         admin = staff_with("manage_staff")
         never = staff_with(username="never_in")
@@ -343,3 +355,49 @@ class RolePaginationTest(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(list(person.groups.all()), [])
+
+
+class SignupPromotionTest(TestCase):
+    """A /signup/ account cannot be invited (its email is taken), so giving
+    it a role from the roster is the way it becomes staff."""
+
+    def setUp(self):
+        self.admin = staff_with("manage_staff", username="admin")
+        self.signup = User.objects.create_user("new@example.com", password="p")
+        self.client.force_login(self.admin)
+
+    def patch(self, body):
+        return self.client.patch(
+            f"/api/staff/people/{self.signup.pk}/",
+            json.dumps(body), content_type="application/json",
+        )
+
+    def test_granting_a_role_makes_the_account_staff(self):
+        role = Group.objects.create(name="plain-role")
+        resp = self.patch({"role_ids": [role.pk]})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["is_staff"])
+        self.signup.refresh_from_db()
+        self.assertTrue(self.signup.is_staff)
+        self.assertTrue(
+            AuditEntry.objects.filter(action="user_promoted", target_user=self.signup).exists()
+        )
+
+    def test_saving_without_a_role_leaves_it_non_staff(self):
+        self.assertEqual(self.patch({"role_ids": [], "is_active": True}).status_code, 200)
+        self.signup.refresh_from_db()
+        self.assertFalse(self.signup.is_staff)
+
+    def test_is_staff_cannot_be_written_directly(self):
+        self.patch({"is_staff": True})
+        self.signup.refresh_from_db()
+        self.assertFalse(self.signup.is_staff)
+
+    def test_cannot_grant_a_role_the_actor_does_not_hold(self):
+        role = Group.objects.create(name="powerful")
+        role.permissions.add(
+            Permission.objects.get(codename="manage_tasks", content_type__app_label="staff")
+        )
+        self.assertEqual(self.patch({"role_ids": [role.pk]}).status_code, 403)
+        self.signup.refresh_from_db()
+        self.assertFalse(self.signup.is_staff)
