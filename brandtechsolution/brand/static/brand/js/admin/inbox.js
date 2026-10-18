@@ -20,6 +20,94 @@
 
     const $ = (id) => document.getElementById(id);
 
+    // Match messaging/mailbox.py; the server checks again.
+    const MAX_FILES = 10;
+    const MAX_BYTES = 20 * 1024 * 1024;
+    const BLOCKED = /\.(ade|adp|apk|app|bat|cab|chm|cmd|com|cpl|dll|dmg|exe|hta|ins|isp|jar|js|jse|lib|lnk|mde|msc|msi|msp|mst|pif|ps1|scr|sct|shb|sys|vb|vbe|vbs|vxd|wsc|wsf|wsh)$/i;
+    // Files picked per form. A file input's list cannot be edited, so the
+    // picks are kept here and the input is cleared after each choice.
+    const picked = new WeakMap();
+
+    function fileSize(bytes) {
+        if (bytes == null) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function filesOf(form) {
+        if (!picked.has(form)) picked.set(form, []);
+        return picked.get(form);
+    }
+
+    function renderPicked(form) {
+        const list = form.querySelector('[data-attach-list]');
+        const files = filesOf(form);
+        list.classList.toggle('hidden', !files.length);
+        list.innerHTML = files.map((f, i) => `
+            <span class="inline-flex items-center gap-2 max-w-full text-xs pl-2 pr-1 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300">
+                <i class="fas fa-paperclip text-gray-500"></i>
+                <span class="truncate max-w-[12rem] sm:max-w-[16rem]" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
+                <span class="text-gray-500 shrink-0">${fileSize(f.size)}</span>
+                <button type="button" data-attach-remove="${i}" class="w-5 h-5 rounded text-gray-500 hover:text-white hover:bg-white/10" aria-label="Remove ${escapeHtml(f.name)}"><i class="fas fa-times text-[10px]"></i></button>
+            </span>`).join('');
+    }
+
+    function addFiles(form, chosen) {
+        const files = filesOf(form);
+        for (const f of chosen) {
+            if (BLOCKED.test(f.name)) {
+                toast.error(`${f.name} can't be attached: mail providers block this file type. Zip it or share a link.`);
+                continue;
+            }
+            if (files.length >= MAX_FILES) {
+                toast.error(`Attach at most ${MAX_FILES} files.`);
+                break;
+            }
+            const total = files.reduce((n, x) => n + x.size, 0) + f.size;
+            if (total > MAX_BYTES) {
+                toast.error(`${f.name} would take the attachments over 20 MB. Share larger files as a link.`);
+                continue;
+            }
+            files.push(f);
+        }
+        renderPicked(form);
+    }
+
+    function clearFiles(form) {
+        picked.set(form, []);
+        renderPicked(form);
+    }
+
+    function wireAttachments(form) {
+        const input = form.querySelector('[data-attach-input]');
+        form.querySelector('[data-attach-btn]').addEventListener('click', () => input.click());
+        input.addEventListener('change', () => {
+            addFiles(form, [...input.files]);
+            input.value = '';
+        });
+        form.querySelector('[data-attach-list]').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-attach-remove]');
+            if (!btn) return;
+            filesOf(form).splice(Number(btn.dataset.attachRemove), 1);
+            renderPicked(form);
+        });
+    }
+
+    // JSON without files; multipart with them, so text-only mail is unchanged.
+    function postMail(url, form, fields) {
+        const files = filesOf(form);
+        if (!files.length) return post(url, fields);
+        const data = new FormData();
+        Object.entries(fields).forEach(([k, v]) => data.append(k, v));
+        files.forEach((f) => data.append('attachments', f, f.name));
+        return fetchJson(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF_TOKEN },
+            body: data,
+        });
+    }
+
     function post(url, body) {
         return fetchJson(url, {
             method: 'POST',
@@ -405,8 +493,11 @@
                     <div data-quoted-body="${index}" class="hidden mt-2 pl-3 border-l-2 border-white/10 text-sm text-gray-500 whitespace-pre-wrap break-words">${linkify(escapeHtml(quoted))}</div>` : '');
         }
         const attachments = (m.attachments || []).length
-            ? `<div class="mt-3 flex flex-wrap gap-2">${m.attachments.map((a) =>
-                `<span class="text-xs px-2 py-1 rounded bg-white/5 text-gray-400" title="Attachments are not stored yet"><i class="fas fa-paperclip mr-1"></i>${escapeHtml(a.name)}</span>`).join('')}</div>`
+            ? `<div class="mt-3 flex flex-wrap gap-2">${m.attachments.map((a) => a.url
+                ? `<a href="${escapeHtml(a.url)}" download class="inline-flex items-center gap-2 max-w-full text-xs px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-200 hover:bg-white/10 hover:border-brand-blue/40" title="Download ${escapeHtml(a.name)}">
+                        <i class="fas fa-paperclip text-gray-500"></i><span class="truncate max-w-[14rem]">${escapeHtml(a.name)}</span>
+                        <span class="text-gray-500 shrink-0">${fileSize(a.size)}</span><i class="fas fa-download text-gray-500"></i></a>`
+                : `<span class="inline-flex items-center gap-2 max-w-full text-xs px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-500" title="Received before attachments were kept, so the file is not available"><i class="fas fa-paperclip"></i><span class="truncate max-w-[14rem]">${escapeHtml(a.name)}</span><span class="shrink-0">not kept</span></span>`).join('')}</div>`
             : '';
         const failed = m.status === 'failed' ? '<span class="text-xs text-red-400 ml-2">Not delivered</span>' : '';
         return `
@@ -489,6 +580,8 @@
     }
 
     async function openThread(id) {
+        // Files picked for a reply belong to that conversation only.
+        if (id !== state.openId) clearFiles($('mailReplyForm'));
         state.openId = id;
         renderThreads();
         showReaderOnMobile(true);
@@ -601,7 +694,10 @@
         const modal = $('mailComposeModal');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        if (reset) $('mailComposeForm').reset();
+        if (reset) {
+            $('mailComposeForm').reset();
+            clearFiles($('mailComposeForm'));
+        }
     }
 
     // --- wiring -----------------------------------------------------------
@@ -675,13 +771,17 @@
             }
         });
 
+        wireAttachments($('mailReplyForm'));
+        wireAttachments($('mailComposeForm'));
+
         $('mailReplyForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const form = e.target;
             const t = state.open;
             withBusy(form, async () => {
-                await post(`${MAIL_API}/threads/${t.id}/reply/`, { body: form.elements.body.value });
+                await postMail(`${MAIL_API}/threads/${t.id}/reply/`, form, { body: form.elements.body.value });
                 form.reset();
+                clearFiles(form);
                 toast.success('Sent.');
                 await openThread(t.id);
                 loadThreads();
@@ -721,7 +821,7 @@
             e.preventDefault();
             const form = e.target;
             withBusy(form, async () => {
-                const sent = await post(`${MAIL_API}/compose/`, {
+                const sent = await postMail(`${MAIL_API}/compose/`, form, {
                     from: form.elements.from.value,
                     to: form.elements.to.value,
                     cc: form.elements.cc.value,

@@ -152,6 +152,8 @@ Thumbs.db
 
 # Docker persistent data (bind mounts)
 /data/
+# Private uploads (mail attachments)
+brandtechsolution/private/
 .superpowers/
 
 # collectstatic output. The /staticfiles rule above is root-anchored and

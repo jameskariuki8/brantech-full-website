@@ -8,8 +8,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -24,7 +25,7 @@ from staff.permissions import has_capability
 
 from . import mailbox as mb
 from . import quota
-from .models import MailSettings, MailThread
+from .models import MailAttachment, MailSettings, MailThread
 
 
 class ThreadPagination(PageNumberPagination):
@@ -62,7 +63,21 @@ def _message_json(message):
         "subject": message.subject,
         "body_text": message.body_text,
         "body_html": message.body_html,
-        "attachments": message.attachments,
+        # Stored files can be downloaded. Mail received before attachments
+        # were kept lists only their names, with no url.
+        "attachments": [
+            {
+                "id": f.id,
+                "name": f.name,
+                "size": f.size,
+                "content_type": f.content_type,
+                "url": reverse("mail-attachment", args=[f.id]),
+            }
+            for f in message.files.all()
+        ] or [
+            {"name": a.get("name", ""), "size": a.get("size"), "content_type": a.get("content_type", ""), "url": None}
+            for a in message.attachments if isinstance(a, dict)
+        ],
         "sent_by": message.sent_by.username if message.sent_by_id else None,
         "status": message.status,
         "created_at": message.created_at,
@@ -192,7 +207,7 @@ def thread_detail(request, pk):
     if thread.unread and mb.marks_read_on_open(request.user, thread):
         thread.unread = False
         thread.save(update_fields=["unread"])
-    messages = thread.messages.select_related("sent_by").order_by("created_at")
+    messages = thread.messages.select_related("sent_by").prefetch_related("files").order_by("created_at")
     data = _thread_json(thread)
     data["can_act"] = mb.can_act(request.user, thread)
     data["messages"] = [_message_json(m) for m in messages]
@@ -257,7 +272,16 @@ def _body(request):
     return body
 
 
+def _attachments(request):
+    files = request.FILES.getlist("attachments") if hasattr(request, "FILES") else []
+    problem = mb.attachment_problem(files)
+    if problem:
+        raise ValidationError({"attachments": problem})
+    return files
+
+
 def _send(request, **kwargs):
+    kwargs["attachments"] = _attachments(request)
     recipients = len(kwargs["to"]) + len(kwargs["cc"])
     try:
         with transaction.atomic():
@@ -322,6 +346,32 @@ def compose(request):
         subject=subject[:500],
         body=_body(request),
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def attachment(request, pk):
+    """Download one attachment, for anyone who may read its thread."""
+    item = get_object_or_404(
+        MailAttachment.objects.select_related("message__thread__owner"), pk=pk
+    )
+    _get_thread(request, item.message.thread_id)
+    try:
+        handle = item.file.open("rb")
+    except FileNotFoundError:
+        raise Http404
+    # Always a download, never rendered: a received HTML or SVG file opened
+    # inline on our origin could run script against the panel.
+    response = FileResponse(
+        handle,
+        as_attachment=True,
+        filename=item.name,
+        content_type=item.content_type or "application/octet-stream",
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Content-Security-Policy"] = "sandbox; default-src 'none'"
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 # The sidebar's unread badge.

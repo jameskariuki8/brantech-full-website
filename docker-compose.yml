@@ -46,6 +46,8 @@ services:
       REDIS_HOST: redis
     volumes:
       - ./data/media:/app/brandtechsolution/media
+      # Mail attachments: private, never under media.
+      - ./data/private:/app/brandtechsolution/private
     depends_on:
       db:
         condition: service_healthy

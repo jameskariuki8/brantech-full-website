@@ -19,7 +19,7 @@ from django.views.decorators.http import require_POST
 from brandtechsolution import turnstile
 from staff.emails import capability_holder_emails
 from staff.handles import mailbox_address
-from .mailbox import deliver_inbound, local_parts, resolve_mailbox
+from .mailbox import deliver_inbound, discard_stored_files, local_parts, resolve_mailbox, store_inbound_files
 from .models import BlockedSender, CampaignRecipient, InboundEmail, Inquiry, Suppression
 from .tokens import read_unsubscribe_token
 
@@ -400,6 +400,9 @@ def mailgun_inbound_webhook(request):
         attachments_info=_attachment_info(request),
     )
 
+    # Saved once however many mailboxes the message is filed into.
+    stored_files = store_inbound_files(request.FILES.values())
+
     header_to = _payload_header(payload, "To")
     to_list = _addresses(header_to) or _addresses(raw_recipient)
     cc_list = _addresses(_payload_header(payload, "Cc"))
@@ -427,12 +430,17 @@ def mailgun_inbound_webhook(request):
             in_reply_to=_payload_header(payload, "In-Reply-To"),
             references=_payload_header(payload, "References"),
             attachments=inbound_email.attachments_info,
+            stored_files=stored_files,
             snippet_text=stripped_text,
         )
         if message is not None:
             delivered += 1
             # Spam from a blocked sender is filed, but raises nothing.
             shared_hit = shared_hit or (owner is None and not message.thread.spam)
+    if not delivered:
+        # A retried webhook or mail to no address of ours: nothing refers to
+        # the files just saved.
+        discard_stored_files(stored_files)
 
     inquiry = None
     if shared_hit:

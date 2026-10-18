@@ -126,11 +126,18 @@ the reader replaces the list while a conversation is open.
                         <p id="mailReplyTo" class="text-xs text-gray-500"></p>
                         <textarea name="body" rows="3" required placeholder="Write a reply"
                             class="w-full bg-[#06090F] border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue/60 resize-y"></textarea>
+                        <div data-attach-list class="hidden flex flex-wrap gap-2"></div>
                         <div class="flex items-center justify-between gap-3">
                             <p id="mailReplyFrom" class="text-xs text-gray-500 truncate"></p>
-                            <button type="submit" class="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
-                                <i class="fas fa-paper-plane"></i> Send
-                            </button>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <input type="file" multiple data-attach-input class="hidden" aria-hidden="true" tabindex="-1">
+                                <button type="button" data-attach-btn class="px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm flex items-center gap-2" title="Attach files" aria-label="Attach files">
+                                    <i class="fas fa-paperclip"></i><span class="hidden sm:inline">Attach</span>
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </footer>
@@ -168,9 +175,14 @@ the reader replaces the list while a conversation is open.
                 </label>
                 <textarea name="body" rows="12" required placeholder="Write your message"
                     class="w-full bg-[#06090F] border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue/60 resize-y"></textarea>
+                <div data-attach-list class="hidden flex flex-wrap gap-2"></div>
             </div>
-            <div class="px-5 py-4 border-t border-dark-border flex items-center justify-end gap-2">
+            <div class="px-5 py-4 border-t border-dark-border flex flex-wrap items-center justify-end gap-2">
                 <p id="mailComposeQuota" class="mr-auto text-xs text-gray-500"></p>
+                <input type="file" multiple data-attach-input class="hidden" aria-hidden="true" tabindex="-1">
+                <button type="button" data-attach-btn class="px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm flex items-center gap-2" title="Attach files" aria-label="Attach files">
+                    <i class="fas fa-paperclip"></i> Attach
+                </button>
                 <button type="button" data-compose-close class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-sm">Discard</button>
                 <button type="submit" class="px-4 py-2 bg-brand-blue hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
                     <i class="fas fa-paper-plane"></i> Send

@@ -184,6 +184,8 @@ STATICFILES_DIRS = []
 STATIC_ROOT = config.static_root
 MEDIA_ROOT = config.media_root
 MEDIA_URL = '/media/'
+# Private: served only through the mail API's permission-checked download.
+MAIL_ATTACHMENTS_ROOT = config.mail_attachments_root
 
 # WhiteNoise compressed storage for collected static files.
 # NOTE: the strict ManifestStaticFilesStorage variant is intentionally NOT used:

@@ -1,4 +1,8 @@
+import os
+import uuid
+
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 
 
@@ -300,6 +304,56 @@ class MailMessage(models.Model):
 
     def __str__(self):
         return f"{self.direction} {self.from_email}: {self.subject[:50]}"
+
+
+class MailAttachmentStorage(FileSystemStorage):
+    """Files under MAIL_ATTACHMENTS_ROOT, read from settings on every use
+    rather than once at import. They have no public URL: they are read only
+    by mail_api.attachment, which checks the reader may see the thread."""
+
+    @property
+    def base_location(self):
+        return settings.MAIL_ATTACHMENTS_ROOT
+
+    @property
+    def location(self):
+        return os.path.abspath(self.base_location)
+
+    def url(self, name):
+        raise ValueError("Mail attachments have no public URL.")
+
+
+def mail_attachment_storage():
+    return MailAttachmentStorage()
+
+
+def attachment_path(instance, filename):
+    # The stored name is random; the sender's filename lives in `name`, so
+    # nothing they chose ends up in a path.
+    ext = os.path.splitext(filename)[1].lower()[:10]
+    return f"{uuid.uuid4().hex[:2]}/{uuid.uuid4().hex}{ext}"
+
+
+class MailAttachment(models.Model):
+    """A file sent or received with a MailMessage.
+
+    One inbound email filed into several mailboxes is stored once; each
+    copy's row points at the same file. Older messages list their attachment
+    names in MailMessage.attachments only, because the file was not kept.
+    """
+
+    message = models.ForeignKey(MailMessage, on_delete=models.CASCADE, related_name="files")
+    file = models.FileField(upload_to=attachment_path, storage=mail_attachment_storage, max_length=255)
+    name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=150, blank=True, default="")
+    size = models.PositiveBigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.name
 
 
 class BlockedSender(models.Model):
