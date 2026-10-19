@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.conf import settings
+from brandtechsolution.ratelimit import rate_limited
 from .service import get_chatbot_response, ChatAssistant
 from .models import ConversationThread, ConversationCheckpoint
 import uuid
@@ -17,7 +18,20 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["POST"])
 def chat_endpoint(request):
     """Chatbot endpoint using Django sessions"""
-    
+
+    # Every message is a paid model call that holds a web worker for seconds,
+    # on a public endpoint. Unlimited, a script would spend the model quota
+    # and queue every other visitor's page load behind its own requests.
+    if rate_limited(
+        request, 'chat',
+        limit=settings.CHAT_RATE_LIMIT_COUNT,
+        window_seconds=settings.CHAT_RATE_LIMIT_WINDOW_SECONDS,
+    ):
+        return JsonResponse(
+            {"error": "You are sending messages too quickly. Please wait a few minutes."},
+            status=429,
+        )
+
     try:
         data = json.loads(request.body)
         message = data.get('message')
@@ -114,9 +128,11 @@ def chat_endpoint(request):
         error_traceback = traceback.format_exc()
         logger.error(f"[chat_endpoint] Error: {str(e)}\n{error_traceback}")
         
+        # The message stays in the log: provider errors can carry request
+        # details, and this endpoint answers anyone.
         return JsonResponse(
             {
-                "error": str(e),
+                "error": "The assistant could not answer just now. Please try again.",
                 "traceback": error_traceback if settings.DEBUG else None
             },
             status=500

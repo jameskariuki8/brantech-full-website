@@ -277,12 +277,17 @@ CONTACT_RATE_LIMIT_COUNT = config.contact_rate_limit_count
 CONTACT_RATE_LIMIT_WINDOW_SECONDS = config.contact_rate_limit_window_seconds
 BLOG_LIKE_RATE_LIMIT_COUNT = config.blog_like_rate_limit_count
 BLOG_LIKE_RATE_LIMIT_WINDOW_SECONDS = config.blog_like_rate_limit_window_seconds
+CHAT_RATE_LIMIT_COUNT = config.chat_rate_limit_count
+CHAT_RATE_LIMIT_WINDOW_SECONDS = config.chat_rate_limit_window_seconds
 
 # ============================================================
 # AUTHENTICATION REDIRECTS
 # ============================================================
 
 LOGIN_URL = '/login/'
+
+# Empties the cache before each test, as the database already is; see the module.
+TEST_RUNNER = 'brandtechsolution.test_runner.CacheClearingRunner'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 

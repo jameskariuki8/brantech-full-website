@@ -12,6 +12,7 @@ import json
 import logging
 from appointments.models import Appointment
 from brandtechsolution import turnstile
+from brandtechsolution.ratelimit import rate_limited
 
 logger = logging.getLogger(__name__)
 from staff.decorators import capability_required
@@ -164,6 +165,10 @@ def create_appointment(request: HttpRequest):
 @csrf_exempt
 @require_http_methods(["POST"])
 def get_appointment(request: HttpRequest):
+    # Answers with a client's name and booking details when id, email and
+    # phone all match, so a script must not get to try combinations freely.
+    if rate_limited(request, 'appointment-lookup', limit=10, window_seconds=10 * 60):
+        return JsonResponse({"error": "Too many lookups. Please try again later."}, status=429)
     try:
         data = json.loads(request.body)
         id = data.get("id", None)
@@ -189,12 +194,17 @@ def get_appointment(request: HttpRequest):
         return JsonResponse({"success": "Appointment fetched successfully", "appointment": appointment_data}, status=200)
     except Appointment.DoesNotExist:
         return JsonResponse({"error": "Appointment not found"}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+    except Exception:
+        logger.exception("get_appointment failed")
+        return JsonResponse({"error": "Could not look up the booking."}, status=400)
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def check_availability(request: HttpRequest):
+    # The booking form asks once per slot a visitor tries, so the allowance is
+    # generous; it only stops a script mapping the whole calendar.
+    if rate_limited(request, 'appointment-availability', limit=60, window_seconds=10 * 60):
+        return JsonResponse({"error": "Too many availability checks. Please try again later."}, status=429)
     try:
         data = json.loads(request.body)
         date_str = data.get("date")

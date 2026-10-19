@@ -1,13 +1,14 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import models
 from django.db.models import F, Count
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -17,6 +18,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
+from brandtechsolution.ratelimit import client_ip as _client_ip, rate_limited as _rate_limited
 from . import login_throttle
 from staff.context_processors import held_capabilities
 from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career, PartnershipType, PartnerOrganisation, careers_address
@@ -45,48 +47,6 @@ def _published_post_or_404(post_id):
     blog_detail() has always filtered on status; these paths had not.
     """
     return get_object_or_404(BlogPost, pk=post_id, status='published')
-
-
-def _client_ip(request):
-    """The visitor's address as seen behind the Cloudflare tunnel.
-
-    Every request reaches the origin from the tunnel, so REMOTE_ADDR is the
-    proxy and would put every visitor in one throttle bucket. Both headers are
-    checked because the codebase already relies on each: turnstile.py reads
-    CF-Connecting-IP, messaging.views reads X-Forwarded-For.
-
-    A client able to reach the origin directly could forge either one, so this
-    is only ever used for rate limiting -- never to grant access. Forging it
-    buys an attacker nothing that rotating browser_id would not.
-    """
-    cf = request.META.get('HTTP_CF_CONNECTING_IP', '').strip()
-    if cf:
-        return cf
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', '')
-
-
-def _rate_limited(request, bucket, limit, window_seconds):
-    """True once this client has spent its allowance for `bucket`.
-
-    Backed by the shared cache, so the count holds across gunicorn workers
-    instead of resetting per process.
-
-    cache.add() only writes when the key is absent, which is what starts the
-    window on the first request and lets it expire on its own; incr() then runs
-    against a key known to exist. This is deliberately atomic where
-    messaging._contact_rate_limited's get/set pair is not -- likes are the
-    endpoint someone would actually hammer in parallel.
-    """
-    key = f'ratelimit:{bucket}:{_client_ip(request)}'
-    cache.add(key, 0, window_seconds)
-    try:
-        return cache.incr(key) > limit
-    except ValueError:
-        # The key expired between add() and incr(); treat it as a fresh window.
-        return False
 
 
 def index(request):
@@ -456,7 +416,11 @@ def signup_view(request):
     """User signup view"""
     if request.method == 'POST':
         # Signup mints real User rows on a public URL, so it is the endpoint
-        # a script would use to fill the auth table.
+        # a script would use to fill the auth table. Each one also costs a
+        # password hash, so solved challenges are capped per address too.
+        if _rate_limited(request, 'signup', limit=5, window_seconds=60 * 60):
+            messages.error(request, 'Too many sign-ups from your network. Please try again later.')
+            return render(request, 'brand/signup.html', status=429)
         if not turnstile.passed(request):
             messages.error(request, turnstile.FAILED)
             return render(request, 'brand/signup.html')
@@ -605,6 +569,55 @@ def login_view(request):
 
     next_url = request.GET.get('next', '/')
     return page(next_url, challenge=login_throttle.needs_challenge(ip))
+
+
+class PasswordResetView(auth_views.PasswordResetView):
+    """Django's reset form, with the bot protection every other public form has.
+
+    Each accepted request sends an email, so unguarded it lets a script fill
+    any inbox with reset mail - ours, through our Mailgun quota and sending
+    reputation. Three limits, in the order a request meets them:
+
+    - per address: past PASSWORD_RESET_ADDRESS_LIMIT requests an hour the
+      network is refused outright;
+    - Turnstile on every request, as on sign-up and the contact form;
+    - per email: past PASSWORD_RESET_EMAIL_LIMIT an hour no more mail goes to
+      that address, however many networks ask. The page still says the email
+      is on its way, as it does for an unknown address, so the form never
+      tells anyone which addresses have accounts.
+    """
+
+    template_name = 'brand/auth/password_reset_form.html'
+
+    PASSWORD_RESET_ADDRESS_LIMIT = 5
+    PASSWORD_RESET_EMAIL_LIMIT = 3
+    WINDOW_SECONDS = 60 * 60
+
+    def refuse(self, error, status):
+        context = self.get_context_data(form=self.get_form(), error=error)
+        return self.render_to_response(context, status=status)
+
+    def post(self, request, *args, **kwargs):
+        if _rate_limited(
+            request, 'password-reset',
+            limit=self.PASSWORD_RESET_ADDRESS_LIMIT, window_seconds=self.WINDOW_SECONDS,
+        ):
+            return self.refuse(
+                'Too many reset requests from your network. Please try again in an hour.',
+                status=429,
+            )
+        if not turnstile.passed(request):
+            return self.refuse(turnstile.FAILED, status=400)
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        if _rate_limited(
+            self.request, 'password-reset-email',
+            limit=self.PASSWORD_RESET_EMAIL_LIMIT, window_seconds=self.WINDOW_SECONDS,
+            subject=form.cleaned_data['email'],
+        ):
+            return HttpResponseRedirect(self.get_success_url())
+        return super().form_valid(form)
 
 
 def logout_view(request):
