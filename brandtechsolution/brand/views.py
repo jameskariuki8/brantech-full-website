@@ -13,9 +13,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
+from . import login_throttle
 from staff.context_processors import held_capabilities
 from .models import BlogPost, BlogLike, BlogComment, Project, SiteContent, Career, PartnershipType, PartnerOrganisation, careers_address
 from .forms import CareerForm, PartnerOrganisationForm, PartnershipTypeForm, SiteContentForm
@@ -504,70 +506,105 @@ def signup_view(request):
     return render(request, 'brand/signup.html')
 
 
+def _login_user_for(identifier):
+    """The account an identifier names, or None.
+
+    An exact username match wins; otherwise the personal email, the handle in
+    any case, or the work address <handle>@MAILBOX_DOMAIN. Resolving it once
+    up front means a sign-in hashes the password once - the old flow tried
+    authenticate() twice and so paid for two hashes on every wrong password.
+    """
+    exact = User.objects.filter(username=identifier).first()
+    if exact:
+        return exact
+    handle = identifier
+    domain_suffix = '@' + settings.MAILBOX_DOMAIN
+    if identifier.lower().endswith(domain_suffix.lower()):
+        handle = identifier[:-len(domain_suffix)]
+    return User.objects.filter(
+        models.Q(username__iexact=handle) | models.Q(email__iexact=identifier)
+    ).first()
+
+
 def login_view(request):
     """User login view"""
+    ip = _client_ip(request)
+
+    def page(next_url, *, challenge=False, status=200):
+        return render(
+            request, 'brand/login.html',
+            {'next': next_url, 'challenge': challenge}, status=status,
+        )
+
     if request.method == 'POST':
-        email = request.POST.get('email')
+        email = (request.POST.get('email') or '').strip()
         password = request.POST.get('password')
         remember_me = request.POST.get('remember')
         next_url = request.POST.get('next') or request.GET.get('next', '/')
-        
+        # An unchecked next turns the sign-in page into a redirect to any
+        # site, with our domain in the link.
+        if not url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure(),
+        ):
+            next_url = '/'
+
         if not email or not password:
             messages.error(request, 'Please fill in all fields.')
-            return render(request, 'brand/login.html', {'next': next_url})
-        
-        # Authenticate user (support both email and username)
-        user = authenticate(request, username=email, password=password)
-        
-        # If authentication fails, try the personal email, the handle in any
-        # case, or the work address <handle>@MAILBOX_DOMAIN.
-        if user is None:
-            try:
-                identifier = email.strip()
-                handle = identifier
-                domain_suffix = '@' + settings.MAILBOX_DOMAIN
-                if identifier.lower().endswith(domain_suffix.lower()):
-                    handle = identifier[:-len(domain_suffix)]
-                user_obj = User.objects.filter(
-                    models.Q(username__iexact=handle) | models.Q(email__iexact=identifier)
-                ).first()
-                
-                if user_obj:
-                    user = authenticate(request, username=user_obj.username, password=password)
-            except Exception:
-                pass
+            return page(next_url, challenge=login_throttle.needs_challenge(ip))
+
+        # Both refusals below come before any password is hashed: that is
+        # the work a bot would otherwise make every real sign-in wait behind.
+        if login_throttle.blocked(ip):
+            messages.error(
+                request,
+                'Too many failed sign-in attempts from your network. '
+                'Please wait 15 minutes and try again.',
+            )
+            return page(next_url, status=429)
+
+        user_obj = _login_user_for(email)
+        account = user_obj.username if user_obj else email
+        if login_throttle.needs_challenge(ip, account) and not turnstile.passed(request):
+            messages.error(request, 'Please confirm you are human, then sign in again.')
+            return page(next_url, challenge=True, status=400)
+
+        # The raw identifier when nothing matched still runs the backend, so
+        # an unknown account costs the same hash as a wrong password and the
+        # timing does not say which it was.
+        user = authenticate(request, username=account, password=password)
 
         if user is not None:
+            login_throttle.record_success(account)
             login(request, user)
             if not remember_me:
                 request.session.set_expiry(0)
             else:
                 request.session.set_expiry(1209600)
-            
+
             return redirect(next_url)
+
+        login_throttle.record_failure(ip, account)
+        # Backends refuse inactive accounts, which would otherwise read as
+        # a wrong password. Say so only to someone who knows the password,
+        # and only for sign-ups: a deactivated staff account gets the
+        # generic message, so its old password cannot be confirmed here.
+        if (
+            user_obj
+            and not user_obj.is_active
+            and not (user_obj.is_staff or user_obj.is_superuser)
+            and user_obj.check_password(password)
+        ):
+            messages.error(
+                request,
+                'This account is not active yet. An administrator needs to '
+                'invite you before you can sign in.',
+            )
         else:
-            # Backends refuse inactive accounts, which would otherwise read as
-            # a wrong password. Say so only to someone who knows the password,
-            # and only for sign-ups: a deactivated staff account gets the
-            # generic message, so its old password cannot be confirmed here.
-            inactive = User.objects.filter(
-                models.Q(username__iexact=email.strip()) | models.Q(email__iexact=email.strip()),
-                is_active=False,
-                is_staff=False,
-                is_superuser=False,
-            ).first()
-            if inactive and inactive.check_password(password):
-                messages.error(
-                    request,
-                    'This account is not active yet. An administrator needs to '
-                    'invite you before you can sign in.',
-                )
-            else:
-                messages.error(request, 'Invalid email/username or password.')
-            return render(request, 'brand/login.html', {'next': next_url})
-    
+            messages.error(request, 'Invalid email/username or password.')
+        return page(next_url, challenge=login_throttle.needs_challenge(ip, account))
+
     next_url = request.GET.get('next', '/')
-    return render(request, 'brand/login.html', {'next': next_url})
+    return page(next_url, challenge=login_throttle.needs_challenge(ip))
 
 
 def logout_view(request):

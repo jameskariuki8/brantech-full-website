@@ -6,6 +6,9 @@ from django.conf.urls.static import static
 from django.views.static import serve
 
 urlpatterns = [
+    # Django admin's own login form has none of /login/'s bot throttling
+    # (brand/login_throttle.py), so it signs in through the same view.
+    path('admin/login/', views.login_view),
     path('admin/', admin.site.urls),
     path('', include('brand.urls')),
     path('', include('messaging.urls')),
