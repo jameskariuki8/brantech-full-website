@@ -9,6 +9,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from brandtechsolution.ratelimit import rate_limited
+
 from .audit import record
 from .capabilities import CAPABILITY_GROUPS
 from .emails import send_invitation
@@ -345,6 +347,17 @@ def me(request):
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def change_password(request):
+    # Checking the current password is a full hash, and a stolen session
+    # could otherwise use this to guess it - the password the person may
+    # well use elsewhere. Counted per account, not per address.
+    if rate_limited(
+        request, 'change-password', limit=5, window_seconds=15 * 60,
+        subject=f'user:{request.user.pk}',
+    ):
+        return Response(
+            {"detail": "Too many attempts. Please wait 15 minutes and try again."},
+            status=429,
+        )
     serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
     serializer.is_valid(raise_exception=True)
     request.user.set_password(serializer.validated_data["new_password"])

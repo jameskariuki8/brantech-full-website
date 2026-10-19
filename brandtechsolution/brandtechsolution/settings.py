@@ -277,6 +277,8 @@ CONTACT_RATE_LIMIT_COUNT = config.contact_rate_limit_count
 CONTACT_RATE_LIMIT_WINDOW_SECONDS = config.contact_rate_limit_window_seconds
 BLOG_LIKE_RATE_LIMIT_COUNT = config.blog_like_rate_limit_count
 BLOG_LIKE_RATE_LIMIT_WINDOW_SECONDS = config.blog_like_rate_limit_window_seconds
+CHAT_RATE_LIMIT_COUNT = config.chat_rate_limit_count
+CHAT_RATE_LIMIT_WINDOW_SECONDS = config.chat_rate_limit_window_seconds
 
 # ============================================================
 # AUTHENTICATION REDIRECTS

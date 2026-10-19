@@ -58,7 +58,7 @@ def _count(key):
 
 
 def _bump(key):
-    # Same add-then-incr pattern as views._rate_limited: add() starts the
+    # Same add-then-incr pattern as ratelimit.rate_limited: add() starts the
     # window only when the key is absent, so it expires on its own.
     cache.add(key, 0, WINDOW_SECONDS)
     try:

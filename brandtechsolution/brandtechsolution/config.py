@@ -168,6 +168,12 @@ class AppSettings(BaseSettings):
     blog_like_rate_limit_count: int = 30
     blog_like_rate_limit_window_seconds: int = 60
 
+    # Chatbot messages per address. Each is a paid model call holding a web
+    # worker for seconds; a person chatting rarely sends more than one every
+    # half minute.
+    chat_rate_limit_count: int = 20
+    chat_rate_limit_window_seconds: int = 600
+
     # ============================================================
     # Gemini API Configuration
     # ============================================================

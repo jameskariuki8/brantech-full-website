@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - After 30 failures in 15 minutes an address is refused outright (HTTP 429). No account is ever locked: the owner can always get in by solving the challenge, so nobody can lock a colleague out by guessing.
   - `/admin/login/` signs in through the same view, so Django admin's form is not a way around the limits.
   - The `next` parameter on login is checked, so a link to the login page can no longer redirect to another site after sign-in.
+- **Other public endpoints a bot could hammer had no limits**:
+  - **Password reset** (`/accounts/password_reset/`) sent an email for every request, so a script could fill any inbox through our Mailgun quota. It now needs the Turnstile challenge, refuses a network after 5 requests an hour, and sends at most 3 reset emails an hour to one address. The page still says the email is on its way when that limit is hit, so it never reveals which addresses have accounts. The "Forgot password?" links on the login pages now open it.
+  - **Website chat** (`/api/ai/chat/`) made a paid model call for every message and held a web worker while it waited. It is now limited to 20 messages per 10 minutes per network (`CHAT_RATE_LIMIT_COUNT`, `CHAT_RATE_LIMIT_WINDOW_SECONDS`), and an error no longer sends the exception text to the visitor.
+  - **Booking lookup** (`/appointments/get/`) returns a client's booking when id, email and phone match; it allows 10 lookups per 10 minutes per network and no longer echoes exception text. The **availability check** allows 60 per 10 minutes.
+  - **Sign-up** allows 5 per hour per network, on top of the Turnstile challenge.
+  - **Change password** in the panel allows 5 attempts per 15 minutes per account, so a stolen session cannot be used to guess the current password.
 - **People who used the "Sign up" link could never get into the panel**: both login pages linked to the public `/signup/` form, which creates ordinary non-staff accounts. The panel turned them away without a message, Staff & Roles could not find them, and inviting the same email was refused because the address was taken. Now:
   - The login pages say staff accounts are created by invitation instead of linking to sign-up.
   - Staff & Roles search finds sign-up accounts, marked "Signed up, not staff", and they have their own filter.
