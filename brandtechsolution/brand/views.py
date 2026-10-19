@@ -547,10 +547,14 @@ def login_view(request):
             return redirect(next_url)
         else:
             # Backends refuse inactive accounts, which would otherwise read as
-            # a wrong password. Say so only to someone who knows the password.
+            # a wrong password. Say so only to someone who knows the password,
+            # and only for sign-ups: a deactivated staff account gets the
+            # generic message, so its old password cannot be confirmed here.
             inactive = User.objects.filter(
                 models.Q(username__iexact=email.strip()) | models.Q(email__iexact=email.strip()),
                 is_active=False,
+                is_staff=False,
+                is_superuser=False,
             ).first()
             if inactive and inactive.check_password(password):
                 messages.error(
