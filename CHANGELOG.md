@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Booking lookup** (`/appointments/get/`) returns a client's booking when id, email and phone match; it allows 10 lookups per 10 minutes per network and no longer echoes exception text. The **availability check** allows 60 per 10 minutes.
   - **Sign-up** allows 5 per hour per network, on top of the Turnstile challenge.
   - **Change password** in the panel allows 5 attempts per 15 minutes per account, so a stolen session cannot be used to guess the current password.
+  - The test runner now empties the cache before every test, as the database already is, so rate-limit counts cannot carry over from one test to the next and fail tests depending on their order (`brandtechsolution/test_runner.py`).
 - **People who used the "Sign up" link could never get into the panel**: both login pages linked to the public `/signup/` form, which creates ordinary non-staff accounts. The panel turned them away without a message, Staff & Roles could not find them, and inviting the same email was refused because the address was taken. Now:
   - The login pages say staff accounts are created by invitation instead of linking to sign-up.
   - Staff & Roles search finds sign-up accounts, marked "Signed up, not staff", and they have their own filter.
