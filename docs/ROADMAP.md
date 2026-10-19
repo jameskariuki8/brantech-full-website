@@ -37,6 +37,9 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 - [ ] **GitHub Admin Panel Integration** (`/admin-panel/?section=githubSync`):
   - [x] Live repository management dashboard with search, filtering, and project conversion.
   - [x] Background sync, commit counts tracking, and interactive README markdown inspector (`brand/github_service.py`).
+  - [x] Repository document standard: README, CHANGELOG, ROADMAP and LICENSE checked per repository, with an alert and a Documents tab (`docs/specs/2026-10-20-repo-docs-standard-spec.md`).
+  - [x] Show whether the GitHub key is a personal account or an organisation.
+  - [ ] Turn open ROADMAP.md tasks from tracked repositories into a list ready for manual assignment in Admin Tasks.
   - [ ] Staff GitHub repository discovery: scan and import accessible repositories from configured staff GitHub profiles.
   - [ ] Automated PR status linking with Teklora Admin Tasks.
 - [ ] **Client Project Delivery Hub**:

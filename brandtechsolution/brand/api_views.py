@@ -534,6 +534,18 @@ def github_repos_list(request):
         logger.exception('github_repos_list failed')
         return JsonResponse({'error': 'Could not reach GitHub.'}, status=500)
 
+@require_http_methods(["GET"])
+def github_account(request):
+    """Whose token this is: a personal account or an organisation."""
+    denied = capability_required_json(request, 'manage_projects')
+    if denied:
+        return denied
+    try:
+        return JsonResponse(GitHubService().get_account_info())
+    except Exception:
+        logger.exception('github_account failed')
+        return JsonResponse({'error': 'Could not reach GitHub.'}, status=500)
+
 @require_http_methods(["POST"])
 def github_sync_selected(request):
     denied = capability_required_json(request, 'manage_projects')

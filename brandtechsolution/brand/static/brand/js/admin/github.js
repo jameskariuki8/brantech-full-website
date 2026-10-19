@@ -34,6 +34,7 @@ async function loadGithubRepos(forceRefresh = false) {
 
         // Update Overview Metric Cards & Filters
         updateGithubDashboardMetrics(currentGithubRepos);
+        loadGithubAccount();
 
         if (!currentGithubRepos.length) {
             if (emptyBox) emptyBox.classList.remove('hidden');
@@ -115,6 +116,17 @@ function updateGithubDashboardMetrics(repos) {
     if (bOwned) bOwned.textContent = `(${ownedCount})`;
     if (bCollab) bCollab.textContent = `(${collabCount})`;
     if (bStaff) bStaff.textContent = `(${staffCount})`;
+
+    const bDocs = document.getElementById('filterCountDocs');
+    if (bDocs) bDocs.textContent = `(${repos.filter(githubDocsNeedAttention).length})`;
+}
+
+/**
+ * True when a repo's README / CHANGELOG / ROADMAP / LICENSE check found problems.
+ * An 'unknown' check (GitHub could not be asked) is not flagged: it is not a finding.
+ */
+function githubDocsNeedAttention(repo) {
+    return Boolean(repo.docs) && repo.docs.status === 'problems';
 }
 
 /**
@@ -145,6 +157,8 @@ function filterGithubRepos() {
         filtered = filtered.filter(r => r.role === 'collaborator');
     } else if (currentGithubFilter === 'staff') {
         filtered = filtered.filter(r => r.role === 'staff' || Boolean(r.staff_member));
+    } else if (currentGithubFilter === 'docs') {
+        filtered = filtered.filter(githubDocsNeedAttention);
     }
 
     // Filter by Search Query
@@ -276,6 +290,14 @@ function renderGithubRepoCard(repo) {
                                 <span class="w-2 h-2 rounded-full" style="background-color: ${langColor};"></span>
                                 ${escapeHtml(lang)}
                             </span>
+                        ` : ''}
+
+                        ${githubDocsNeedAttention(repo) ? `
+                            <button onclick="openGithubInspector(${repo.id}, 'docs')"
+                                class="font-bold px-2 py-0.5 rounded bg-amber-900/30 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 hover:bg-amber-900/50 transition-colors"
+                                title="${escapeHtml(repo.docs.problems.map(p => p.message).join('\n'))}">
+                                <i class="fas fa-triangle-exclamation text-[10px]"></i>${repo.docs.problems.length} doc ${repo.docs.problems.length === 1 ? 'issue' : 'issues'}
+                            </button>
                         ` : ''}
 
                         ${repo.stargazers_count > 0 ? `
@@ -620,6 +642,13 @@ async function openGithubInspector(repoId, initialTab = 'readme') {
         syncBtn.innerHTML = `<i class="fas fa-sync-alt mr-1.5"></i>${repo.is_synced ? 'Re-sync Repository' : 'Import as Project'}`;
     }
 
+    const docsBadge = document.getElementById('inspectorDocsTabBadge');
+    if (docsBadge) {
+        const n = githubDocsNeedAttention(repo) ? repo.docs.problems.length : 0;
+        docsBadge.textContent = n;
+        docsBadge.classList.toggle('hidden', n === 0);
+    }
+
     // Open Modal
     modal.classList.remove('hidden');
 
@@ -669,6 +698,10 @@ async function switchInspectorTab(tabName, clickedBtn = null) {
         const panel = document.getElementById('inspectorTabContentProject');
         if (panel) panel.classList.remove('hidden');
         renderInspectorProjectDetails(activeInspectorRepo);
+    } else if (tabName === 'docs') {
+        const panel = document.getElementById('inspectorTabContentDocs');
+        if (panel) panel.classList.remove('hidden');
+        renderInspectorDocs(activeInspectorRepo);
     }
 }
 
@@ -947,4 +980,102 @@ function getLanguageColor(lang) {
         'Shell': '#89E051',
     };
     return colors[lang] || '#38BDF8';
+}
+
+
+// ============================================================
+// Required documents (README / CHANGELOG / ROADMAP / LICENSE)
+// ============================================================
+
+const GITHUB_REQUIRED_DOCS = ['README.md', 'CHANGELOG.md', 'ROADMAP.md', 'LICENSE'];
+
+/**
+ * Render the Documents tab: what is present, and exactly what is wrong.
+ */
+function renderInspectorDocs(repo) {
+    const box = document.getElementById('inspectorDocsBox');
+    if (!box) return;
+    const docs = repo.docs;
+
+    if (!docs || docs.status === 'unknown') {
+        box.innerHTML = `
+            <div class="rounded-xl border border-white/10 bg-[#0A101D] p-5 text-sm text-gray-400">
+                <i class="fas fa-circle-question text-gray-500 mr-2"></i>
+                ${escapeHtml((docs && docs.error) || 'The documents of this repository have not been checked.')}
+                Use Reload to try again.
+            </div>`;
+        return;
+    }
+
+    const present = docs.present || {};
+    const problemsByFile = {};
+    docs.problems.forEach(p => { (problemsByFile[p.file] = problemsByFile[p.file] || []).push(p); });
+
+    const rows = GITHUB_REQUIRED_DOCS.map(name => {
+        const path = present[name];
+        const issues = problemsByFile[name] || [];
+        const state = !path ? 'missing' : (issues.length ? 'flawed' : 'ok');
+        const icon = state === 'ok'
+            ? '<i class="fas fa-circle-check text-emerald-400"></i>'
+            : (state === 'flawed'
+                ? '<i class="fas fa-triangle-exclamation text-amber-400"></i>'
+                : '<i class="fas fa-circle-xmark text-red-400"></i>');
+        const label = state === 'ok' ? 'OK' : (state === 'flawed' ? 'Needs fixing' : 'Missing');
+        return `
+            <div class="rounded-xl border ${state === 'ok' ? 'border-emerald-500/20' : (state === 'flawed' ? 'border-amber-500/30' : 'border-red-500/30')} bg-[#0A101D] p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        ${icon}
+                        <span class="font-semibold text-white">${escapeHtml(name)}</span>
+                        ${path && path !== name ? `<span class="text-xs text-gray-500 truncate">found as ${escapeHtml(path)}</span>` : ''}
+                    </div>
+                    <span class="text-xs font-semibold ${state === 'ok' ? 'text-emerald-400' : (state === 'flawed' ? 'text-amber-300' : 'text-red-400')}">${label}</span>
+                </div>
+                ${issues.map(p => `
+                    <div class="mt-3 pl-6 border-l border-white/10 text-sm">
+                        <p class="text-gray-200">${escapeHtml(p.message)}</p>
+                        <p class="text-gray-500 text-xs mt-1"><span class="text-gray-400 font-medium">Fix:</span> ${escapeHtml(p.fix)}</p>
+                    </div>`).join('')}
+            </div>`;
+    }).join('');
+
+    const roadmap = docs.roadmap;
+    const summary = roadmap
+        ? `<p class="text-xs text-gray-500">Roadmap: ${roadmap.milestones} milestone(s), <strong class="text-gray-300">${roadmap.open_tasks}</strong> open task(s) ready to assign, ${roadmap.done_tasks} done.</p>`
+        : '';
+    const head = docs.ok
+        ? `<div class="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4 text-sm text-emerald-300"><i class="fas fa-circle-check mr-2"></i>All four documents are present and follow the standard.</div>`
+        : `<div class="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm text-amber-200"><i class="fas fa-triangle-exclamation mr-2"></i>${docs.empty_repo ? 'This repository is empty. ' : ''}${docs.problems.length} ${docs.problems.length === 1 ? 'problem' : 'problems'} found. The format is defined in docs/specs/2026-10-20-repo-docs-standard-spec.md.</div>`;
+
+    box.innerHTML = head + rows + summary;
+}
+
+/**
+ * Show whose GitHub token this is: a personal account or an organisation.
+ */
+async function loadGithubAccount() {
+    const banner = document.getElementById('githubAccountBanner');
+    if (!banner) return;
+    try {
+        const a = await fetchJson(`${API_BASE}/github/account/`);
+        const kind = a.is_organization ? 'an organisation' : 'a personal account';
+        const orgs = (a.organizations || []).length
+            ? `Member of ${a.organizations.map(o => `<strong class="text-gray-200">${escapeHtml(o)}</strong>`).join(', ')}.`
+            : 'Not a member of any organisation.';
+        const mismatch = a.username_matches ? '' : `
+            <p class="mt-2 text-amber-300 text-xs"><i class="fas fa-triangle-exclamation mr-1.5"></i>GITHUB_USERNAME is set to ${escapeHtml(a.configured_username)}, but the token belongs to ${escapeHtml(a.login)}.</p>`;
+        banner.innerHTML = `
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-400">
+                <i class="fab fa-github text-gray-300"></i>
+                <span>The key is a ${escapeHtml(a.token_kind)} for ${kind}:
+                    <strong class="text-white">${escapeHtml(a.login)}</strong>.</span>
+                <span>${orgs}</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">A personal access token always belongs to a person's account, even when it reaches an organisation's repositories. For an organisation-owned key use a fine-grained token with the organisation as resource owner, or a GitHub App.</p>
+            ${mismatch}`;
+        banner.classList.remove('hidden');
+    } catch (e) {
+        console.warn('GitHub account lookup failed:', e);
+        banner.classList.add('hidden');
+    }
 }

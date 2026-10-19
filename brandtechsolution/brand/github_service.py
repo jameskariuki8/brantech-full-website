@@ -1,12 +1,22 @@
 import logging
 from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from github import Github
 from github.GithubException import GithubException
+from django.core.cache import cache
 from django.utils import timezone
 from brandtechsolution.config import config
 from brand.models import Project
+from brand import repo_docs
 
 logger = logging.getLogger(__name__)
+
+# How long a repository's document check is reused. The key also carries the
+# repo's last push time, so a push invalidates it at once; this only bounds
+# how stale a check can be when the push time did not change.
+DOC_AUDIT_TTL_SECONDS = 6 * 3600
+DOC_AUDIT_WORKERS = 8
 
 
 def _short(description):
@@ -107,6 +117,7 @@ class GitHubService:
         role: str,
         staff_member: Optional[Dict[str, Any]],
         synced_projects: Dict[int, Project],
+        docs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Helper to format a GitHub repository into standard API dictionary format."""
         project = synced_projects.get(repo.id)
@@ -163,6 +174,111 @@ class GitHubService:
             'project': project_data,
             'staff_member': staff_member,
             'permissions': perms_data,
+            'docs': docs,
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Document audit (README / CHANGELOG / ROADMAP / LICENSE)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def audit_repo_docs(self, repo) -> Dict[str, Any]:
+        """
+        Check one repository against the document standard (brand/repo_docs.py).
+
+        Costs one API call for the root listing, one per CHANGELOG/ROADMAP to
+        read, and one more for docs/ when the root has no ROADMAP.md. The result
+        is cached against the repo's last push, so a reload costs nothing.
+
+        Returns the check_documents() dict plus 'status': 'ok' | 'problems' |
+        'unknown'. 'unknown' means GitHub could not be asked, and carries 'error'.
+        """
+        pushed = getattr(repo, 'pushed_at', None)
+        stamp = int(pushed.timestamp()) if isinstance(pushed, datetime) else 'na'
+        key = f'github-doc-audit:{repo.id}:{stamp}'
+        cached = cache.get(key)
+        if cached is not None:
+            return cached
+
+        try:
+            try:
+                root = repo.get_contents('')
+            except GithubException as e:
+                if e.status == 404:
+                    # An empty repository has no contents to list.
+                    result = repo_docs.check_documents({}, {})
+                    result['status'] = 'problems'
+                    result['empty_repo'] = True
+                    cache.set(key, result, DOC_AUDIT_TTL_SECONDS)
+                    return result
+                raise
+            if not isinstance(root, list):
+                root = [root]
+            root_files = {c.name: c.size for c in root if c.type == 'file'}
+            has_docs_dir = any(c.type == 'dir' and c.name == repo_docs.ROADMAP_FALLBACK_DIR for c in root)
+
+            docs_files = None
+            if has_docs_dir and not any(n.lower() == 'roadmap.md' for n in root_files):
+                listing = repo.get_contents(repo_docs.ROADMAP_FALLBACK_DIR)
+                docs_files = {c.name: c.size for c in listing if c.type == 'file'}
+
+            wanted = {}
+            for name in root_files:
+                if name.lower() in ('changelog.md', 'roadmap.md'):
+                    wanted[name] = name
+            if docs_files:
+                for name in docs_files:
+                    if name.lower() == 'roadmap.md':
+                        wanted[f'{repo_docs.ROADMAP_FALLBACK_DIR}/{name}'] = f'{repo_docs.ROADMAP_FALLBACK_DIR}/{name}'
+
+            contents: Dict[str, Optional[str]] = {}
+            for key_name, path in wanted.items():
+                try:
+                    contents[key_name] = repo.get_contents(path).decoded_content.decode('utf-8')
+                except (GithubException, UnicodeDecodeError, AssertionError) as e:
+                    # Over 1 MB the contents API sends no body; binary is not text.
+                    logger.warning(f"Could not read {path} in {repo.full_name}: {e}")
+                    contents[key_name] = None
+
+            result = repo_docs.check_documents(root_files, contents, docs_files)
+            result['status'] = 'ok' if result['ok'] else 'problems'
+            cache.set(key, result, DOC_AUDIT_TTL_SECONDS)
+            return result
+        except Exception as e:
+            # Not cached: the next load should try again. The panel shows
+            # 'unknown' rather than a green tick it has not earned.
+            logger.warning(f"Document audit failed for repo {getattr(repo, 'full_name', repo.id)}: {e}")
+            return {'status': 'unknown', 'ok': False, 'problems': [], 'present': {}, 'roadmap': None,
+                    'error': 'GitHub could not be asked about this repository\'s files.'}
+
+    def get_account_info(self) -> Dict[str, Any]:
+        """
+        Say whose token this is. A personal access token always belongs to a
+        user account, even when it can reach an organisation's repositories, so
+        the answer is the account type of the token's owner plus the
+        organisations that account belongs to.
+        """
+        user = self.client.get_user()
+        token = config.github_access_token or ''
+        if token.startswith('github_pat_'):
+            token_kind = 'fine-grained personal access token'
+        elif token.startswith('ghp_'):
+            token_kind = 'classic personal access token'
+        elif token.startswith('ghs_'):
+            token_kind = 'GitHub App installation token'
+        else:
+            token_kind = 'token'
+        orgs = [o.login for o in user.get_orgs()]
+        account_type = user.type  # 'User' or 'Organization'
+        configured = (self.username or '').strip()
+        return {
+            'login': user.login,
+            'account_type': account_type,
+            'is_organization': account_type == 'Organization',
+            'token_kind': token_kind,
+            'scopes': sorted(self.client.oauth_scopes or []),
+            'organizations': orgs,
+            'configured_username': configured,
+            'username_matches': not configured or configured.lower() == user.login.lower(),
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -182,6 +298,7 @@ class GitHubService:
                 for p in Project.objects.filter(github_repo_id__isnull=False)
             }
             repo_list = []
+            repo_objects = []  # parallel to repo_list, for the document audit
             seen_repo_ids = set()
 
             # 1. Fetch repositories associated with the authenticated account
@@ -202,6 +319,7 @@ class GitHubService:
                     staff_member = None
 
                 seen_repo_ids.add(repo.id)
+                repo_objects.append(repo)
                 repo_list.append(self._format_repo_dict(
                     repo,
                     role=role,
@@ -222,6 +340,7 @@ class GitHubService:
                             continue
 
                         seen_repo_ids.add(repo.id)
+                        repo_objects.append(repo)
                         repo_list.append(self._format_repo_dict(
                             repo,
                             role='staff',
@@ -232,6 +351,12 @@ class GitHubService:
                     logger.warning(f"Could not scan repos for staff user '{staff_info['username']}': {e}")
                 except Exception as e:
                     logger.warning(f"Unexpected error scanning repos for staff user '{staff_info['username']}': {e}")
+
+            # Network-bound, one small request set per repository, so run them
+            # side by side. Each audit is cached against the repo's last push.
+            with ThreadPoolExecutor(max_workers=DOC_AUDIT_WORKERS) as pool:
+                for entry, docs in zip(repo_list, pool.map(self.audit_repo_docs, repo_objects)):
+                    entry['docs'] = docs
 
             return sorted(repo_list, key=lambda x: (not x['is_synced'], x['name'].lower()))
 

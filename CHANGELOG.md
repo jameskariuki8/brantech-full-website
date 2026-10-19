@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **GitHub Manager checks every repository for README.md, CHANGELOG.md, ROADMAP.md and LICENSE**: a repository missing one, or with a CHANGELOG or ROADMAP that does not follow the standard, gets an amber "N doc issues" badge on its card, appears under a new "Needs docs" filter, and its new Documents tab lists each file as OK, Needs fixing or Missing, with the exact problem and how to fix it. A misspelt license file (for example `LISENCE.md`) is named rather than reported as missing, and a roadmap in `docs/` is accepted. The format both files must follow is in `docs/specs/2026-10-20-repo-docs-standard-spec.md`; the checker is `brand/repo_docs.py`, and `open_roadmap_tasks()` produces the list of unchecked roadmap tasks that will feed manual task assignment. Results are cached for 6 hours and re-checked as soon as the repository is pushed to.
+- **GitHub Manager says whether the key is a personal account or an organisation**: a banner shows the account that owns `GITHUB_ACCESS_TOKEN`, its token kind and its organisations (`/api/github/account/`), and warns if `GITHUB_USERNAME` is a different account. The current key is a classic personal access token for the user account `teklorasolutionsltd`, a member of the `Teklora-solutions` organisation.
+
 ### Fixed
 - **Anyone could read, or take over, another visitor's website-chat conversation**: the chat trusted the conversation id sent by the browser. A signed-out visitor could ask for the history of any id, and a signed-in user who sent someone else's id was attached to that conversation. The server now decides which conversation a visitor is in: signed-out visitors always get the one in their own session, and signed-in users get only their own, so a sent id that is not theirs is ignored.
 - **Bots aimed at the login page could slow sign-in for everyone and guess passwords without limit**: every attempt ran the deliberately slow password hash, up to three times for a wrong password, on the site's three web workers, and nothing counted failures. Now (`brand/login_throttle.py`):
