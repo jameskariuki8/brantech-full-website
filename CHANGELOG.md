@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Bots aimed at the login page could slow sign-in for everyone and guess passwords without limit**: every attempt ran the deliberately slow password hash, up to three times for a wrong password, on the site's three web workers, and nothing counted failures. Now (`brand/login_throttle.py`):
+  - A wrong password costs one hash, not two or three.
+  - After 5 failures in 15 minutes from one address, or against one account, or 100 failures site-wide, each attempt must pass the Cloudflare Turnstile challenge. Attempts without it are refused before the password is checked, so a flood no longer queues real sign-ins.
+  - After 30 failures in 15 minutes an address is refused outright (HTTP 429). No account is ever locked: the owner can always get in by solving the challenge, so nobody can lock a colleague out by guessing.
+  - `/admin/login/` signs in through the same view, so Django admin's form is not a way around the limits.
+  - The `next` parameter on login is checked, so a link to the login page can no longer redirect to another site after sign-in.
 - **People who used the "Sign up" link could never get into the panel**: both login pages linked to the public `/signup/` form, which creates ordinary non-staff accounts. The panel turned them away without a message, Staff & Roles could not find them, and inviting the same email was refused because the address was taken. Now:
   - The login pages say staff accounts are created by invitation instead of linking to sign-up.
   - Staff & Roles search finds sign-up accounts, marked "Signed up, not staff", and they have their own filter.

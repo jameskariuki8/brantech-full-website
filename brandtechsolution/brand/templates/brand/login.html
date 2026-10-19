@@ -136,6 +136,13 @@
                     <a href="#" class="text-brandBlue font-medium hover:underline">Forgot password?</a>
                 </div>
 
+                {% if challenge %}
+                {# Shown only after repeated failures; see brand/login_throttle.py. #}
+                <div class="flex justify-center overflow-hidden">
+                    {% include 'brand/_turnstile.html' with widget_id="loginTurnstile" %}
+                </div>
+                {% endif %}
+
                 <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-brandBlue hover:bg-sky-500 text-white font-semibold text-sm shadow-lg shadow-brandBlue/25 hover:shadow-brandBlue/40 transition-all flex items-center justify-center gap-2 group">
                     <span>Sign In</span>
                     <i class="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
@@ -169,6 +176,10 @@
             });
         }
     </script>
+
+    {% if challenge and turnstile_enabled %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
 </body>
 
 </html>
