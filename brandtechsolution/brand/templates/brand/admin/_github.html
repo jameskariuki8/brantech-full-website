@@ -33,6 +33,9 @@
                     </div>
                 </div>
 
+                <!-- Whose token this is: personal account or organisation -->
+                <div id="githubAccountBanner" class="hidden mb-6 rounded-xl border border-white/10 bg-[#0A101D] px-5 py-4 text-sm"></div>
+
                 <!-- Metric Overview Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <!-- Total Repos -->
@@ -140,6 +143,9 @@
                             </button>
                             <button onclick="setGithubFilter('staff', this)" class="github-filter-tab px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white transition-colors">
                                 <i class="fas fa-user-group text-purple-400 mr-1"></i>Staff <span id="filterCountStaff" class="opacity-70">(0)</span>
+                            </button>
+                            <button onclick="setGithubFilter('docs', this)" class="github-filter-tab px-3 py-1.5 rounded-md font-medium text-gray-400 hover:text-white transition-colors">
+                                <i class="fas fa-triangle-exclamation text-amber-400 mr-1"></i>Needs docs <span id="filterCountDocs" class="opacity-70">(0)</span>
                             </button>
                         </div>
 
@@ -268,6 +274,11 @@
                             class="inspector-tab-btn py-3 px-4 text-gray-400 hover:text-gray-200 border-b-2 border-transparent flex items-center gap-2 transition-colors">
                             <i class="fas fa-folder-open"></i>Project CMS Data
                         </button>
+                        <button onclick="switchInspectorTab('docs', this)" id="tabBtnDocs"
+                            class="inspector-tab-btn py-3 px-4 text-gray-400 hover:text-gray-200 border-b-2 border-transparent flex items-center gap-2 transition-colors">
+                            <i class="fas fa-file-circle-check"></i>Documents
+                            <span id="inspectorDocsTabBadge" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">0</span>
+                        </button>
                     </div>
 
                     <!-- Inspector Content Body -->
@@ -306,6 +317,11 @@
                                 <h4 class="text-white font-medium">No commits recorded</h4>
                                 <p class="text-gray-500 text-xs mt-1">Sync this repository to import and cache its latest commit history.</p>
                             </div>
+                        </div>
+
+                        <!-- TAB 4: REQUIRED DOCUMENTS -->
+                        <div id="inspectorTabContentDocs" class="inspector-tab-panel hidden space-y-5">
+                            <div id="inspectorDocsBox" class="space-y-4"></div>
                         </div>
 
                         <!-- TAB 3: PROJECT CMS DETAILS -->
