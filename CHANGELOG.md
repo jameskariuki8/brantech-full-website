@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The login pages say staff accounts are created by invitation instead of linking to sign-up.
   - Staff & Roles search finds sign-up accounts, marked "Signed up, not staff", and they have their own filter.
   - Sign-up is closed: `/signup/` now creates a deactivated account, and signing in to one says it is not active yet.
+  - Login confirms a deactivated account's password only for sign-up accounts; a deactivated staff account gets the generic "invalid email/username or password" message, so a former employee's old password cannot be checked through the login page.
   - Anyone with `manage_staff` sees normal (non-staff) accounts in Staff & Roles, marked "Not staff yet".
   - Opening one sends a staff invitation to its address. Accepting it takes the account over with a new password, staff status and the invited roles. Sign-up never verifies the address, so the account is never made staff without proof the person holds that inbox, and the people API cannot edit sign-up accounts.
 - **Staff could read shared mail and inquiries, and everyone was emailed every lead**: team invitations hand out the Support role, which carried `view_inbox` and `handle_inquiries`, so every staff member could read info@ and the other shared mailboxes. Every website inquiry, booking and email to info@ also went to the whole team's personal inboxes, including third-party mail such as account verification links. Now:

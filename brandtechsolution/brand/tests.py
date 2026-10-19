@@ -401,7 +401,19 @@ class BrandViewsTest(TestCase):
         })
         self.assertContains(response, 'not active yet')
         self.assertNotIn('_auth_user_id', self.client.session)
-    
+
+    def test_deactivated_staff_login_gets_generic_message(self):
+        """A deactivated staff account's password is not confirmed at login."""
+        User.objects.create_user(
+            username='former', email='former@example.com', password='oldpass123',
+            is_staff=True, is_active=False,
+        )
+        response = self.client.post(reverse('login'), {
+            'email': 'former@example.com', 'password': 'oldpass123',
+        })
+        self.assertNotContains(response, 'not active yet')
+        self.assertContains(response, 'Invalid email/username or password.')
+
     def test_signup_view_post_password_mismatch(self):
         """Test signup with mismatched passwords"""
         response = self.client.post(reverse('signup'), {
