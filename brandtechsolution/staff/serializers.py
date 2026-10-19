@@ -8,6 +8,7 @@ from .capabilities import CODENAMES
 from .models import AuditEntry, StaffInvitation
 from .handles import mailbox_address, needs_handle
 from .phone import normalize_phone
+from .signups import TAKEN, account_for
 from .profile_options import COMMON_FRAMEWORKS, COMMON_LANGUAGES, ROLE_CHOICES, SCOPE_CHOICES, clean_list
 
 
@@ -105,11 +106,13 @@ class PersonSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "id", "username", "email", "first_name", "last_name",
-            "is_active", "is_superuser", "roles", "role_ids", "date_joined",
+            "is_active", "is_staff", "is_superuser", "roles", "role_ids", "date_joined",
             "last_login", "phone", "primary_role", "scopes", "coding_languages",
             "frameworks", "github_username", "bio", "is_onboarded",
         ]
-        read_only_fields = ["username", "is_superuser", "date_joined", "last_login"]
+        read_only_fields = [
+            "username", "is_staff", "is_superuser", "date_joined", "last_login",
+        ]
 
     def get_roles(self, obj):
         return sorted(g.name for g in obj.groups.all())
@@ -180,10 +183,10 @@ class InvitationSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         email = value.strip().lower()
-        if User.objects.filter(username__iexact=email).exists() or \
-                User.objects.filter(email__iexact=email).exists():
+        # A lone /signup/ account is fine: accepting takes it over.
+        if account_for(email) is TAKEN:
             raise serializers.ValidationError(
-                "An account with this email already exists. "
+                "A staff account with this email already exists. "
                 "Edit that person's roles instead."
             )
         return email

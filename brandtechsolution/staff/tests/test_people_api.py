@@ -31,6 +31,18 @@ class PeopleListTest(TestCase):
         self.assertIn("cap", usernames)
         self.assertNotIn("public_signup", usernames)
 
+    def test_include_signups_lists_public_signup_accounts(self):
+        admin = staff_with("manage_staff")
+        User.objects.create_user("public_signup", password="p")  # not staff
+        self.client.force_login(admin)
+        people = {
+            p["username"]: p
+            for p in self.client.get("/api/staff/people/?include=signups").json()["results"]
+        }
+        self.assertFalse(people["public_signup"]["is_staff"])
+        self.assertTrue(people["cap"]["is_staff"])
+
+
     def test_reports_last_sign_in_and_cannot_be_written(self):
         admin = staff_with("manage_staff")
         never = staff_with(username="never_in")
@@ -343,3 +355,30 @@ class RolePaginationTest(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(list(person.groups.all()), [])
+
+
+class SignupAccountsAreListOnlyTest(TestCase):
+    """A /signup/ account never proved its address, so the people API must
+    not edit it - not its roles, and not its email, which would let an admin
+    point it at an inbox they hold and then claim it by invitation."""
+
+    def setUp(self):
+        self.admin = staff_with("manage_staff", username="admin")
+        self.signup = User.objects.create_user(
+            "new@example.com", email="new@example.com", password="p"
+        )
+        self.client.force_login(self.admin)
+
+    def test_detail_routes_do_not_reach_a_signup_account(self):
+        url = f"/api/staff/people/{self.signup.pk}/"
+        self.assertEqual(self.client.get(url).status_code, 404)
+        role = Group.objects.create(name="plain-role")
+        resp = self.client.patch(
+            url, json.dumps({"role_ids": [role.pk], "email": "mine@evil.test"}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 404)
+        self.signup.refresh_from_db()
+        self.assertFalse(self.signup.is_staff)
+        self.assertEqual(self.signup.email, "new@example.com")
+        self.assertFalse(self.signup.groups.exists())

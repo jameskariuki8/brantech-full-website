@@ -479,16 +479,23 @@ def signup_view(request):
             messages.error(request, 'An account with this email already exists.')
             return render(request, 'brand/signup.html')
         
-        # Create user
+        # Create user. Sign-up is closed: the account starts deactivated, so
+        # it cannot sign in until someone with manage_staff invites the
+        # address and the invitation is accepted (staff/signups.py).
         try:
             user = User.objects.create_user(
                 username=email,
                 email=email,
                 password=password,
                 first_name=first_name,
-                last_name=last_name
+                last_name=last_name,
+                is_active=False,
             )
-            messages.success(request, 'Account created successfully! Please log in.')
+            messages.success(
+                request,
+                'Your account has been created but is not active yet. '
+                'An administrator will send you an invitation to finish setting it up.',
+            )
             return redirect('login')
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
@@ -539,7 +546,20 @@ def login_view(request):
             
             return redirect(next_url)
         else:
-            messages.error(request, 'Invalid email/username or password.')
+            # Backends refuse inactive accounts, which would otherwise read as
+            # a wrong password. Say so only to someone who knows the password.
+            inactive = User.objects.filter(
+                models.Q(username__iexact=email.strip()) | models.Q(email__iexact=email.strip()),
+                is_active=False,
+            ).first()
+            if inactive and inactive.check_password(password):
+                messages.error(
+                    request,
+                    'This account is not active yet. An administrator needs to '
+                    'invite you before you can sign in.',
+                )
+            else:
+                messages.error(request, 'Invalid email/username or password.')
             return render(request, 'brand/login.html', {'next': next_url})
     
     next_url = request.GET.get('next', '/')

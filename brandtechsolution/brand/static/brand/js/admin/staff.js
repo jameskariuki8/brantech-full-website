@@ -99,15 +99,20 @@ const TIERS = {
     },
 };
 
+// Normal (non-staff) accounts are loaded too, so whoever manages staff can see
+// them and invite them in. Opening one sends an invitation (openSignupInvite).
 const PEOPLE_FILTERS = [
     { key: 'all', label: 'Everyone', test: () => true },
-    { key: 'owner', label: 'Owners', test: p => personTier(p) === 'owner' },
-    { key: 'administrator', label: 'Administrators', test: p => personTier(p) === 'administrator' },
-    { key: 'member', label: 'Members', test: p => personTier(p) === 'member' },
-    { key: 'none', label: 'No access', test: p => personTier(p) === 'none' },
-    { key: 'pending', label: 'Setup pending', test: p => !p.is_onboarded },
-    { key: 'inactive', label: 'Deactivated', test: p => !p.is_active },
+    { key: 'owner', label: 'Owners', test: p => p.is_staff && personTier(p) === 'owner' },
+    { key: 'administrator', label: 'Administrators', test: p => p.is_staff && personTier(p) === 'administrator' },
+    { key: 'member', label: 'Members', test: p => p.is_staff && personTier(p) === 'member' },
+    { key: 'none', label: 'No access', test: p => p.is_staff && personTier(p) === 'none' },
+    { key: 'pending', label: 'Setup pending', test: p => p.is_staff && !p.is_onboarded },
+    { key: 'inactive', label: 'Deactivated', test: p => p.is_staff && !p.is_active },
+    { key: 'signups', label: 'Not staff yet', test: p => !p.is_staff },
 ];
+
+const SIGNUP_BADGE = '<span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">Not staff yet</span>';
 
 let PEOPLE = [];
 const peopleView = { query: '', filter: 'all' };
@@ -264,7 +269,7 @@ async function loadStaff() {
 }
 
 async function loadPeople() {
-    const [people] = await Promise.all([staffFetchAll('/people/'), loadList('invitations')]);
+    const [people] = await Promise.all([staffFetchAll('/people/?include=signups'), loadList('invitations')]);
     PEOPLE = people;
     renderPeople();
 }
@@ -312,14 +317,14 @@ function personRow(person) {
             : '<span class="text-xs text-gray-500">No roles yet</span>');
     return `
     <button type="button" data-action="edit-person" data-id="${escapeHtml(person.id)}"
-        class="w-full text-left flex items-start gap-3 p-4 hover:bg-white/[0.03] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-blue ${person.is_active ? '' : 'opacity-60'}">
+        class="w-full text-left flex items-start gap-3 p-4 hover:bg-white/[0.03] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-blue ${person.is_active || !person.is_staff ? '' : 'opacity-60'}">
         <span class="shrink-0 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-sm font-semibold text-gray-300 font-heading" aria-hidden="true">${escapeHtml(initialsOf(person))}</span>
         <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span class="text-white font-medium">${escapeHtml(personName(person))}</span>
-                ${tierBadge(tierKey)}
-                ${person.is_active ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/20">Deactivated</span>'}
-                ${person.is_onboarded ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">Setup pending</span>'}
+                ${person.is_staff ? tierBadge(tierKey) : SIGNUP_BADGE}
+                ${person.is_active || !person.is_staff ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-500/20">Deactivated</span>'}
+                ${person.is_onboarded || !person.is_staff ? '' : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">Setup pending</span>'}
             </span>
             <span class="block text-xs text-gray-400 mt-0.5 truncate">${escapeHtml(person.email || person.username)}</span>
             ${(person.scopes || []).length ? `<span class="block text-xs text-gray-500 mt-0.5">${escapeHtml(person.scopes.join(', '))}</span>` : ''}
@@ -630,6 +635,51 @@ function openPersonEditor(person) {
     });
 }
 
+// A /signup/ account never proved it owns its address, so it is not edited in
+// place. It is invited like anyone else, and accepting the emailed link takes
+// the account over (staff/signups.py).
+function openSignupInvite(person) {
+    const email = person.email || person.username;
+    const joined = person.date_joined ? new Date(person.date_joined).toLocaleDateString() : '';
+    openStaffModal(personName(person), `
+    <div class="flex items-start gap-3 mb-5">
+        <span class="shrink-0 w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-semibold text-gray-300 font-heading" aria-hidden="true">${escapeHtml(initialsOf(person))}</span>
+        <div class="min-w-0">
+            <div class="text-white font-medium">${escapeHtml(personName(person))}</div>
+            <div class="text-xs text-gray-400 truncate">${escapeHtml(email)}</div>
+            ${joined ? `<div class="text-xs text-gray-500 mt-0.5">Signed up ${escapeHtml(joined)}</div>` : ''}
+        </div>
+    </div>
+    <div class="mb-5 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs text-sky-200">
+        <i class="fas fa-user-plus mr-1.5"></i>This is a normal account, not staff, so it cannot open the panel.
+        Send an invitation to its address. When they accept it from that inbox, this account becomes an active staff account
+        with the roles below, and they choose a new password.</div>
+    <fieldset class="mb-5">
+        <legend class="text-sm font-medium text-white mb-2">Roles</legend>
+        <div class="space-y-2">${roleCards([])}</div>
+    </fieldset>
+    <div class="sticky bottom-0 -mx-5 sm:-mx-6 -mb-5 px-5 sm:px-6 py-4 bg-dark-card border-t border-dark-border">
+        <button type="button" id="inviteSignupBtn" class="${PRIMARY_BUTTON}">Send staff invitation</button>
+    </div>`);
+
+    const send = document.getElementById('inviteSignupBtn');
+    send.addEventListener('click', async () => {
+        send.disabled = true;
+        try {
+            await staffFetch('/invitations/', {
+                method: 'POST',
+                body: JSON.stringify({ email, role_ids: selectedRoleIds() }),
+            });
+            closeStaffModal();
+            await Promise.all([loadPeople(), loadActivity()]);
+            toast.success(`Invitation sent to ${email}.`);
+        } catch (e) {
+            send.disabled = false;
+            toastApiError(e, 'The invitation could not be sent.');
+        }
+    });
+}
+
 function showStaffTab(name) {
     const section = document.getElementById('staff');
     section.querySelectorAll('.staff-tab').forEach(tab => {
@@ -800,6 +850,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (button.dataset.action === 'edit-person') {
+            const row = PEOPLE.find(p => p.id === id);
+            if (row && !row.is_staff) { openSignupInvite(row); return; }
             // Fetch fresh rather than reuse the roster row: the editor decides
             // what to lock from it, and the roster may be a few minutes old.
             let person;

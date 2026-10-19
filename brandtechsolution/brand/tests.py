@@ -391,7 +391,16 @@ class BrandViewsTest(TestCase):
             'confirmPassword': 'securepass123'
         })
         self.assertEqual(response.status_code, 302)  # Redirect after success
-        self.assertTrue(User.objects.filter(email='john@example.com').exists())
+        user = User.objects.get(email='john@example.com')
+        # Sign-up is closed: the account waits, deactivated, for an invitation.
+        self.assertFalse(user.is_active)
+        self.assertFalse(user.is_staff)
+
+        response = self.client.post(reverse('login'), {
+            'email': 'john@example.com', 'password': 'securepass123',
+        })
+        self.assertContains(response, 'not active yet')
+        self.assertNotIn('_auth_user_id', self.client.session)
     
     def test_signup_view_post_password_mismatch(self):
         """Test signup with mismatched passwords"""
