@@ -14,6 +14,38 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _own_thread_id(request, requested, create):
+    """The conversation this visitor may read and write, never one they name.
+
+    A thread id sent by the browser is only a hint. It is honoured when the
+    thread already belongs to the signed-in user; any other id (someone else's,
+    unknown, or sent while signed out) is ignored, so knowing or guessing an id
+    gives no access to that conversation. Signed-out visitors always get the
+    thread stored in their own session.
+    """
+    user = request.user
+    if not user.is_authenticated:
+        if 'chat_thread_id' not in request.session:
+            request.session['chat_thread_id'] = f"anon_{uuid.uuid4().hex[:12]}"
+        return request.session['chat_thread_id']
+
+    mine = ConversationThread.objects.filter(user=user, workflow_type='chatbot')
+    thread = None
+    if requested:
+        thread = mine.filter(thread_id=requested).first()
+    if thread is None:
+        thread = mine.order_by('-updated_at').first()
+    if thread is not None:
+        return thread.thread_id
+
+    thread_id = f"user_{user.id}_{uuid.uuid4().hex[:8]}"
+    if create:
+        ConversationThread.objects.create(
+            thread_id=thread_id, user=user, workflow_type='chatbot',
+        )
+    return thread_id
+
+
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
 def chat_endpoint(request):
@@ -50,38 +82,7 @@ def chat_endpoint(request):
         is_authenticated = user.is_authenticated
         logger.debug(f"[chat_endpoint] User authenticated: {is_authenticated}, user_id: {user.id if is_authenticated else 'None'}")
         
-        # Get or create thread_id
-        if is_authenticated:
-            # For logged-in users, use database
-            thread_id = data.get('thread_id')
-            if thread_id:
-                # Check if thread exists and is linked to this user
-                try:
-                    thread = ConversationThread.objects.get(thread_id=thread_id)
-                    # If thread exists but isn't linked to this user, link it
-                    if thread.user != user:
-                        thread.user = user
-                        thread.save()
-                except ConversationThread.DoesNotExist:
-                    # Thread doesn't exist, create it and link to user
-                    thread = ConversationThread.objects.create(
-                        thread_id=thread_id,
-                        user=user,
-                        workflow_type='chatbot'
-                    )
-            else:
-                # No thread_id provided, create or get existing thread for user
-                thread, created = ConversationThread.objects.get_or_create(
-                    user=user,
-                    workflow_type='chatbot',
-                    defaults={'thread_id': f"user_{user.id}_{uuid.uuid4().hex[:8]}"}
-                )
-                thread_id = thread.thread_id
-        else:
-            # For anonymous users, use session
-            if 'chat_thread_id' not in request.session:
-                request.session['chat_thread_id'] = f"anon_{uuid.uuid4().hex[:12]}"
-            thread_id = request.session['chat_thread_id']
+        thread_id = _own_thread_id(request, data.get('thread_id'), create=True)
         
         logger.info(f"[chat_endpoint] Using thread_id={thread_id}")
         
@@ -148,45 +149,7 @@ def chat_history(request):
     
     user = request.user
     is_authenticated = user.is_authenticated
-    thread_id = None
-
-    if is_authenticated:
-        thread_id = request.GET.get('thread_id')
-        if thread_id:
-            # Check if thread exists and is linked to this user
-            try:
-                thread = ConversationThread.objects.get(thread_id=thread_id)
-                # If thread exists but isn't linked to this user, link it
-                if thread.user != user:
-                    thread.user = user
-                    thread.save()
-            except ConversationThread.DoesNotExist:
-                # Thread doesn't exist, create it and link to user
-                thread = ConversationThread.objects.create(
-                    thread_id=thread_id,
-                    user=user,
-                    workflow_type='chatbot'
-                )
-        else:
-            # Try to find the most recent thread for the user
-            thread = ConversationThread.objects.filter(
-                user=user,
-                workflow_type='chatbot'
-            ).order_by('-updated_at').first()
-            
-            if thread:
-                thread_id = thread.thread_id
-            else:
-                # If no thread exists, generate a new ID
-                thread_id = f"user_{user.id}_{uuid.uuid4().hex[:8]}"
-    else:
-        # For anonymous users, get from request or session
-        thread_id = request.GET.get('thread_id')
-        if not thread_id:
-            if 'chat_thread_id' not in request.session:
-                request.session['chat_thread_id'] = f"anon_{uuid.uuid4().hex[:12]}"
-                request.session.modified = True
-            thread_id = request.session['chat_thread_id']
+    thread_id = _own_thread_id(request, request.GET.get('thread_id'), create=False)
 
     logger.info(f"[chat_history] Using thread_id={thread_id}")
     

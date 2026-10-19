@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Anyone could read, or take over, another visitor's website-chat conversation**: the chat trusted the conversation id sent by the browser. A signed-out visitor could ask for the history of any id, and a signed-in user who sent someone else's id was attached to that conversation. The server now decides which conversation a visitor is in: signed-out visitors always get the one in their own session, and signed-in users get only their own, so a sent id that is not theirs is ignored.
 - **Bots aimed at the login page could slow sign-in for everyone and guess passwords without limit**: every attempt ran the deliberately slow password hash, up to three times for a wrong password, on the site's three web workers, and nothing counted failures. Now (`brand/login_throttle.py`):
   - A wrong password costs one hash, not two or three.
   - After 5 failures in 15 minutes from one address, or against one account, or 100 failures site-wide, each attempt must pass the Cloudflare Turnstile challenge. Attempts without it are refused before the password is checked, so a flood no longer queues real sign-ins.

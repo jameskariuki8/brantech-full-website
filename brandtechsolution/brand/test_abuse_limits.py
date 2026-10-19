@@ -163,3 +163,58 @@ class SignupLimitTest(TestCase):
             })
         self.assertEqual(response.status_code, 429)
         self.assertEqual(User.objects.filter(email__startswith='bot').count(), 5)
+
+
+class ChatThreadOwnershipTest(TestCase):
+    """A thread id sent by the browser must never open someone else's chat."""
+
+    def setUp(self):
+        cache.clear()
+        self.owner = User.objects.create_user('owner', password='pw-12345678')
+        self.other = User.objects.create_user('other', password='pw-12345678')
+        from ai_workflows.models import ConversationThread
+        self.Thread = ConversationThread
+        self.private = ConversationThread.objects.create(
+            thread_id=f'user_{self.owner.id}_abcd1234', user=self.owner, workflow_type='chatbot',
+        )
+
+    def history_thread(self, client, requested):
+        with patch('ai_workflows.views.ChatAssistant') as assistant:
+            assistant.return_value.get_history.return_value = []
+            response = client.get('/api/ai/chat/history/', {'thread_id': requested})
+        return response.json()['thread_id'], assistant.call_args.kwargs['thread_id']
+
+    def test_signed_out_visitor_cannot_name_a_thread(self):
+        _, used = self.history_thread(self.client, self.private.thread_id)
+        self.assertNotEqual(used, self.private.thread_id)
+        self.assertTrue(used.startswith('anon_'))
+
+    def test_signed_in_user_cannot_take_over_anothers_thread(self):
+        self.client.force_login(self.other)
+        reply = {'response': 'hi', 'metadata': {}}
+        with patch('ai_workflows.views.get_chatbot_response', return_value=reply) as model:
+            response = self.client.post(
+                '/api/ai/chat/',
+                json.dumps({'message': 'hello', 'thread_id': self.private.thread_id}),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(model.call_args.kwargs['thread_id'], self.private.thread_id)
+        self.private.refresh_from_db()
+        self.assertEqual(self.private.user, self.owner)
+
+    def test_signed_in_user_cannot_read_anothers_thread(self):
+        self.client.force_login(self.other)
+        _, used = self.history_thread(self.client, self.private.thread_id)
+        self.assertNotEqual(used, self.private.thread_id)
+
+    def test_owner_still_reaches_their_own_thread(self):
+        self.client.force_login(self.owner)
+        shown, used = self.history_thread(self.client, self.private.thread_id)
+        self.assertEqual(used, self.private.thread_id)
+
+    def test_unknown_id_is_not_adopted(self):
+        self.client.force_login(self.other)
+        _, used = self.history_thread(self.client, 'anon_someone_elses_session')
+        self.assertNotEqual(used, 'anon_someone_elses_session')
+        self.assertFalse(self.Thread.objects.filter(thread_id='anon_someone_elses_session').exists())

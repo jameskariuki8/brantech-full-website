@@ -243,7 +243,13 @@ class AIWorkflowsViewsTest(TestCase):
             content_type='application/json'
         )
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(ConversationThread.objects.filter(thread_id=new_thread_id).exists())
+        # The server issues the id; one named by the browser is not adopted.
+        issued = response.json()['thread_id']
+        self.assertNotEqual(issued, new_thread_id)
+        self.assertTrue(ConversationThread.objects.filter(
+            thread_id=issued, user__username='testuser',
+        ).exists())
+        self.assertFalse(ConversationThread.objects.filter(thread_id=new_thread_id).exists())
     
     def test_chat_history_get(self):
         """Test getting chat history"""
@@ -374,6 +380,7 @@ class AIWorkflowsIntegrationTest(TestCase):
             content_type='application/json'
         )
         self.assertEqual(response.status_code, 200)
+        thread_id = response.json()['thread_id']
         self.assertTrue(ConversationThread.objects.filter(thread_id=thread_id).exists())
         
         # Get history
