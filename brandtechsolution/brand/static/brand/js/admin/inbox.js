@@ -575,7 +575,7 @@
         } else {
             $('mailReadOnly').textContent = t.owner
                 ? `Read-only: this is ${t.owner}'s mailbox. Only they can reply or file it.`
-                : 'Read-only: only the administrator can reply from a shared mailbox.';
+                : 'Read-only: replying from a shared mailbox needs the handle_inquiries capability.';
         }
     }
 

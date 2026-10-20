@@ -1,5 +1,5 @@
-"""The panel's mail client: every staff member's own mailbox, and for the
-superuser alone the shared mailboxes and every other mailbox."""
+"""The panel's mail client: every staff member's own mailbox, the shared
+mailboxes for view_inbox holders, and every mailbox for view_all_mail."""
 
 import email.utils
 
@@ -86,9 +86,12 @@ def _message_json(message):
 
 def _visible(user):
     """Threads the user may read, before any mailbox filter."""
-    if mb.is_admin(user):
+    if mb.can_view_all(user):
         return MailThread.objects.all()
-    return MailThread.objects.filter(owner=user)
+    q = Q(owner=user)
+    if mb.can_view_shared(user):
+        q |= Q(owner__isnull=True)
+    return MailThread.objects.filter(q)
 
 
 @api_view(["GET"])
@@ -106,18 +109,18 @@ def mailboxes(request):
             if own else None
         ),
         "shared": [],
-        "all_mail": mb.is_admin(user),
+        "all_mail": mb.can_view_all(user),
         "manage_limits": user.has_perm("staff.manage_mail_limits"),
         "quota": quota.status(user),
         "people": [],
     }
-    if mb.is_admin(user):
+    if mb.can_view_shared(user):
         data["shared"] = [
             {
                 "mailbox": name,
                 "address": mailbox_address(name) if name != mb.OTHER else "Unmatched addresses",
                 "unread": unread.get(name, 0),
-                "can_send": name != mb.OTHER and mb.is_admin(user),
+                "can_send": name != mb.OTHER and mb.can_handle_shared(user),
             }
             for name in mb.SHARED
         ]
@@ -142,12 +145,12 @@ def threads(request):
         if box == "sent":
             qs = qs.filter(messages__direction="out").distinct()
     elif box in mb.SHARED:
-        if not mb.is_admin(user):
-            raise PermissionDenied("Shared mailboxes are for the administrator only.")
+        if not mb.can_view_shared(user):
+            raise PermissionDenied("You need the view_inbox capability.")
         qs = qs.filter(owner__isnull=True, mailbox=box)
     elif box == "all":
-        if not mb.is_admin(user):
-            raise PermissionDenied("Only the administrator can read other mailboxes.")
+        if not mb.can_view_all(user):
+            raise PermissionDenied("You need the view_all_mail capability.")
         person = request.query_params.get("person")
         if person:
             qs = qs.filter(owner_id=person)
@@ -192,7 +195,7 @@ def _get_thread(request, pk):
     if not mb.can_read(request.user, thread):
         # 404 rather than 403: whether a colleague has a thread is itself private.
         raise Http404
-    if thread.deleted_at and not mb.is_admin(request.user):
+    if thread.deleted_at and not mb.can_view_all(request.user):
         raise Http404
     return thread
 
@@ -325,8 +328,8 @@ def compose(request):
             raise PermissionDenied("Choose your work address before sending mail.")
         owner = user
     elif source in mb.SHARED_MAILBOXES:
-        if not mb.is_admin(user):
-            raise PermissionDenied("Only the administrator can send from a shared address.")
+        if not mb.can_handle_shared(user):
+            raise PermissionDenied("You need handle_inquiries to send from a shared address.")
         mailbox, owner = source, None
     else:
         raise ValidationError({"from": "Unknown mailbox."})
@@ -377,7 +380,7 @@ def attachment(request, pk):
 def unread_count(request):
     user = request.user
     q = Q(owner=user)
-    if mb.is_admin(user):
+    if mb.can_view_shared(user):
         q |= Q(owner__isnull=True)
     count = MailThread.objects.filter(
         q, unread=True, archived=False, spam=False, deleted_at__isnull=True

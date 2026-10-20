@@ -9,8 +9,9 @@ from staff.capabilities import CODENAMES
 EXPECTED = {
     "Editor": {"manage_blog", "publish_blog", "manage_projects"},
     "Marketing": {"manage_templates", "manage_campaigns", "manage_recipients"},
-    # Shared mail and inquiries are the superuser's, not a capability, so
-    # Support keeps only bookings (staff.0020).
+    # Support carries no mail capabilities: handing them out through an
+    # invitation role is what exposed shared mail (staff.0020). They are
+    # granted on purpose; only Administrator gets them (staff.0021).
     "Support": {"manage_appointments"},
     "Administrator": set(CODENAMES),
 }

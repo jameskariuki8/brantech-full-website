@@ -214,7 +214,7 @@ class CoverageReportTest(TestCase):
         self.assertEqual(self._run(), "")
 
     def test_the_warning_names_what_to_fix(self):
-        self.assertIn("inquiries, bookings and shared mail (a superuser)", self._run())
+        self.assertIn("inquiries and bookings (receive_inquiry_emails)", self._run())
 
 
 class SupportRoleCoversTheLeadWorkTest(TestCase):

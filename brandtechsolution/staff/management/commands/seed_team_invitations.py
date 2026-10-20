@@ -92,14 +92,11 @@ class Command(BaseCommand):
         created without one -- and that failure is otherwise invisible until a
         customer inquiry goes unanswered.
         """
-        from staff.emails import capability_holder_emails, superuser_emails
+        from staff.emails import capability_holder_emails
 
         uncovered = []
-        if superuser_emails():
-            self._say(f"  inquiries, bookings and shared mail: {len(superuser_emails())} recipient(s)")
-        else:
-            uncovered.append("inquiries, bookings and shared mail (a superuser)")
         for label, codename in (
+            ("inquiries and bookings", "receive_inquiry_emails"),
             ("task reviews", "manage_tasks"),
             ("editorial reviews", "publish_blog"),
         ):

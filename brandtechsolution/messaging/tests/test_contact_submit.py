@@ -48,21 +48,36 @@ class ContactSubmitTests(TestCase):
         # fail for reasons unrelated to the notification.
         TURNSTILE_SECRET_KEY="",
     )
-    def test_valid_submission_notifies_the_superuser_only(self):
-        """Inquiries are the owner's. Staff who can do everything else in the
-        panel still get nothing."""
+    def test_valid_submission_notifies_holders_of_receive_inquiry_emails(self):
+        """The superuser always, and whoever is granted the capability. Staff
+        without it get nothing, even with every other panel permission."""
         User.objects.create_superuser("owner", "owner@example.com", "pw")
-        handler = User.objects.create_user(
-            "handler", "handler@example.com", "pw", is_staff=True
+        receiver = User.objects.create_user(
+            "receiver", "receiver@example.com", "pw", is_staff=True
         )
-        handler.user_permissions.add(
-            *Permission.objects.filter(content_type__app_label="staff")
+        receiver.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="staff", codename="receive_inquiry_emails"
+            )
+        )
+        other = User.objects.create_user(
+            "other", "other@example.com", "pw", is_staff=True
+        )
+        other.user_permissions.add(
+            *Permission.objects.filter(content_type__app_label="staff").exclude(
+                codename="receive_inquiry_emails"
+            )
         )
 
         self._post()
 
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, ["owner@example.com"])
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(
+            sorted(m.to[0] for m in mail.outbox),
+            ["owner@example.com", "receiver@example.com"],
+        )
+        for m in mail.outbox:
+            self.assertEqual(len(m.to), 1)
         self.assertIn("grace@example.com", mail.outbox[0].body)
 
     @override_settings(
