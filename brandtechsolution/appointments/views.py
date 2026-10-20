@@ -113,16 +113,16 @@ def create_appointment(request: HttpRequest):
             full_name=full_name
         )
 
-        # Notify the superuser only, not everyone who can manage bookings.
+        # Notify holders of receive_inquiry_emails (the superuser always does).
         try:
             from django.conf import settings
             from brandtechsolution.mail import send_mail_each
-            from staff.emails import superuser_emails
+            from staff.emails import capability_holder_emails
 
-            recipients = superuser_emails()
+            recipients = capability_holder_emails("receive_inquiry_emails")
             if not recipients:
                 logger.warning(
-                    "No superuser has an email address; "
+                    "Nobody receiving inquiry emails has an address; "
                     "appointment #%s saved with nobody notified.",
                     appointment.id,
                 )

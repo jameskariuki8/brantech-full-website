@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
 from brandtechsolution.mail import send_mail_each
-from staff.emails import superuser_emails
+from staff.emails import capability_holder_emails
 from staff.handles import mailbox_address
 from .autoreply import answer_closed_role
 from .mailbox import deliver_inbound, discard_stored_files, local_parts, resolve_mailbox, store_inbound_files
@@ -131,11 +131,11 @@ def contact_submit(request):
         body_text=f"{message}\n\nPhone / WhatsApp: {phone}" if phone else message,
     )
 
-    # The superuser only. Inquiries are the owner's, not the whole team's.
-    recipients = superuser_emails()
+    # Whoever holds receive_inquiry_emails (the superuser always does).
+    recipients = capability_holder_emails("receive_inquiry_emails")
     if not recipients:
         logger.warning(
-            "No superuser has an email address; inquiry #%s "
+            "Nobody who receives inquiry emails has an address; inquiry #%s "
             "saved with nobody notified.",
             inquiry.pk,
         )
@@ -464,7 +464,7 @@ def mailgun_inbound_webhook(request):
             phone="",
             message=f"[Email to {raw_recipient}]\nSubject: {subject}\n\n{stripped_text or body_plain}",
         )
-        recipients = superuser_emails()
+        recipients = capability_holder_emails("receive_inquiry_emails")
         if recipients:
             try:
                 send_mail_each(

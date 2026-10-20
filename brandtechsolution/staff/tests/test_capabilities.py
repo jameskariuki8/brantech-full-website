@@ -5,16 +5,16 @@ from staff.capabilities import ALL_CAPABILITIES, CODENAMES
 
 
 class CapabilityRegistryTest(TestCase):
-    def test_registry_has_twelve_capabilities(self):
+    def test_registry_has_sixteen_capabilities(self):
         # Bumped from 11 when manage_tasks was added, from 12 when
         # receive_alerts was, from 13 for view_all_mail, from 14 for
         # manage_mail_limits; down to 12 when view_inbox, handle_inquiries and
-        # view_all_mail were removed in favour of a fixed superuser rule
-        # (staff.0020). The count is pinned so that adding a capability
+        # view_all_mail were removed (staff.0020), up to 16 when they came
+        # back with receive_inquiry_emails (staff.0021). The count is pinned so that adding a capability
         # is a deliberate act: a new codename has to be given a migration and
         # a place in a preset role, and this test is what stops that being
         # forgotten.
-        self.assertEqual(len(ALL_CAPABILITIES), 12)
+        self.assertEqual(len(ALL_CAPABILITIES), 16)
 
     def test_codenames_are_unique(self):
         self.assertEqual(len(CODENAMES), len(set(CODENAMES)))

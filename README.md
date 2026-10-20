@@ -437,9 +437,9 @@ in step by hand.
 
 | Notification | Sent to |
 |---|---|
-| Contact form inquiry | Superusers only |
-| Mail to a shared mailbox (info@, hello@, support@) | Superusers only |
-| Strategy session booking | Superusers only |
+| Contact form inquiry | `receive_inquiry_emails` |
+| Mail to a shared mailbox (info@, hello@, support@) | `receive_inquiry_emails` |
+| Strategy session booking | `receive_inquiry_emails` |
 | Task ready for review | `manage_tasks` |
 | Editorial draft ready for review | `publish_blog` |
 
@@ -453,11 +453,18 @@ sees another person's address.
 
 ### Mail access
 
-Each staff member reads only their own mailbox (`<handle>@` the mail domain).
-Shared mailboxes, mail to unclaimed addresses, website inquiries and other
-people's mailboxes belong to superusers alone. This is a fixed rule, not a
-capability, so no role can hand it out. The `view_inbox`, `handle_inquiries`
-and `view_all_mail` capabilities were removed in `staff.0020`.
+Each staff member reads their own mailbox (`<handle>@` the mail domain) and
+nothing else unless granted more. Four capabilities decide who sees what, and no
+preset role carries them, so each is a deliberate grant to a role or a person:
+
+| Capability | Gives |
+|---|---|
+| `view_inbox` | Read shared mailboxes, mail to unclaimed addresses and website inquiries |
+| `handle_inquiries` | Reply, file and send from shared mailboxes; answer inquiries |
+| `view_all_mail` | Read-only oversight of every staff member's mailbox |
+| `receive_inquiry_emails` | Be emailed website inquiries, bookings and info@ mail |
+
+Superusers hold all four implicitly.
 
 ### Team seeding
 

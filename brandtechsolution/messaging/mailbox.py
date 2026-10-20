@@ -1,11 +1,12 @@
 """Staff mailboxes: routing inbound mail to them and sending from them.
 
 A mailbox is the local part of <mailbox>@MAILBOX_DOMAIN. Staff handles are
-personal mailboxes, and each person sees only their own. SHARED_MAILBOXES,
-and OTHER (anything addressed to a name nobody owns, so mail to a typo or a
-departed colleague is never silently dropped), belong to the superuser, who
-also reads every mailbox for oversight. That is a fixed rule, not a
-capability: it cannot be handed out by giving someone a role.
+personal mailboxes, and each person sees only their own unless granted more.
+SHARED_MAILBOXES, and OTHER (anything addressed to a name nobody owns, so mail
+to a typo or a departed colleague is never silently dropped), are read by
+holders of view_inbox and answered by holders of handle_inquiries. view_all_mail
+adds read-only oversight of every personal mailbox. The superuser holds all
+three implicitly.
 """
 
 import email.utils
@@ -231,16 +232,31 @@ def own_mailbox(user):
     return user.username
 
 
-def is_admin(user):
-    """The superuser: shared mailboxes, every inquiry, and oversight of
-    every mailbox are theirs alone."""
-    return bool(user and user.is_active and user.is_superuser)
+def _holds(user, codename):
+    return bool(user and user.is_active and user.has_perm(f"staff.{codename}"))
+
+
+def can_view_shared(user):
+    """Shared mailboxes and unmatched addresses."""
+    return _holds(user, "view_inbox")
+
+
+def can_handle_shared(user):
+    """Reply, file and send from shared mailboxes."""
+    return _holds(user, "handle_inquiries")
+
+
+def can_view_all(user):
+    """Read every staff member's personal mailbox, for oversight."""
+    return _holds(user, "view_all_mail")
 
 
 def can_read(user, thread):
     if thread.owner_id is not None and thread.owner_id == user.pk:
         return True
-    return is_admin(user)
+    if thread.owner_id is None and can_view_shared(user):
+        return True
+    return can_view_all(user)
 
 
 def can_act(user, thread):
@@ -250,7 +266,7 @@ def can_act(user, thread):
         return False
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
-    return is_admin(user)
+    return can_handle_shared(user)
 
 
 def set_spam(user, thread, spam):
@@ -272,7 +288,7 @@ def set_spam(user, thread, spam):
 def marks_read_on_open(user, thread):
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
-    return is_admin(user)
+    return can_view_shared(user)
 
 
 # --- sending ---------------------------------------------------------------
