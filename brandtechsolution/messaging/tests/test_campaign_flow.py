@@ -146,7 +146,10 @@ class CampaignFlowTests(TestCase):
     def test_overview_lists_senders_and_month(self):
         data = self.client.get("/api/messaging/campaigns/overview/").json()
         values = [s["value"] for s in data["senders"]]
-        self.assertEqual(values, ["info", "hello", "support", "ada"])
+        self.assertEqual(
+            values,
+            ["info", "hello", "support", "careers", "jobs", "hr", "sales", "billing", "contact", "ada"],
+        )
         self.assertIn("headroom", data["month"])
 
     def test_audience_skips_staff_blocked_and_own_domain(self):

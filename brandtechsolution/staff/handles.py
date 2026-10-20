@@ -16,9 +16,14 @@ HANDLE_RE = re.compile(r"^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 MIN_LENGTH = 3
 MAX_LENGTH = 30
 
-# Team addresses only the superuser reads. Reserved so nobody can
-# claim one as a personal handle.
-SHARED_MAILBOXES = ("info", "hello", "support")
+# Team addresses read by holders of view_inbox rather than one person.
+# Reserved so nobody can claim one as a personal handle. Mail to any other
+# name nobody owns lands in "Unmatched"; add the name here to give it a
+# shared mailbox of its own.
+SHARED_MAILBOXES = (
+    "info", "hello", "support",
+    "careers", "jobs", "hr", "sales", "billing", "contact",
+)
 
 # Names a mail provider, a client or a phishing email could lean on.
 RESERVED = frozenset(SHARED_MAILBOXES) | {
