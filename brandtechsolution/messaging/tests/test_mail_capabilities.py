@@ -41,3 +41,11 @@ class MailCapabilityTests(TestCase):
         u = grant(self.person, "view_all_mail")
         self.assertTrue(mb.can_read(u, self.private))
         self.assertFalse(mb.can_act(u, self.private))
+
+
+class SharedMailboxRoutingTests(TestCase):
+    def test_careers_is_a_shared_mailbox_not_unmatched(self):
+        self.assertEqual(mb.resolve_mailbox("careers"), ("careers", None))
+
+    def test_an_unknown_name_is_still_unmatched(self):
+        self.assertEqual(mb.resolve_mailbox("nobody-here"), (mb.OTHER, None))
