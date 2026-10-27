@@ -449,7 +449,7 @@ in step by hand.
 | Notification | Sent to |
 |---|---|
 | Contact form inquiry | `receive_inquiry_emails` |
-| Mail to a shared mailbox (info@, hello@, support@) | `receive_inquiry_emails` |
+| Mail to a shared mailbox (info@, careers@, ...) | `receive_inquiry_emails`, and the members of the groups that hold that mailbox |
 | Strategy session booking | `receive_inquiry_emails` |
 | Task ready for review | `manage_tasks` |
 | Editorial draft ready for review | `publish_blog` |
@@ -465,13 +465,24 @@ sees another person's address.
 ### Mail access
 
 Each staff member reads their own mailbox (`<handle>@` the mail domain) and
-nothing else unless granted more. Four capabilities decide who sees what, and no
-preset role carries them, so each is a deliberate grant to a role or a person:
+nothing else unless granted more.
+
+**Shared mailboxes** (info@, careers@, hr@, ...) are created and deleted under
+**Staff & Groups → Groups → Shared mailboxes** (`messaging.SharedMailbox`,
+`/api/messaging/mail/shared/`); there is no list to edit in code. Adding a
+mailbox to a group lets that group's members read it and reply from it, and
+emails them when mail arrives. Deleting a mailbox moves its conversations to
+Unmatched. A mailbox's name cannot be a staff handle or a mail-system address
+(postmaster, abuse, ...), and nobody can pick a shared mailbox's name as their
+handle.
+
+Four capabilities reach further, and no preset group carries them, so each is a
+deliberate grant to a group or a person:
 
 | Capability | Gives |
 |---|---|
-| `view_inbox` | Read shared mailboxes, mail to unclaimed addresses and website inquiries |
-| `handle_inquiries` | Reply, file and send from shared mailboxes; answer inquiries |
+| `view_inbox` | Read every shared mailbox, mail to unclaimed addresses and website inquiries |
+| `handle_inquiries` | Reply, file and send from every shared mailbox; answer inquiries |
 | `view_all_mail` | Read-only oversight of every staff member's mailbox |
 | `receive_inquiry_emails` | Be emailed website inquiries, bookings and info@ mail |
 
@@ -712,7 +723,7 @@ Capabilities are never granted to a person directly. They are ticked into a
 | `manage_recipients` | Manage campaign recipients | Building a campaign's audience and adding or removing individual recipients |
 | `send_campaigns` | Send campaigns | Queueing, pausing and resuming a campaign — i.e. actually sending |
 | `manage_tasks` | Assign and review tasks | Creating, assigning, editing and deleting tasks, and approving or sending back work that has been submitted for review. **Not** needed to see the task board or to do assigned work — see [Tasks](#tasks) |
-| `manage_staff` | Manage staff and roles | Everything under **Staff & Roles**: roles, people, invitations and the activity log |
+| `manage_staff` | Manage staff and roles | Everything under **Staff & Groups**: groups, shared mailboxes, people, invitations and the activity log |
 
 Note that `manage_campaigns` and `send_campaigns` are deliberately separate.
 Sending is the one irreversible, externally visible action in the panel, so
@@ -740,10 +751,26 @@ Reversing the migration does not delete these groups. Once created they are
 yours — a rollback that dropped them by name would take their memberships and
 any customisation with them.
 
+### Groups
+
+A group (Django `auth.Group`; the API still calls it a role, at
+`/api/staff/roles/`) holds capabilities, shared mailboxes and members. Under
+**Staff & Groups → Groups** you create one, tick what it may do and which
+mailboxes it answers, tick the staff who belong to it, and invite new people
+into it by email. The preset groups (Editor, Marketing, Support,
+Administrator) are ordinary groups and can be edited or deleted.
+
+A `manage_staff` holder who is not a superuser can only grant what they hold:
+they cannot add a capability they lack or a mailbox they cannot send from, and
+cannot add anyone to (or invite anyone into) a group that grants more than
+they hold. They cannot change their own groups or an owner's. Every change is
+in the activity log.
+
 ### Inviting someone
 
-**Staff & Roles → Invite person**, then an email address and the roles they
-should start with. The invitee gets a link and sets their own password; no
+**Staff & Groups → Invite person**, then an email address and the groups they
+should start with. Or open a group under **Groups** and invite addresses
+straight into it. The invitee gets a link and sets their own password; no
 account exists until they do, and the password they choose must satisfy the
 project's configured `AUTH_PASSWORD_VALIDATORS`.
 
@@ -949,7 +976,7 @@ python manage.py migrate
 `staff.0007` grants `manage_tasks` to the **Administrator** preset, so
 existing administrators can use the section immediately. Editor, Marketing
 and Support are left alone — assigning work is not part of any of them, so
-tick it in from **Staff & Roles → Roles** if you want it there. Reversing the
+tick it in from **Staff & Groups → Groups** if you want it there. Reversing the
 migration removes that one grant and leaves the group and every hand-made
 grant intact.
 

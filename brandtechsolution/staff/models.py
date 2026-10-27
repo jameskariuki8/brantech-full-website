@@ -35,15 +35,17 @@ class AuditEntry(models.Model):
         ("invite_send_failed", "Invitation email failed"),
         ("invite_revoked", "Invitation revoked"),
         ("invite_accepted", "Invitation accepted"),
-        ("roles_changed", "Roles changed"),
+        ("roles_changed", "Groups changed"),
         ("user_deactivated", "Account deactivated"),
         ("user_reactivated", "Account reactivated"),
-        ("group_created", "Role created"),
-        ("group_updated", "Role updated"),
-        ("group_deleted", "Role deleted"),
+        ("group_created", "Group created"),
+        ("group_updated", "Group updated"),
+        ("group_deleted", "Group deleted"),
         ("handle_chosen", "Work address chosen"),
         ("onboarding_completed", "Onboarding completed"),
         ("mail_limit_changed", "Mail sending limit changed"),
+        ("mailbox_created", "Shared mailbox created"),
+        ("mailbox_deleted", "Shared mailbox deleted"),
     ]
 
     actor = models.ForeignKey(

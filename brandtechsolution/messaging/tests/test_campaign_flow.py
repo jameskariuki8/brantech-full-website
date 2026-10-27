@@ -148,7 +148,8 @@ class CampaignFlowTests(TestCase):
         values = [s["value"] for s in data["senders"]]
         self.assertEqual(
             values,
-            ["info", "hello", "support", "careers", "jobs", "hr", "sales", "billing", "contact", "ada"],
+            # Shared mailboxes alphabetically, then the author's own.
+            ["billing", "careers", "contact", "hello", "hr", "info", "jobs", "sales", "support", "ada"],
         )
         self.assertIn("headroom", data["month"])
 

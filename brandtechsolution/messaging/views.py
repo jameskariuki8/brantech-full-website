@@ -22,7 +22,10 @@ from brandtechsolution.mail import send_mail_each
 from staff.emails import capability_holder_emails
 from staff.handles import mailbox_address
 from .autoreply import answer_closed_role
-from .mailbox import deliver_inbound, discard_stored_files, local_parts, resolve_mailbox, store_inbound_files
+from .mailbox import (
+    deliver_inbound, discard_stored_files, local_parts, mailbox_member_emails, resolve_mailbox,
+    store_inbound_files,
+)
 from .models import BlockedSender, CampaignRecipient, InboundEmail, Inquiry, Suppression
 from .tokens import read_unsubscribe_token
 
@@ -438,6 +441,8 @@ def mailgun_inbound_webhook(request):
     # the To header is the fallback for a payload that lacks it.
     locals_ = local_parts(raw_recipient) or local_parts(header_to)
     shared_hit = False
+    # Shared mailboxes it was freshly filed in, so their groups can be told.
+    shared_boxes = set()
     delivered = 0
     # Each address it was filed under, for an automatic reply to answer in.
     threads = {}
@@ -465,7 +470,9 @@ def mailgun_inbound_webhook(request):
             delivered += 1
             threads[mailbox_address(local).lower()] = message.thread
             # Spam from a blocked sender is filed, but raises nothing.
-            shared_hit = shared_hit or (owner is None and not message.thread.spam)
+            if owner is None and not message.thread.spam:
+                shared_hit = True
+                shared_boxes.add(mailbox)
     if not delivered:
         # A retried webhook or mail to no address of ours: nothing refers to
         # the files just saved.
@@ -491,7 +498,10 @@ def mailgun_inbound_webhook(request):
             phone="",
             message=f"[Email to {raw_recipient}]\nSubject: {subject}\n\n{stripped_text or body_plain}",
         )
-        recipients = capability_holder_emails("receive_inquiry_emails")
+        recipients = list(dict.fromkeys(
+            capability_holder_emails("receive_inquiry_emails")
+            + mailbox_member_emails(shared_boxes)
+        ))
         if recipients:
             try:
                 send_mail_each(

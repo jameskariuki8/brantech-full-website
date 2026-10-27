@@ -9,10 +9,10 @@ import email.utils
 
 from django.conf import settings
 
-from staff.handles import SHARED_MAILBOXES, mailbox_address
+from staff.handles import mailbox_address
 
 from . import quota
-from .models import Campaign, CampaignRecipient, MailSettings
+from .models import Campaign, CampaignRecipient, MailSettings, SharedMailbox
 
 ORG_NAME = "Teklora"
 ACTIVE_STATUSES = ("queued", "sending", "paused")
@@ -23,7 +23,7 @@ def sender_choices(user):
     mailboxes, plus their own work address once they have one."""
     choices = [
         {"value": box, "address": mailbox_address(box), "label": ORG_NAME}
-        for box in SHARED_MAILBOXES
+        for box in SharedMailbox.objects.values_list("name", flat=True)
     ]
     if user is not None and "@" not in user.username:
         choices.append({
@@ -35,7 +35,7 @@ def sender_choices(user):
 
 
 def allowed_sender(user, value, campaign=None):
-    if value in SHARED_MAILBOXES:
+    if value and SharedMailbox.objects.filter(name=value).exists():
         return True
     # A campaign keeps the author's address it was given, even when someone
     # else later edits it.
@@ -48,7 +48,7 @@ def from_header(campaign):
     box = campaign.from_mailbox
     if not box:
         return settings.DEFAULT_FROM_EMAIL
-    if box in SHARED_MAILBOXES:
+    if SharedMailbox.objects.filter(name=box).exists():
         name = ORG_NAME
     else:
         author = campaign.created_by

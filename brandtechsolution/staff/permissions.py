@@ -33,7 +33,17 @@ def enforce_grantable_roles(actor, roles):
     """
     if actor.is_superuser:
         return
+    from messaging.mailbox import can_send_shared
+
     for role in roles:
+        # A group's shared mailboxes are a grant too: its members read and
+        # reply from them. The actor must be able to send from each.
+        for name in role.shared_mailboxes.values_list("name", flat=True):
+            if not can_send_shared(actor, name):
+                raise PermissionDenied(
+                    f"You cannot grant the '{role.name}' group: it includes "
+                    f"the shared mailbox '{name}', which you cannot send from."
+                )
         held_by_role = role.permissions.select_related("content_type")
         for permission in held_by_role:
             label = f"{permission.content_type.app_label}.{permission.codename}"

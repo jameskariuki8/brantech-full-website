@@ -1,7 +1,7 @@
             <div id="staff" class="section hidden" data-user-id="{{ request.user.id }}" data-user-superuser="{{ request.user.is_superuser|yesno:'true,false' }}">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Staff &amp; Roles</h2>
+                        <h2 class="text-2xl font-bold text-white">Staff &amp; Groups</h2>
                         <p class="text-gray-500 text-sm">Who can use this panel, and what they can do</p>
                     </div>
                     {% comment %}
@@ -21,7 +21,7 @@
                     <button type="button" data-tab="people"
                         class="staff-tab px-4 py-2 text-sm font-medium text-white border-b-2 border-brand-blue">People</button>
                     <button type="button" data-tab="roles"
-                        class="staff-tab px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent">Roles</button>
+                        class="staff-tab px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent">Groups</button>
                     <button type="button" data-tab="activity"
                         class="staff-tab px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent">Activity</button>
                 </div>
@@ -84,12 +84,34 @@
                     <div id="staffPeopleList" class="rounded-lg border border-dark-border bg-dark-card divide-y divide-dark-border overflow-hidden"></div>
                 </div>
 
+                {% comment %}
+                A group is an auth.Group (the API still calls it a role): what
+                its members may do, the shared mailboxes they read and answer,
+                and who is in it.
+                {% endcomment %}
                 <div id="staffRoles" class="staff-pane hidden">
-                    <button type="button" id="newRoleBtn" disabled
-                        class="mb-4 px-4 py-2 text-sm rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-plus mr-2"></i>New role
-                    </button>
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <p class="text-sm text-gray-400 max-w-xl">A group decides what its members can do and which shared mailboxes they read and answer.</p>
+                        <button type="button" id="newRoleBtn" disabled
+                            class="px-4 py-2 text-sm rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-plus mr-2"></i>New group
+                        </button>
+                    </div>
                     <div id="staffRolesList" class="grid gap-3 lg:grid-cols-2"></div>
+
+                    <div class="mt-10">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <div>
+                                <h3 class="text-base font-semibold text-white font-heading">Shared mailboxes</h3>
+                                <span class="block text-sm text-gray-400">Team addresses. Add one to a group to give its members the mail.</span>
+                            </div>
+                            <button type="button" id="newMailboxBtn"
+                                class="px-4 py-2 text-sm rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>New mailbox
+                            </button>
+                        </div>
+                        <div id="staffMailboxList" class="rounded-lg border border-dark-border bg-dark-card divide-y divide-dark-border overflow-hidden"></div>
+                    </div>
                 </div>
 
                 <div id="staffActivity" class="staff-pane hidden">

@@ -1,5 +1,6 @@
 """The panel's mail client: every staff member's own mailbox, the shared
-mailboxes for view_inbox holders, and every mailbox for view_all_mail."""
+mailboxes their groups hold (all of them for view_inbox), and every mailbox
+for view_all_mail."""
 
 import email.utils
 
@@ -19,13 +20,13 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from staff.audit import record
-from staff.handles import mailbox_address
+from staff.handles import mailbox_address, validate_mailbox_name
 from staff.models import StaffProfile
 from staff.permissions import has_capability
 
 from . import mailbox as mb
 from . import quota
-from .models import MailAttachment, MailSettings, MailThread
+from .models import MailAttachment, MailSettings, MailThread, SharedMailbox
 
 
 class ThreadPagination(PageNumberPagination):
@@ -89,8 +90,9 @@ def _visible(user):
     if mb.can_view_all(user):
         return MailThread.objects.all()
     q = Q(owner=user)
-    if mb.can_view_shared(user):
-        q |= Q(owner__isnull=True)
+    shared = mb.readable_shared(user)
+    if shared:
+        q |= Q(owner__isnull=True, mailbox__in=shared)
     return MailThread.objects.filter(q)
 
 
@@ -114,16 +116,16 @@ def mailboxes(request):
         "quota": quota.status(user),
         "people": [],
     }
-    if mb.can_view_shared(user):
-        data["shared"] = [
-            {
-                "mailbox": name,
-                "address": mailbox_address(name) if name != mb.OTHER else "Unmatched addresses",
-                "unread": unread.get(name, 0),
-                "can_send": name != mb.OTHER and mb.can_handle_shared(user),
-            }
-            for name in mb.SHARED
-        ]
+    sendable = set(mb.sendable_shared(user))
+    data["shared"] = [
+        {
+            "mailbox": name,
+            "address": mailbox_address(name) if name != mb.OTHER else "Unmatched addresses",
+            "unread": unread.get(name, 0),
+            "can_send": name in sendable,
+        }
+        for name in mb.readable_shared(user)
+    ]
     if data["all_mail"]:
         data["people"] = [
             {"id": u.id, "mailbox": u.username, "name": u.get_full_name() or u.username}
@@ -144,9 +146,9 @@ def threads(request):
         qs = qs.filter(owner=user)
         if box == "sent":
             qs = qs.filter(messages__direction="out").distinct()
-    elif box in mb.SHARED:
-        if not mb.can_view_shared(user):
-            raise PermissionDenied("You need the view_inbox capability.")
+    elif box == mb.OTHER or mb.is_shared(box):
+        if not mb.can_read_shared(user, box):
+            raise PermissionDenied("You are not in a group that reads this mailbox.")
         qs = qs.filter(owner__isnull=True, mailbox=box)
     elif box == "all":
         if not mb.can_view_all(user):
@@ -324,9 +326,9 @@ def _sender(user, source):
         if mailbox is None:
             raise PermissionDenied("Choose your work address before sending mail.")
         return mailbox, user
-    if source in mb.SHARED_MAILBOXES:
-        if not mb.can_handle_shared(user):
-            raise PermissionDenied("You need handle_inquiries to send from a shared address.")
+    if source != mb.OTHER and mb.is_shared(source):
+        if not mb.can_send_shared(user, source):
+            raise PermissionDenied("You are not in a group that sends from this address.")
         return source, None
     raise ValidationError({"from": "Unknown mailbox."})
 
@@ -432,14 +434,79 @@ def attachment(request, pk):
     return response
 
 
+# --- shared mailboxes ------------------------------------------------------
+
+
+def _shared_mailbox_json(mailbox, counts):
+    return {
+        "name": mailbox.name,
+        "address": mailbox_address(mailbox.name),
+        "groups": sorted(g.name for g in mailbox.groups.all()),
+        "group_ids": sorted(g.id for g in mailbox.groups.all()),
+        "threads": counts.get(mailbox.name, 0),
+    }
+
+
+def _thread_counts():
+    return dict(
+        MailThread.objects.filter(owner__isnull=True)
+        .values_list("mailbox").annotate(n=Count("id")).values_list("mailbox", "n")
+    )
+
+
+@api_view(["GET", "POST"])
+@permission_classes([has_capability("manage_staff")])
+def shared_mailboxes(request):
+    """The shared mailboxes, for Staff & Groups. Creating one gives nobody
+    access: that comes from adding it to a group."""
+    if request.method == "POST":
+        try:
+            name = validate_mailbox_name(request.data.get("name"))
+        except DjangoValidationError as exc:
+            raise ValidationError({"name": exc.messages})
+        with transaction.atomic():
+            mailbox = SharedMailbox.objects.create(name=name, created_by=request.user)
+            record(
+                actor=request.user,
+                action="mailbox_created",
+                summary=f"{request.user} created the shared mailbox {mailbox_address(name)}",
+                detail={"mailbox": name},
+            )
+        return Response(_shared_mailbox_json(mailbox, {}), status=201)
+    counts = _thread_counts()
+    return Response([
+        _shared_mailbox_json(m, counts)
+        for m in SharedMailbox.objects.prefetch_related("groups")
+    ])
+
+
+@api_view(["DELETE"])
+@permission_classes([has_capability("manage_staff")])
+def shared_mailbox(request, name):
+    """Delete a shared mailbox. Its conversations move to Unmatched, where
+    view_inbox holders still find them, and so does new mail to it."""
+    mailbox = get_object_or_404(SharedMailbox.objects.prefetch_related("groups"), name=name)
+    groups = sorted(g.name for g in mailbox.groups.all())
+    with transaction.atomic():
+        moved = mb.delete_shared_mailbox(mailbox)
+        record(
+            actor=request.user,
+            action="mailbox_deleted",
+            summary=f"{request.user} deleted the shared mailbox {mailbox_address(name)}",
+            detail={"mailbox": name, "groups": groups, "threads_moved": moved},
+        )
+    return Response(status=204)
+
+
 # The sidebar's unread badge.
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def unread_count(request):
     user = request.user
     q = Q(owner=user)
-    if mb.can_view_shared(user):
-        q |= Q(owner__isnull=True)
+    shared = mb.readable_shared(user)
+    if shared:
+        q |= Q(owner__isnull=True, mailbox__in=shared)
     count = MailThread.objects.filter(
         q, unread=True, archived=False, spam=False, deleted_at__isnull=True
     ).count()

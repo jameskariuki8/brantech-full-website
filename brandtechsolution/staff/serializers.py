@@ -26,10 +26,40 @@ class RoleSerializer(serializers.ModelSerializer):
         child=serializers.CharField(), allow_empty=True, write_only=True
     )
     member_count = serializers.IntegerField(read_only=True)
+    # Shared mailbox names its members read and reply from. Optional on
+    # write, so a client that predates groups-with-mailboxes keeps working.
+    mailboxes = serializers.ListField(
+        child=serializers.CharField(), allow_empty=True, write_only=True, required=False
+    )
+    # The whole membership, replacing it. RoleViewSet applies it, since each
+    # added or removed person is a grant to check and audit on its own.
+    member_ids = serializers.ListField(
+        child=serializers.IntegerField(), allow_empty=True, write_only=True, required=False
+    )
 
     class Meta:
         model = Group
-        fields = ["id", "name", "capabilities", "member_count"]
+        fields = ["id", "name", "capabilities", "member_count", "mailboxes", "member_ids"]
+
+    def validate_mailboxes(self, value):
+        from messaging.models import SharedMailbox
+
+        names = sorted(set(value))
+        known = set(SharedMailbox.objects.filter(name__in=names).values_list("name", flat=True))
+        unknown = [n for n in names if n not in known]
+        if unknown:
+            raise serializers.ValidationError(f"Unknown mailboxes: {', '.join(unknown)}")
+        return names
+
+    def validate_member_ids(self, value):
+        ids = sorted(set(value))
+        found = set(User.objects.filter(pk__in=ids, is_staff=True).values_list("pk", flat=True))
+        missing = [str(i) for i in ids if i not in found]
+        if missing:
+            raise serializers.ValidationError(
+                f"Not staff accounts: {', '.join(missing)}. Invite them instead."
+            )
+        return ids
 
     def validate_capabilities(self, value):
         unknown = sorted(set(value) - set(CODENAMES))
@@ -55,10 +85,18 @@ class RoleSerializer(serializers.ModelSerializer):
             + keep
         )
 
+    def _apply_mailboxes(self, group, names):
+        from messaging.models import SharedMailbox
+
+        group.shared_mailboxes.set(SharedMailbox.objects.filter(name__in=names))
+
     def create(self, validated_data):
         codenames = validated_data.pop("capabilities")
+        mailboxes = validated_data.pop("mailboxes", [])
+        validated_data.pop("member_ids", None)
         group = Group.objects.create(**validated_data)
         self._apply(group, codenames)
+        self._apply_mailboxes(group, mailboxes)
         # Group.objects.create() bypasses the view's annotated queryset
         # (Count("user") -> member_count), so re-fetch through it to keep
         # the create response shape consistent with list/retrieve/update.
@@ -66,10 +104,14 @@ class RoleSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         codenames = validated_data.pop("capabilities", None)
+        mailboxes = validated_data.pop("mailboxes", None)
+        validated_data.pop("member_ids", None)
         instance.name = validated_data.get("name", instance.name)
         instance.save()
         if codenames is not None:
             self._apply(instance, codenames)
+        if mailboxes is not None:
+            self._apply_mailboxes(instance, mailboxes)
         return instance
 
     def to_representation(self, instance):
@@ -78,6 +120,21 @@ class RoleSerializer(serializers.ModelSerializer):
             instance.permissions.filter(
                 content_type__app_label="staff"
             ).values_list("codename", flat=True)
+        )
+        data["mailboxes"] = sorted(m.name for m in instance.shared_mailboxes.all())
+        members = sorted(instance.user_set.all(), key=lambda u: (u.get_full_name() or u.username).lower())
+        data["members"] = [
+            {
+                "id": u.id,
+                "name": u.get_full_name() or u.username,
+                "username": u.username,
+                "is_active": u.is_active,
+                "is_superuser": u.is_superuser,
+            }
+            for u in members
+        ]
+        data["invited"] = sorted(
+            i.email for i in instance.staffinvitation_set.all() if i.accepted_at is None
         )
         return data
 

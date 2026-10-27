@@ -1,4 +1,5 @@
-// Staff & Roles section.
+// Staff & Groups section. A group is an auth.Group, which the API still
+// calls a role, so identifiers below keep the word "role".
 //
 // Two rules hold everywhere in this file:
 //   1. Every value that comes back from the API goes through escapeHtml()
@@ -13,6 +14,9 @@
 const STAFF_API = '/api/staff';
 let CAPABILITY_GROUPS = [];
 let ROLES = [];
+// Shared mailboxes, for the group editor and the list under the groups.
+const MAIL_SHARED_API = '/api/messaging/mail/shared';
+let MAILBOXES = [];
 
 async function apiFetch(url, options = {}) {
     const response = await fetch(url, {
@@ -24,7 +28,10 @@ async function apiFetch(url, options = {}) {
         let detail = 'Request failed';
         try {
             const body = await response.json();
-            detail = typeof body === 'string' ? body : (body.detail || JSON.stringify(body));
+            // DRF field errors arrive as {"field": ["message", ...]}; show
+            // the messages rather than the JSON.
+            detail = typeof body === 'string' ? body
+                : (body.detail || Object.values(body).flat().join(' ') || 'Request failed');
         } catch (e) { /* response had no JSON body */ }
         throw new Error(detail);
     }
@@ -80,22 +87,22 @@ const TIERS = {
     owner: {
         label: 'Owner', icon: 'fa-crown',
         badge: 'bg-purple-500/10 text-purple-300 border-purple-500/20',
-        summary: 'Holds every capability. Roles do not limit an owner.',
+        summary: 'Holds every capability. Groups do not limit an owner.',
     },
     administrator: {
         label: 'Administrator', icon: 'fa-user-shield',
         badge: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
-        summary: 'Can invite people and change roles.',
+        summary: 'Can invite people and change groups.',
     },
     member: {
         label: 'Member', icon: 'fa-user',
         badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
-        summary: 'Can use the parts of the panel their roles open.',
+        summary: 'Can use the parts of the panel their groups open.',
     },
     none: {
         label: 'No access', icon: 'fa-user-slash',
         badge: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-        summary: 'Can sign in, but the panel is empty until they get a role.',
+        summary: 'Can sign in, but the panel is empty until they join a group.',
     },
 };
 
@@ -369,20 +376,28 @@ async function loadRoles() {
     const container = document.getElementById('staffRolesList');
     if (!container) return;
 
-    ROLES = await staffFetchAll('/roles/');
+    [ROLES, MAILBOXES] = await Promise.all([staffFetchAll('/roles/'), apiFetch(`${MAIL_SHARED_API}/`)]);
     const labels = capabilityLabels();
     container.innerHTML = ROLES.map(role => {
         const shown = role.capabilities.slice(0, 6);
         const extra = role.capabilities.length - shown.length;
+        const faces = role.members.slice(0, 5).map(m => `
+            <span class="w-7 h-7 -ml-1.5 first:ml-0 rounded-full bg-white/10 border-2 border-dark-card text-[10px] font-semibold text-gray-200 flex items-center justify-center" title="${escapeHtml(m.name)}">${escapeHtml(initialsOf({ username: m.name }))}</span>`).join('');
+        const memberLine = role.members.length
+            ? `<button type="button" data-action="show-role-members" data-role="${escapeHtml(role.name)}"
+                    class="text-xs text-brand-blue hover:text-blue-400">${role.members.length} member${role.members.length === 1 ? '' : 's'}</button>`
+            : '<span class="text-xs text-gray-500">No members yet</span>';
+        const invited = role.invited.length
+            ? `<span class="text-xs text-gray-500">, ${role.invited.length} invited</span>` : '';
         return `
         <div class="bg-dark-card border border-dark-border rounded-lg p-4 flex flex-col gap-3">
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                    <div class="text-white font-medium font-heading">${escapeHtml(role.name)}</div>
-                    ${role.member_count
-                        ? `<button type="button" data-action="show-role-members" data-role="${escapeHtml(role.name)}"
-                            class="text-xs text-brand-blue hover:text-blue-400">${role.member_count} member${role.member_count === 1 ? '' : 's'}, show who</button>`
-                        : '<span class="text-xs text-gray-500">Nobody has this role</span>'}
+                    <div class="text-white font-medium font-heading truncate">${escapeHtml(role.name)}</div>
+                    <div class="flex items-center gap-2 mt-1.5">
+                        ${faces ? `<span class="flex">${faces}</span>` : ''}
+                        <span>${memberLine}${invited}</span>
+                    </div>
                 </div>
                 <div class="flex items-center gap-4 shrink-0">
                     <button type="button" data-action="edit-role" data-id="${escapeHtml(role.id)}"
@@ -391,13 +406,50 @@ async function loadRoles() {
                         class="text-xs text-red-400 hover:text-red-300">Delete</button>
                 </div>
             </div>
+            ${role.mailboxes.length ? `<div class="flex flex-wrap gap-1.5">
+                ${role.mailboxes.map(name => `<span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20"><i class="fas fa-inbox mr-1"></i>${escapeHtml(name)}@</span>`).join('')}
+            </div>` : ''}
             <div class="flex flex-wrap gap-1.5">
                 ${shown.map(code => `<span class="text-[11px] px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10">${escapeHtml(labels[code] || code)}</span>`).join('')
-                    || '<span class="text-xs text-gray-500">No capabilities yet</span>'}
+                    || '<span class="text-xs text-gray-500">No capabilities</span>'}
                 ${extra > 0 ? `<span class="text-[11px] px-2 py-0.5 rounded text-gray-500">+${extra} more</span>` : ''}
             </div>
         </div>`;
-    }).join('') || '<p class="text-gray-500 text-sm">No roles yet.</p>';
+    }).join('') || '<p class="text-gray-500 text-sm">No groups yet. Create one to give people access together.</p>';
+    renderMailboxes();
+}
+
+function renderMailboxes() {
+    const list = document.getElementById('staffMailboxList');
+    if (!list) return;
+    list.innerHTML = MAILBOXES.map(box => `
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-1 px-4 py-3">
+            <i class="fas fa-inbox text-gray-500 shrink-0"></i>
+            <div class="min-w-0 flex-1">
+                <div class="text-sm text-white truncate">${escapeHtml(box.address)}</div>
+                <div class="text-xs text-gray-500 truncate">${box.groups.length
+                    ? escapeHtml(box.groups.join(', '))
+                    : 'In no group. Only people who read every shared mailbox see it.'}</div>
+            </div>
+            <span class="text-xs text-gray-500 shrink-0">${box.threads} conversation${box.threads === 1 ? '' : 's'}</span>
+            <button type="button" data-action="delete-mailbox" data-name="${escapeHtml(box.name)}"
+                class="text-xs text-red-400 hover:text-red-300 shrink-0">Delete</button>
+        </div>`).join('') || '<p class="px-4 py-3 text-sm text-gray-500">No shared mailboxes. Mail to any unknown address lands in Unmatched.</p>';
+}
+
+function mailboxDomain() {
+    const any = MAILBOXES[0];
+    return any ? any.address.split('@')[1] : 'teklora.co.ke';
+}
+
+async function createMailbox(name) {
+    const box = await apiFetch(`${MAIL_SHARED_API}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ name }),
+    });
+    MAILBOXES = [...MAILBOXES, box].sort((a, b) => a.name.localeCompare(b.name));
+    return box;
 }
 
 function capabilityCheckboxes(selected) {
@@ -421,10 +473,13 @@ function capabilityCheckboxes(selected) {
 function roleCards(selectedNames, disabled = false) {
     const labels = capabilityLabels();
     return ROLES.map(role => {
-        const names = role.capabilities.map(code => labels[code] || code);
+        const names = [
+            ...role.mailboxes.map(name => `${name}@ mail`),
+            ...role.capabilities.map(code => labels[code] || code),
+        ];
         const summary = names.length
             ? names.slice(0, 3).join(', ') + (names.length > 3 ? `, and ${names.length - 3} more` : '')
-            : 'No capabilities yet';
+            : 'Grants nothing yet';
         return `
         <label class="flex items-start gap-3 p-3 rounded-lg border border-dark-border ${disabled ? 'opacity-60' : 'cursor-pointer hover:bg-white/[0.03] has-[:checked]:border-brand-blue has-[:checked]:bg-white/[0.03]'}">
             <input type="checkbox" value="${escapeHtml(role.id)}"
@@ -435,7 +490,7 @@ function roleCards(selectedNames, disabled = false) {
                 <span class="block text-xs text-gray-400">${escapeHtml(summary)}</span>
             </span>
         </label>`;
-    }).join('') || '<p class="text-xs text-gray-500">No roles exist yet. Create one in the Roles tab first.</p>';
+    }).join('') || '<p class="text-xs text-gray-500">No groups exist yet. Create one in the Groups tab first.</p>';
 }
 
 // What a set of roles adds up to: the resulting level and the capabilities
@@ -494,23 +549,171 @@ function selectedRoleNames() {
     return ROLES.filter(r => ids.has(r.id)).map(r => r.name);
 }
 
-function wireRoleSave() {
+// Why the viewer cannot add or remove this person from a group, or ''.
+function membershipLock(person, viewer) {
+    if (viewer.isSuperuser) return '';
+    if (person.id === viewer.id) return 'You';
+    if (person.is_superuser) return 'Owner';
+    return '';
+}
+
+function memberRows(role, viewer) {
+    const memberIds = new Set((role ? role.members : []).map(m => m.id));
+    const staff = PEOPLE.filter(p => p.is_staff && (p.is_active || memberIds.has(p.id)))
+        .sort((a, b) => personName(a).localeCompare(personName(b)));
+    if (!staff.length) return '<p class="text-xs text-gray-500">No staff accounts yet. Invite people below.</p>';
+    return staff.map(person => {
+        const lock = membershipLock(person, viewer);
+        return `
+        <label data-member-row data-search="${escapeHtml(`${personName(person)} ${person.username} ${person.email || ''}`.toLowerCase())}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg ${lock ? 'opacity-60' : 'cursor-pointer hover:bg-white/[0.03]'}">
+            <input type="checkbox" value="${escapeHtml(person.id)}" ${memberIds.has(person.id) ? 'checked' : ''} ${lock ? 'disabled' : ''}
+                class="member-box rounded bg-[#06090F] border-dark-border">
+            <span class="w-7 h-7 shrink-0 rounded-full bg-white/10 text-[10px] font-semibold text-gray-200 flex items-center justify-center">${escapeHtml(initialsOf(person))}</span>
+            <span class="min-w-0 flex-1">
+                <span class="block text-sm text-white truncate">${escapeHtml(personName(person))}</span>
+                <span class="block text-xs text-gray-500 truncate">${escapeHtml(person.email || person.username)}${person.is_active ? '' : ', deactivated'}</span>
+            </span>
+            ${lock ? `<span class="text-[11px] text-gray-500 shrink-0" title="${lock === 'You' ? 'You cannot change your own groups' : 'Only an owner can change an owner'}">${lock}</span>` : ''}
+        </label>`;
+    }).join('');
+}
+
+function mailboxChips(selected) {
+    return MAILBOXES.map(box => `
+        <label class="inline-flex items-center gap-2 text-sm pl-2.5 pr-3 py-1.5 rounded-lg border border-dark-border text-gray-300 cursor-pointer hover:bg-white/[0.03] has-[:checked]:border-brand-blue has-[:checked]:text-white">
+            <input type="checkbox" value="${escapeHtml(box.name)}" ${selected.includes(box.name) ? 'checked' : ''}
+                class="mailbox-box rounded bg-[#06090F] border-dark-border">
+            ${escapeHtml(box.address)}
+        </label>`).join('') || '<span class="text-xs text-gray-500">No shared mailboxes yet. Create one here.</span>';
+}
+
+const FIELD = 'w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue';
+
+function groupEditorHtml(role) {
+    const viewer = staffViewer();
+    const invited = role && role.invited.length
+        ? `<span class="block text-xs text-gray-500 mt-2">Already invited: ${escapeHtml(role.invited.join(', '))}</span>` : '';
+    return `
+        <div class="space-y-6">
+            <div>
+                <label for="roleName" class="block text-sm font-medium text-white mb-2">Group name</label>
+                <input type="text" id="roleName" value="${escapeHtml(role ? role.name : '')}" placeholder="e.g. HR, Sales, Writers" class="${FIELD}">
+            </div>
+
+            <fieldset class="min-w-0">
+                <legend class="text-sm font-medium text-white mb-1">Members</legend>
+                <span class="block text-xs text-gray-400 mb-2">Ticked people get everything this group grants.</span>
+                <input type="search" id="memberSearch" placeholder="Search staff" autocomplete="off"
+                    class="w-full mb-2 bg-[#06090F] border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue">
+                <div id="memberRows" class="max-h-60 overflow-y-auto rounded-lg border border-dark-border p-1">${memberRows(role, viewer)}</div>
+            </fieldset>
+
+            <div>
+                <label for="groupInvites" class="block text-sm font-medium text-white mb-1">Invite by email</label>
+                <span class="block text-xs text-gray-400 mb-2">For people without an account yet. One address per line; each gets an invitation into this group when you save.</span>
+                <textarea id="groupInvites" rows="2" placeholder="new.person@example.com" class="${FIELD} text-sm"></textarea>
+                ${invited}
+            </div>
+
+            <fieldset class="min-w-0">
+                <legend class="text-sm font-medium text-white mb-1">Shared mailboxes</legend>
+                <span class="block text-xs text-gray-400 mb-2">Members read this mail and reply from these addresses.</span>
+                <div id="mailboxChips" class="flex flex-wrap gap-2">${mailboxChips(role ? role.mailboxes : [])}</div>
+                <div class="flex items-stretch gap-2 mt-3">
+                    <div class="flex-1 min-w-0 flex items-center bg-[#06090F] border border-dark-border rounded-lg focus-within:border-brand-blue">
+                        <input type="text" id="newMailboxName" placeholder="new mailbox" autocomplete="off" aria-label="New mailbox name"
+                            class="flex-1 min-w-0 bg-transparent px-3 py-2 text-sm text-white focus:outline-none">
+                        <span class="pr-3 text-sm text-gray-500 shrink-0">@${escapeHtml(mailboxDomain())}</span>
+                    </div>
+                    <button type="button" id="addMailboxBtn" class="px-3 py-2 text-sm rounded-lg border border-dark-border text-gray-300 hover:text-white hover:bg-white/5 shrink-0">Create</button>
+                </div>
+            </fieldset>
+
+            <fieldset class="min-w-0">
+                <legend class="text-sm font-medium text-white mb-2">Capabilities</legend>
+                ${capabilityCheckboxes(role ? role.capabilities : [])}
+            </fieldset>
+
+            <button type="button" id="saveRoleBtn" data-role-id="${role ? escapeHtml(role.id) : ''}" class="${PRIMARY_BUTTON}">
+                ${role ? 'Save group' : 'Create group'}
+            </button>
+        </div>`;
+}
+
+function openGroupEditor(role) {
+    openStaffModal(role ? `Edit ${role.name}` : 'New group', groupEditorHtml(role));
+
+    document.getElementById('memberSearch').addEventListener('input', (event) => {
+        const q = event.target.value.trim().toLowerCase();
+        document.querySelectorAll('[data-member-row]').forEach(row => {
+            row.classList.toggle('hidden', !!q && !row.dataset.search.includes(q));
+        });
+    });
+
+    const addMailbox = async () => {
+        const input = document.getElementById('newMailboxName');
+        const name = input.value.trim();
+        if (!name) { input.focus(); return; }
+        const kept = Array.from(document.querySelectorAll('.mailbox-box:checked')).map(b => b.value);
+        try {
+            const box = await createMailbox(name);
+            document.getElementById('mailboxChips').innerHTML = mailboxChips([...kept, box.name]);
+            input.value = '';
+            renderMailboxes();
+            toast.success(`${box.address} created.`);
+        } catch (e) { toastApiError(e, 'The mailbox could not be created.'); }
+    };
+    document.getElementById('addMailboxBtn').addEventListener('click', addMailbox);
+    document.getElementById('newMailboxName').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') { event.preventDefault(); addMailbox(); }
+    });
+
     // The button is re-created by every openStaffModal() call (innerHTML is
     // replaced), so this listener cannot stack on a stale element.
     document.getElementById('saveRoleBtn').addEventListener('click', async (event) => {
-        const roleId = event.currentTarget.dataset.roleId;
+        const button = event.currentTarget;
+        const roleId = button.dataset.roleId;
         const name = document.getElementById('roleName').value.trim();
-        if (!name) { toast.warning('Give the role a name.'); return; }
-        const payload = JSON.stringify({ name, capabilities: selectedCapabilities() });
+        if (!name) { toast.warning('Give the group a name.'); return; }
+        const emails = document.getElementById('groupInvites').value
+            .split(/[\s,;]+/).map(e => e.trim()).filter(Boolean);
+        const payload = JSON.stringify({
+            name,
+            capabilities: selectedCapabilities(),
+            mailboxes: Array.from(document.querySelectorAll('.mailbox-box:checked')).map(b => b.value),
+            // Disabled rows are locked, not removed: keep them as they were.
+            member_ids: Array.from(document.querySelectorAll('.member-box:checked')).map(b => Number(b.value)),
+        });
+        button.disabled = true;
+        let group;
         try {
-            if (roleId) {
-                await staffFetch(`/roles/${roleId}/`, { method: 'PUT', body: payload });
-            } else {
-                await staffFetch('/roles/', { method: 'POST', body: payload });
-            }
-            closeStaffModal();
-            await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
-        } catch (e) { toastApiError(e, 'The role could not be saved.'); }
+            group = roleId
+                ? await staffFetch(`/roles/${roleId}/`, { method: 'PUT', body: payload })
+                : await staffFetch('/roles/', { method: 'POST', body: payload });
+        } catch (e) {
+            button.disabled = false;
+            toastApiError(e, 'The group could not be saved.');
+            return;
+        }
+        // Each invitation stands alone: one bad address does not undo the
+        // group or the other invitations.
+        const failed = [];
+        for (const email of emails) {
+            try {
+                await staffFetch('/invitations/', {
+                    method: 'POST', body: JSON.stringify({ email, role_ids: [group.id] }),
+                });
+            } catch (e) { failed.push(`${email}: ${e.message}`); }
+        }
+        closeStaffModal();
+        await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
+        if (failed.length) {
+            toast.error(`Group saved, but ${failed.length === 1 ? 'one invitation' : 'some invitations'} failed. ${failed.join(' ')}`);
+        } else {
+            const sent = emails.length ? ` ${emails.length} invitation${emails.length === 1 ? '' : 's'} sent.` : '';
+            toast.success(`Group ${roleId ? 'saved' : 'created'}.${sent}`);
+        }
     });
 }
 
@@ -520,10 +723,10 @@ const PRIMARY_BUTTON = 'w-full bg-brand-green hover:bg-green-500 text-black font
 function lockReason(person, viewer) {
     if (viewer.isSuperuser) return '';
     if (person.id === viewer.id) {
-        return 'You cannot change your own roles or deactivate your own account. Ask another administrator.';
+        return 'You cannot change your own groups or deactivate your own account. Ask another administrator.';
     }
     if (person.is_superuser) {
-        return 'This person is an owner. Only another owner can change their roles or deactivate them.';
+        return 'This person is an owner. Only another owner can change their groups or deactivate them.';
     }
     return '';
 }
@@ -556,10 +759,10 @@ function personEditorHtml(person, viewer) {
     ${locked ? `<div class="mb-5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-amber-200">
         <i class="fas fa-lock mr-1.5"></i>${escapeHtml(locked)}</div>` : ''}
     ${person.is_superuser && viewer.isSuperuser ? `<div class="mb-5 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2.5 text-xs text-purple-200">
-        <i class="fas fa-crown mr-1.5"></i>This person is an owner. They hold every capability whatever roles are ticked below.</div>` : ''}
+        <i class="fas fa-crown mr-1.5"></i>This person is an owner. They hold every capability whatever groups are ticked below.</div>` : ''}
 
     <fieldset class="mb-5">
-        <legend class="text-sm font-medium text-white mb-2">Roles</legend>
+        <legend class="text-sm font-medium text-white mb-2">Groups</legend>
         <div class="space-y-2">${roleCards(person.roles, !!locked)}</div>
     </fieldset>
 
@@ -574,7 +777,7 @@ function personEditorHtml(person, viewer) {
                 class="mt-1 rounded bg-[#06090F] border-dark-border">
             <span>
                 <span class="block text-sm text-white font-medium">Account active</span>
-                <span class="block text-xs text-gray-400">Turn this off to stop them signing in. Their roles are kept, so turning it back on restores their access.</span>
+                <span class="block text-xs text-gray-400">Turn this off to stop them signing in. Their groups are kept, so turning it back on restores their access.</span>
             </span>
         </label>
     </div>
@@ -721,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
                 </div>
                 <fieldset>
-                    <legend class="text-sm font-medium text-white mb-1">Roles</legend>
+                    <legend class="text-sm font-medium text-white mb-1">Groups</legend>
                     <p class="text-xs text-gray-400 mb-2">They get these the moment they accept. You can change them later.</p>
                     <div class="space-y-2">${roleCards([])}</div>
                 </fieldset>
@@ -745,20 +948,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.getElementById('newRoleBtn').addEventListener('click', () => {
-        openStaffModal('New role', `
+    document.getElementById('newRoleBtn').addEventListener('click', () => openGroupEditor(null));
+
+    document.getElementById('newMailboxBtn').addEventListener('click', () => {
+        openStaffModal('New shared mailbox', `
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Role name</label>
-                    <input type="text" id="roleName"
-                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
+                    <label for="mailboxName" class="block text-sm font-medium text-white mb-2">Address</label>
+                    <div class="flex items-center bg-[#06090F] border border-dark-border rounded-lg focus-within:border-brand-blue">
+                        <input type="text" id="mailboxName" placeholder="events" autocomplete="off"
+                            class="flex-1 min-w-0 bg-transparent px-4 py-3 text-white focus:outline-none">
+                        <span class="pr-4 text-gray-500 shrink-0">@${escapeHtml(mailboxDomain())}</span>
+                    </div>
+                    <span class="block text-xs text-gray-400 mt-2">Nobody reads it until you add it to a group, apart from people who read every shared mailbox.</span>
                 </div>
-                <div>${capabilityCheckboxes([])}</div>
-                <button type="button" id="saveRoleBtn" data-role-id="" class="${PRIMARY_BUTTON}">
-                    Create role
-                </button>
+                <button type="button" id="saveMailboxBtn" class="${PRIMARY_BUTTON}">Create mailbox</button>
             </div>`);
-        wireRoleSave();
+        const input = document.getElementById('mailboxName');
+        input.focus();
+        const save = async () => {
+            try {
+                const box = await createMailbox(input.value.trim());
+                closeStaffModal();
+                renderMailboxes();
+                await loadActivity();
+                toast.success(`${box.address} created.`);
+            } catch (e) { toastApiError(e, 'The mailbox could not be created.'); }
+        };
+        document.getElementById('saveMailboxBtn').addEventListener('click', save);
+        input.addEventListener('keydown', (event) => { if (event.key === 'Enter') save(); });
     });
 
     // One delegated listener for every row action. #staff is a stable
@@ -823,30 +1041,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (button.dataset.action === 'delete-role') {
             const role = ROLES.find(r => r.id === id);
-            if (!await tkConfirm(`Members keep their accounts but lose the capabilities granted by "${role ? role.name : ''}".`, { title: 'Delete this role?', confirmText: 'Delete role', danger: true })) return;
+            if (!await tkConfirm(`Members keep their accounts but lose what "${role ? role.name : ''}" granted, including its shared mailboxes.`, { title: 'Delete this group?', confirmText: 'Delete group', danger: true })) return;
             try {
                 await staffFetch(`/roles/${id}/`, { method: 'DELETE' });
-                toast.success('Role deleted.');
+                toast.success('Group deleted.');
                 await Promise.all([loadRoles(), loadPeople(), loadActivity()]);
-            } catch (e) { toastApiError(e, 'The role could not be deleted.'); }
+            } catch (e) { toastApiError(e, 'The group could not be deleted.'); }
+        }
+
+        if (button.dataset.action === 'delete-mailbox') {
+            const box = MAILBOXES.find(b => b.name === button.dataset.name);
+            if (!box) return;
+            const moved = box.threads ? ` Its ${box.threads} conversation${box.threads === 1 ? '' : 's'} move to Unmatched, and so does new mail to it.` : ' New mail to it will land in Unmatched.';
+            if (!await tkConfirm(`${box.address} is removed from every group.${moved}`, { title: 'Delete this mailbox?', confirmText: 'Delete mailbox', danger: true })) return;
+            try {
+                await apiFetch(`${MAIL_SHARED_API}/${encodeURIComponent(box.name)}/`, {
+                    method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN },
+                });
+                toast.success('Mailbox deleted.');
+                await Promise.all([loadRoles(), loadActivity()]);
+            } catch (e) { toastApiError(e, 'The mailbox could not be deleted.'); }
         }
 
         if (button.dataset.action === 'edit-role') {
             const role = ROLES.find(r => r.id === id);
-            if (!role) return;
-            openStaffModal(`Edit ${role.name}`, `
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-400 mb-2">Role name</label>
-                        <input type="text" id="roleName" value="${escapeHtml(role.name)}"
-                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue">
-                    </div>
-                    <div>${capabilityCheckboxes(role.capabilities)}</div>
-                    <button type="button" id="saveRoleBtn" data-role-id="${escapeHtml(role.id)}" class="${PRIMARY_BUTTON}">
-                        Save changes
-                    </button>
-                </div>`);
-            wireRoleSave();
+            if (role) openGroupEditor(role);
         }
 
         if (button.dataset.action === 'edit-person') {
