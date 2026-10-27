@@ -16,21 +16,25 @@ HANDLE_RE = re.compile(r"^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 MIN_LENGTH = 3
 MAX_LENGTH = 30
 
-# Team addresses read by holders of view_inbox rather than one person.
-# Reserved so nobody can claim one as a personal handle. Mail to any other
-# name nobody owns lands in "Unmatched"; add the name here to give it a
-# shared mailbox of its own.
-SHARED_MAILBOXES = (
-    "info", "hello", "support",
-    "careers", "jobs", "hr", "sales", "billing", "contact",
-)
+# Shared mailboxes are rows of messaging.SharedMailbox, created in the panel.
+# A personal handle may not take the name of one (see validate_handle).
 
-# Names a mail provider, a client or a phishing email could lean on.
-RESERVED = frozenset(SHARED_MAILBOXES) | {
-    "abuse", "admin", "administrator", "billing", "careers", "contact",
-    "hostmaster", "hr", "jobs", "legal", "mail", "mailer-daemon", "marketing",
-    "no-reply", "noreply", "office", "postmaster", "press", "privacy",
-    "root", "sales", "security", "staff", "system", "team", "teklora",
+# Addresses mail infrastructure relies on. Nobody, and no shared mailbox, may
+# have one: mail to them must keep reaching whoever runs the domain. "other"
+# is the internal name of the Unmatched mailbox.
+SYSTEM_ADDRESSES = frozenset({
+    "abuse", "hostmaster", "mailer-daemon", "no-reply", "noreply", "other",
+    "postmaster",
+})
+
+# Names a mail provider, a client or a phishing email could lean on, and the
+# shared mailboxes the site started with. Kept from personal handles even if
+# that mailbox is later deleted. A shared mailbox may use any of these except
+# SYSTEM_ADDRESSES.
+RESERVED = SYSTEM_ADDRESSES | {
+    "admin", "administrator", "billing", "careers", "contact", "hello", "hr",
+    "info", "jobs", "legal", "mail", "marketing", "office", "press", "privacy",
+    "root", "sales", "security", "staff", "support", "system", "team", "teklora",
     "webmaster", "www",
 }
 
@@ -60,12 +64,44 @@ def validate_handle(raw, user=None):
         raise ValidationError("Dots and hyphens cannot sit next to each other.")
     if handle in RESERVED:
         raise ValidationError("That address is reserved. Pick another.")
+    from messaging.models import SharedMailbox
+
+    if SharedMailbox.objects.filter(name__iexact=handle).exists():
+        raise ValidationError("That is a shared mailbox. Pick another.")
     taken = User.objects.filter(username__iexact=handle)
     if user is not None:
         taken = taken.exclude(pk=user.pk)
     if taken.exists():
         raise ValidationError("Someone already has that address.")
     return handle
+
+
+MAILBOX_MIN_LENGTH = 2
+
+
+def validate_mailbox_name(raw):
+    """Return a new shared mailbox's name normalised, or raise ValidationError."""
+    name = (raw or "").strip().lower()
+    if name.endswith("@" + settings.MAILBOX_DOMAIN.lower()):
+        name = name.rsplit("@", 1)[0]
+    if not MAILBOX_MIN_LENGTH <= len(name) <= MAX_LENGTH:
+        raise ValidationError(
+            f"Use between {MAILBOX_MIN_LENGTH} and {MAX_LENGTH} characters."
+        )
+    if not HANDLE_RE.match(name) or re.search(r"[.-]{2}", name):
+        raise ValidationError(
+            "Use lowercase letters, digits, single dots and hyphens, "
+            "starting and ending with a letter or digit."
+        )
+    if name in SYSTEM_ADDRESSES:
+        raise ValidationError("That address is kept for the mail system.")
+    if User.objects.filter(username__iexact=name).exists():
+        raise ValidationError("A staff member already has that address.")
+    from messaging.models import SharedMailbox
+
+    if SharedMailbox.objects.filter(name__iexact=name).exists():
+        raise ValidationError("That shared mailbox already exists.")
+    return name
 
 
 def _slug(text):

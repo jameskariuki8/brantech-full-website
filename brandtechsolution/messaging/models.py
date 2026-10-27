@@ -356,6 +356,33 @@ class MailAttachment(models.Model):
         return self.name
 
 
+class SharedMailbox(models.Model):
+    """A team address such as info@ or careers@, read by people rather than
+    one person. Created and deleted in the panel (Staff & Groups).
+
+    Members of any of its groups read it and reply from it. view_inbox and
+    handle_inquiries still reach every shared mailbox, for whoever oversees
+    them all. Threads refer to a mailbox by name, so deleting one refiles its
+    conversations to Unmatched rather than orphaning them.
+    """
+
+    name = models.CharField(max_length=64, unique=True)
+    groups = models.ManyToManyField(
+        "auth.Group", blank=True, related_name="shared_mailboxes"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class BlockedSender(models.Model):
     """An address marked as spam. Its mail is filed straight into Spam with
     nobody notified, and its contact-form submissions are dropped."""

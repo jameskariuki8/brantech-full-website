@@ -52,7 +52,15 @@ class RoleViewSet(viewsets.ModelViewSet):
     pagination_class = StaffPagination
 
     def get_queryset(self):
-        return Group.objects.annotate(member_count=Count("user")).order_by("name")
+        return Group.objects.annotate(member_count=Count("user")).prefetch_related(
+            "user_set", "shared_mailboxes", "staffinvitation_set"
+        ).order_by("name")
+
+    def _mailboxes(self, group):
+        return sorted(group.shared_mailboxes.values_list("name", flat=True))
+
+    def _snapshot(self, group):
+        return {"capabilities": self._codenames(group), "mailboxes": self._mailboxes(group)}
 
     def _codenames(self, group):
         return sorted(
@@ -78,44 +86,106 @@ class RoleViewSet(viewsets.ModelViewSet):
         for codename in sorted(after - before):
             if not actor.has_perm(f"staff.{codename}"):
                 raise PermissionDenied(
-                    f"You cannot add the '{codename}' capability to a role: "
+                    f"You cannot add the '{codename}' capability to a group: "
                     "you do not hold it yourself."
                 )
 
+        # The same rule for mailboxes: adding one hands its mail to every
+        # member, so the actor must be able to send from it themselves.
+        if "mailboxes" not in serializer.validated_data:
+            return
+        from messaging.mailbox import can_send_shared
+
+        before = set(self._mailboxes(serializer.instance)) if serializer.instance else set()
+        for name in sorted(set(serializer.validated_data["mailboxes"]) - before):
+            if not can_send_shared(actor, name):
+                raise PermissionDenied(
+                    f"You cannot add the shared mailbox '{name}' to a group: "
+                    "you cannot send from it yourself."
+                )
+
+    def _apply_members(self, group, member_ids):
+        """Replace the group's membership, one checked and audited change per
+        person. Runs inside the caller's transaction, after the group itself
+        is saved, so additions are checked against what it now grants."""
+        if member_ids is None:
+            return
+        actor = self.request.user
+        current = {u.pk: u for u in group.user_set.all()}
+        wanted = set(member_ids)
+        added = User.objects.filter(pk__in=wanted - set(current)).prefetch_related("groups")
+        removed = [u for pk, u in current.items() if pk not in wanted]
+        changed = list(added) + removed
+
+        # The person editor's rules, so the group editor is not a way round them.
+        for person in changed:
+            if person.pk == actor.pk and not actor.is_superuser:
+                raise PermissionDenied("You cannot change your own groups.")
+            if person.is_superuser and not actor.is_superuser:
+                raise PermissionDenied("You cannot change a superuser's groups.")
+        if added:
+            enforce_grantable_roles(actor, [group])
+
+        for person in changed:
+            before = sorted(g.name for g in person.groups.all())
+            if person.pk in current:
+                person.groups.remove(group)
+            else:
+                person.groups.add(group)
+            after = sorted(g.name for g in person.groups.all())
+            record(
+                actor=actor,
+                action="roles_changed",
+                summary=f"{actor} changed {person}'s groups to {', '.join(after) or 'none'}",
+                target_user=person,
+                target_group=group,
+                detail={"before": before, "after": after},
+            )
+
+    def _fresh(self, group):
+        return self.get_queryset().get(pk=group.pk)
+
     def perform_create(self, serializer):
+        member_ids = serializer.validated_data.get("member_ids")
         with transaction.atomic():
             self._enforce_grantable_capabilities(serializer)
             group = serializer.save()
             record(
                 actor=self.request.user,
                 action="group_created",
-                summary=f"{self.request.user} created the role {group.name}",
+                summary=f"{self.request.user} created the group {group.name}",
                 target_group=group,
-                detail={"after": self._codenames(group)},
+                detail={"after": self._snapshot(group)},
             )
+            self._apply_members(group, member_ids)
+        serializer.instance = self._fresh(group)
 
     def perform_update(self, serializer):
+        member_ids = serializer.validated_data.get("member_ids")
         with transaction.atomic():
             self._enforce_grantable_capabilities(serializer)
-            before = self._codenames(serializer.instance)
+            before = self._snapshot(serializer.instance)
             group = serializer.save()
-            record(
-                actor=self.request.user,
-                action="group_updated",
-                summary=f"{self.request.user} changed the role {group.name}",
-                target_group=group,
-                detail={"before": before, "after": self._codenames(group)},
-            )
+            after = self._snapshot(group)
+            if after != before or group.name != serializer.instance.name:
+                record(
+                    actor=self.request.user,
+                    action="group_updated",
+                    summary=f"{self.request.user} changed the group {group.name}",
+                    target_group=group,
+                    detail={"before": before, "after": after},
+                )
+            self._apply_members(group, member_ids)
+        serializer.instance = self._fresh(group)
 
     def perform_destroy(self, instance):
         with transaction.atomic():
             name = instance.name
-            codenames = self._codenames(instance)
             record(
                 actor=self.request.user,
                 action="group_deleted",
-                summary=f"{self.request.user} deleted the role {name}",
-                detail={"before": codenames, "name": name},
+                summary=f"{self.request.user} deleted the group {name}",
+                detail={"before": self._snapshot(instance), "name": name},
             )
             instance.delete()
 

@@ -707,7 +707,8 @@
         $('mailForwardBlock').classList.toggle('hidden', !m);
         if (!m) return;
 
-        const sender = m.from_name ? `${m.from_name} <${m.from_email}>` : m.from_email;
+        // Plain text, escaped where it is rendered below.
+        const sender = m.from_name ? m.from_name + ' <' + m.from_email + '>' : m.from_email;
         const meta = [
             ['From', sender],
             ['Date', new Date(m.created_at).toLocaleString()],

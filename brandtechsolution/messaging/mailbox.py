@@ -2,11 +2,13 @@
 
 A mailbox is the local part of <mailbox>@MAILBOX_DOMAIN. Staff handles are
 personal mailboxes, and each person sees only their own unless granted more.
-SHARED_MAILBOXES, and OTHER (anything addressed to a name nobody owns, so mail
-to a typo or a departed colleague is never silently dropped), are read by
-holders of view_inbox and answered by holders of handle_inquiries. view_all_mail
-adds read-only oversight of every personal mailbox. The superuser holds all
-three implicitly.
+
+Shared mailboxes (SharedMailbox rows, made in the panel) are read and answered
+by the members of their groups. view_inbox reads every one of them, and OTHER
+(anything addressed to a name nobody owns, so mail to a typo or a departed
+colleague is never silently dropped); handle_inquiries replies from all of
+them. view_all_mail adds read-only oversight of every personal mailbox. The
+superuser holds all three implicitly.
 """
 
 import email.utils
@@ -23,13 +25,23 @@ from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.utils import timezone
 
-from staff.handles import SHARED_MAILBOXES, mailbox_address
+from staff.handles import mailbox_address
 
-from .models import BlockedSender, MailAttachment, MailMessage, MailThread, attachment_path
+from .models import (
+    BlockedSender, MailAttachment, MailMessage, MailThread, SharedMailbox, attachment_path,
+)
 
 OTHER = "other"
-SHARED = (*SHARED_MAILBOXES, OTHER)
 ORG_NAME = "Teklora"
+
+
+def shared_names():
+    """Every shared mailbox's name, without OTHER."""
+    return list(SharedMailbox.objects.values_list("name", flat=True))
+
+
+def is_shared(name):
+    return bool(name) and SharedMailbox.objects.filter(name=name).exists()
 
 
 # Mailgun takes up to 25 MB a message; this leaves room for the encoding.
@@ -120,7 +132,7 @@ def resolve_mailbox(local):
     ).first()
     if owner is not None:
         return owner.username, owner
-    if local in SHARED_MAILBOXES:
+    if is_shared(local):
         return local, None
     return OTHER, None
 
@@ -238,12 +250,12 @@ def _holds(user, codename):
 
 
 def can_view_shared(user):
-    """Shared mailboxes and unmatched addresses."""
+    """Every shared mailbox and unmatched addresses."""
     return _holds(user, "view_inbox")
 
 
 def can_handle_shared(user):
-    """Reply, file and send from shared mailboxes."""
+    """Reply, file and send from every shared mailbox."""
     return _holds(user, "handle_inquiries")
 
 
@@ -252,10 +264,49 @@ def can_view_all(user):
     return _holds(user, "view_all_mail")
 
 
+def _group_mailboxes(user):
+    if not (user and user.is_active and user.is_staff):
+        return []
+    return list(
+        SharedMailbox.objects.filter(groups__user=user).values_list("name", flat=True).distinct()
+    )
+
+
+def readable_shared(user):
+    """Names of the shared mailboxes this person may read, OTHER included
+    when they may read unmatched mail. Sorted, OTHER last."""
+    if can_view_shared(user):
+        return [*sorted(shared_names()), OTHER]
+    return sorted(_group_mailboxes(user))
+
+
+def sendable_shared(user):
+    """Names of the shared mailboxes this person may reply and send from."""
+    if can_handle_shared(user):
+        return sorted(shared_names())
+    return sorted(_group_mailboxes(user))
+
+
+def can_read_shared(user, name):
+    if name == OTHER:
+        return can_view_shared(user)
+    return can_view_shared(user) or name in _group_mailboxes(user)
+
+
+def can_send_shared(user, name):
+    """Reply, file and send from one shared mailbox. Unmatched mail has no
+    address of its own to send from, but handle_inquiries may still file it."""
+    if name == OTHER:
+        return can_handle_shared(user)
+    if can_handle_shared(user):
+        return is_shared(name)
+    return name in _group_mailboxes(user)
+
+
 def can_read(user, thread):
     if thread.owner_id is not None and thread.owner_id == user.pk:
         return True
-    if thread.owner_id is None and can_view_shared(user):
+    if thread.owner_id is None and can_read_shared(user, thread.mailbox):
         return True
     return can_view_all(user)
 
@@ -267,7 +318,7 @@ def can_act(user, thread):
         return False
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
-    return can_handle_shared(user)
+    return can_send_shared(user, thread.mailbox)
 
 
 def set_spam(user, thread, spam):
@@ -289,7 +340,25 @@ def set_spam(user, thread, spam):
 def marks_read_on_open(user, thread):
     if thread.owner_id is not None:
         return thread.owner_id == user.pk
-    return can_view_shared(user)
+    return can_read_shared(user, thread.mailbox)
+
+
+def mailbox_member_emails(names):
+    """Addresses to tell about new mail in these shared mailboxes: the
+    members of their groups, active staff only."""
+    return list(
+        User.objects.filter(
+            groups__shared_mailboxes__name__in=list(names), is_staff=True, is_active=True,
+        ).exclude(email="").values_list("email", flat=True).distinct()
+    )
+
+
+def delete_shared_mailbox(mailbox):
+    """Delete a shared mailbox, moving its conversations to Unmatched."""
+    with transaction.atomic():
+        moved = MailThread.objects.filter(owner__isnull=True, mailbox=mailbox.name).update(mailbox=OTHER)
+        mailbox.delete()
+    return moved
 
 
 # --- sending ---------------------------------------------------------------

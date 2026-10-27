@@ -29,7 +29,7 @@ it stands alone: no panel shell, which a signed-out visitor could not use anyway
             {% if user.is_authenticated %}
             <p class="text-sm text-gray-400 mb-6">
                 You are signed in as <span class="text-gray-200 break-all">{{ user.email|default:user.username }}</span>,
-                but your role doesn't include this area. If you need it, ask an administrator to update your role in Staff &amp; Roles.
+                but your groups don't include this area. If you need it, ask an administrator to add you to a group in Staff &amp; Groups.
             </p>
             {% else %}
             <p class="text-sm text-gray-400 mb-6">Sign in with an account that has access to this area.</p>

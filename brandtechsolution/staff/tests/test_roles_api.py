@@ -100,8 +100,8 @@ class RoleWriteTest(TestCase):
             list(group.permissions.values_list("codename", flat=True)), ["manage_projects"]
         )
         entry = AuditEntry.objects.get(action="group_updated")
-        self.assertIn("manage_blog", entry.detail["before"])
-        self.assertEqual(entry.detail["after"], ["manage_projects"])
+        self.assertIn("manage_blog", entry.detail["before"]["capabilities"])
+        self.assertEqual(entry.detail["after"], {"capabilities": ["manage_projects"], "mailboxes": []})
 
     def test_unknown_capability_is_rejected(self):
         resp = self.client.post(
