@@ -175,6 +175,17 @@ the reader replaces the list while a conversation is open.
                 </label>
                 <textarea name="body" rows="12" required placeholder="Write your message"
                     class="w-full bg-[#06090F] border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-blue/60 resize-y"></textarea>
+                {% comment %}Forward mode only: the message going out below the note, and
+                which of its files go with it. Filled by inbox.js.{% endcomment %}
+                <div id="mailForwardBlock" class="hidden rounded-lg border border-white/10 bg-white/5">
+                    <div id="mailForwardMeta" class="px-3 pt-3 text-xs text-gray-500 space-y-0.5 break-words"></div>
+                    <div id="mailForwardText" class="px-3 pt-2 pb-3 text-sm text-gray-400 whitespace-pre-wrap break-words max-h-40 overflow-y-auto"></div>
+                    <fieldset id="mailForwardFiles" class="hidden border-t border-white/10 px-3 py-3">
+                        <legend class="sr-only">Attachments to include</legend>
+                        <span class="block text-xs text-gray-500 mb-2">Include the original's attachments</span>
+                        <div data-forward-files class="flex flex-wrap gap-2"></div>
+                    </fieldset>
+                </div>
                 <div data-attach-list class="hidden flex flex-wrap gap-2"></div>
             </div>
             <div class="px-5 py-4 border-t border-dark-border flex flex-wrap items-center justify-end gap-2">

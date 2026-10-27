@@ -22,6 +22,7 @@ urlpatterns = [
     path("mail/threads/<int:pk>/state/", mail_api.thread_state, name="mail-thread-state"),
     path("mail/threads/<int:pk>/reply/", mail_api.reply, name="mail-reply"),
     path("mail/threads/<int:pk>/delete/", mail_api.delete_thread, name="mail-delete"),
+    path("mail/threads/<int:pk>/forward/", mail_api.forward, name="mail-forward"),
     path("mail/compose/", mail_api.compose, name="mail-compose"),
     path("mail/attachments/<int:pk>/", mail_api.attachment, name="mail-attachment"),
     path("mail/limits/", mail_api.limits, name="mail-limits"),

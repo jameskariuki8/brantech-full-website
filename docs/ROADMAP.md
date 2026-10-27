@@ -82,6 +82,7 @@ This document serves as the high-level roadmap and strategic milestone tracker f
 - [x] **Statutory Compliance & Legal Engine**: KDPA 2019 & GDPR compliant Privacy Policy and Terms of Service.
 - [x] **Multi-Team Real-Time Email Broadcast**: Instant email alerts to all engineering inboxes for incoming client inquiries.
 - [x] **Mail Attachments**: Staff can attach files to new mail and replies, and files received by email are kept and downloadable by whoever can read the conversation.
+- [x] **Mail forwarding**: Forward any readable message, with a note and a choice of its attachments, from your own or a shared mailbox.
 - [x] **Capability-based mail access**: `view_inbox`, `handle_inquiries`, `view_all_mail` and `receive_inquiry_emails` decide who reads shared mail, replies, oversees personal mailboxes and is emailed inquiries.
 - [x] **Staff & Role-Based Access Control**: Granular capability system with immutable audit logging.
 - [x] **Staff Roster with Access Levels**: Derived Owner / Administrator / Member / No access levels, search and filters, and an editor that previews what a role combination grants.
