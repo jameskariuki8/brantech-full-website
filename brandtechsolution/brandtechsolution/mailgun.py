@@ -22,8 +22,10 @@ Two details matter for the outbox specifically:
    from bulk senders -- dropping them silently would hurt deliverability in a
    way that no test would catch.
 """
+import json
 import logging
 import re
+import urllib.parse
 
 import requests
 from django.conf import settings
@@ -184,6 +186,67 @@ class MailgunEmailBackend(BaseEmailBackend):
                     type(attachment),
                 )
         return files
+
+
+# A received message is at most 25 MB, so no single file can be larger.
+MAX_STORED_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
+
+class StoredAttachmentError(Exception):
+    pass
+
+
+def _is_mailgun_storage(url):
+    parts = urllib.parse.urlsplit(url or "")
+    host = (parts.hostname or "").lower()
+    return parts.scheme == "https" and (host == "mailgun.net" or host.endswith(".mailgun.net"))
+
+
+def stored_attachments(listing):
+    """Download the files a store(notify=...) webhook lists but does not carry.
+
+    A forward() route posts each file as a multipart field. A store() route
+    posts only an "attachments" JSON list of storage URLs. Our route has both
+    actions, so whichever post arrives first is the copy that gets filed: this
+    makes the store post bring the same files the forward post would.
+
+    Returns (name, content, content_type) tuples. Raises StoredAttachmentError
+    when a listed file cannot be fetched, so the webhook can refuse the post
+    and let Mailgun retry instead of filing the message without its files.
+    """
+    if isinstance(listing, str):
+        try:
+            listing = json.loads(listing or "[]")
+        except ValueError as exc:
+            raise StoredAttachmentError(f"Unreadable attachments list: {exc}") from exc
+    if not isinstance(listing, list):
+        raise StoredAttachmentError("The attachments field is not a list.")
+    key = getattr(settings, "MAILGUN_API_KEY", "")
+    found = []
+    for item in listing:
+        url = str((item or {}).get("url") or "")
+        if not _is_mailgun_storage(url):
+            # Only Mailgun's own storage is fetched, and with our API key: a
+            # forged post can never make us send the key, or a request, elsewhere.
+            raise StoredAttachmentError(f"Refusing to fetch an attachment from {url!r}.")
+        if not key:
+            raise StoredAttachmentError("MAILGUN_API_KEY is not set, so stored files cannot be fetched.")
+        try:
+            response = requests.get(url, auth=("api", key), timeout=30, stream=True)
+            response.raise_for_status()
+            content = b""
+            for chunk in response.iter_content(64 * 1024):
+                content += chunk
+                if len(content) > MAX_STORED_ATTACHMENT_BYTES:
+                    raise StoredAttachmentError(f"{url} is larger than a message can be.")
+        except requests.RequestException as exc:
+            raise StoredAttachmentError(f"Could not fetch {url}: {exc}") from exc
+        found.append((
+            str(item.get("name") or item.get("filename") or "attachment"),
+            content,
+            str(item.get("content-type") or item.get("content_type") or ""),
+        ))
+    return found
 
 
 CONSOLE_BACKEND = "django.core.mail.backends.console.EmailBackend"
