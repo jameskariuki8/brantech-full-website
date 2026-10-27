@@ -280,8 +280,8 @@ def _attachments(request):
     return files
 
 
-def _send(request, **kwargs):
-    kwargs["attachments"] = _attachments(request)
+def _send(request, files=None, **kwargs):
+    kwargs["attachments"] = _attachments(request) if files is None else files
     recipients = len(kwargs["to"]) + len(kwargs["cc"])
     try:
         with transaction.atomic():
@@ -317,22 +317,25 @@ def reply(request, pk):
     )
 
 
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
-def compose(request):
-    user = request.user
-    source = request.data.get("from") or "me"
+def _sender(user, source):
+    """(mailbox, owner) for a "from" choice: "me" or a shared mailbox."""
     if source == "me":
         mailbox = mb.own_mailbox(user)
         if mailbox is None:
             raise PermissionDenied("Choose your work address before sending mail.")
-        owner = user
-    elif source in mb.SHARED_MAILBOXES:
+        return mailbox, user
+    if source in mb.SHARED_MAILBOXES:
         if not mb.can_handle_shared(user):
             raise PermissionDenied("You need handle_inquiries to send from a shared address.")
-        mailbox, owner = source, None
-    else:
-        raise ValidationError({"from": "Unknown mailbox."})
+        return source, None
+    raise ValidationError({"from": "Unknown mailbox."})
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def compose(request):
+    user = request.user
+    mailbox, owner = _sender(user, request.data.get("from") or "me")
 
     subject = (request.data.get("subject") or "").strip()
     if not subject:
@@ -345,6 +348,61 @@ def compose(request):
         cc=_recipients(request.data.get("cc"), "cc"),
         subject=subject[:500],
         body=_body(request),
+    )
+
+
+def _ids(raw):
+    """Attachment ids from a list, or from "1,2" as a multipart form sends them."""
+    if isinstance(raw, str):
+        raw = raw.split(",")
+    try:
+        return {int(str(i).strip()) for i in raw or [] if str(i).strip()}
+    except ValueError:
+        raise ValidationError({"keep": "Attachment ids must be numbers."})
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def forward(request, pk):
+    """Forward one message of a thread the user can read.
+
+    It goes out from a mailbox the user may send from, like a new message,
+    and is filed there as a thread of its own: forwarding a colleague's mail
+    under oversight never writes into their mailbox. "keep" lists which of
+    the original's stored attachments go with it; new files may be added.
+    """
+    thread = _get_thread(request, pk)
+    messages = thread.messages.prefetch_related("files").order_by("-created_at")
+    if request.data.get("message"):
+        original = get_object_or_404(messages, pk=request.data.get("message"))
+    else:
+        original = messages.first()
+        if original is None:
+            raise Http404
+    default_from = thread.mailbox if mb.can_act(request.user, thread) and thread.owner_id is None else "me"
+    mailbox, owner = _sender(request.user, request.data.get("from") or default_from)
+
+    keep = _ids(request.data.get("keep"))
+    kept = [f for f in original.files.all() if f.id in keep]
+    try:
+        carried = [mb.attachment_upload(f) for f in kept]
+    except FileNotFoundError:
+        raise ValidationError({"keep": "An attachment of the original is no longer stored."})
+    files = carried + list(request.FILES.getlist("attachments"))
+    problem = mb.attachment_problem(files)
+    if problem:
+        raise ValidationError({"attachments": problem})
+
+    subject = (request.data.get("subject") or "").strip() or mb.forward_subject(original.subject)
+    return _send(
+        request,
+        mailbox=mailbox,
+        owner=owner,
+        to=_recipients(request.data.get("to"), "to", required=True),
+        cc=_recipients(request.data.get("cc"), "cc"),
+        subject=subject[:500],
+        body=mb.forward_body(request.data.get("body") or "", original),
+        files=files,
     )
 
 

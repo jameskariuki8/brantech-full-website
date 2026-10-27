@@ -16,6 +16,8 @@
         threads: [],
         openId: null,
         open: null,
+        // {thread, message} while the compose modal is forwarding.
+        forward: null,
     };
 
     const $ = (id) => document.getElementById(id);
@@ -513,6 +515,9 @@
                 </header>
                 ${body}
                 ${attachments}
+                ${canSend() ? `<div class="mt-3 flex justify-end">
+                    <button type="button" data-forward="${index}" class="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 flex items-center gap-2"><i class="fas fa-share"></i> Forward</button>
+                </div>` : ''}
             </article>`;
     }
 
@@ -670,13 +675,83 @@
 
     // --- compose ----------------------------------------------------------
 
+    // Mailboxes the user may send from, as compose's From options.
+    function sendableBoxes() {
+        if (!state.boxes) return [];
+        const boxes = [];
+        if (state.boxes.me) boxes.push({ value: 'me', label: state.boxes.me.address });
+        state.boxes.shared.filter((s) => s.can_send).forEach((s) =>
+            boxes.push({ value: s.mailbox, label: `${s.address} (shared)` }));
+        return boxes;
+    }
+
+    function canSend() {
+        return sendableBoxes().length > 0;
+    }
+
+    function plainText(m) {
+        if ((m.body_text || '').trim()) return m.body_text.trim();
+        // DOMParser builds an inert document: nothing in it runs or loads.
+        const doc = new DOMParser().parseFromString(m.body_html || '', 'text/html');
+        doc.querySelectorAll('style, script, head').forEach((el) => el.remove());
+        return (doc.body.innerText || doc.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    function setForwardMode(thread, m) {
+        const form = $('mailComposeForm');
+        state.forward = m ? { thread, message: m } : null;
+        $('mailComposeTitle').textContent = m ? 'Forward' : 'New message';
+        form.elements.body.required = !m;
+        form.elements.body.rows = m ? 4 : 12;
+        form.elements.body.placeholder = m ? 'Add a note (optional)' : 'Write your message';
+        $('mailForwardBlock').classList.toggle('hidden', !m);
+        if (!m) return;
+
+        const sender = m.from_name ? `${m.from_name} <${m.from_email}>` : m.from_email;
+        const meta = [
+            ['From', sender],
+            ['Date', new Date(m.created_at).toLocaleString()],
+            ['Subject', m.subject || '(no subject)'],
+            ['To', (m.to || []).join(', ')],
+        ];
+        $('mailForwardMeta').innerHTML = '<span class="block text-gray-400">Forwarded message</span>'
+            + meta.map(([k, v]) => `<span class="block">${k}: ${escapeHtml(v)}</span>`).join('');
+        $('mailForwardText').textContent = plainText(m);
+        form.elements.subject.value = /^(fwd?|fw):/i.test(m.subject || '') ? m.subject : `Fwd: ${m.subject || ''}`.trim();
+
+        const stored = (m.attachments || []).filter((a) => a.url);
+        $('mailForwardFiles').classList.toggle('hidden', !stored.length);
+        $('mailForwardBlock').querySelector('[data-forward-files]').innerHTML = stored.map((a) => `
+            <label class="inline-flex items-center gap-2 max-w-full text-xs pl-2 pr-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300 cursor-pointer has-[:checked]:border-brand-blue/40">
+                <input type="checkbox" data-keep="${a.id}" checked class="accent-[#3B82F6]">
+                <span class="truncate max-w-[12rem] sm:max-w-[16rem]" title="${escapeHtml(a.name)}">${escapeHtml(a.name)}</span>
+                <span class="text-gray-500 shrink-0">${fileSize(a.size)}</span>
+            </label>`).join('');
+    }
+
+    function keptAttachments() {
+        return [...$('mailForwardBlock').querySelectorAll('[data-keep]:checked')].map((el) => el.dataset.keep);
+    }
+
+    function openForward(index) {
+        const t = state.open;
+        if (!t) return;
+        const form = $('mailComposeForm');
+        form.reset();
+        clearFiles(form);
+        openCompose();
+        setForwardMode(t, t.messages[index]);
+        // A shared thread goes out from its own address when the user may
+        // send from it; otherwise from their own.
+        if (sendableBoxes().some((b) => b.value === t.mailbox)) form.elements.from.value = t.mailbox;
+        form.elements.to.focus();
+    }
+
     function openCompose() {
         const form = $('mailComposeForm');
-        const options = [];
-        if (state.boxes.me) options.push(`<option value="me">${escapeHtml(state.boxes.me.address)}</option>`);
-        state.boxes.shared.filter((s) => s.can_send).forEach((s) =>
-            options.push(`<option value="${escapeHtml(s.mailbox)}">${escapeHtml(s.address)} (shared)</option>`));
-        form.elements.from.innerHTML = options.join('');
+        setForwardMode(null, null);
+        form.elements.from.innerHTML = sendableBoxes().map((b) =>
+            `<option value="${escapeHtml(b.value)}">${escapeHtml(b.label)}</option>`).join('');
         const q = state.boxes.quota;
         $('mailComposeQuota').textContent = q
             ? (q.limit === 0 ? 'Your sending is suspended.' : `${q.remaining} of ${q.limit} recipients left today`)
@@ -697,6 +772,7 @@
         if (reset) {
             $('mailComposeForm').reset();
             clearFiles($('mailComposeForm'));
+            setForwardMode(null, null);
         }
     }
 
@@ -754,6 +830,11 @@
         $('mailDeleteBtn').addEventListener('click', deleteThread);
 
         $('mailMessages').addEventListener('click', (e) => {
+            const forwardBtn = e.target.closest('[data-forward]');
+            if (forwardBtn) {
+                openForward(Number(forwardBtn.dataset.forward));
+                return;
+            }
             const textToggle = e.target.closest('[data-quoted]');
             if (textToggle) {
                 $('mailMessages').querySelector(`[data-quoted-body="${textToggle.dataset.quoted}"]`).classList.toggle('hidden');
@@ -821,15 +902,20 @@
             e.preventDefault();
             const form = e.target;
             withBusy(form, async () => {
-                const sent = await postMail(`${MAIL_API}/compose/`, form, {
+                const fields = {
                     from: form.elements.from.value,
                     to: form.elements.to.value,
                     cc: form.elements.cc.value,
                     subject: form.elements.subject.value,
                     body: form.elements.body.value,
-                });
+                };
+                const fwd = state.forward;
+                const sent = fwd
+                    ? await postMail(`${MAIL_API}/threads/${fwd.thread.id}/forward/`, form,
+                        { ...fields, message: fwd.message.id, keep: keptAttachments().join(',') })
+                    : await postMail(`${MAIL_API}/compose/`, form, fields);
                 closeCompose(true);
-                toast.success('Sent.');
+                toast.success(fwd ? 'Forwarded.' : 'Sent.');
                 state.box = sent.owner ? 'sent' : sent.mailbox;
                 state.filter = 'inbox';
                 state.page = 1;

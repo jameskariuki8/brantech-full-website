@@ -18,6 +18,7 @@ import re
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.utils import timezone
@@ -308,6 +309,51 @@ def _html_body(text):
     return "".join(
         f"<p>{p.replace(chr(10), '<br>')}</p>" for p in paragraphs if p.strip()
     )
+
+
+def _text_of_html(markup):
+    """Readable text from a received HTML body, for quoting it in a forward."""
+    text = re.sub(r"(?is)<(head|style|script)\b.*?</\1\s*>", "", markup or "")
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</(p|div|tr|li|h[1-6]|table|blockquote)\s*>", "\n", text)
+    text = html.unescape(re.sub(r"<[^>]+>", "", text))
+    text = re.sub(r"[ \t\xa0]+", " ", text)
+    return re.sub(r"\n\s*\n\s*\n+", "\n\n", text).strip()
+
+
+def forward_body(note, original):
+    """The text of a forward: the sender's note, then the original message
+    under the header mail clients use, so it reads as a forward anywhere."""
+    sender = original.from_email
+    if original.from_name:
+        sender = email.utils.formataddr((original.from_name, original.from_email))
+    when = timezone.localtime(original.created_at).strftime("%a, %d %b %Y at %H:%M")
+    lines = [
+        "---------- Forwarded message ---------",
+        f"From: {sender}",
+        f"Date: {when}",
+        f"Subject: {original.subject}",
+        f"To: {', '.join(original.to)}",
+    ]
+    if original.cc:
+        lines.append(f"Cc: {', '.join(original.cc)}")
+    quoted = original.body_text.strip() or _text_of_html(original.body_html)
+    parts = [note.strip(), "\n".join(lines) + "\n\n" + quoted]
+    return "\n\n".join(p for p in parts if p)
+
+
+def forward_subject(subject):
+    subject = (subject or "").strip()
+    if re.match(r"(?i)^(fwd?|fw):", subject):
+        return subject
+    return f"Fwd: {subject}".strip()
+
+
+def attachment_upload(item):
+    """A stored attachment as an upload send() can attach again."""
+    with item.file.open("rb") as fh:
+        content = fh.read()
+    return SimpleUploadedFile(item.name, content, content_type=item.content_type or None)
 
 
 class SendError(Exception):

@@ -410,6 +410,17 @@ inbound webhook are kept, and compose and reply accept up to 10 files totalling
 `/api/messaging/mail/attachments/<id>/`, which applies the same access rule as
 the conversation itself.
 
+The Mailgun route both forwards each email and stores it with a notification,
+and both reach the webhook. The stored-notification post lists files by URL
+only, so the webhook fetches them from Mailgun storage with `MAILGUN_API_KEY`;
+either post files the message with its attachments.
+
+Any message a person can read can be forwarded
+(`/api/messaging/mail/threads/<id>/forward/`). It goes out from a mailbox they
+may send from (their own, or a shared one with `handle_inquiries`), quotes the
+original under a "Forwarded message" header, carries whichever of its stored
+attachments they keep, and is filed as a new thread in the sending mailbox.
+
 The From address must sit inside the sending domain. Anything else — a
 `gmail.com` address in particular — fails SPF and DKIM alignment and lands in
 spam, which is why the previous hardcoded Gmail fallbacks were removed.
