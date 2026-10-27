@@ -1,13 +1,15 @@
+import json
 import os
 import shutil
 import tempfile
 from unittest import mock
 
+import requests
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
-from messaging.models import MailAttachment, MailMessage, MailThread
+from messaging.models import InboundEmail, MailAttachment, MailMessage, MailThread
 
 from .test_mail import admin, inbound, staff
 
@@ -105,6 +107,69 @@ class MailAttachmentTest(TestCase):
         [att] = self.detail(message.thread)["messages"][0]["attachments"]
         self.assertEqual(att["name"], "old.pdf")
         self.assertIsNone(att["url"])
+
+    # --- the route's store(notify=) post ------------------------------------
+    # Our Mailgun route both forwards (files attached) and stores and notifies
+    # (files listed by URL). Whichever arrives first is the copy kept.
+
+    STORED_URL = "https://storage-us-east4.api.mailgun.net/v3/domains/teklora.co.ke/messages/abc/attachments/0"
+
+    def stored_listing(self, url=None):
+        return json.dumps([{
+            "url": url or self.STORED_URL, "name": "quote.pdf",
+            "content-type": "application/pdf", "size": 14,
+        }])
+
+    def fake_get(self, content=b"%PDF-1.4 quote", status=200):
+        response = mock.Mock(status_code=status)
+        response.iter_content.return_value = [content]
+        if status >= 400:
+            response.raise_for_status.side_effect = requests.HTTPError(f"HTTP {status}")
+        return mock.patch("brandtechsolution.mailgun.requests.get", return_value=response)
+
+    @override_settings(MAILGUN_API_KEY="key-test")
+    def test_a_store_notification_fetches_the_listed_files(self):
+        with self.fake_get() as get:
+            self.receive(**{"Message-Id": "<m1@x>", "attachments": self.stored_listing()})
+        get.assert_called_once()
+        self.assertEqual(get.call_args.kwargs["auth"], ("api", "key-test"))
+        item = MailAttachment.objects.get()
+        self.assertEqual((item.name, item.size), ("quote.pdf", 14))
+        with item.file.open("rb") as fh:
+            self.assertEqual(fh.read(), b"%PDF-1.4 quote")
+
+    @override_settings(MAILGUN_API_KEY="key-test")
+    def test_store_post_first_then_forward_keeps_the_files_once(self):
+        with self.fake_get():
+            self.receive(**{"Message-Id": "<m1@x>", "attachments": self.stored_listing()})
+        self.receive(**{"Message-Id": "<m1@x>", "attachment-count": "1", "attachment-1": upload()})
+        self.assertEqual(MailMessage.objects.count(), 1)
+        self.assertEqual(MailAttachment.objects.count(), 1)
+        self.assertEqual(len(stored_files()), 1)
+
+    @override_settings(MAILGUN_API_KEY="key-test")
+    def test_a_failed_fetch_records_nothing_and_asks_mailgun_to_retry(self):
+        with self.fake_get(status=500):
+            resp = self.receive(**{"Message-Id": "<m1@x>", "attachments": self.stored_listing()})
+        self.assertEqual(resp.status_code, 503)
+        self.assertFalse(MailMessage.objects.exists())
+        self.assertFalse(InboundEmail.objects.exists())
+        self.assertEqual(stored_files(), [])
+
+    @override_settings(MAILGUN_API_KEY="key-test")
+    def test_files_are_only_fetched_from_mailgun(self):
+        for url in ("https://evil.example/x", "http://storage.api.mailgun.net/x",
+                    "https://mailgun.net.evil.example/x"):
+            with self.subTest(url=url), self.fake_get() as get:
+                resp = self.receive(**{"attachments": self.stored_listing(url)})
+                self.assertEqual(resp.status_code, 503)
+                get.assert_not_called()
+        self.assertFalse(MailMessage.objects.exists())
+
+    def test_a_store_notification_without_files_is_filed(self):
+        resp = self.receive(**{"attachments": "[]"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(MailMessage.objects.count(), 1)
 
     # --- sending -----------------------------------------------------------
 

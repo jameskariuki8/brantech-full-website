@@ -10,12 +10,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.core import signing
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from brandtechsolution import turnstile
+from brandtechsolution.mailgun import StoredAttachmentError, stored_attachments
 from brandtechsolution.mail import send_mail_each
 from staff.emails import capability_holder_emails
 from staff.handles import mailbox_address
@@ -351,10 +353,26 @@ def _addresses(raw):
     ]
 
 
-def _attachment_info(request):
+def _attachment_info(files):
     return [
         {"name": f.name, "size": f.size, "content_type": getattr(f, "content_type", "")}
-        for f in request.FILES.values()
+        for f in files
+    ]
+
+
+def _received_files(request, payload):
+    """The message's files, whichever of our route's two posts this is.
+
+    The forward() post carries them as multipart fields. The store(notify=)
+    post lists them by URL only, so they are fetched from Mailgun's storage.
+    Raises StoredAttachmentError when that fetch fails.
+    """
+    files = list(request.FILES.values())
+    if files or not payload.get("attachments"):
+        return files
+    return [
+        SimpleUploadedFile(name, content, content_type=content_type or None)
+        for name, content, content_type in stored_attachments(payload["attachments"])
     ]
 
 
@@ -381,6 +399,15 @@ def mailgun_inbound_webhook(request):
         sender_name, sender_email = email.utils.parseaddr(str(payload.get("sender") or ""))
     sender_email = sender_email or raw_from
 
+    try:
+        files = _received_files(request, payload)
+    except StoredAttachmentError:
+        # Nothing has been recorded yet. A non-2xx makes Mailgun retry this
+        # post, and the forward() post may file the message, files and all,
+        # in the meantime.
+        logger.exception("Inbound mail refused: its stored attachments could not be fetched.")
+        return JsonResponse({"ok": False, "error": "Attachments unavailable"}, status=503)
+
     subject = str(payload.get("subject") or payload.get("Subject") or "").strip()
     body_plain = str(payload.get("body-plain") or payload.get("text") or "").strip()
     stripped_text = str(payload.get("stripped-text") or "").strip()
@@ -396,11 +423,11 @@ def mailgun_inbound_webhook(request):
         body_plain=body_plain,
         body_html=body_html,
         message_headers={"raw_sender": raw_from, "raw_recipient": raw_recipient},
-        attachments_info=_attachment_info(request),
+        attachments_info=_attachment_info(files),
     )
 
     # Saved once however many mailboxes the message is filed into.
-    stored_files = store_inbound_files(request.FILES.values())
+    stored_files = store_inbound_files(files)
 
     header_to = _payload_header(payload, "To")
     to_list = _addresses(header_to) or _addresses(raw_recipient)
