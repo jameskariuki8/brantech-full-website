@@ -982,6 +982,52 @@ grant intact.
 
 ---
 
+## Saved GitHub data and background updates
+
+GitHub Manager reads repository metadata, account details, README previews, commit lists and document checks from persistent database snapshots. Opening or reloading a screen does **not** call GitHub directly. Empty commit lists and missing READMEs are saved too, so they do not become repeated cache misses. Local project titles and descriptions remain editable and appear immediately without a GitHub refresh.
+
+| Data | Refresh behavior |
+|---|---|
+| Repository discovery and metadata | Due after one hour; the scheduled GitHub job or a stale page queues an update. |
+| Account and organisation details | Reused for six hours. |
+| README, commit lists and document checks | Reused for unchanged repository revisions for up to six hours; changed push timestamps/default branches trigger refresh. |
+| CHANGELOG/ROADMAP text | Persisted once and shared with task imports; unchanged file hashes reuse saved text after a code push. |
+
+The existing worker and Beat perform updates. Verified default-branch push webhooks invalidate only the affected repository. Task polling checks metadata at `BEAT_TASK_REPO_INTERVAL`, but skips commit/document/roadmap downloads for revisions it has already processed. Commit summaries avoid one additional stats request per commit. Metadata discovery also reuses the same repository objects when updating tracked projects.
+
+The **Refresh** button requests background work and leaves saved data visible, with an update timestamp and status. Concurrent requests share a database refresh lease. Failures keep the last successful data; rate-limit responses delay further work until the retry/reset window. Cache entries are scoped to a one-way hash of the configured GitHub credential/account, so changing credentials cannot expose the previous account’s private repository list. No credentials are stored in these cache records.
+
+Cold snapshots may show a preparation message until the worker finishes. Docker Compose already starts the worker and Beat and applies the new database migrations with `docker compose up --build -d`; no cache-flush command or new environment variables are required. The public commits GET endpoint ignores `?refresh=1`; manual updates use the `manage_projects`-protected `POST /api/github/refresh/` endpoint.
+
+See the [cache specification](docs/specs/2026-10-28-github-database-cache-spec.md) and [execution plan](docs/plans/2026-10-28-github-database-cache-plan.md).
+
+## GitHub roadmaps, documentation and the task backlog
+
+**Admin → Tasks** has two workspaces:
+
+- **Team tasks**: assigned work, personal tasks, reviews and approved work.
+- **Project backlog**: open roadmap items and documentation repairs awaiting an owner, with project filtering, search and an **Assign** action. Task managers can select one or more active staff. Assigned items leave the backlog and appear on the team board.
+
+The source is the projects already synced in **GitHub Manager**. No repository names need to be entered again on the Tasks page. A successful project sync queues its task import, and Celery Beat discovers existing GitHub-synced projects and checks their roadmaps every `BEAT_TASK_REPO_INTERVAL` seconds (default `600`). `GITHUB_ACCESS_TOKEN` must be able to read these repositories. Importing never assigns people automatically or changes existing assignments. Future authenticated automation can use the same capability-protected assignment endpoint, `POST /api/work/tasks/<id>/assign/`, with `{"assignee_ids": [1, 2]}`; no AI assignment policy is enabled.
+
+Imports read `ROADMAP.md`, then `docs/ROADMAP.md`. Each unchecked leaf checkbox in an unfinished milestone becomes an unassigned task. Matching unlinked manual tasks are reused and imports are idempotent. Checked items without assignees leave the available backlog without being approved. Project titles and milestone context help managers choose work before assigning it. The refresh button reloads the imported list; it does not initiate GitHub imports.
+
+The same document audit shown in GitHub Manager checks **README.md, CHANGELOG.md, ROADMAP.md and LICENSE**. Missing files and format/quality findings create one unassigned **Documentation** repair task per affected document, containing its current problems and fix instructions. A missing roadmap does not block these tasks. Repeated checks update existing work rather than creating duplicates or changing assignees. Unknown/failed audits do not claim that files are missing or resolved.
+
+When a document passes its checks, an unassigned repair leaves the backlog; an assigned repair moves to **In Review**. Approval is always manual. A recurring problem reuses unapproved work or creates a new repair task if the earlier one was already approved. Default-branch pushes changing any required document queue a recheck when the webhook is configured; polling remains the fallback.
+
+Reference work in commits as `Task #42`. A default-branch commit saying `Closes Task #42` (also fixes, resolves, completes or done), or a merge of a branch such as `feat/task-42-title`, completes outstanding assignments and submits the task to **In Review**. Only a task manager can approve it to **Done**. Checking a roadmap item also submits already assigned work. After rejection, an unchanged checked item will not repeatedly resubmit work. Submit again through the board, a new closing commit, or by unticking and later reticking the roadmap item. Feature-branch pushes link commits without submitting work when the optional webhook is configured. Polling initially reads the past seven days of default-branch commits; repeated deliveries retain one entry per task.
+
+Docker deployment runs migrations and collects static files through the web entrypoint, and starts the worker and Beat:
+
+```bash
+docker compose up --build -d
+```
+
+An optional GitHub push webhook can target `https://<your-host>/api/work/github/webhook/`. Choose JSON content, push events, and a secret matching `GITHUB_WEBHOOK_SECRET` in the application environment. Without a secret, polling still works. The worker and Beat must run for ongoing automatic imports; a standalone development web server only displays previously imported data.
+
+See the [backlog specification](docs/specs/2026-10-28-roadmap-backlog-spec.md) and [execution plan](docs/plans/2026-10-28-roadmap-backlog-plan.md).
+
 ## 🛠️ Development Workflow & Repository Standards
 
 Teklora operates under a **file-based single source of truth** engineering workflow tightly coupled with our internal platform task system:

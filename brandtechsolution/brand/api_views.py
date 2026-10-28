@@ -524,9 +524,8 @@ def github_repos_list(request):
     if denied:
         return denied
     try:
-        service = GitHubService()
-        repos = service.get_user_repositories()
-        return JsonResponse({'results': repos})
+        from .github_cache import cached_repositories
+        return JsonResponse(cached_repositories())
     except Exception:
         # Never echo the exception. GitHubService carries an API token, and
         # request failures from the client library routinely put the URL -
@@ -541,7 +540,8 @@ def github_account(request):
     if denied:
         return denied
     try:
-        return JsonResponse(GitHubService().get_account_info())
+        from .github_cache import cached_account
+        return JsonResponse(cached_account())
     except Exception:
         logger.exception('github_account failed')
         return JsonResponse({'error': 'Could not reach GitHub.'}, status=500)
@@ -578,11 +578,13 @@ def github_repo_readme(request, repo_id):
     if denied:
         return denied
     try:
-        service = GitHubService()
-        result = service.get_repository_readme(repo_id)
-        if result.get("success"):
+        from .github_cache import cached_readme
+        result = cached_readme(repo_id)
+        if result.get('pending'):
+            return JsonResponse(result, status=202)
+        if result.get('success'):
             return JsonResponse(result)
-        return JsonResponse({'error': result.get("error", "Could not fetch README.")}, status=404)
+        return JsonResponse({**result, 'error': 'No README is available for this repository.'}, status=404)
     except Exception:
         logger.exception('github_repo_readme failed for repo %s', repo_id)
         return JsonResponse({'error': 'Could not fetch README from GitHub.'}, status=500)
@@ -592,21 +594,36 @@ def project_commits(request, pk):
     """
     Returns last 10 commits for a GitHub-synced project.
 
-    Normal: served instantly from DB (cached_commits field).
-    ?refresh=1: forces a live GitHub fetch and updates the DB cache.
+    Always served from saved data. Refreshes use the protected POST endpoint;
+    a query string on this public route cannot force upstream requests.
     """
     project = get_object_or_404(Project, pk=pk)
     if not project.is_github_synced or not project.github_repo_id:
         return JsonResponse({'error': 'This project is not linked to GitHub.'}, status=400)
-    try:
-        force_refresh = request.GET.get('refresh') == '1'
-        service = GitHubService()
-        result = service.get_recent_commits(
-            github_repo_id=project.github_repo_id,
-            force_refresh=force_refresh,
-        )
-        return JsonResponse(result)
-    except Exception:
-        # This view has no @login_required, so its error body is public.
-        logger.exception('project_commits failed for project %s', pk)
-        return JsonResponse({'error': 'Could not fetch commits.'}, status=500)
+    from .github_cache import cached_commits
+    # Query strings on this public endpoint can never request upstream work.
+    return JsonResponse(cached_commits(project))
+
+
+@require_http_methods(["POST"])
+def github_refresh(request):
+    """Request a bounded asynchronous refresh; ordinary reads remain DB-only."""
+    denied = capability_required_json(request, 'manage_projects')
+    if denied:
+        return denied
+    from .github_cache import request_refresh, refresh_status
+    data = get_data(request)
+    kind = data.get('kind', 'catalogue')
+    if kind not in ('catalogue', 'account', 'repository'):
+        return JsonResponse({'error': 'Choose a valid refresh type.'}, status=400)
+    repo_id = data.get('repo_id')
+    if kind == 'repository':
+        try:
+            repo_id = int(repo_id)
+            if repo_id <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Choose a valid repository.'}, status=400)
+    queued = request_refresh(kind, repo_id, force=True)
+    key = f'repository:{repo_id}' if kind == 'repository' else kind
+    return JsonResponse({'queued': queued, 'cache': refresh_status(key)}, status=202)

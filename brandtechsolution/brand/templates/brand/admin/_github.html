@@ -17,8 +17,8 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <button onclick="loadGithubRepos(true)" id="githubRefreshBtn"
                             class="bg-[#111827] hover:bg-[#1f2937] text-gray-300 hover:text-white border border-white/10 font-medium px-4 py-2.5 rounded-lg flex items-center transition-colors text-sm"
-                            title="Reload repositories from GitHub API">
-                            <i class="fas fa-rotate mr-2 text-xs"></i>Reload
+                            title="Request a background update; saved repositories stay available">
+                            <i class="fas fa-rotate mr-2 text-xs"></i>Refresh
                         </button>
                         <button onclick="syncAllTrackedRepos()" id="syncAllTrackedBtn"
                             class="bg-[#111827] hover:bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 font-medium px-4 py-2.5 rounded-lg flex items-center transition-colors text-sm"
@@ -34,6 +34,7 @@
                 </div>
 
                 <!-- Whose token this is: personal account or organisation -->
+                <p id="githubCacheStatus" role="status" class="text-xs text-gray-500 mb-4"></p>
                 <div id="githubAccountBanner" class="hidden mb-6 rounded-xl border border-white/10 bg-[#0A101D] px-5 py-4 text-sm"></div>
 
                 <!-- Metric Overview Cards -->

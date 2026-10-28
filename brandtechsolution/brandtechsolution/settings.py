@@ -414,6 +414,8 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # Beat intervals (seconds), consumed in celery.py.
 BEAT_OUTBOX_INTERVAL = config.beat_outbox_interval
 BEAT_GITHUB_SYNC_INTERVAL = config.beat_github_sync_interval
+BEAT_TASK_REPO_INTERVAL = config.beat_task_repo_interval
+GITHUB_WEBHOOK_SECRET = config.github_webhook_secret or ""
 
 # The test suite must never need a live broker, Redis, or a network round trip
 # to Cloudflare.

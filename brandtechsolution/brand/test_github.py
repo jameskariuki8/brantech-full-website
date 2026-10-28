@@ -41,6 +41,9 @@ def fake_repo(repo_id=101, name="widget", description="A widget.", commits=3,
     repo = mock.MagicMock()
     repo.id = repo_id
     repo.name = name
+    repo.full_name = f"{owner}/{name}"
+    repo.default_branch = "main"
+    repo.pushed_at = timezone.now() - timedelta(days=7)
     repo.description = description
     repo.html_url = f"https://github.com/{owner}/{name}"
     repo.private = private
@@ -57,6 +60,9 @@ def fake_repo(repo_id=101, name="widget", description="A widget.", commits=3,
 
 class GitHubTestCase(TestCase):
     def setUp(self):
+        queue = mock.patch("brand.github_cache.enqueue_refresh_job")
+        queue.start()
+        self.addCleanup(queue.stop)
         self.repos = {}
         self.staff_users = {}
         client = mock.MagicMock()
@@ -122,6 +128,7 @@ class SyncTests(GitHubTestCase):
             title="Widget Pro", short_description="Edited.", description="Edited in admin.",
         )
 
+        repo.pushed_at = timezone.now()
         repo.name = "widget-renamed"
         repo.description = "GitHub's new blurb."
         repo.get_readme.return_value.decoded_content = b"# New readme"
@@ -165,7 +172,7 @@ class SyncTests(GitHubTestCase):
 
         call_command("sync_github", verbosity=0)
 
-        self.assertEqual(self.repos[101].get_readme.call_count, 2)
+        self.assertEqual(self.repos[101].get_readme.call_count, 1)
         self.assertEqual(self.repos[202].get_readme.call_count, 0)
         self.assertFalse(Project.objects.filter(github_repo_id=202).exists())
 
@@ -185,6 +192,8 @@ class EndpointTests(GitHubTestCase):
         self.sync(101)
         self.client.force_login(staff_with("manage_projects"))
 
+        from brand.github_service import GitHubService
+        GitHubService().get_user_repositories()
         resp = self.client.get("/api/github/repos/")
 
         self.assertEqual(resp.status_code, 200)
@@ -237,6 +246,8 @@ class EndpointTests(GitHubTestCase):
         self.sync(101)
         self.client.force_login(staff_with("manage_projects"))
 
+        from brand.github_service import GitHubService
+        GitHubService().get_user_repositories()
         resp = self.client.get("/api/github/repos/")
         self.assertEqual(resp.status_code, 200)
         repo_data = resp.json()["results"][0]
@@ -246,7 +257,10 @@ class EndpointTests(GitHubTestCase):
         self.assertEqual(repo_data["project"]["commit_count"], 3)
 
     def test_github_repo_readme_endpoint(self):
-        self.add(repo_id=101, name="widget", readme="# Widget Readme")
+        repo = self.add(repo_id=101, name="widget", readme="# Widget Readme")
+        from brand.github_cache import refresh_content
+        from brand.github_service import GitHubService
+        refresh_content(GitHubService(), repo)
         self.client.force_login(staff_with("manage_projects"))
 
         resp = self.client.get("/api/github/repos/101/readme/")
@@ -290,6 +304,8 @@ class EndpointTests(GitHubTestCase):
         )
 
         self.client.force_login(staff_with("manage_projects"))
+        from brand.github_service import GitHubService
+        GitHubService().get_user_repositories()
         resp = self.client.get("/api/github/repos/")
         self.assertEqual(resp.status_code, 200)
 
@@ -321,6 +337,8 @@ class EndpointTests(GitHubTestCase):
         self.staff_users["ghost-user"] = ghost_mock
 
         self.client.force_login(staff_with("manage_projects"))
+        from brand.github_service import GitHubService
+        GitHubService().get_user_repositories()
         resp = self.client.get("/api/github/repos/")
         self.assertEqual(resp.status_code, 200)
 

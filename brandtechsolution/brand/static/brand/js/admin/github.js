@@ -5,11 +5,15 @@
 let currentGithubRepos = [];
 let currentGithubFilter = 'all';
 let activeInspectorRepo = null;
+let githubCacheTimer = null;
+let githubCachePolls = 0;
 
 /**
  * Fetch repositories from GitHub API and initialize dashboard.
  */
-async function loadGithubRepos(forceRefresh = false) {
+async function loadGithubRepos(forceRefresh = false, polling = false) {
+    clearTimeout(githubCacheTimer);
+    if (!polling) githubCachePolls = 0;
     const list = document.getElementById('githubList');
     const loading = document.getElementById('githubLoading');
     const errorBox = document.getElementById('githubError');
@@ -29,7 +33,26 @@ async function loadGithubRepos(forceRefresh = false) {
     }
 
     try {
+        if (forceRefresh) {
+            await fetchJson(`${API_BASE}/github/refresh/`, {
+                method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ kind: 'catalogue' }),
+            });
+        }
         const data = await fetchJson(`${API_BASE}/github/repos/`);
+        const status = document.getElementById('githubCacheStatus');
+        const cacheInfo = data.cache || {};
+        if (status) status.textContent = [
+            cacheInfo.updated_at ? `Last updated ${new Date(cacheInfo.updated_at).toLocaleString()}` : 'Preparing saved repository data',
+            cacheInfo.refreshing ? 'Updating in the background' : '', cacheInfo.error || '',
+        ].filter(Boolean).join(' · ');
+        if (cacheInfo.refreshing && githubCachePolls < 20) {
+            githubCachePolls += 1;
+            githubCacheTimer = setTimeout(() => {
+                const section = document.getElementById('githubSync');
+                if (section && !section.classList.contains('hidden')) loadGithubRepos(false, true);
+            }, 3000);
+        }
         currentGithubRepos = (data && data.results) || [];
 
         // Update Overview Metric Cards & Filters
@@ -37,7 +60,7 @@ async function loadGithubRepos(forceRefresh = false) {
         loadGithubAccount();
 
         if (!currentGithubRepos.length) {
-            if (emptyBox) emptyBox.classList.remove('hidden');
+            if (emptyBox) emptyBox.classList.toggle('hidden', Boolean(cacheInfo.refreshing));
             return;
         }
 
@@ -45,7 +68,7 @@ async function loadGithubRepos(forceRefresh = false) {
         filterGithubRepos();
 
         if (forceRefresh) {
-            toast.success(`Loaded ${currentGithubRepos.length} repositories from GitHub.`);
+            toast.success('Refresh requested. Saved repositories remain available while it runs.');
         }
     } catch (e) {
         console.error('GitHub Repos Fetch Error:', e);
@@ -58,7 +81,7 @@ async function loadGithubRepos(forceRefresh = false) {
     } finally {
         loading.classList.add('hidden');
         if (refreshBtn) {
-            refreshBtn.innerHTML = `<i class="fas fa-rotate mr-2 text-xs"></i>Reload`;
+            refreshBtn.innerHTML = `<i class="fas fa-rotate mr-2 text-xs"></i>Refresh`;
             refreshBtn.disabled = false;
         }
     }
@@ -732,7 +755,13 @@ async function loadInspectorReadme(repo) {
 
     try {
         const data = await fetchJson(`${API_BASE}/github/repos/${repo.id}/readme/`);
-        if (data && data.readme) {
+        if (data && data.pending) {
+            container.innerHTML = '<p class="text-sm text-gray-400">The README is being prepared in the background. Saved data will appear shortly.</p>';
+            repo._readmePolls = (repo._readmePolls || 0) + 1;
+            if (repo._readmePolls < 15) setTimeout(() => {
+                if (activeInspectorRepo && activeInspectorRepo.id === repo.id) loadInspectorReadme(repo);
+            }, 2000);
+        } else if (data && data.readme) {
             // Save to repo object cache in memory
             if (!repo.project) repo.project = {};
             repo.project.readme_content = data.readme;
@@ -833,11 +862,15 @@ async function refreshInspectorCommitsLive() {
     }
 
     try {
-        const data = await fetchJson(`${API_BASE}/projects/${projectId}/commits/?refresh=1`);
+        await fetchJson(`${API_BASE}/github/refresh/`, {
+            method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 'repository', repo_id: activeInspectorRepo.id }),
+        });
+        const data = await fetchJson(`${API_BASE}/projects/${projectId}/commits/`);
         if (data && data.commits) {
             activeInspectorRepo.project.cached_commits = data.commits;
             renderInspectorCommits(activeInspectorRepo);
-            toast.success('Commits refreshed from GitHub!');
+            toast.success('Refresh requested. Showing saved commits until the update finishes.');
         }
     } catch (e) {
         console.error('Failed to refresh commits:', e);
@@ -1058,6 +1091,11 @@ async function loadGithubAccount() {
     if (!banner) return;
     try {
         const a = await fetchJson(`${API_BASE}/github/account/`);
+        if (a.pending) {
+            banner.textContent = a.cache && a.cache.error ? a.cache.error : 'Account details are updating in the background.';
+            banner.classList.remove('hidden');
+            return;
+        }
         const kind = a.is_organization ? 'an organisation' : 'a personal account';
         const orgs = (a.organizations || []).length
             ? `Member of ${a.organizations.map(o => `<strong class="text-gray-200">${escapeHtml(o)}</strong>`).join(', ')}.`
