@@ -39,6 +39,7 @@ def setup_periodic_tasks(sender, **kwargs):
     from editorial.tasks import release_stale_pipeline_runs_task
     from messaging.tasks import process_email_outbox_task
     from ai_workflows.tasks import refresh_catalogue_task
+    from tasks.tasks import poll_repositories_task
 
     sender.add_periodic_task(
         settings.BEAT_OUTBOX_INTERVAL,
@@ -54,6 +55,13 @@ def setup_periodic_tasks(sender, **kwargs):
         sync_github_task.s(),
         name="sync GitHub projects",
         options={"expires": settings.BEAT_GITHUB_SYNC_INTERVAL},
+    )
+
+    sender.add_periodic_task(
+        settings.BEAT_TASK_REPO_INTERVAL,
+        poll_repositories_task.s(),
+        name="link commits and roadmaps to tasks",
+        options={"expires": settings.BEAT_TASK_REPO_INTERVAL},
     )
 
     # Overnight, off the back of the working day in EAT.

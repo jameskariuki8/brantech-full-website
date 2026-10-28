@@ -18,6 +18,7 @@ class TaskSectionVisibilityTest(TestCase):
         response = self.client.get("/admin-panel/")
 
         self.assertContains(response, 'id="taskList"')
+        self.assertNotContains(response, 'id="taskRepoForm"')
         self.assertContains(response, 'id="nav-tasks"')
         # So is mail: everyone has their own mailbox.
         self.assertContains(response, 'id="nav-inbox"')
@@ -46,6 +47,8 @@ class TaskSectionVisibilityTest(TestCase):
         response = self.client.get("/admin-panel/")
 
         self.assertContains(response, "manage_tasks")
+        self.assertNotContains(response, 'id="taskRepoForm"')
+        self.assertContains(response, 'id="taskBacklogProject"')
 
 
 class NavGatingTest(TestCase):

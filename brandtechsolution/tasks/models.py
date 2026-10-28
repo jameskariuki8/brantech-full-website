@@ -3,6 +3,50 @@ from django.db import models
 from django.utils import timezone
 
 
+class Repository(models.Model):
+    """A GitHub repository whose commits and roadmap drive the board.
+
+    Mirrors existing GitHub-synced projects for import status and task history.
+    Legacy/internal links may have no public project. Discovery never creates
+    public Project records.
+    """
+
+    project = models.OneToOneField(
+        "brand.Project", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="task_repository",
+    )
+    full_name = models.CharField(
+        max_length=200, unique=True, help_text="owner/name on GitHub"
+    )
+    default_branch = models.CharField(max_length=100, default="main")
+    # Off means commits are still linked to tasks, but the roadmap never
+    # creates or finishes any.
+    track_roadmap = models.BooleanField(default=True)
+    last_checked_at = models.DateTimeField(null=True, blank=True)
+    last_processed_revision = models.CharField(max_length=255, blank=True, default="")
+    last_error = models.TextField(blank=True, default="")
+    added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="task_repositories_added",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["full_name"]
+        default_permissions = ()
+        verbose_name_plural = "repositories"
+
+    def __str__(self):
+        return self.full_name
+
+    @property
+    def url(self):
+        return f"https://github.com/{self.full_name}"
+
+
 class Task(models.Model):
     """A unit of work an administrator hands to one or more staff members.
 
@@ -43,6 +87,27 @@ class Task(models.Model):
         choices=PRIORITY_CHOICES, default=NORMAL
     )
     due_date = models.DateField(null=True, blank=True)
+
+    MANUAL = "manual"
+    ROADMAP = "roadmap"
+    DOCUMENTATION = "documentation"
+    IMPORTED_SOURCES = (ROADMAP, DOCUMENTATION)
+    SOURCE_CHOICES = [(MANUAL, "Created by hand"), (ROADMAP, "From a roadmap"),
+                      (DOCUMENTATION, "Documentation repair")]
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default=MANUAL)
+    repository = models.ForeignKey(
+        Repository,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
+    )
+    # "<milestone number>:<normalised item title>" for a task made from a
+    # roadmap item, so the next read of the roadmap finds it again.
+    roadmap_key = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    # Detect checkbox transitions so a rejected task is not resubmitted on every poll.
+    roadmap_checked = models.BooleanField(default=False)
+    documentation_resolved = models.BooleanField(default=False)
 
     assignees = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
@@ -183,6 +248,7 @@ class TaskActivity(models.Model):
         ("submitted", "Submitted for review"),
         ("approved", "Approved"),
         ("reopened", "Sent back for more work"),
+        ("commit", "Commit pushed"),
     ]
 
     task = models.ForeignKey(
@@ -208,3 +274,44 @@ class TaskActivity(models.Model):
 
     def __str__(self):
         return f"{self.get_kind_display()} on {self.task_id}"
+
+
+class TaskCommit(models.Model):
+    """A commit whose message names a task.
+
+    Unique per task and sha, which is what makes processing idempotent: a
+    webhook delivery and the next poll both see the same commit, and only
+    the first one writes anything.
+    """
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="commits")
+    repository = models.ForeignKey(
+        Repository, on_delete=models.SET_NULL, null=True, related_name="commits"
+    )
+    sha = models.CharField(max_length=40)
+    message = models.TextField(blank=True, default="")
+    author_login = models.CharField(max_length=100, blank=True, default="")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="task_commits",
+    )
+    url = models.URLField(max_length=500, blank=True, default="")
+    committed_at = models.DateTimeField(null=True, blank=True)
+    # True once seen on the default branch. A commit pushed to a feature
+    # branch is linked first and promoted when it is merged.
+    on_default_branch = models.BooleanField(default=False)
+    finishes = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-committed_at", "-id"]
+        default_permissions = ()
+        constraints = [
+            models.UniqueConstraint(fields=["task", "sha"], name="unique_task_commit"),
+        ]
+
+    def __str__(self):
+        return f"{self.sha[:7]} on {self.task_id}"

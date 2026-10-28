@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets
@@ -12,9 +12,9 @@ from staff.permissions import has_capability
 
 from .activity import record
 from .emails import notify_review_ready
-from .models import Task, TaskActivity, TaskAssignment
+from .models import Repository, Task, TaskActivity, TaskAssignment, TaskCommit
 from .permissions import IsStaffMember
-from .serializers import TaskActivitySerializer, TaskSerializer
+from .serializers import RepositorySerializer, TaskActivitySerializer, TaskSerializer
 
 CAPABILITY = "manage_tasks"
 
@@ -42,19 +42,20 @@ class TaskViewSet(viewsets.ModelViewSet):
         class so that adding an action forces a deliberate choice.
         """
         managed = {
-            "create", "update", "partial_update", "destroy", "approve", "reopen",
+            "create", "update", "partial_update", "destroy", "approve", "reopen", "assign",
         }
         if self.action in managed:
             return [has_capability(CAPABILITY)()]
         return [IsStaffMember()]
 
     def _base_queryset(self):
-        return Task.objects.select_related("created_by").prefetch_related(
+        return Task.objects.select_related("created_by", "repository", "repository__project").prefetch_related(
             Prefetch(
                 "assignments",
                 queryset=TaskAssignment.objects.select_related("user"),
             ),
             "activity",
+            Prefetch("commits", queryset=TaskCommit.objects.select_related("author")),
         )
 
     def get_queryset(self):
@@ -84,6 +85,18 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         if params.get("assignee"):
             queryset = queryset.filter(assignments__user_id=params["assignee"])
+
+        backlog = Q(source__in=Task.IMPORTED_SOURCES, assignments__isnull=True, status=Task.OPEN, roadmap_checked=False, documentation_resolved=False)
+        if params.get("workspace") == "backlog":
+            queryset = queryset.filter(backlog)
+        elif params.get("workspace") == "board":
+            queryset = queryset.exclude(source__in=Task.IMPORTED_SOURCES, assignments__isnull=True)
+        if params.get("repository"):
+            try:
+                repository_id = int(params["repository"])
+            except (ValueError, TypeError):
+                raise ValidationError({"repository": "Choose a valid project."})
+            queryset = queryset.filter(repository_id=repository_id)
 
         search = (params.get("q") or "").strip()
         if search:
@@ -132,6 +145,26 @@ class TaskViewSet(viewsets.ModelViewSet):
                 if task.refresh_review_state() == Task.IN_REVIEW:
                     record(task, None, "submitted", "Every assignee is finished")
                     notify_review_ready(task, self.request)
+
+    @action(detail=True, methods=["post"])
+    def assign(self, request, pk=None):
+        """Claim an unassigned backlog item without replacing another manager's work."""
+        validator = TaskSerializer(data={"assignee_ids": request.data.get("assignee_ids", [])}, partial=True)
+        validator.is_valid(raise_exception=True)
+        users = validator.validated_data.get("assignee_ids", [])
+        if not users:
+            raise ValidationError({"assignee_ids": "Choose at least one person."})
+        with transaction.atomic():
+            task = self._locked(pk)
+            if (task.source not in Task.IMPORTED_SOURCES or task.status != Task.OPEN
+                    or task.roadmap_checked or task.documentation_resolved or task.assignments.exists()):
+                return Response({"detail": "This task is no longer awaiting assignment. Refresh the backlog."}, status=409)
+            TaskAssignment.objects.bulk_create([
+                TaskAssignment(task=task, user_id=uid) for uid in sorted({user.pk for user in users})
+            ])
+            task.save(update_fields=["updated_at"])
+            record(task, request.user, "assignees_changed", "Assigned to " + ", ".join(sorted(user.username for user in users)))
+        return Response(self.get_serializer(self._fresh(task)).data)
 
     def _locked(self, pk):
         """Re-read the task under a row lock.
@@ -300,6 +333,8 @@ def summary(request):
             .count()
         ),
         "done": Task.objects.filter(status=Task.DONE).count(),
+        "backlog": Task.objects.filter(source__in=Task.IMPORTED_SOURCES, documentation_resolved=False, assignments__isnull=True,
+                                       status=Task.OPEN, roadmap_checked=False).count(),
         "can_manage": _can_manage(request.user),
     })
 
@@ -313,4 +348,53 @@ def assignable(request):
     return Response([
         {"id": u.id, "username": u.username}
         for u in staff_queryset().order_by("username")
+    ])
+
+
+class RepositoryViewSet(viewsets.ModelViewSet):
+    """Repositories whose commits and roadmap drive the board.
+
+    manage_tasks only, reading included: the list is configuration, and
+    adding one can import unassigned roadmap tasks on its next check.
+    """
+
+    serializer_class = RepositorySerializer
+    queryset = Repository.objects.all()
+    pagination_class = None
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    def get_permissions(self):
+        return [has_capability(CAPABILITY)()]
+
+    def perform_create(self, serializer):
+        serializer.save(added_by=self.request.user)
+
+    @action(detail=True, methods=["post"])
+    def check(self, request, pk=None):
+        """Read the repository now instead of waiting for the next poll."""
+        from .github import poll_repository
+
+        repository = self.get_object()
+        try:
+            result = poll_repository(repository)
+        except Exception as exc:
+            Repository.objects.filter(pk=repository.pk).update(last_error=str(exc)[:1000])
+            return Response({"error": f"Could not read {repository.full_name} from GitHub: {exc}"}, status=502)
+        repository.refresh_from_db()
+        return Response({"repository": self.get_serializer(repository).data, "result": result})
+
+
+@api_view(["GET"])
+@permission_classes([IsStaffMember])
+def backlog_projects(request):
+    """Read-only import status and project filters, using the existing integration."""
+    repositories = Repository.objects.select_related("project").annotate(
+        awaiting=Count("tasks", filter=Q(tasks__source__in=Task.IMPORTED_SOURCES, tasks__documentation_resolved=False, tasks__assignments__isnull=True,
+                                         tasks__status=Task.OPEN, tasks__roadmap_checked=False))
+    ).order_by("project__title", "full_name")
+    return Response([
+        {"id": repo.pk, "title": repo.project.title if repo.project_id else repo.full_name,
+         "full_name": repo.full_name, "awaiting": repo.awaiting,
+         "last_checked_at": repo.last_checked_at, "has_error": bool(repo.last_error)}
+        for repo in repositories
     ])

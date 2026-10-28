@@ -16,15 +16,14 @@ logger = logging.getLogger(__name__)
     max_retries=3,
 )
 def sync_github_task():
-    """Refresh GitHub repository metadata for synced projects.
+    """Queue due catalogue/account refreshes; their leases coalesce duplicate ticks.
 
-    Previously only ever run by hand. On Beat it keeps project cards current
-    without anyone remembering to run it. Safe to retry -- the command reads
-    from the GitHub API and overwrites project fields, so a repeat is a no-op
-    beyond the API calls, which is exactly what you want when the failure was
-    a rate limit.
+    Catalogue refresh also updates tracked projects, reusing unchanged content.
+    Last-good snapshots survive failures and account-wide rate-limit backoff.
     """
-    call_command('sync_github', verbosity=0)
+    from .github_cache import request_refresh
+    request_refresh('catalogue')
+    request_refresh('account')
     return {'status': 'ok'}
 
 
@@ -42,3 +41,9 @@ def rebuild_vector_stores_task(force: bool = False):
     """
     call_command('init_vector_stores', force=force, verbosity=0)
     return {'status': 'ok', 'force': force}
+
+
+@shared_task(name='brand.refresh_github_cache')
+def refresh_github_cache_task(scope, kind, repo_id, token):
+    from .github_cache import run_refresh
+    return run_refresh(scope, kind, repo_id, token)

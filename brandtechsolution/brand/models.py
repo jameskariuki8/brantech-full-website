@@ -1167,3 +1167,47 @@ class BlogComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.user_name} on {self.post.title}"
+
+
+class GitHubRepositoryCache(models.Model):
+    """Private integration snapshots, separate from public portfolio projects."""
+
+    scope = models.CharField(max_length=64, db_index=True)
+    github_repo_id = models.BigIntegerField()
+    full_name = models.CharField(max_length=255, db_index=True)
+    metadata = models.JSONField(default=dict)
+    documents = models.JSONField(default=dict)
+    document_contents = models.JSONField(default=dict)
+    document_shas = models.JSONField(default=dict)
+    documents_revision = models.CharField(max_length=255, blank=True, default="")
+    documents_checked_at = models.DateTimeField(null=True, blank=True)
+    readme_content = models.TextField(null=True, blank=True)
+    readme_sha = models.CharField(max_length=64, blank=True, default="")
+    recent_commits = models.JSONField(null=True, blank=True)
+    commit_count = models.PositiveIntegerField(null=True, blank=True)
+    content_revision = models.CharField(max_length=255, blank=True, default="")
+    content_checked_at = models.DateTimeField(null=True, blank=True)
+    fetched_at = models.DateTimeField(null=True, blank=True)
+    available = models.BooleanField(default=True)
+
+    class Meta:
+        default_permissions = ()
+        constraints = [models.UniqueConstraint(fields=["scope", "github_repo_id"], name="unique_github_snapshot")]
+
+
+class GitHubRefreshState(models.Model):
+    """Durable freshness, refresh leases and retry windows; never stores tokens."""
+
+    scope = models.CharField(max_length=64, db_index=True)
+    key = models.CharField(max_length=100)
+    value = models.JSONField(default=dict)
+    refreshed_at = models.DateTimeField(null=True, blank=True)
+    lease_until = models.DateTimeField(null=True, blank=True)
+    lease_token = models.CharField(max_length=32, blank=True, default="")
+    running = models.BooleanField(default=False)
+    retry_after = models.DateTimeField(null=True, blank=True)
+    last_error = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        default_permissions = ()
+        constraints = [models.UniqueConstraint(fields=["scope", "key"], name="unique_github_refresh_state")]

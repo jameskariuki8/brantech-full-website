@@ -124,6 +124,8 @@ class AppSettings(BaseSettings):
     # Beat intervals, in seconds.
     beat_outbox_interval: int = 60
     beat_github_sync_interval: int = 3600
+    # How often linked repositories are read for task commits and roadmaps.
+    beat_task_repo_interval: int = 600
 
     @property
     def redis_url_base(self) -> str:
@@ -232,6 +234,9 @@ class AppSettings(BaseSettings):
     # ============================================================
     github_access_token: Optional[str] = None
     github_username: Optional[str] = None
+    # Signs GitHub's push webhook for the task board (optional; polling
+    # covers the same ground a few minutes later).
+    github_webhook_secret: Optional[str] = None
 
     # ============================================================
     # Database Configuration

@@ -15,6 +15,11 @@
 // do not depend on each other.
 const TASK_API = '/api/work';
 
+let TASK_WORKSPACE = new URLSearchParams(window.location.search).get('task_view') === 'backlog' ? 'backlog' : 'board';
+let TASK_PROJECT = '';
+let TASK_PROJECTS = [];
+let TASK_REQUEST = 0;
+let TASK_MODAL_FOCUS = null;
 let TASK_TAB = 'mine';
 let TASK_ROWS = [];
 let TASK_NEXT = null;
@@ -157,6 +162,8 @@ function taskCard(task) {
                 </h3>
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 mt-1">
                     <span class="font-semibold ${priority.text}">${escapeHtml(priority.label)}</span>
+                    <span>#${escapeHtml(task.id)}</span>
+                    ${task.repository_name ? `<span>${escapeHtml(task.repository_name)} · ${escapeHtml(task.source_display)}</span>` : ''}
                     ${taskDueLabel(task)}
                     ${task.comment_count ? `<span class="flex items-center gap-1.5">
                         <i class="far fa-comment"></i>${escapeHtml(task.comment_count)}
@@ -214,7 +221,12 @@ function renderTaskStats(summary) {
 /* ---------- list ---------- */
 
 function taskQueryString() {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ workspace: TASK_WORKSPACE });
+    if (TASK_WORKSPACE === 'backlog') {
+        if (TASK_PROJECT) params.set('repository', TASK_PROJECT);
+        if (TASK_SEARCH) params.set('q', TASK_SEARCH);
+        return `/tasks/?${params.toString()}`;
+    }
     if (TASK_TAB === 'mine') { params.set('mine', '1'); params.set('active', '1'); }
     if (TASK_TAB === 'all') params.set('active', '1');
     if (TASK_TAB === 'review') params.set('status', 'in_review');
@@ -236,7 +248,11 @@ const TASK_EMPTY = {
 function renderTaskList() {
     const container = document.getElementById('taskList');
     if (!TASK_ROWS.length) {
-        const empty = TASK_SEARCH
+        const empty = TASK_WORKSPACE === 'backlog'
+            ? { icon: 'fa-list-check', text: TASK_SEARCH || TASK_PROJECT
+                ? 'No project tasks match these filters.'
+                : 'No project tasks waiting for an owner. Roadmap items and documentation fixes appear here automatically.' }
+            : TASK_SEARCH
             ? { icon: 'fa-magnifying-glass', text: `No tasks match "${TASK_SEARCH}".` }
             : (TASK_EMPTY[TASK_TAB] || TASK_EMPTY.all);
         container.innerHTML = `
@@ -245,13 +261,17 @@ function renderTaskList() {
             <p>${escapeHtml(empty.text)}</p>
         </div>`;
     } else {
-        container.innerHTML = TASK_ROWS.map(taskCard).join('');
+        container.innerHTML = TASK_WORKSPACE === 'backlog'
+            ? `<div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden divide-y divide-dark-border">${TASK_ROWS.map(taskBacklogRow).join('')}</div>`
+            : TASK_ROWS.map(taskCard).join('');
     }
     document.getElementById('taskListMore').classList.toggle('hidden', !TASK_NEXT);
 }
 
 async function loadTaskPage(url, append) {
+    const request = ++TASK_REQUEST;
     const data = await taskApi(url);
+    if (request !== TASK_REQUEST) return;
     TASK_ROWS = append ? TASK_ROWS.concat(data.results || []) : (data.results || []);
     TASK_NEXT = taskSameOrigin(data.next);
     renderTaskList();
@@ -270,6 +290,7 @@ async function refreshTaskSummary() {
         reviewCount.textContent = summary.needs_review;
         reviewCount.classList.toggle('hidden', !summary.needs_review);
 
+        document.getElementById('taskBacklogCount').textContent = summary.backlog;
         renderTaskStats(summary);
 
         // The sidebar badge shows whichever number the viewer can act on:
@@ -288,6 +309,7 @@ async function refreshTaskSummary() {
 }
 
 async function loadTasks() {
+    document.getElementById('taskList').innerHTML = '<div class="space-y-3" aria-label="Loading tasks">' + Array.from({length: 3}, () => '<div class="bg-dark-card border border-dark-border rounded-xl p-5"><div class="h-3 bg-white/5 rounded w-2/3 mb-3"></div><div class="h-2 bg-white/5 rounded w-1/3"></div></div>').join('') + '</div>';
     try {
         await refreshTaskSummary();
         if (!TASK_LOADED) {
@@ -295,6 +317,7 @@ async function loadTasks() {
             TASK_LOADED = true;
         }
         await loadTaskPage(taskQueryString(), false);
+        if (TASK_WORKSPACE === 'backlog') await loadTaskBacklogProjects();
     } catch (e) {
         document.getElementById('taskList').innerHTML =
             `<div class="text-red-400 text-sm">${escapeHtml(e.message)}</div>`;
@@ -304,11 +327,13 @@ async function loadTasks() {
 /* ---------- detail modal ---------- */
 
 function openTaskModal(title, body) {
+    TASK_MODAL_FOCUS = document.activeElement;
     document.getElementById('taskModalTitle').textContent = title;
     document.getElementById('taskModalBody').innerHTML = body;
     const modal = document.getElementById('taskModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    document.getElementById('taskModalClose').focus();
 }
 
 function closeTaskModal() {
@@ -316,6 +341,7 @@ function closeTaskModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     document.getElementById('taskModalBody').innerHTML = '';
+    if (TASK_MODAL_FOCUS && TASK_MODAL_FOCUS.isConnected) TASK_MODAL_FOCUS.focus();
 }
 
 const TASK_ACTIVITY_ICON = {
@@ -328,6 +354,7 @@ const TASK_ACTIVITY_ICON = {
     submitted: 'fa-paper-plane text-yellow-400',
     approved: 'fa-circle-check text-green-400',
     reopened: 'fa-arrow-rotate-left text-red-400',
+    commit: 'fa-code-commit text-blue-400',
 };
 
 // A comment is something a person wrote and gets the inbox's inset message
@@ -416,6 +443,7 @@ function taskDetailBody(task, activity) {
             : '<p class="text-sm text-gray-600 italic">No description.</p>'}
 
         ${taskProgressBar(task)}
+        ${taskCommitDetails(task)}
 
         <div>
             <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Assigned to</h4>
@@ -702,4 +730,150 @@ document.addEventListener('DOMContentLoaded', () => {
     // The badge has to be right before anyone opens the section, otherwise
     // nobody learns there is work waiting for them.
     refreshTaskSummary();
+});
+
+
+// Only generated GitHub URLs are navigable, even if a webhook supplied the URL.
+function taskGithubLink(url, label) {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol === 'https:' && parsed.hostname === 'github.com' && !parsed.username && !parsed.password) {
+            return `<a href="${escapeHtml(parsed.href)}" target="_blank" rel="noopener noreferrer" class="text-brand-blue hover:underline">${escapeHtml(label)}</a>`;
+        }
+    } catch (e) { /* Render a plain label for invalid URLs. */ }
+    return escapeHtml(label);
+}
+
+function taskCommitDetails(task) {
+    return `<div class="text-sm text-gray-400">
+        <p>Task #${escapeHtml(task.id)}${task.repository_name ? ` · ${escapeHtml(task.repository_name)} · ${escapeHtml(task.source_display)}` : ''}</p>
+        <h4 class="font-semibold text-white mt-3">Commits</h4>
+        ${(task.commits || []).length ? task.commits.map(c => `<div class="py-2 border-b border-white/5">
+            ${taskGithubLink(c.url, c.short_sha)} ${escapeHtml(c.title)}
+            <p class="text-xs">${escapeHtml(c.author_name)} · ${c.on_default_branch ? 'On default branch' : 'Not merged yet'}${c.finishes ? ' · Submitted for review' : ''}</p>
+        </div>`).join('') : '<p>No linked commits yet. Reference this task in commits using Task # followed by its number.</p>'}
+    </div>`;
+}
+
+
+function taskBacklogRow(task) {
+    const project = task.project_title || task.repository_name || 'Roadmap';
+    const priority = taskPriority(task);
+    return `<div class="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors">
+        <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1.5">
+                <span class="font-mono">#${escapeHtml(task.id)}</span><span aria-hidden="true">/</span><span>${escapeHtml(project)}</span>${task.source === 'documentation' ? '<span class="text-amber-300 bg-amber-500/10 rounded px-2 py-0.5">Documentation</span>' : '<span class="text-gray-400 bg-white/5 rounded px-2 py-0.5">Roadmap</span>'}
+            </div>
+            <button type="button" data-action="open-task" data-id="${escapeHtml(task.id)}" class="text-left text-sm font-semibold text-white hover:text-brand-blue break-words">${escapeHtml(task.title)}</button>
+            <p class="text-xs text-gray-500 mt-1.5 truncate" title="${escapeHtml(task.roadmap_context)}">${escapeHtml(task.roadmap_context)}</p>
+        </div>
+        <div class="flex items-center justify-between sm:justify-end gap-5 shrink-0">
+            <span class="text-xs ${priority.text}">${escapeHtml(priority.label)}</span>
+            ${TASK_CAN_MANAGE ? `<button type="button" data-assign-backlog="${escapeHtml(task.id)}" class="text-sm font-medium text-brand-blue border border-brand-blue/30 hover:bg-brand-blue/10 focus-visible:outline focus-visible:outline-brand-blue px-4 py-2 rounded-lg transition-colors">Assign<span class="sr-only"> ${escapeHtml(task.title)}</span></button>` : '<span class="text-xs text-gray-500">Awaiting assignment</span>'}
+        </div>
+    </div>`;
+}
+
+function taskWorkspace(workspace) {
+    TASK_WORKSPACE = workspace;
+    TASK_ROWS = [];
+    TASK_NEXT = null;
+    ++TASK_REQUEST;
+    const backlog = workspace === 'backlog';
+    document.querySelectorAll('.task-workspace').forEach(button => {
+        const active = button.dataset.workspace === workspace;
+        button.setAttribute('aria-pressed', String(active));
+        button.classList.toggle('border-brand-blue', active);
+        button.classList.toggle('border-transparent', !active);
+        button.classList.toggle('text-white', active);
+        button.classList.toggle('text-gray-500', !active);
+    });
+    document.getElementById('taskStats').classList.toggle('hidden', backlog);
+    document.getElementById('taskBoardFilters').classList.toggle('hidden', backlog);
+    document.getElementById('taskBacklogIntro').classList.toggle('hidden', !backlog);
+    document.getElementById('taskBacklogProjectLabel').classList.toggle('hidden', !backlog);
+    document.getElementById('taskSearch').placeholder = backlog ? 'Search project tasks' : 'Search tasks';
+}
+
+async function loadTaskBacklogProjects() {
+    const status = document.getElementById('taskImportStatus');
+    try {
+        TASK_PROJECTS = await taskApi('/backlog-projects/');
+        const picker = document.getElementById('taskBacklogProject');
+        picker.innerHTML = '<option value="">All projects</option>' + TASK_PROJECTS.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.title)} (${escapeHtml(p.awaiting)})</option>`).join('');
+        picker.value = TASK_PROJECT;
+        const checked = TASK_PROJECTS.map(p => p.last_checked_at).filter(Boolean).sort();
+        const errors = TASK_PROJECTS.filter(p => p.has_error).length;
+        status.textContent = !TASK_PROJECTS.length
+            ? 'Roadmap work and documentation issues from synced GitHub projects appear on the next scheduled check.'
+            : `${TASK_PROJECTS.length} projects · Imported automatically · ${checked.length ? 'Last checked ' + new Date(checked.at(-1)).toLocaleString() : 'Waiting for first check'}${errors ? ` · ${errors} projects could not sync; the next check will retry` : ''}`;
+    } catch (e) { status.textContent = `Import status unavailable: ${e.message}`; }
+}
+
+async function openTaskAssignment(id) {
+    try {
+        const task = await taskApi(`/tasks/${id}/`);
+        if (task.assignees.length) {
+            document.getElementById('taskBacklogFeedback').textContent = 'This item has already been assigned. The backlog has been refreshed.';
+            await loadTasks();
+            return;
+        }
+        const people = await taskApi('/assignable/');
+        openTaskModal('Assign backlog item', `<div class="space-y-5">
+            <div><p class="text-xs text-gray-500 mb-2">${escapeHtml(task.project_title || task.repository_name)} · #${escapeHtml(task.id)}</p><h4 class="text-white font-semibold">${escapeHtml(task.title)}</h4></div>
+            <fieldset><legend class="text-sm text-gray-300 mb-3">Who will take this on?</legend>
+                <div class="max-h-64 overflow-y-auto divide-y divide-white/5">${people.length ? people.map(person => `<label class="flex items-center gap-3 py-3 cursor-pointer"><input type="checkbox" class="task-backlog-assignee accent-brand-blue w-4 h-4" value="${escapeHtml(person.id)}"><span class="text-sm text-white">${escapeHtml(person.username)}</span></label>`).join('') : '<p class="text-sm text-gray-500">No active staff are available. Add staff before assigning work.</p>'}</div>
+            </fieldset>
+            <p id="taskAssignError" role="alert" class="text-sm text-red-400"></p>
+            <div class="flex justify-end gap-3 border-t border-white/5 pt-4"><button type="button" data-action="cancel-task" class="text-gray-400 text-sm px-4 py-2">Cancel</button><button type="button" id="taskAssignSave" class="bg-brand-blue hover:bg-blue-500 text-white text-sm font-semibold rounded-lg px-5 py-2.5" ${people.length ? '' : 'disabled'}>Assign task</button></div>
+        </div>`);
+        document.getElementById('taskAssignSave').addEventListener('click', async event => {
+            const assigneeIds = Array.from(document.querySelectorAll('.task-backlog-assignee:checked')).map(input => Number(input.value));
+            const error = document.getElementById('taskAssignError');
+            if (!assigneeIds.length) { error.textContent = 'Choose at least one person.'; return; }
+            event.target.disabled = true;
+            try {
+                await taskApi(`/tasks/${id}/assign/`, { method: 'POST', body: JSON.stringify({ assignee_ids: assigneeIds }) });
+                closeTaskModal();
+                document.getElementById('taskBacklogFeedback').textContent = `Assigned “${task.title}”. You can follow its progress in Team tasks.`;
+                await loadTasks();
+            } catch (e) { error.textContent = e.message; }
+            finally { event.target.disabled = false; }
+        });
+    } catch (e) { toastApiError(e, 'Could not open assignment.'); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const section = document.getElementById('tasks');
+    if (!section) return;
+    taskWorkspace(TASK_WORKSPACE);
+    section.addEventListener('click', async event => {
+        const workspace = event.target.closest('[data-workspace]');
+        if (workspace) {
+            taskWorkspace(workspace.dataset.workspace);
+            const url = new URL(window.location.href);
+            url.searchParams.set('task_view', TASK_WORKSPACE);
+            window.history.replaceState(null, '', url);
+            await loadTasks();
+        }
+        const assign = event.target.closest('[data-assign-backlog]');
+        if (assign) await openTaskAssignment(assign.dataset.assignBacklog);
+    });
+    document.getElementById('taskBacklogProject').addEventListener('change', async event => {
+        TASK_PROJECT = event.target.value;
+        await loadTasks();
+    });
+    document.getElementById('taskBacklogRefresh').addEventListener('click', async event => {
+        event.currentTarget.disabled = true;
+        try { await loadTasks(); }
+        finally { document.getElementById('taskBacklogRefresh').disabled = false; }
+    });
+    document.getElementById('taskModal').addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeTaskModal();
+        if (event.key !== 'Tab') return;
+        const nodes = Array.from(document.getElementById('taskModal').querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]'));
+        const first = nodes[0], last = nodes.at(-1);
+        if (event.shiftKey && document.activeElement === first) { last.focus(); event.preventDefault(); }
+        else if (!event.shiftKey && document.activeElement === last) { first.focus(); event.preventDefault(); }
+    });
 });

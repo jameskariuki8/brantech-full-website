@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Task, TaskActivity, TaskAssignment
+from .models import Repository, Task, TaskActivity, TaskAssignment, TaskCommit
 
 
 def staff_queryset():
@@ -36,6 +36,60 @@ class TaskAssignmentSerializer(serializers.ModelSerializer):
         return obj.completed_at is not None
 
 
+class TaskCommitSerializer(serializers.ModelSerializer):
+    short_sha = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    author_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TaskCommit
+        fields = [
+            "short_sha", "title", "url", "author_login", "author_name",
+            "committed_at", "on_default_branch", "finishes",
+        ]
+        read_only_fields = fields
+
+    def get_short_sha(self, obj):
+        return obj.sha[:7]
+
+    def get_title(self, obj):
+        lines = (obj.message or "").strip().splitlines()
+        return lines[0][:200] if lines else ""
+
+    def get_author_name(self, obj):
+        return obj.author.username if obj.author else obj.author_login
+
+
+class RepositorySerializer(serializers.ModelSerializer):
+    url = serializers.CharField(read_only=True)
+    open_tasks = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Repository
+        fields = [
+            "id", "full_name", "url", "default_branch", "track_roadmap",
+            "last_checked_at", "last_error", "open_tasks",
+        ]
+        read_only_fields = ["id", "url", "default_branch", "last_checked_at", "last_error", "open_tasks"]
+
+    def get_open_tasks(self, obj):
+        return obj.tasks.exclude(status=Task.DONE).count()
+
+    def validate_full_name(self, value):
+        import re
+
+        name = re.sub(r"^(?:https?://)?(?:www\.)?github\.com/", "", value.strip(), flags=re.I)
+        name = name.removesuffix(".git").strip("/")
+        if not re.fullmatch(r"[\w.-]+/[\w.-]+", name):
+            raise serializers.ValidationError("Use owner/name or the repository's GitHub link.")
+        clash = Repository.objects.filter(full_name__iexact=name)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError("That repository is already linked.")
+        return name
+
+
 class TaskSerializer(serializers.ModelSerializer):
     # assignee_ids is the write path and is write_only so DRF never calls
     # get_attribute("assignee_ids") on a Task while rendering - no such
@@ -56,6 +110,15 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by_name = serializers.SerializerMethodField()
     my_assignment = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
+    commits = TaskCommitSerializer(many=True, read_only=True)
+    repository_name = serializers.CharField(
+        source="repository.full_name", read_only=True, default=None
+    )
+    source_display = serializers.CharField(source="get_source_display", read_only=True)
+    project_id = serializers.IntegerField(source="repository.project_id", read_only=True, default=None)
+    project_title = serializers.CharField(source="repository.project.title", read_only=True, default=None)
+    roadmap_context = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Task
@@ -64,7 +127,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "priority", "priority_display", "due_date", "is_overdue",
             "assignees", "assignee_ids", "created_by_name", "my_assignment",
             "comment_count", "created_at", "updated_at", "submitted_at",
-            "closed_at",
+            "closed_at", "source", "source_display", "repository_name",
+            "commits", "project_id", "project_title", "roadmap_context",
         ]
         # status is absent from the writable set on purpose. It is moved only
         # by the complete/approve/reopen actions, each of which enforces its
@@ -73,7 +137,13 @@ class TaskSerializer(serializers.ModelSerializer):
         # per-assignee completion state and the task status disagree.
         read_only_fields = [
             "status", "created_at", "updated_at", "submitted_at", "closed_at",
+            "source",
         ]
+
+    def get_roadmap_context(self, obj):
+        if obj.source not in Task.IMPORTED_SOURCES:
+            return ""
+        return (obj.description or "").split("\n\n", 1)[0]
 
     def get_created_by_name(self, obj):
         return obj.created_by.username if obj.created_by else "system"

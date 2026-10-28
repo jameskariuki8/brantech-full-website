@@ -154,6 +154,10 @@ class StaffProfile(models.Model):
         help_text="List of frameworks & tools, e.g. ['Django', 'React', 'Docker']",
     )
     github_username = models.CharField(max_length=100, blank=True, default="")
+    # Off keeps someone off work handed out automatically (roadmap items),
+    # for instance while they are on another project. Manual assignment is
+    # unaffected.
+    auto_assign = models.BooleanField(default=True)
     bio = models.TextField(blank=True, default="")
     is_onboarded = models.BooleanField(
         default=False,
