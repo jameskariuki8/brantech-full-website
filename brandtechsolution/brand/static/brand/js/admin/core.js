@@ -79,11 +79,23 @@ function showSection(sectionName, clickedElement) {
     if (sectionName === 'tasks') loadTasks();
 }
 
-function showAddForm(type) { document.getElementById(`${type}Form`).classList.remove('hidden'); }
+function showAddForm(type) {
+    const el = document.getElementById(`${type}Form`);
+    if (!el) return;
+    el.classList.remove('hidden');
+    if (el.classList.contains('fixed')) {
+        el.classList.add('flex');
+    }
+}
 function hideAddForm(type) {
-    document.getElementById(`${type}Form`).classList.add('hidden');
+    const el = document.getElementById(`${type}Form`);
+    if (!el) return;
+    el.classList.add('hidden');
+    if (el.classList.contains('fixed')) {
+        el.classList.remove('flex');
+    }
     const form = document.getElementById(`add${type.charAt(0).toUpperCase() + type.slice(1)}Form`);
-    form.reset();
+    if (form) form.reset();
     if (typeof getEmailEditor === 'function') {
         const editor = getEmailEditor(type);
         if (editor) editor.setValue('');

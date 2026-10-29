@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Unified Projects & GitHub Source Hub**: Unified repository management into the canonical Projects admin section (`/admin-panel/?section=projects`), replacing the fragmented standalone GitHub Manager view.
+- **Dynamic Palette Extraction & Theme Harmonization**: Automatic sampling and derivation of vibrant brand accents and deep glow shades from uploaded project covers and screenshots, propagating dynamically across card glowing borders, showcase modules, and charts.
+- **Media Attachments (Screenshots & Video)**: Extended `Project` model with direct video demonstration support (`video_url`, `video_file`) and enriched interface gallery management.
+- **Interactive System Modules & Data Story Studio**: Replaced manual JSON Chart.js specifications with a visual metric comparison table builder and markdown README auto-extraction.
+- **Single-Project GitHub Synchronization**: Added `POST /api/projects/<pk>/sync-github/` endpoint for 1-click on-demand commit and metadata refreshes directly from project cards.
+
+### Changed
+- **Admin Navigation Simplification**: Retired standalone GitHub Manager sidebar navigation in favor of in-line repository selection and sync inside the Projects workspace.
 - **Documentation repair tasks**: Missing or invalid README.md, CHANGELOG.md, ROADMAP.md and LICENSE files automatically create unassigned repair tasks in Project backlog, using GitHub Manager’s existing document checks. Findings are grouped per file and refreshed without duplicates. Passing checks remove unassigned repairs from the backlog or submit assigned work for human review. Document pushes queue rechecks, and empty repositories still produce repair work.
 - **GitHub task automation**: Referenced commits appear on task details; closing commits and task-branch merges submit assigned work for administrator review. Roadmap imports reuse GitHub-synced projects and populate an unassigned backlog. Includes Celery polling, an optional signed webhook, migrations and regression tests.
 - **Custom staff groups with their own mailboxes and members**: Staff & Roles is now Staff & Groups. A group holds capabilities as before, plus shared mailboxes and members. From the group editor you tick its members, invite new people into it by email, tick the shared mailboxes its members read and reply from, and create a new mailbox on the spot. Group cards show members, pending invitations, mailboxes and capabilities. Members of a mailbox's groups are also emailed when mail arrives in it. `view_inbox` and `handle_inquiries` still reach every shared mailbox. Granting stays bounded: a non-superuser cannot add a capability they lack or a mailbox they cannot send from, cannot put anyone in a group that grants more than they hold, and cannot change their own or an owner's groups. Plan: `docs/plans/2026-10-27-custom-staff-groups-plan.md`.

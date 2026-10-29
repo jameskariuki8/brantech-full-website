@@ -414,17 +414,22 @@ def project_list(request):
                 'description': p.description,
                 'project_url': p.project_url,
                 'github_url': p.github_url,
+                'github_repo_id': p.github_repo_id,
                 'featured': p.featured,
                 'image': p.image.url if p.image else None,
+                'video_url': p.video_url,
+                'video_file': p.video_file.url if p.video_file else None,
                 'is_github_synced': p.is_github_synced,
                 'commit_count': p.commit_count,
                 'github_role': p.github_role,
+                'last_synced_at': p.last_synced_at.isoformat() if p.last_synced_at else None,
+                'has_readme': bool(p.readme_content),
                 **serialize_showcase(p),
             }
             for p in paginated_projects
         ]
         
-        return JsonResponse(data, safe=False)
+        return JsonResponse({'results': data, 'pagination': pagination_meta}, safe=False)
     
     if request.method == "POST":
         denied = capability_required_json(request, 'manage_projects')
@@ -438,6 +443,10 @@ def project_list(request):
             github_url = request.POST.get('github_url')
             featured = request.POST.get('featured') == 'true'
             image = request.FILES.get('image')
+            video_url = request.POST.get('video_url', '').strip() or None
+            video_file = request.FILES.get('video_file')
+            github_repo_id = request.POST.get('github_repo_id')
+            github_repo_id_val = int(github_repo_id) if github_repo_id and github_repo_id.isdigit() else None
 
             project = Project(
                 title=title,
@@ -445,8 +454,12 @@ def project_list(request):
                 description=description,
                 project_url=project_url,
                 github_url=github_url,
+                github_repo_id=github_repo_id_val,
+                is_github_synced=bool(github_repo_id_val),
                 featured=featured,
-                image=image
+                image=image,
+                video_url=video_url,
+                video_file=video_file,
             )
             apply_showcase_fields(project, request.POST)
             project.save()
@@ -469,11 +482,15 @@ def project_detail(request, pk):
             'description': project.description,
             'project_url': project.project_url,
             'github_url': project.github_url,
+            'github_repo_id': project.github_repo_id,
             'featured': project.featured,
             'image': project.image.url if project.image else None,
+            'video_url': project.video_url,
+            'video_file': project.video_file.url if project.video_file else None,
             'is_github_synced': project.is_github_synced,
             'commit_count': project.commit_count,
             'github_role': project.github_role,
+            'last_synced_at': project.last_synced_at.isoformat() if project.last_synced_at else None,
             'readme_content': project.readme_content,
             **serialize_showcase(project),
         }
@@ -489,7 +506,19 @@ def project_detail(request, pk):
             project.description = request.POST.get('description', project.description)
             project.project_url = request.POST.get('project_url', project.project_url)
             project.github_url = request.POST.get('github_url', project.github_url)
+            if 'github_repo_id' in request.POST:
+                raw_id = request.POST.get('github_repo_id', '').strip()
+                if raw_id.isdigit():
+                    project.github_repo_id = int(raw_id)
+                    project.is_github_synced = True
+                else:
+                    project.github_repo_id = None
+                    project.is_github_synced = False
             project.featured = request.POST.get('featured') == 'true'
+            if 'video_url' in request.POST:
+                project.video_url = request.POST.get('video_url', '').strip() or None
+            if 'video_file' in request.FILES:
+                project.video_file = request.FILES['video_file']
             
             if 'image' in request.FILES:
                 project.image = request.FILES['image']
@@ -627,3 +656,29 @@ def github_refresh(request):
     queued = request_refresh(kind, repo_id, force=True)
     key = f'repository:{repo_id}' if kind == 'repository' else kind
     return JsonResponse({'queued': queued, 'cache': refresh_status(key)}, status=202)
+
+
+@require_http_methods(["POST"])
+def project_sync_github(request, pk):
+    """Sync a specific project with its linked GitHub repository immediately."""
+    denied = capability_required_json(request, 'manage_projects')
+    if denied:
+        return denied
+    project = get_object_or_404(Project, pk=pk)
+    if not project.github_repo_id:
+        return JsonResponse({'error': 'Project does not have a linked GitHub repository.'}, status=400)
+    try:
+        service = GitHubService()
+        result = service.sync_repositories([project.github_repo_id])
+        project.refresh_from_db()
+        return JsonResponse({
+            'success': True,
+            'project_id': project.id,
+            'commit_count': project.commit_count,
+            'last_synced_at': project.last_synced_at.isoformat() if project.last_synced_at else None,
+            'message': 'Project synced with GitHub successfully.'
+        })
+    except Exception as e:
+        logger.exception("Failed to sync project %s with GitHub", pk)
+        return JsonResponse({'error': 'Failed to sync with GitHub.'}, status=500)
+

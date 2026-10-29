@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/posts/<int:pk>/', api_views.post_detail, name='api_post_detail'),
     path('api/projects/', api_views.project_list, name='api_project_list'),
     path('api/projects/<int:pk>/', api_views.project_detail, name='api_project_detail'),
+    path('api/projects/<int:pk>/sync-github/', api_views.project_sync_github, name='api_project_sync_github'),
     path('api/projects/<int:pk>/commits/', api_views.project_commits, name='api_project_commits'),
     
     path('api/github/repos/', api_views.github_repos_list, name='api_github_repos'),

@@ -813,6 +813,10 @@ class Project(models.Model):
     readme_content = models.TextField(blank=True, null=True, help_text="Raw Markdown README from GitHub")
     cached_commits = models.JSONField(blank=True, null=True, help_text="Last 10 commits cached during sync")
 
+    # Media Fields (Video Demo & Attachments)
+    video_url = models.URLField(blank=True, null=True, max_length=500, help_text="Link to video demo (YouTube, Vimeo, Loom, or MP4 URL)")
+    video_file = models.FileField(upload_to='project_videos/', blank=True, null=True, help_text="Direct video file upload (.mp4, .webm)")
+
     # ============================================================
     # SHOWCASE FIELDS
     # ============================================================

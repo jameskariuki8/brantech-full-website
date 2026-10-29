@@ -1,222 +1,366 @@
             <div id="projects" class="section hidden">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Projects</h2>
-                        <p class="text-gray-500 text-sm">Showcase your best work</p>
+                        <h2 class="text-2xl font-bold text-white tracking-tight">Projects &amp; Products</h2>
+                        <p class="text-gray-400 text-sm mt-1">Manage public portfolio showcases, connected GitHub repositories, and dynamic data stories.</p>
                     </div>
-                    <button onclick="newProject()"
-                        class="bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors">
-                        <i class="fas fa-plus mr-2"></i>New Project
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button onclick="newProject()"
+                            class="bg-brand-green hover:bg-green-500 text-black font-semibold px-5 py-2.5 rounded-lg flex items-center transition-colors text-sm shadow-sm shadow-green-500/10">
+                            <i class="fas fa-plus mr-2"></i>New Project
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Add/Edit Form -->
-                <div id="projectForm" class="bg-dark-card border border-dark-border rounded-xl p-6 mb-8 hidden">
-                    <h3 class="text-lg font-bold text-white mb-6 border-b border-dark-border pb-4">New Project Details
-                    </h3>
-                    {# One form, not two. This markup used to open <form id="addProjectForm"> #}
-                    {# twice and close it once: a nested form is dropped by the parser and the #}
-                    {# duplicate id made getElementById's result depend on that recovery. #}
-                    {# The submit handler is bound in projects.js, not inline. #}
-                    <form id="addProjectForm" class="space-y-6" enctype="multipart/form-data">
-                        {# Tells the API this form posts the showcase fields, so an unticked #}
-                        {# "showcase" checkbox reads as false instead of "absent, leave alone". #}
-                        <input type="hidden" name="has_showcase_fields" value="true">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Project Title</label>
-                            <input type="text" name="title" required
-                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Short Description</label>
-                            <textarea name="short_description" rows="2"
-                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-400 mb-2">Full Description</label>
-                            <textarea name="description" rows="4" required
-                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"></textarea>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Project Image</label>
-                                <input type="file" name="image" accept="image/*"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-gray-400 focus:outline-none focus:border-brand-blue transition-colors">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">Live Demo URL</label>
-                                <input type="url" name="project_url"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-400 mb-2">GitHub URL</label>
-                                <input type="url" name="github_url"
-                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                            </div>
-                            <div class="flex items-center pt-8">
-                                <input type="checkbox" name="featured" id="projectFeatured"
-                                    class="w-5 h-5 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
-                                <label for="projectFeatured" class="ml-2 text-sm text-gray-300">Featured
-                                    Project</label>
-                            </div>
-                        </div>
-
-                        <!-- ============================================================ -->
-                        <!-- Showcase: the /products/ article                             -->
-                        <!-- ============================================================ -->
-                        <div class="border-t border-dark-border pt-6 space-y-6">
-                            <div class="flex items-start gap-3">
-                                <input type="checkbox" id="projectShowcase"
-                                    onchange="toggleShowcaseFields(this.checked)"
-                                    class="w-5 h-5 mt-0.5 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
-                                <label for="projectShowcase" class="text-sm text-gray-300">
-                                    <span class="font-semibold text-white">Feature on the Products page</span>
-                                    <span class="block text-xs text-gray-500 mt-0.5">
-                                        Renders this project as a full article on /products/, with its own
-                                        accent colour, gallery and chart. Leave off to show it only in the
-                                        /projects/ grid.
-                                    </span>
-                                </label>
-                            </div>
-
-                            <div id="showcaseFields" class="space-y-6 hidden">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Phase</label>
-                                        <select name="phase"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                            <option value="completed">Completed &amp; Live</option>
-                                            <option value="active">Active Development</option>
-                                            <option value="future">Future Vision</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Order in phase</label>
-                                        <input type="number" name="display_order" min="0" value="0"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Card style</label>
-                                        <select name="card_variant"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                            <option value="default">Standard</option>
-                                            <option value="spotlight">Spotlight (gradient &amp; glow)</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Accent colour</label>
-                                        <div class="flex gap-2">
-                                            <input type="color" name="accent" value="#00FF94"
-                                                class="h-12 w-14 bg-[#06090F] border border-dark-border rounded-lg cursor-pointer">
-                                            <input type="text" name="accent_deep" placeholder="Deeper shade (optional)"
-                                                class="flex-1 bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                        </div>
-                                        <p class="text-xs text-gray-600 mt-1">Used for text and icons. The deeper
-                                            shade fills the badge; leave blank to reuse the accent.</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Status badge</label>
-                                        <div class="flex gap-2">
-                                            <input type="text" name="badge_icon" placeholder="fas fa-check-circle"
-                                                class="w-40 bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                            <input type="text" name="badge_label" placeholder="Deployed SaaS Platform"
-                                                class="flex-1 bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                        </div>
-                                        <p class="text-xs text-gray-600 mt-1">Font Awesome classes, then the label.</p>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Button label</label>
-                                        <input type="text" name="cta_label" placeholder="Visit Platform"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                        <p class="text-xs text-gray-600 mt-1">Links to the Live Demo URL above.
-                                            Blank hides the button.</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Button icon</label>
-                                        <input type="text" name="cta_icon" placeholder="fas fa-external-link-alt"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Gallery heading</label>
-                                        <input type="text" name="gallery_heading" placeholder="Interface Gallery"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Features heading</label>
-                                        <input type="text" name="features_heading" placeholder="Core Capabilities &amp; Modules"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                    </div>
-                                </div>
-
-                                <!-- Gallery rows -->
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <label class="block text-sm font-medium text-gray-400">Gallery images</label>
-                                        <button type="button" onclick="addGalleryRow()"
-                                            class="text-xs text-brand-blue hover:underline"><i class="fas fa-plus mr-1"></i>Add image</button>
-                                    </div>
-                                    <div id="galleryRows" class="space-y-3"></div>
-                                    <p class="text-xs text-gray-600">Two images render side by side, as on the
-                                        current page. Upload new art through Django admin, or point at a URL here.</p>
-                                </div>
-
-                                <!-- Feature rows -->
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <label class="block text-sm font-medium text-gray-400">Capability list</label>
-                                        <button type="button" onclick="addFeatureRow()"
-                                            class="text-xs text-brand-blue hover:underline"><i class="fas fa-plus mr-1"></i>Add row</button>
-                                    </div>
-                                    <div id="featureRows" class="space-y-3"></div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Chart heading</label>
-                                        <input type="text" name="chart_heading" placeholder="Data Story: ..."
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-400 mb-2">Chart icon</label>
-                                        <input type="text" name="chart_icon" placeholder="fas fa-chart-bar"
-                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-400 mb-2">Chart definition
-                                        <span class="text-gray-600 font-normal">(Chart.js config, JSON)</span></label>
-                                    <textarea name="chart_spec" rows="6" spellcheck="false"
-                                        class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white font-mono text-xs focus:outline-none focus:border-brand-blue transition-colors"
-                                        placeholder='{"type": "bar", "data": {"labels": [], "datasets": []}}'></textarea>
-                                    <p class="text-xs text-gray-600 mt-1">Leave blank for no chart. Invalid JSON is
-                                        rejected on save rather than breaking the page.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end gap-3 pt-4 border-t border-dark-border">
-                            <button type="button" onclick="hideAddForm('project')"
-                                class="px-6 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
-                            <button type="submit"
-                                class="bg-brand-green hover:bg-green-500 text-black px-6 py-2.5 rounded-lg transition-colors font-semibold">Save
-                                Project</button>
-                        </div>
-                    </form>
+                <!-- Filters & Search Toolbar -->
+                <div class="bg-dark-card border border-dark-border rounded-xl p-4 mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="text" id="projectSearchInput" oninput="filterProjectsList()"
+                            placeholder="Search projects by title, description, or GitHub repo..."
+                            class="w-full bg-[#06090F] border border-dark-border rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                    </div>
+                    <div class="flex items-center gap-1.5 overflow-x-auto text-xs font-semibold">
+                        <button onclick="setProjectFilter('all')" id="pFilter-all" class="px-3 py-1.5 rounded-lg bg-white/10 text-white transition-colors">All</button>
+                        <button onclick="setProjectFilter('github')" id="pFilter-github" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-colors flex items-center gap-1.5"><i class="fab fa-github"></i>GitHub Synced</button>
+                        <button onclick="setProjectFilter('standalone')" id="pFilter-standalone" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-colors">Standalone</button>
+                        <button onclick="setProjectFilter('showcase')" id="pFilter-showcase" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-colors">Showcase</button>
+                    </div>
                 </div>
 
-                <div id="projectsList" class="space-y-4"></div>
+                <!-- Add/Edit Project Modal Dialog -->
+                <div id="projectForm" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fade-in" role="dialog" aria-modal="true">
+                    <div class="bg-[#0A101D] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+                        <div class="flex items-center justify-between p-5 sm:p-6 border-b border-white/10 bg-[#06090F]/80 sticky top-0 z-10 backdrop-blur">
+                            <div>
+                                <h3 id="projectModalTitle" class="text-lg font-bold text-white font-heading">New Project Details</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">Configure showcase settings, connected repository, and media assets.</p>
+                            </div>
+                            <button type="button" onclick="hideAddForm('project')" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                <i class="fas fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+
+                        <div class="p-5 sm:p-6 overflow-y-auto space-y-6">
+                            <form id="addProjectForm" class="space-y-6" enctype="multipart/form-data">
+                                <input type="hidden" name="has_showcase_fields" value="true">
+                                <input type="hidden" name="github_repo_id" id="projectGithubRepoId" value="">
+
+                                <!-- Source Section: GitHub Connection -->
+                                <div class="p-4 rounded-xl bg-[#06090F] border border-white/5 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-sm font-semibold text-white flex items-center gap-2">
+                                            <i class="fab fa-github text-brand-blue"></i>
+                                            Connected GitHub Repository
+                                        </label>
+                                        <span id="githubStatusBadge" class="text-xs text-gray-400">Standalone (No Git)</span>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <select id="repoSelector" onchange="onSelectGitHubRepo(this.value)"
+                                            class="flex-1 bg-dark-card border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                            <option value="">-- No Repository / Standalone Project --</option>
+                                        </select>
+                                        <button type="button" onclick="populateRepoDropdown(true)"
+                                            class="px-3 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 justify-center transition-colors">
+                                            <i class="fas fa-rotate text-[10px]"></i>Refresh Repos
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500">
+                                        Linking a repository unlocks commit telemetry, document health checks (README, ROADMAP), and automatic Data Story generation.
+                                    </p>
+                                </div>
+
+                                <!-- Basic Information -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Project Title</label>
+                                        <input type="text" name="title" required
+                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Short Description</label>
+                                        <textarea name="short_description" rows="2"
+                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                            placeholder="Brief elevator pitch (up to 500 characters)..."></textarea>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Full Description</label>
+                                        <textarea name="description" rows="4" required
+                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                            placeholder="Detailed architecture, scope, and technical achievements..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Links & Visibility -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">Live Demo / Production URL</label>
+                                        <input type="url" name="project_url" placeholder="https://example.com"
+                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-2">GitHub Public URL</label>
+                                        <input type="url" name="github_url" id="projectGithubUrlInput" placeholder="https://github.com/org/repo"
+                                            class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                    </div>
+                                </div>
+
+                                <!-- Media Attachments & Dynamic Palette Section -->
+                                <div class="border-t border-dark-border pt-6 space-y-4">
+                                    <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fas fa-photo-film text-brand-green"></i>
+                                        Media Attachments &amp; Dynamic Theme
+                                    </h4>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-400 mb-2">Cover / Hero Image</label>
+                                            <input type="file" name="image" id="projectCoverImageInput" accept="image/*" onchange="handleCoverImageUpload(this)"
+                                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-xs text-gray-400 focus:outline-none focus:border-brand-blue transition-colors">
+                                            <p class="text-[11px] text-gray-500 mt-1">Uploading an image will automatically sample and suggest a dynamic color palette below.</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-400 mb-2">Video Demo URL</label>
+                                            <input type="url" name="video_url" placeholder="YouTube, Vimeo, Loom, or direct MP4 URL"
+                                                class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                            <div class="mt-2">
+                                                <label class="block text-[11px] text-gray-400 mb-1">Or direct video file upload (.mp4, .webm)</label>
+                                                <input type="file" name="video_file" accept="video/mp4,video/webm"
+                                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-3 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-brand-blue transition-colors">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Extracted Palette Swatches & Accent Customization -->
+                                    <div class="p-4 rounded-xl bg-[#06090F] border border-white/5 space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-semibold text-gray-300">Theme Color (Accent &amp; Glow)</span>
+                                            <div id="paletteSwatches" class="flex items-center gap-1.5">
+                                                <span class="text-[11px] text-gray-500 mr-1">Presets:</span>
+                                                <button type="button" onclick="setAccentTheme('#007AFF', '#0056B3')" class="w-5 h-5 rounded-full bg-[#007AFF] border border-white/20" title="Tech Blue"></button>
+                                                <button type="button" onclick="setAccentTheme('#00FF94', '#00B368')" class="w-5 h-5 rounded-full bg-[#00FF94] border border-white/20" title="Neon Emerald"></button>
+                                                <button type="button" onclick="setAccentTheme('#C084FC', '#A855F7')" class="w-5 h-5 rounded-full bg-[#C084FC] border border-white/20" title="Violet Pulse"></button>
+                                                <button type="button" onclick="setAccentTheme('#F59E0B', '#D97706')" class="w-5 h-5 rounded-full bg-[#F59E0B] border border-white/20" title="Warm Amber"></button>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <div class="flex items-center gap-2">
+                                                <input type="color" name="accent" id="accentColorInput" value="#00FF94" oninput="updateLiveThemePreview()"
+                                                    class="h-10 w-12 bg-transparent border-0 rounded cursor-pointer">
+                                                <span class="text-xs font-mono text-gray-400" id="accentColorHex">#00FF94</span>
+                                            </div>
+                                            <input type="text" name="accent_deep" id="accentDeepInput" placeholder="Deep shade (auto-calculated if blank)"
+                                                class="flex-1 bg-dark-card border border-dark-border rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                        </div>
+                                        <div class="flex items-center pt-2">
+                                            <input type="checkbox" name="featured" id="projectFeatured"
+                                                class="w-4 h-4 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
+                                            <label for="projectFeatured" class="ml-2 text-xs text-gray-300">Featured on Home &amp; Portfolio Hero</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Showcase & Products page article settings -->
+                                <div class="border-t border-dark-border pt-6 space-y-6">
+                                    <div class="flex items-start gap-3">
+                                        <input type="checkbox" id="projectShowcase"
+                                            onchange="toggleShowcaseFields(this.checked)"
+                                            class="w-5 h-5 mt-0.5 bg-[#06090F] border-dark-border rounded text-brand-green focus:ring-offset-gray-900">
+                                        <label for="projectShowcase" class="text-sm text-gray-300">
+                                            <span class="font-semibold text-white">Feature as Full Article on /products/</span>
+                                            <span class="block text-xs text-gray-500 mt-0.5">
+                                                Renders this project with interactive capabilities, gallery lightbox, and the Data Story Chart.
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div id="showcaseFields" class="space-y-6 hidden">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-400 mb-2">Phase</label>
+                                                <select name="phase"
+                                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                    <option value="completed">Completed &amp; Live</option>
+                                                    <option value="active">Active Development</option>
+                                                    <option value="future">Future Vision</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-400 mb-2">Order in phase</label>
+                                                <input type="number" name="display_order" min="0" value="0"
+                                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-400 mb-2">Card Style</label>
+                                                <select name="card_variant"
+                                                    class="w-full bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                    <option value="default">Standard</option>
+                                                    <option value="spotlight">Spotlight (Gradient &amp; Outer Glow)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-400 mb-2">Status Badge</label>
+                                                <div class="flex gap-2">
+                                                    <input type="text" name="badge_icon" placeholder="fas fa-check-circle"
+                                                        class="w-36 bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                    <input type="text" name="badge_label" placeholder="Deployed Platform"
+                                                        class="flex-1 bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-400 mb-2">CTA Button</label>
+                                                <div class="flex gap-2">
+                                                    <input type="text" name="cta_label" placeholder="Visit Platform"
+                                                        class="flex-1 bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                    <input type="text" name="cta_icon" placeholder="fas fa-arrow-up-right-from-square"
+                                                        class="w-36 bg-[#06090F] border border-dark-border rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Screenshots Gallery -->
+                                        <div class="space-y-3">
+                                            <div class="flex items-center justify-between">
+                                                <label class="block text-sm font-medium text-gray-400">Screenshots &amp; Interface Gallery</label>
+                                                <button type="button" onclick="addGalleryRow()"
+                                                    class="text-xs text-brand-blue hover:underline"><i class="fas fa-plus mr-1"></i>Add Screenshot</button>
+                                            </div>
+                                            <div id="galleryRows" class="space-y-3"></div>
+                                        </div>
+
+                                        <!-- Dynamic System Modules & Features (Left half of showcase) -->
+                                        <div class="space-y-3 p-4 rounded-xl bg-[#06090F] border border-white/5">
+                                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                                <div>
+                                                    <label class="block text-sm font-bold text-white">System Modules &amp; Features</label>
+                                                    <p class="text-xs text-gray-500">Feature highlights shown on the left of the showcase card.</p>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <button type="button" id="btnExtractReadme" onclick="extractFeaturesFromReadme()"
+                                                        class="px-2.5 py-1.5 bg-blue-500/10 text-brand-blue hover:bg-blue-500/20 rounded text-xs font-semibold flex items-center gap-1 transition-colors">
+                                                        <i class="fab fa-github"></i>Extract from README
+                                                    </button>
+                                                    <button type="button" onclick="addFeatureRow()"
+                                                        class="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-gray-200 rounded text-xs font-semibold flex items-center gap-1 transition-colors">
+                                                        <i class="fas fa-plus"></i>Add Module
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input type="text" name="features_heading" placeholder="Section Heading (e.g. System Modules & Features)"
+                                                class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                            <div id="featureRows" class="space-y-3 mt-3"></div>
+                                        </div>
+
+                                        <!-- Dynamic Data Story & Chart Studio (Right half of showcase) -->
+                                        <div class="space-y-4 p-4 rounded-xl bg-[#06090F] border border-white/5">
+                                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                                <div>
+                                                    <label class="block text-sm font-bold text-white flex items-center gap-2">
+                                                        <i class="fas fa-chart-line text-amber-400"></i>
+                                                        Data Story &amp; Metrics Studio
+                                                    </label>
+                                                    <p class="text-xs text-gray-500">Visual comparison or growth chart displayed next to features.</p>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <select id="chartPresetSelector" onchange="applyChartPreset(this.value)"
+                                                        class="bg-dark-card border border-dark-border rounded px-2.5 py-1 text-xs text-gray-300 focus:outline-none">
+                                                        <option value="custom">Presets: Custom Business Story</option>
+                                                        <option value="school_sms">Preset: School SMS Speed (Days vs Secs)</option>
+                                                        <option value="lead_growth">Preset: Inbound Lead Growth (Timeline)</option>
+                                                        <option value="distribution">Preset: Resource Distribution (Donut)</option>
+                                                        <option value="github_velocity">Preset: GitHub Commit Velocity</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-400 mb-1">Chart Heading</label>
+                                                    <input type="text" name="chart_heading" id="chartHeadingInput" placeholder="Data Story: Result Generation Speed"
+                                                        class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-400 mb-1">Chart Icon</label>
+                                                    <input type="text" name="chart_icon" placeholder="fas fa-chart-bar"
+                                                        class="w-full bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors">
+                                                </div>
+                                            </div>
+
+                                            <!-- Visual Metric Rows Editor -->
+                                            <div id="chartBuilderSection" class="space-y-2 pt-2 border-t border-white/5">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs font-semibold text-gray-300">Metric Datasets</span>
+                                                    <button type="button" onclick="addChartMetricRow()" class="text-xs text-brand-green hover:underline">
+                                                        <i class="fas fa-plus mr-1"></i>Add Row
+                                                    </button>
+                                                </div>
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-left text-xs">
+                                                        <thead>
+                                                            <tr class="text-gray-500 border-b border-dark-border">
+                                                                <th class="py-1.5 px-2">Metric / Stage</th>
+                                                                <th class="py-1.5 px-2">Baseline / Before</th>
+                                                                <th class="py-1.5 px-2">With Teklora / After</th>
+                                                                <th class="py-1.5 px-2 w-8"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="chartMetricRows" class="divide-y divide-white/5"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <!-- Chart Spec Raw Editor (Collapsible) -->
+                                            <div>
+                                                <details class="text-xs text-gray-500 cursor-pointer">
+                                                    <summary class="hover:text-gray-300">Advanced: Raw Chart.js JSON Specification</summary>
+                                                    <textarea name="chart_spec" id="chartSpecJsonInput" rows="5" spellcheck="false"
+                                                        class="w-full mt-2 bg-[#06090F] border border-dark-border rounded-lg p-3 text-white font-mono text-[11px] focus:outline-none focus:border-brand-blue transition-colors"
+                                                        placeholder='{"type": "bar", "data": {"labels": [], "datasets": []}}'></textarea>
+                                                </details>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end gap-3 border-t border-dark-border pt-5">
+                                    <button type="button" onclick="hideAddForm('project')"
+                                        class="px-5 py-2.5 rounded-lg border border-dark-border text-gray-400 hover:text-white transition-colors text-sm">
+                                        Cancel
+                                    </button>
+                                    <button type="submit"
+                                        class="bg-brand-green hover:bg-green-500 text-black font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm shadow-sm shadow-green-500/10">
+                                        Save Project
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projects Grid List -->
+                <div id="projectsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-3 text-brand-blue"></i>
+                        <p>Loading projects...</p>
+                    </div>
+                </div>
+
+                <!-- README Inspector Modal -->
+                <div id="projectReadmeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden animate-fade-in">
+                    <div class="bg-[#0B132B] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                        <div class="flex items-center justify-between p-5 border-b border-white/10">
+                            <div class="flex items-center gap-2">
+                                <i class="fab fa-github text-brand-blue text-lg"></i>
+                                <h3 id="modalReadmeTitle" class="text-base font-bold text-white">Repository README</h3>
+                            </div>
+                            <button type="button" onclick="closeProjectReadmeModal()" class="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                                <i class="fas fa-xmark text-base"></i>
+                            </button>
+                        </div>
+                        <div id="modalReadmeContent" class="p-6 overflow-y-auto text-sm text-gray-300 font-mono whitespace-pre-wrap leading-relaxed"></div>
+                    </div>
+                </div>
             </div>
